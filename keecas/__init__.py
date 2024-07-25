@@ -13,4 +13,4 @@
 # sp.init_printing(mul_symbol=mul_symbol, order="none")
 # platex = lambda x: latex(x, mode="inline", mul_symbol=mul_symbol)
 
-import dataframe, display, pipe_command, pint_sympy, utils
+from . import dataframe, display, pipe_command, pint_sympy, utils
