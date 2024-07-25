@@ -1,11 +1,11 @@
 
 # import matplotlib.pyplot as plt
-import display as qt
-from display import *
-from pint_sympy import unitregistry as u 
+# import display as qt
+from .display import *
+from .pint_sympy import unitregistry as u 
 
 # import the pipe command
-import pipe_command as pc
+# import .pipe_command as pc
 
 # sympy printing settings
 import sympy as sp
