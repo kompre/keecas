@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "keecas"
-version = "0.1.0"
+version = "0.1.1a0"
 description = "A set of tools for symbolic math computation done in a jupyter notebook, aimed specifically for Quarto. It is based mostly on sympy."
 authors = ["kompre <s.follador@gmail.com>"]
 readme = "README.md"
@@ -15,6 +15,9 @@ ipython = "^8.26.0"
 pyyaml = "^6.0.1"
 flatten-dict = "^0.4.2"
 
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
 
 [build-system]
 requires = ["poetry-core"]

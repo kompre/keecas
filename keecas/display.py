@@ -8,13 +8,14 @@ from sympy import (
     Basic,
     FunctionClass,
     Dict,
+    S,
 )
 from IPython.display import Markdown, display
 import re
 
 from typing import Union, List, Dict
 
-from dataframe import *
+from .dataframe import *
 
 # DEFINITION OF DEFAULT VALUES
 
@@ -26,21 +27,17 @@ KaTeX_compatibility = {
 }
 
 # default values for labels
-EQ_PREFIX = "eq-"
-EQ_SUFFIX = ""
-VERTICAL_SKIP = "8pt"
-PRINT_LABEL = True
+from dataclasses import dataclass
 
-replacement = {
-    # r"\^{{1}}": r"",
-    # r"\^{1 \\cdot": r"^{ ",
-    r"\b1 \\cdot": r"",
-    r"\\frac": r"\\dfrac",
-    r"\\\\": rf"\\\\[{VERTICAL_SKIP}]",
-    r"for": "per",
-    r"otherwise": "altrimenti",
-    r"\\,": r"{\,}",
-}
+
+@dataclass
+class options:
+    EQ_PREFIX: str = "eq-"
+    EQ_SUFFIX: str = ""
+    VERTICAL_SKIP: str = "8pt"
+    PRINT_LABEL: bool = False
+    DEBUG = False
+
 
 from itertools import chain, zip_longest
 
@@ -91,7 +88,7 @@ def show_eqn(
     label_command: str = None,
     col_wrap: list[None | tuple] = None,
     float_format: str = None,
-    debug: bool = False,
+    debug: bool = None,
     **kwargs,
 ) -> Markdown:
     """Formats and displays mathematical equations with LaTeX rendering.
@@ -118,6 +115,9 @@ def show_eqn(
     """
 
     # set defualt values
+    if not debug:
+        debug = options.DEBUG
+
     if not "mul_symbol" in kwargs:
         kwargs["mul_symbol"] = KaTeX_compatibility["default_mul_symbol"]
 
@@ -135,7 +135,7 @@ def show_eqn(
 
     # add label at the end (does it make sense for * object?)
     if label and not isinstance(label, dict):
-        label_at_the_start = rf"{EQ_PREFIX}{label}{EQ_SUFFIX}"
+        label_at_the_start = rf"{options.EQ_PREFIX}{label}{options.EQ_SUFFIX}"
     else:
         label_at_the_start = ""
 
@@ -178,13 +178,16 @@ def show_eqn(
             f"ATTENTION! label is a dict, while the {environment} does not support multiple labels"
         )
 
+    # handle edge case for 'equation' environment
+    if "equation" in environment:
+        sep = ""  # no separator in environment
+
     # definition of the main template
     template = f"{wrap[0]}{wrap[1]}\n___body___{wrap[2]}{wrap[3]}"
 
     # convert sep to a list: str-> list[str]
     if not isinstance(sep, list):
         sep = [sep]
-
 
     # convert eqns to a Dataframe
     if not isinstance(eqns, Dataframe):
@@ -195,7 +198,7 @@ def show_eqn(
 
     # adjust sep to the size of the list of eqns(e.g. 'key & val0 & val1' ); assume last value of sep as filler
     sep += [sep[-1]] * (eqns.width - len(sep))
-    
+
     # extract keys from first dict
     keys = eqns.keys()
     # determine the number of columns (keys & value0 & value1 ...)
@@ -235,7 +238,6 @@ def show_eqn(
                 )
             ]
         )
-    print(body_lines)
 
     # how to join the lines of the body
     join_token = "" if "equation" in environment else " \\\\\n "
@@ -257,10 +259,11 @@ def show_eqn(
     if debug:
         print(template)
 
-    if PRINT_LABEL:
+    if options.PRINT_LABEL:
         print(f"{label_at_the_start = :s}") if label_at_the_start else None
 
     return Markdown(template)
+
 
 def myprint_latex(expr: Basic | str | Markdown, **kwargs) -> str:
     """Converts a mathematical expression to a LaTeX string.
@@ -317,13 +320,26 @@ def eq_to_dict(result: Eq | list | tuple):
         return {result.expr.lhs: result.value}
 
 
+import regex
+
+# replacements for the regex function
+replacement = {
+    r"\\frac": r"\\dfrac",  # fisrt replace all frac with dfrac
+    r"\^\{((?:[^{}]|(?:\{(?1)\}))*)}": lambda m: regex.sub(
+        "dfrac", "frac", m.group(0)
+    ),  # then replace all dfrac inside ^{} with frac (small exponent)
+    r"\b1 \\cdot": r"",
+    r"\\\\": rf"\\\\[{options.VERTICAL_SKIP}]",
+    r"for": "per",
+    r"otherwise": "altrimenti",
+    r"\\,": r"{\,}",
+}
 
 
 # %% replace all the key, value pair
 def replace_all(body, reps=replacement):
     for pattern, repl in reps.items():
-        # body = body.replace(pattern, repl)
-        body = re.sub(pattern, repl, body)
+        body = regex.sub(pattern, repl, body)
     return body
 
 
@@ -342,17 +358,3 @@ def latex_inline_dict(var, mapping: dict, **kwargs):
 
     _latex = lambda x: replace_all(latex(x, **kwargs))
     return f"{wrap[0]}{_latex(var)} = {_latex(mapping[var])}{wrap[1]}"
-
-
-
-
-# %% debug
-
-if __name__ == "__main__":
-    KaTeX_compatibility.update(
-        {
-            "default_environment": "flalign",
-            "default_label_command": r"\label",
-        }
-    )
-# %%

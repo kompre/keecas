@@ -1,12 +1,19 @@
 import copy
 
+from itertools import chain
+
+
 class Dataframe(dict):
     def __init__(self, *args, filler=None, **kwargs):
         super().__init__()
         self._width = 0
         self._filler = filler
 
-        if args and isinstance(args[0], list) and all(isinstance(item, dict) for item in args[0]):
+        if (
+            args
+            and isinstance(args[0], list)
+            and all(isinstance(item, dict) for item in args[0])
+        ):
             self._init_from_list_of_dicts(args[0])
         else:
             self._update_initial(*args, **kwargs)
@@ -15,7 +22,9 @@ class Dataframe(dict):
         if not list_of_dicts:
             return
 
-        keys = list(list_of_dicts[0].keys()) # the keys are determined by the first dict (order is important!)
+        keys = list(
+            list_of_dicts[0].keys()
+        )  # the keys are determined by the first dict (order is important!)
         for key in keys:
             self[key] = [d.get(key, self._filler) for d in list_of_dicts]
 
@@ -24,7 +33,9 @@ class Dataframe(dict):
     def _update_initial(self, *args, **kwargs):
         if args:
             if len(args) > 1:
-                raise TypeError("update expected at most 1 arguments, got %d" % len(args))
+                raise TypeError(
+                    "update expected at most 1 arguments, got %d" % len(args)
+                )
             other = dict(args[0])
             other.update(kwargs)
         else:
@@ -50,7 +61,9 @@ class Dataframe(dict):
     def update(self, *args, **kwargs):
         if args:
             if len(args) > 1:
-                raise TypeError("update expected at most 1 arguments, got %d" % len(args))
+                raise TypeError(
+                    "update expected at most 1 arguments, got %d" % len(args)
+                )
             other = dict(args[0])
             other.update(kwargs)
         else:
@@ -63,11 +76,11 @@ class Dataframe(dict):
 
         # Find the maximum length of any value in both self and other
         max_length = max(
-            [len(value) for value in self.values()] +
-            [len(value) for value in other.values()] +
-            [self._width]
+            [len(value) for value in self.values()]
+            + [len(value) for value in other.values()]
+            + [self._width]
         )
-        
+
         # Update existing keys and add new ones
         for key, value in other.items():
             self[key] = value + [self._filler] * (max_length - len(value))
@@ -76,100 +89,107 @@ class Dataframe(dict):
         for key in self:
             if key not in other:
                 if len(self[key]) < max_length:
-                    self[key] = self[key] + [self._filler] * (max_length - len(self[key]))
+                    self[key] = self[key] + [self._filler] * (
+                        max_length - len(self[key])
+                    )
                 else:
                     self[key] = self[key][:max_length]
 
         # Update width
         self._width = max_length
-    
-    def append(self, value, strict=True):
-        if isinstance(value, Dataframe):
+
+    def append(self, other, strict=True):
+        if isinstance(other, Dataframe):
+            if strict:
+                other = {key: other[key] for key in self.keys() if key in other}
+
             for key in self.keys():
-                if key in value:
-                    self[key].append(value[key][0] if len(value[key]) > 0 else self._filler)
-                else:
-                    self[key].append(self._filler)
+                self[key].append(
+                    other[key][0]
+                    if key in other and len(other[key]) > 0
+                    else self._filler
+                )
+        elif isinstance(other, dict):
+            if strict:
+                other = {key: other[key] for key in self.keys() if key in other}
 
-            if not strict:
-                for key in value.keys():
-                    if key not in self:
-                        self[key] = [self._filler] * self._width + [value[key][0] if len(value[key]) > 0 else self._filler]
-
-        elif isinstance(value, dict):
             for key in self.keys():
-                if key in value:
-                    self[key].append(value[key])
-                else:
-                    self[key].append(self._filler)
-
-            if not strict:
-                for key in value.keys():
-                    if key not in self:
-                        self[key] = [self._filler] * self._width + [value[key]]
-
-        else:  # any other type
+                self[key].append(other[key] if key in other else self._filler)
+        else:
             for key in self.keys():
-                self[key].append(value)
+                self[key].append(other)
 
         self._width += 1
 
-    def extend(self, value, strict=True):
-        if isinstance(value, Dataframe):
-            other_width = value.width
-            for key in self.keys():
-                if key in value:
-                    self[key].extend(value[key] + [self._filler] * (other_width - len(value[key])))
-                else:
-                    self[key].extend([self._filler] * other_width)
+    def extend(self, other, strict=True):
+        if isinstance(other, Dataframe):
+            # filter keys
+            if strict:
+                other = Dataframe(
+                    {key: other[key] for key in self.keys() if key in other}
+                )
+                if not other:
+                    return
 
-            if not strict:
-                for key in value.keys():
-                    if key not in self:
-                        self[key] = [self._filler] * self._width + value[key] + [self._filler] * (other_width - len(value[key]))
+            other_width = other.width
+
+            extra_keys = [k for k in other.keys() if k not in self.keys()]
+
+            for key in chain(self.keys(), extra_keys):
+                match (key in self, key in other):
+                    case (True, True):
+                        self[key].extend(
+                            other[key]
+                            + [self._filler] * (other_width - len(other[key]))
+                        )
+                    case (True, False):
+                        self[key].extend([self._filler] * other_width)
+                    case (False, True):
+                        self[key] = (
+                            [self._filler] * self._width
+                            + other[key]
+                            + [self._filler] * (other_width - len(other[key]))
+                        )
 
             self._width += other_width
+        elif isinstance(other, dict):
+            # filter keys
+            if strict:
+                other = {key: other[key] for key in self.keys() if key in other}
+                if not other:
+                    return
+            self.extend(Dataframe(other), strict=strict)
 
-        elif isinstance(value, dict):
-            max_len = max(len(v) if isinstance(v, list) else 1 for v in value.values())
-            
+            # max_len = max(len(v) if isinstance(v, list) else 1 for v in other.values())
+
+            # for key in self.keys():
+            #     if key in other:
+            #         v = other[key]
+            #         if isinstance(v, list):
+            #             self[key].extend(v + [self._filler] * (max_len - len(v)))
+            #         else:
+            #             self[key].extend([v] * max_len)
+            #     else:
+            #         self[key].extend([self._filler] * max_len)
+
+            # self._width += max_len
+        elif isinstance(other, list):
             for key in self.keys():
-                if key in value:
-                    v = value[key]
-                    if isinstance(v, list):
-                        self[key].extend(v + [self._filler] * (max_len - len(v)))
-                    else:
-                        self[key].extend([v] * max_len)
-                else:
-                    self[key].extend([self._filler] * max_len)
+                self[key].extend(other)
 
-            if not strict:
-                for key in value.keys():
-                    if key not in self:
-                        v = value[key]
-                        if isinstance(v, list):
-                            self[key] = [self._filler] * self._width + v + [self._filler] * (max_len - len(v))
-                        else:
-                            self[key] = [self._filler] * self._width + [v] * max_len
+            self._width += len(other)
+        else:
+            raise ValueError(
+                "Cannot extend Dataframe with this type. Use 'append' for single values."
+            )
 
-            self._width += max_len
-
-        elif isinstance(value, list):
-            for key in self.keys():
-                self[key].extend(value)
-            
-            self._width += len(value)
-
-        else:  # any other type
-            raise ValueError("Cannot extend Dataframe with this type. Use 'append' for single values.")
-        
     def __add__(self, other):
         # if not isinstance(other, Dataframe):
         #     raise ValueError("Can only add Dataframe to Dataframe")
         result = copy.deepcopy(Dataframe(self))
         result.extend(other, strict=False)
         return result
-    
+
     def __or__(self, other):
         # if not isinstance(other, Dataframe):
         #     raise ValueError("Can only perform '|' operation with Dataframe")
@@ -196,10 +216,9 @@ class Dataframe(dict):
         return super().__repr__()
 
     def print_dict(self):
-        print(self.dict_repr())        
-        
-        
-        
+        print(self.dict_repr())
+
+
 from typing import List, Union, Dict
 
 
@@ -226,9 +245,7 @@ def create_dataframe(
     elif isinstance(seed, Dataframe):
         for key in keys:
             if key in seed:
-                df[key] = seed[key][:width] + [default_value] * (
-                    width - len(seed[key])
-                )
+                df[key] = seed[key][:width] + [default_value] * (width - len(seed[key]))
             else:
                 df[key] = [default_value] * width
 
