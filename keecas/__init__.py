@@ -17,7 +17,7 @@ from . import pipe_command as pc
 # initialize pint
 from .pint_sympy import unitregistry as u
 
-u.formatter.default_format = ".2f~P"
+u.formatter.default_format = ".3f~P"
 
 # initialize sympy
 import sympy as sp
