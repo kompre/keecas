@@ -42,7 +42,7 @@ def subs(expression: Basic, substitution: dict, sorted=True, simplify_quantity=T
     if simplify_quantity:        
         expression = expression | quantity_simplify(**kwargs)
         
-    return 
+    return expression
 
 @Pipe
 def N(expression: Basic, precision: int = 15) -> Basic:
@@ -87,5 +87,5 @@ if __name__ == '__main__':
         y : x*4, 
     }
     
-    print("x*y" | parse_expr | subs(_d) | N | convert_to)
+    print("x*y" | parse_expr | subs(_d) )
 # %%
