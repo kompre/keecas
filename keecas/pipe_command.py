@@ -3,6 +3,7 @@ from pipe import Pipe
 from sympy.parsing.sympy_parser import parse_expr as sympy_parse_expr
 from sympy import Basic, sympify
 from sympy.physics.units.util import convert_to as sympy_convert_to
+from sympy.physics.units.util import quantity_simplify as sympy_quantity_simplify
 from sympy import topological_sort, default_sort_key
 from itertools import permutations
 from inspect import currentframe
@@ -28,16 +29,24 @@ def order_subs(subs: dict) -> list[tuple]:
     return topological_sort((subs.items(), edges), default_sort_key)
 
 @Pipe
-def subs(expression: Basic, substitution: dict, sorted=True) -> Basic:
+def subs(expression: Basic, substitution: dict, sorted=True, quantity_simplify=True, **kwargs) -> Basic:
+    
+    # filter out non Basic expressions from the substitution dict
+    substitution = {lhs: rhs for lhs, rhs in substitution.items() if isinstance(lhs, Basic)}
     
     if sorted:
         substitution = order_subs(substitution)
     
-    return expression.subs(substitution)
+    expression = expression.subs(substitution)
+           
+    if quantity_simplify:        
+        expression = expression | quantity_simplify(**kwargs)
+        
+    return 
 
 @Pipe
 def N(expression: Basic, precision: int = 15) -> Basic:
-    return expression.evalf(precision)
+    return expression.evalf(precision) 
 
 @Pipe
 def convert_to(expression: Basic, units = 1) -> Basic:
@@ -60,6 +69,10 @@ def parse_expr(expression: Basic, evaluate=False, local_dict:dict=None, **kwargs
         **kwargs
     )
     return parsed_expr
+
+@Pipe
+def quantity_simplify(expression: Basic, across_dimensions=True, unit_system="SI", **kwargs) -> Basic:
+    return sympy_quantity_simplify(expression, across_dimensions=across_dimensions, unit_system=unit_system)
 
 # print(currentframe().f_back.f_locals)
 # %% debug
