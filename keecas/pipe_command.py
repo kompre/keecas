@@ -1,7 +1,7 @@
 # %% pipe command
 from pipe import Pipe
 from sympy.parsing.sympy_parser import parse_expr as sympy_parse_expr
-from sympy import Basic, sympify
+from sympy import Basic, sympify, S
 from sympy.physics.units.util import convert_to as sympy_convert_to
 from sympy.physics.units.util import quantity_simplify as sympy_quantity_simplify
 from sympy import topological_sort, default_sort_key
@@ -37,7 +37,7 @@ def subs(
 
     # filter out non Basic expressions from the substitution dict
     substitution = {
-        lhs: rhs for lhs, rhs in substitution.items() if isinstance(lhs, Basic)
+        lhs: S(rhs) for lhs, rhs in substitution.items() if isinstance(lhs, Basic)
     }
 
     if sorted:
