@@ -29,7 +29,7 @@ def order_subs(subs: dict) -> list[tuple]:
     return topological_sort((subs.items(), edges), default_sort_key)
 
 @Pipe
-def subs(expression: Basic, substitution: dict, sorted=True, quantity_simplify=True, **kwargs) -> Basic:
+def subs(expression: Basic, substitution: dict, sorted=True, simplify_quantity=True, **kwargs) -> Basic:
     
     # filter out non Basic expressions from the substitution dict
     substitution = {lhs: rhs for lhs, rhs in substitution.items() if isinstance(lhs, Basic)}
@@ -39,7 +39,7 @@ def subs(expression: Basic, substitution: dict, sorted=True, quantity_simplify=T
     
     expression = expression.subs(substitution)
            
-    if quantity_simplify:        
+    if simplify_quantity:        
         expression = expression | quantity_simplify(**kwargs)
         
     return 
