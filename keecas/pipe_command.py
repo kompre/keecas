@@ -28,64 +28,82 @@ def order_subs(subs: dict) -> list[tuple]:
     # Reorder the dict with topological_sort
     return topological_sort((subs.items(), edges), default_sort_key)
 
+
 @Pipe
-def subs(expression: Basic, substitution: dict, sorted=True, simplify_quantity=True, **kwargs) -> Basic:
-    
+def subs(
+    expression: Basic, substitution: dict, sorted=True, 
+    # simplify_quantity=True, **kwargs
+) -> Basic:
+
     # filter out non Basic expressions from the substitution dict
-    substitution = {lhs: rhs for lhs, rhs in substitution.items() if isinstance(lhs, Basic)}
-    
+    substitution = {
+        lhs: rhs for lhs, rhs in substitution.items() if isinstance(lhs, Basic)
+    }
+
     if sorted:
         substitution = order_subs(substitution)
-    
+
     expression = expression.subs(substitution)
-           
-    if simplify_quantity:        
-        expression = expression | quantity_simplify(**kwargs)
-        
+
+    # if simplify_quantity:
+    #     expression = expression | quantity_simplify(**kwargs)
+
     return expression
+
 
 @Pipe
 def N(expression: Basic, precision: int = 15) -> Basic:
-    return expression.evalf(precision) 
+    return expression.evalf(precision)
+
 
 @Pipe
-def convert_to(expression: Basic, units = 1) -> Basic:
+def convert_to(expression: Basic, units=1) -> Basic:
     return sympy_convert_to(expression, target_units=units)
+
 
 @Pipe
 def doit(expression: Basic) -> Basic:
     return expression.doit()
 
+
 @Pipe
-def parse_expr(expression: Basic, evaluate=False, local_dict:dict=None, **kwargs) -> Basic:
+def parse_expr(
+    expression: Basic, evaluate=False, local_dict: dict = None, **kwargs
+) -> Basic:
     if not local_dict:
         local_dict = currentframe().f_back.f_back.f_back.f_locals
-    
+
     parsed_expr = sympy_parse_expr(
         expression,
-        evaluate=evaluate, 
+        evaluate=evaluate,
         transformations="all",
-        local_dict=local_dict, 
+        local_dict=local_dict,
         **kwargs
     )
     return parsed_expr
 
+
 @Pipe
-def quantity_simplify(expression: Basic, across_dimensions=True, unit_system="SI", **kwargs) -> Basic:
-    return sympy_quantity_simplify(expression, across_dimensions=across_dimensions, unit_system=unit_system)
+def quantity_simplify(
+    expression: Basic, across_dimensions=True, unit_system="SI", **kwargs
+) -> Basic:
+    return sympy_quantity_simplify(
+        expression, across_dimensions=across_dimensions, unit_system=unit_system
+    )
+
 
 # print(currentframe().f_back.f_locals)
 # %% debug
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sympy as sp
-    
-    x, y = sp.symbols('x y')
-    
+
+    x, y = sp.symbols("x y")
+
     _d = {
-        x : 3,
-        y : x*4, 
+        x: 3,
+        y: x * 4,
     }
-    
-    print("x*y" | parse_expr | subs(_d) )
+
+    print("x*y" | parse_expr | subs(_d))
 # %%
