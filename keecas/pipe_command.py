@@ -37,13 +37,13 @@ def subs(
 
     # filter out non Basic expressions from the substitution dict
     substitution = {
-        lhs: S(rhs) for lhs, rhs in substitution.items() if isinstance(lhs, Basic)
+        lhs: rhs for lhs, rhs in substitution.items() if isinstance(lhs, Basic)
     }
 
     if sorted:
         substitution = order_subs(substitution)
 
-    expression = expression.subs(substitution)
+    expression = S(expression).subs(substitution)
 
     # if simplify_quantity:
     #     expression = expression | quantity_simplify(**kwargs)
