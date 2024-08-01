@@ -7,6 +7,7 @@ from sympy.physics.units.util import quantity_simplify as sympy_quantity_simplif
 from sympy import topological_sort, default_sort_key
 from itertools import permutations
 from inspect import currentframe
+from keecas.display import wrap_floats
 
 
 def order_subs(subs: dict) -> list[tuple]:
@@ -37,7 +38,7 @@ def subs(
 
     # filter out non Basic expressions from the substitution dict
     substitution = {
-        lhs: rhs for lhs, rhs in substitution.items() if isinstance(lhs, Basic)
+        lhs: rhs for lhs, rhs in substitution.items() if isinstance(lhs, Basic) and rhs is not None
     }
 
     if sorted:
@@ -68,10 +69,14 @@ def doit(expression: Basic) -> Basic:
 
 @Pipe
 def parse_expr(
-    expression: Basic, evaluate=False, local_dict: dict = None, **kwargs
+    expression: Basic, evaluate=False, local_dict: dict = None, as_float=True, **kwargs
 ) -> Basic:
     if not local_dict:
         local_dict = currentframe().f_back.f_back.f_back.f_locals
+    
+    # wrap every decimal number in N()
+    if as_float:
+        expression = wrap_floats(expression, wrapper=("N(", ")"))
 
     parsed_expr = sympy_parse_expr(
         expression,
@@ -92,6 +97,7 @@ def quantity_simplify(
     )
 
 
+
 # print(currentframe().f_back.f_locals)
 # %% debug
 
@@ -105,5 +111,5 @@ if __name__ == "__main__":
         y: x * 4,
     }
 
-    print("x*y" | parse_expr | subs(_d))
+    print("x*3.0" | parse_expr(as_float=True) )
 # %%

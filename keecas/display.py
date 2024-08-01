@@ -285,6 +285,21 @@ def myprint_latex(expr: Basic | str | Markdown, **kwargs) -> str:
 
     return latex(expr, **kwargs)
 
+import re
+
+def wrap_floats(text, wrapper=("", "")):
+    # Define a regular expression pattern to match decimal numbers
+    float_pattern = re.compile(r'-?\d+\.\d+')
+    
+    # Define a function to use as replacement
+    def wrap_match(match):
+        return f"{wrapper[0]}{match.group(0)}{wrapper[1]}"
+    
+    # Use re.sub to replace all matches with the wrapped version
+    wrapped_text = float_pattern.sub(wrap_match, text)
+    
+    return wrapped_text
+
 
 def format_decimal_numbers(text, format_string="{:.2f}"):
     """
