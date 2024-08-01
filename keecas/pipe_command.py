@@ -66,22 +66,21 @@ def convert_to(expression: Basic, units=1) -> Basic:
 def doit(expression: Basic) -> Basic:
     return expression.doit()
 
+from sympy.parsing.sympy_parser import T
 
 @Pipe
 def parse_expr(
-    expression: Basic, evaluate=False, local_dict: dict = None, as_float=True, **kwargs
+    expression: Basic, evaluate=False, local_dict: dict = None, **kwargs
 ) -> Basic:
     if not local_dict:
         local_dict = currentframe().f_back.f_back.f_back.f_locals
-    
-    # wrap every decimal number in N()
-    if as_float:
-        expression = wrap_floats(expression, wrapper=("N(", ")"))
+        
+    if "transformations" not in kwargs:
+        kwargs["transformations"]=T[:11]
 
     parsed_expr = sympy_parse_expr(
         expression,
         evaluate=evaluate,
-        transformations="all",
         local_dict=local_dict,
         **kwargs
     )
@@ -111,5 +110,5 @@ if __name__ == "__main__":
         y: x * 4,
     }
 
-    print("x*3.0" | parse_expr(as_float=True) )
+    print("a = x*3.0/100")
 # %%
