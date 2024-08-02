@@ -19,13 +19,6 @@ from .dataframe import *
 
 # DEFINITION OF DEFAULT VALUES
 
-# add {{< include _KaTeX_compatibility.qmd >}} to main qmd file
-KaTeX_compatibility = {
-    "default_environment": "align",
-    "default_label_command": r"\\%\label",
-    "default_mul_symbol": r"\,",
-}
-
 # default values for labels
 from dataclasses import dataclass
 
@@ -37,6 +30,10 @@ class options:
     VERTICAL_SKIP: str = "8pt"
     PRINT_LABEL: bool = False
     DEBUG = False
+    katex = False
+    default_mul_symbol = r"\,"
+    default_environment = "align"
+    default_label_command = r"\label"
 
 
 from itertools import chain, zip_longest
@@ -82,7 +79,7 @@ def verifica(lhs, rhs, test=Le) -> Markdown:
 
 def show_eqn(
     eqns: dict | list[dict] | Dataframe,
-    environment: str = "align",
+    environment: str = None,
     sep: str | list[str] = "&",
     label: str | dict = None,
     label_command: str = None,
@@ -91,27 +88,39 @@ def show_eqn(
     debug: bool = None,
     **kwargs,
 ) -> Markdown:
-    """Formats and displays mathematical equations with LaTeX rendering.
+    """
+    Generates a LaTeX equation or equation array based on the provided equations.
 
     Args:
-        eqns (dict | list[dict]): A dictionary or list of dictionaries representing equations.
-            Each dictionary key is a variable name, and the value is the corresponding expression.
-        environment (str, optional): The LaTeX environment for rendering the equations.
-            Defaults to "align" (for aligned equations). Other options include "equation", "align*", etc.
-        sep (str | list[str], optional): The separator symbol(s) used between different parts of the equation.
-            Defaults to "&" for aligned equations. Can be a string or a list of strings (one per element).
-        label (str | dict, optional): A label to add to the equation. Single label as a string or a dictionary
-            for multiple labels (not supported for all environments). Defaults to None.
-        label_command (str, optional): The LaTeX command for labeling. Defaults to the value from `KaTeX_compatibility` dictionary.
-        col_wrap (list[None | tuple], optional): Controls wrapping of elements in each column. Each tuple defines
-            wrapping before and after the element (e.g., [None, ('=', '')] for no wrapping in the first column
-            and wrapping around the "=" sign in the second). Defaults to `[None, ('=', '')]`.
-        float_format (str, optional): The format string for displaying decimal numbers (e.g., ".2f" for two decimal places).
-        debug (bool, optional): Enables printing the formatted equation template for debugging purposes. Defaults to False.
-        **kwargs: Additional keyword arguments passed to underlying functions (e.g., `myprint_latex`).
+        eqns (dict | list[dict] | Dataframe): The equations to be displayed. It can be a dictionary, a list of dictionaries, or a Dataframe object.
+        environment (str, optional): The LaTeX environment to use for displaying the equations. Defaults to options.default_environment.
+        sep (str | list[str], optional): The separator to use between the key and value in each equation. It can be a string or a list of strings. Defaults to "&" or "" for specific environments (e.g. equation, gather).
+        label (str | dict, optional): The label to attach to the equation. It can be a string or a dictionary. Defaults to None.
+        label_command (str, optional): The LaTeX command to use for attaching the label. Defaults to options.default_label_command.
+        col_wrap (list[None | tuple], optional): The column wrapping specification for the Dataframe. Defaults to [None, ('=', '')].
+        float_format (str, optional): The float format specification for the Dataframe. Defaults to None.
+        debug (bool, optional): Whether to enable debug mode. Defaults to options.DEBUG.
+        **kwargs: Additional keyword arguments to be passed to the `myprint_latex` function.
 
     Returns:
-        Markdown: A Markdown object containing the formatted equation(s).
+        Markdown: The LaTeX equation or equation array displayed as a Markdown object.
+
+    Notes:
+        - If `debug` is True, the generated LaTeX code will be printed.
+        - If `environment` is not provided, the default environment specified in `options.default_environment` will be used.
+        - If `col_wrap` is not provided, the default column wrapping specification will be used.
+        - If `float_format` is not provided, the default float format specification will be used.
+        - If `label` is not provided, a label will not be attached to the equation.
+        - If `label_command` is not provided, the default label command specified in `options.default_label_command` will be used.
+        - The `eqns` argument can be a dictionary, a list of dictionaries, or a Dataframe object.
+        - The `sep` argument can be a string or a list of strings.
+        - The `label` argument can be a string or a dictionary.
+        - The `label_command` argument can be a string.
+        - The `col_wrap` argument can be a list of None or tuples.
+        - The `float_format` argument can be a string.
+        - The `debug` argument can be a boolean.
+        - The `**kwargs` argument can be any additional keyword arguments to be passed to the `myprint_latex` function.
+
     """
 
     # set defualt values
@@ -119,10 +128,10 @@ def show_eqn(
         debug = options.DEBUG
 
     if not "mul_symbol" in kwargs:
-        kwargs["mul_symbol"] = KaTeX_compatibility["default_mul_symbol"]
+        kwargs["mul_symbol"] = options.default_mul_symbol
 
     if not environment:
-        environment = KaTeX_compatibility["default_environment"]
+        environment = options.default_environment
 
     if not col_wrap:
         col_wrap = [
@@ -130,60 +139,16 @@ def show_eqn(
             ("=", ""),
         ]  # no wrapping for the key element (first columns), then '=' sign for the second column
 
-    if not label_command:
-        label_command = KaTeX_compatibility["default_label_command"]
-
-    # add label at the end (does it make sense for * object?)
-    if label and not isinstance(label, dict):
-        label_at_the_start = rf"{options.EQ_PREFIX}{label}{options.EQ_SUFFIX}"
-    else:
-        label_at_the_start = ""
-
-    if label_at_the_start and "%" not in label_command:
-        full_label_at_the_start = rf"{label_command}{{{label_at_the_start}}}"
-    else:
-        full_label_at_the_start = ""
-
-    # check if environment is a special (starred "cases*" and "split*" are not valid latex environment, but they need to pass the "*" operator to the "equation" outer environment)
-    if environment.replace("*", "") in ["cases", "split"]:
-
-        # determine if outer env is starred
-        env = "align*" if "*" in environment else "align"
-
-        # clear the cases|split environment from the star
-        environment = "aligned"
-
-        # wrap inner cases|split in outer "align"
-        wrap = (
-            f"\\begin{{{env}}}{full_label_at_the_start}\n",
-            f"\t\\left\\{{\\begin{{{environment}}}",
-            f"\t\n\\end{{{environment}}}\\right.",
-            f"\n\\end{{{env}}}",
-        )
-
-    else:
-        # do nothing
-        wrap = (
-            "",
-            f"\\begin{{{environment}}}{full_label_at_the_start}",
-            f"\n\\end{{{environment}}}",
-            "",
-        )
-
     # warning message in case of too many labels provided
-    if environment.replace("*", "") in ["equation", "cases", "split"] and isinstance(
-        label, dict
-    ):
+    single_label_env = ["equation", "cases", "split"]
+    if environment.replace("*", "") in single_label_env and isinstance(label, dict):
         warn(
             f"ATTENTION! label is a dict, while the {environment} does not support multiple labels"
         )
 
-    # handle edge case for 'equation' environment
-    if "equation" in environment:
+    # handle edge case for 'equation' and 'gather' environment
+    if environment.replace("*", "") in ["equation", "gather"]:
         sep = ""  # no separator in environment
-
-    # definition of the main template
-    template = f"{wrap[0]}{wrap[1]}\n___body___{wrap[2]}{wrap[3]}"
 
     # convert sep to a list: str-> list[str]
     if not isinstance(sep, list):
@@ -222,7 +187,73 @@ def show_eqn(
         # substitute single value with tuple, assuming last item is ''
         col_wrap[k] = [cw if isinstance(cw, tuple) else (cw, "") for cw in col_wrap[k]]
 
-    # print(f'{col_wrap=}')
+    # generate label dict if none is passed
+    if not label:
+        label = {k: None for k in keys}
+
+    # define label command
+    if not label_command:
+        label_command = options.default_label_command
+
+    def attach_label(key):
+        """
+        Attaches a label to a given key.
+
+        Parameters:
+            key (str): The key to attach the label to.
+
+        Returns:
+            str: The label attached to the key. If the label is empty or the katex engine is being used for rendering (i.e. in a Jupyter notebook), an empty string is returned.
+
+        Notes:
+            - The label is constructed using the `options.EQ_PREFIX`, the value of `label[key]`, and `options.EQ_SUFFIX`.
+            - If `options.PRINT_LABEL` is True, the key and label are printed.
+            - The label is wrapped in a LaTeX command specified by `label_command` if it is not empty and the katex engine is not being used for rendering.
+        """
+        text_label = (
+            rf"{options.EQ_PREFIX}{label[key]}{options.EQ_SUFFIX}"
+            if label.get(key)
+            else ""
+        )
+
+        if options.PRINT_LABEL:
+            print(f"{key}: {text_label}")
+
+        return (
+            rf" {label_command}{{{text_label}}} "
+            if label.get(key)
+            and not options.katex  # don't add the label if there is no label to add, and if katex engine is used for rendering (i.e. jupyter notebook)
+            else ""
+        )
+
+    # check if environment is a special (starred "cases*" and "split*" are not valid latex environment, but they need to pass the "*" operator to the "equation" outer environment)
+    if environment.replace("*", "") in ["cases", "split"]:
+
+        # determine if outer env is starred
+        env = "align*" if "*" in environment else "align"
+
+        # clear the cases|split environment from the star
+        environment = "aligned"
+
+        # wrap inner cases|split in outer "align"
+        wrap = (
+            f"\\begin{{{env}}}{attach_label(list(keys)[0])}\n",  # for an equation environment, only one label is allowed
+            f"\t\\left\\{{\\begin{{{environment}}}",
+            f"\t\n\\end{{{environment}}}\\right.",
+            f"\n\\end{{{env}}}",
+        )
+
+    else:
+        # do nothing
+        wrap = (
+            "",
+            f"\\begin{{{environment}}}{attach_label(list(keys)[0]) if environment.replace('*', '') in single_label_env else ''}",
+            f"\n\\end{{{environment}}}",
+            "",
+        )
+
+    # definition of the main template
+    template = f"{wrap[0]}{wrap[1]}\n___body___{wrap[2]}{wrap[3]}"
 
     # generate the rows
     body_lines = {}
@@ -234,10 +265,14 @@ def show_eqn(
                     ff,
                 )
                 for v, s, cw, ff in zip_longest(
-                    list_values, sep, col_wrap[key], float_format[key], fillvalue=""
+                    list_values,
+                    sep,
+                    col_wrap[key],
+                    float_format[key],
+                    fillvalue="",
                 )
             ]
-        )
+        ) + attach_label(key)
 
     # how to join the lines of the body
     join_token = "" if "equation" in environment else " \\\\\n "
@@ -247,20 +282,11 @@ def show_eqn(
 
     # clean the body
     body = replace_all(body, replacement)
-    # for pattern, repl in replacement.items():
-    #     body = body.replace(pattern, repl)
-
-    # format the decimal numbers
-    # if float_format:
-    #     body = format_decimal_numbers(body, float_format)
 
     template = template.replace("___body___", body)
 
     if debug:
         print(template)
-
-    if options.PRINT_LABEL:
-        print(f"{label_at_the_start = :s}") if label_at_the_start else None
 
     return Markdown(template)
 
@@ -285,19 +311,21 @@ def myprint_latex(expr: Basic | str | Markdown, **kwargs) -> str:
 
     return latex(expr, **kwargs)
 
+
 import re
+
 
 def wrap_floats(text, wrapper=("", "")):
     # Define a regular expression pattern to match decimal numbers
-    float_pattern = re.compile(r'-?\d+\.\d+')
-    
+    float_pattern = re.compile(r"-?\d+\.\d+")
+
     # Define a function to use as replacement
     def wrap_match(match):
         return f"{wrapper[0]}{match.group(0)}{wrapper[1]}"
-    
+
     # Use re.sub to replace all matches with the wrapped version
     wrapped_text = float_pattern.sub(wrap_match, text)
-    
+
     return wrapped_text
 
 
@@ -330,9 +358,9 @@ def dict_to_eq(result: dict):
 
 def eq_to_dict(result: Eq | list | tuple):
     if hasattr(result, "__iter__"):
-        return {x.expr.lhs: x.value for x in result}
+        return {x.lhs: x.rhs for x in result}
     else:
-        return {result.expr.lhs: result.value}
+        return {result.lhs: result.rhs}
 
 
 import regex
@@ -373,3 +401,14 @@ def latex_inline_dict(var, mapping: dict, **kwargs):
 
     _latex = lambda x: replace_all(latex(x, **kwargs))
     return f"{wrap[0]}{_latex(var)} = {_latex(mapping[var])}{wrap[1]}"
+
+
+if __name__ == "__main__":
+    x, y = symbols("x y")
+    show_eqn(
+        {
+            x: 1,
+        },
+        label={x: "banana"},
+        debug=True,
+    )

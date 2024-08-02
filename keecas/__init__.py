@@ -4,7 +4,6 @@ from .dataframe import Dataframe
 # display
 from .display import (
     options,
-    KaTeX_compatibility,
     show_eqn,
     verifica,
     dict_to_eq,
@@ -25,16 +24,14 @@ import sympy as sp
 from sympy import latex, Eq, Le, symbols, Basic, Dict, S, Matrix
 
 ## latex printing settings
-mul_symbol = r"\,"
-sp.init_printing(mul_symbol=mul_symbol, order="none")
-platex = lambda x: latex(x, mode="inline", mul_symbol=mul_symbol)
+sp.init_printing(mul_symbol=options.default_mul_symbol, order="none")
+platex = lambda x: latex(x, mode="inline", mul_symbol=options.default_mul_symbol)
 
 ## common sympy functions
 
 
 __all__ = [
     "Dataframe",
-    "KaTeX_compatibility",
     "show_eqn",
     "options",
     "verifica",
