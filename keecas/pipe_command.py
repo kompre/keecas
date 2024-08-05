@@ -114,5 +114,5 @@ if __name__ == "__main__":
         y: x * 4,
     }
 
-    print("a = x*3.0/100")
+    print((None) | subs(_d))
 # %%
