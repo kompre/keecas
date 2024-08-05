@@ -174,7 +174,10 @@ def show_eqn(
     # print(f'{matrix=}')
 
     # create float_format (dict)
-    float_format = create_dataframe(seed=float_format, keys=keys, width=num_cols)
+    if isinstance(float_format, tuple):
+        float_format = create_dataframe(seed=float_format[0], default_value=float_format[1], keys=keys, width=num_cols)
+    else:
+        float_format = create_dataframe(seed=float_format, keys=keys, width=num_cols)
     # print(f'{float_format=}')
 
     ### col_wrap
