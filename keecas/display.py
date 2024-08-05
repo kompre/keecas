@@ -376,8 +376,8 @@ replacement = {
     ),  # then replace all dfrac inside ^{} with frac (small exponent)
     r"\b1 \\cdot": r"",
     r"\\\\": rf"\\\\[{options.VERTICAL_SKIP}]",
-    r"for": "per",
-    r"otherwise": "altrimenti",
+    "\bfor\b": "per",
+    "\botherwise\b": "altrimenti",
     r"\\,": r"{\,}",
 }
 
