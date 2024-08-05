@@ -35,6 +35,10 @@ def subs(
     expression: Basic, substitution: dict, sorted=True, 
     # simplify_quantity=True, **kwargs
 ) -> Basic:
+    
+    # filter out None expressions from the expression
+    if expression is None:
+        return
 
     # filter out non Basic expressions from the substitution dict
     substitution = {
