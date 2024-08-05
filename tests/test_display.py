@@ -12,6 +12,7 @@ from keecas.display import (
     replace_all,
     latex_inline_dict,
 )
+from keecas import pipe_command as pc
 
 # Test data
 x, y = symbols("x y")
@@ -85,6 +86,15 @@ def test_show_eqn():
     assert isinstance(result, Markdown)
     assert r"x & =1" in result.data
     assert r"y & =2" in result.data
+
+def test_replace_all():
+    expr = {x: "Piecewise((0, x < 0), (x, x >= 0))" | pc.parse_expr}
+    result = show_eqn(expr)
+    assert r"\text{for}" not in result.data
+    assert r"\text{per}" in result.data
+    assert r"\text{otherwise}" not in result.data
+    assert r"\text{altrimenti}" in result.data
+
 
 
 if __name__ == "__main__":
