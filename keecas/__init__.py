@@ -21,7 +21,7 @@ u.formatter.default_format = ".2f~P"
 # initialize sympy
 import sympy as sp
 
-from sympy import latex, Eq, Le, symbols, Basic, Dict, S, Matrix
+from sympy import latex, Eq, Le, symbols, Basic, Dict, S, ImmutableDenseMatrix as Matrix
 
 ## latex printing settings
 sp.init_printing(mul_symbol=options.default_mul_symbol, order="none")
