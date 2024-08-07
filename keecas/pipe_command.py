@@ -2,6 +2,7 @@
 from pipe import Pipe
 from sympy.parsing.sympy_parser import parse_expr as sympy_parse_expr
 from sympy import Basic, sympify, S
+from sympy.core.function import UndefinedFunction
 from sympy.physics.units.util import convert_to as sympy_convert_to
 from sympy.physics.units.util import quantity_simplify as sympy_quantity_simplify
 from sympy import topological_sort, default_sort_key
@@ -42,7 +43,7 @@ def subs(
 
     # filter out non Basic expressions from the substitution dict
     substitution = {
-        lhs: rhs for lhs, rhs in substitution.items() if isinstance(lhs, Basic) and rhs is not None
+        lhs: rhs for lhs, rhs in substitution.items() if isinstance(lhs, Basic|UndefinedFunction) and rhs is not None
     }
 
     if sorted:
@@ -113,6 +114,12 @@ if __name__ == "__main__":
         x: 3,
         y: x * 4,
     }
-
     print((None) | subs(_d))
+    
+    e = sp.symbols("e", cls=sp.Function)
+    _e = {
+        e: "Lambda(j, j+1)" | parse_expr
+    }
+    print("e(x)" | parse_expr| subs(_e))
+
 # %%
