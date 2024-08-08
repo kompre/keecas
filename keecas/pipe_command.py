@@ -47,7 +47,7 @@ def subs(
     substitution = {
         lhs: rhs
         for lhs, rhs in substitution.items()
-        if isinstance(lhs, Basic | UndefinedFunction) and rhs is not None
+        if isinstance(lhs, Basic | UndefinedFunction | str) and rhs is not None
     }
 
     if sorted:
