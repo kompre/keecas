@@ -32,17 +32,21 @@ def order_subs(subs: dict) -> list[tuple]:
 
 @Pipe
 def subs(
-    expression: Basic, substitution: dict, sorted=True, 
+    expression: Basic,
+    substitution: dict,
+    sorted=True,
     # simplify_quantity=True, **kwargs
 ) -> Basic:
-    
+
     # filter out None expressions from the expression
     if expression is None:
         return
 
     # filter out non Basic expressions from the substitution dict
     substitution = {
-        lhs: rhs for lhs, rhs in substitution.items() if isinstance(lhs, Basic) and rhs is not None
+        lhs: rhs
+        for lhs, rhs in substitution.items()
+        if isinstance(lhs, Basic | str) and rhs is not None
     }
 
     if sorted:
@@ -70,7 +74,9 @@ def convert_to(expression: Basic, units=1) -> Basic:
 def doit(expression: Basic) -> Basic:
     return expression.doit()
 
+
 from sympy.parsing.sympy_parser import T
+
 
 @Pipe
 def parse_expr(
@@ -78,15 +84,12 @@ def parse_expr(
 ) -> Basic:
     if not local_dict:
         local_dict = currentframe().f_back.f_back.f_back.f_locals
-        
+
     if "transformations" not in kwargs:
-        kwargs["transformations"]=T[:11]
+        kwargs["transformations"] = T[:11]
 
     parsed_expr = sympy_parse_expr(
-        expression,
-        evaluate=evaluate,
-        local_dict=local_dict,
-        **kwargs
+        expression, evaluate=evaluate, local_dict=local_dict, **kwargs
     )
     return parsed_expr
 
@@ -98,7 +101,6 @@ def quantity_simplify(
     return sympy_quantity_simplify(
         expression, across_dimensions=across_dimensions, unit_system=unit_system
     )
-
 
 
 # print(currentframe().f_back.f_locals)
