@@ -106,7 +106,7 @@ def quantity_simplify(
 @Pipe
 def as_two_terms(
     expression: Basic,
-    as_mul=True,
+    as_mul=False,
 ) -> Basic:    
     if isinstance(expression, Mul):
         att = expression.as_two_terms()
