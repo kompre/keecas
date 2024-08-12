@@ -33,17 +33,21 @@ def order_subs(subs: dict) -> list[tuple]:
 
 @Pipe
 def subs(
-    expression: Basic, substitution: dict, sorted=True, 
+    expression: Basic,
+    substitution: dict,
+    sorted=True,
     # simplify_quantity=True, **kwargs
 ) -> Basic:
-    
+
     # filter out None expressions from the expression
     if expression is None:
         return
 
     # filter out non Basic expressions from the substitution dict
     substitution = {
-        lhs: rhs for lhs, rhs in substitution.items() if isinstance(lhs, Basic|UndefinedFunction) and rhs is not None
+        lhs: rhs
+        for lhs, rhs in substitution.items()
+        if isinstance(lhs, Basic | UndefinedFunction | str) and rhs is not None
     }
 
     if sorted:
@@ -71,7 +75,9 @@ def convert_to(expression: Basic, units=1) -> Basic:
 def doit(expression: Basic) -> Basic:
     return expression.doit()
 
+
 from sympy.parsing.sympy_parser import T
+
 
 @Pipe
 def parse_expr(
@@ -79,15 +85,12 @@ def parse_expr(
 ) -> Basic:
     if not local_dict:
         local_dict = currentframe().f_back.f_back.f_back.f_locals
-        
+
     if "transformations" not in kwargs:
-        kwargs["transformations"]=T[:11]
+        kwargs["transformations"] = T[:11]
 
     parsed_expr = sympy_parse_expr(
-        expression,
-        evaluate=evaluate,
-        local_dict=local_dict,
-        **kwargs
+        expression, evaluate=evaluate, local_dict=local_dict, **kwargs
     )
     return parsed_expr
 
@@ -117,7 +120,6 @@ def as_two_terms(
     
 _unit = list({vv for k,v in params.items() if (S(v).has(Quantity) and k in [a, b]) for vv in (v.as_coefficients_dict())})
 
-
 # print(currentframe().f_back.f_locals)
 # %% debug
 
@@ -131,11 +133,9 @@ if __name__ == "__main__":
         y: x * 4,
     }
     print((None) | subs(_d))
-    
+
     e = sp.symbols("e", cls=sp.Function)
-    _e = {
-        e: "Lambda(j, j+1)" | parse_expr
-    }
-    print("e(x)" | parse_expr| subs(_e))
+    _e = {e: "Lambda(j, j+1)" | parse_expr}
+    print("e(x)" | parse_expr | subs(_e))
 
 # %%

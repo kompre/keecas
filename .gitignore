@@ -5,3 +5,8 @@ test.py
 __pycache__
 
 .venv
+
+.*/*
+./keecas.egg-info/*
+
+*egg-info/*

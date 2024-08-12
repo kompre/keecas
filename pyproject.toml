@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "keecas"
-version = "0.1.1b5"
+version = "0.1.1b6"
 description = "A set of tools for symbolic math computation done in a jupyter notebook, aimed specifically for Quarto. It is based mostly on sympy."
 authors = ["kompre <s.follador@gmail.com>"]
 readme = "README.md"
