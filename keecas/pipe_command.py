@@ -1,7 +1,7 @@
 # %% pipe command
 from pipe import Pipe
 from sympy.parsing.sympy_parser import parse_expr as sympy_parse_expr
-from sympy import Basic, sympify, S, Mul, MatrixBase
+from sympy import Basic, sympify, S, Mul, MatrixBase, UnevaluatedExpr
 from sympy.core.function import UndefinedFunction
 from sympy.physics.units.util import convert_to as sympy_convert_to
 from sympy.physics.units.util import quantity_simplify as sympy_quantity_simplify
@@ -105,19 +105,27 @@ def quantity_simplify(
     
 @Pipe
 def as_two_terms(
-    expression: Basic
-) -> Basic:
+    expression: Basic,
+    as_mul=True,
+) -> Basic:    
     if isinstance(expression, Mul):
-        return expression.as_two_terms()
+        att = expression.as_two_terms()
     elif isinstance(expression, MatrixBase):
         units = {u for e in expression.values() for u in e.as_coefficients_dict()}
         if len(units) == 1:
             u = units.pop()
-            return (expression/u, u)
+            att = (expression/u, u)
         else:
             return expression        
     else:
         return expression
+    
+    return as_Mul(att) if as_mul else att
+
+@Pipe
+def as_Mul(expression: tuple[Basic]) -> Basic:
+    return UnevaluatedExpr(expression[0])*expression[1]
+    
     
 # print(currentframe().f_back.f_locals)
 # %% debug
