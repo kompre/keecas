@@ -120,7 +120,7 @@ def as_two_terms(
     else:
         return expression
     
-    return as_Mul(att) if as_mul else att
+    return att|as_Mul if as_mul else att
 
 @Pipe
 def as_Mul(expression: tuple[Basic]) -> Basic:
