@@ -81,7 +81,7 @@ from sympy.parsing.sympy_parser import T
 
 @Pipe
 def parse_expr(
-    expression: Basic, evaluate=False, local_dict: dict = None, **kwargs
+    expression: Basic, local_dict: dict = None, evaluate=False, **kwargs
 ) -> Basic:
     if not local_dict:
         local_dict = currentframe().f_back.f_back.f_back.f_locals
@@ -102,31 +102,33 @@ def quantity_simplify(
     return sympy_quantity_simplify(
         expression, across_dimensions=across_dimensions, unit_system=unit_system
     )
-    
+
+
 @Pipe
 def as_two_terms(
     expression: Basic,
     as_mul=False,
-) -> Basic:    
+) -> Basic:
     if isinstance(expression, Mul):
         att = expression.as_two_terms()
     elif isinstance(expression, MatrixBase):
         units = {u for e in expression.values() for u in e.as_coefficients_dict()}
         if len(units) == 1:
             u = units.pop()
-            att = (expression/u, u)
+            att = (expression / u, u)
         else:
-            return expression        
+            return expression
     else:
         return expression
-    
-    return att|as_Mul if as_mul else att
+
+    return att | as_Mul if as_mul else att
+
 
 @Pipe
 def as_Mul(expression: tuple[Basic]) -> Basic:
-    return UnevaluatedExpr(expression[0])*expression[1]
-    
-    
+    return UnevaluatedExpr(expression[0]) * expression[1]
+
+
 # print(currentframe().f_back.f_locals)
 # %% debug
 
