@@ -118,8 +118,6 @@ def as_two_terms(
     else:
         return expression
     
-_unit = list({vv for k,v in params.items() if (S(v).has(Quantity) and k in [a, b]) for vv in (v.as_coefficients_dict())})
-
 # print(currentframe().f_back.f_locals)
 # %% debug
 
