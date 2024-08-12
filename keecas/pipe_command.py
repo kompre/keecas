@@ -112,7 +112,8 @@ def as_two_terms(
     elif isinstance(expression, MatrixBase):
         units = {u for e in expression.values() for u in e.as_coefficients_dict()}
         if len(units) == 1:
-            return (expression/units[0], units[0])
+            u = units.pop()
+            return (expression/u, u)
         else:
             return expression        
     else:
