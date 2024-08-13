@@ -126,7 +126,7 @@ def as_two_terms(
 
 @Pipe
 def as_Mul(expression: tuple[Basic]) -> Basic:
-    return UnevaluatedExpr(expression[0]) * expression[1]
+    return UnevaluatedExpr(expression[0]) * UnevaluatedExpr(expression[1])
 
 
 # print(currentframe().f_back.f_locals)
