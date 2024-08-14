@@ -83,6 +83,19 @@ from sympy.parsing.sympy_parser import T
 def parse_expr(
     expression: Basic, local_dict: dict = None, evaluate=False, **kwargs
 ) -> Basic:
+    """
+    Parses a mathematical expression into a SymPy expression object.
+
+    Parameters:
+        expression (Basic): The mathematical expression to parse.
+        local_dict (dict, optional): A dictionary of local variables to use during parsing. If None is passed, then the current frame's local variables will be used.
+        evaluate (bool, optional): Whether to evaluate the expression during parsing. Defaults to False.
+        **kwargs: Additional keyword arguments to pass to the SymPy parser.
+
+    Returns:
+        Basic: The parsed SymPy expression object.
+    """
+    
     if not local_dict:
         local_dict = currentframe().f_back.f_back.f_back.f_locals
 
@@ -99,6 +112,19 @@ def parse_expr(
 def quantity_simplify(
     expression: Basic, across_dimensions=True, unit_system="SI", **kwargs
 ) -> Basic:
+    """
+    Simplifies a given expression by applying quantity simplification.
+
+    Parameters:
+        expression (Basic): The expression to simplify.
+        across_dimensions (bool): Whether to simplify across dimensions. Defaults to True.
+        unit_system (str): The unit system to use for simplification. Defaults to "SI".
+        **kwargs: Additional keyword arguments to pass to the underlying sympy_quantity_simplify function.
+
+    Returns:
+        Basic: The simplified expression.
+    """
+    
     return sympy_quantity_simplify(
         expression, across_dimensions=across_dimensions, unit_system=unit_system
     )
@@ -109,6 +135,16 @@ def as_two_terms(
     expression: Basic,
     as_mul=False,
 ) -> Basic:
+    """
+    This function takes in a `Basic` expression and an optional boolean flag `as_mul`. 
+    It checks if the expression is an instance of `Mul`. If it is, it calls the `as_two_terms()` method on the expression. 
+    If the expression is not an instance of `Mul`, it checks if it is an instance of `MatrixBase`. 
+    If it is, it creates a set of units by iterating over the values of the matrix and getting the coefficients dictionary of each element. 
+    If the set of units has a length of 1, it assigns the only unit to `u`, divides the matrix by `u`, and assigns the result to `att`. 
+    If the set of units has a length greater than 1, it returns the original expression. 
+    If the expression is neither a `Mul` nor a `MatrixBase`, it returns the original expression. 
+    Finally, it returns `att` if `as_mul` is `False`, otherwise it returns `att` combined with `as_Mul`.
+    """
     if isinstance(expression, Mul):
         att = expression.as_two_terms()
     elif isinstance(expression, MatrixBase):
@@ -126,6 +162,16 @@ def as_two_terms(
 
 @Pipe
 def as_Mul(expression: tuple[Basic]) -> Basic:
+    """
+    Multiplies two expressions together and returns the result as an unevaluated expression. (Ideally to nicely separate the magnitude from the units)
+
+    Parameters:
+        expression (tuple[Basic]): A tuple containing two Basic expressions to be multiplied together.
+
+    Returns:
+        Basic: The result of multiplying the two expressions together as an unevaluated expression.
+    """
+    
     return UnevaluatedExpr(expression[0]) * UnevaluatedExpr(expression[1])
 
 
