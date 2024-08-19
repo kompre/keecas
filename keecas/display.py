@@ -232,7 +232,7 @@ def show_eqn(
         
         if isinstance(label, str):
             
-            text_label = label
+            text_label = rf"{options.EQ_PREFIX}{label}{options.EQ_SUFFIX}"
             
             if options.PRINT_LABEL:
                 print(f"label: {text_label}")
