@@ -221,7 +221,7 @@ def show_eqn(
                 else ""
             )
             if options.PRINT_LABEL:
-                print(f"{key}: {text_label}")
+                print(f"{key}: {text_label}") if text_label else None
 
             return (
                 rf" {label_command}{{{text_label}}} "
@@ -235,7 +235,7 @@ def show_eqn(
             text_label = rf"{options.EQ_PREFIX}{label}{options.EQ_SUFFIX}"
             
             if options.PRINT_LABEL:
-                print(f"label: {text_label}")
+                print(f"label: {text_label}" if text_label else None)
 
             return (
                 rf" {label_command}{{{text_label}}} "
