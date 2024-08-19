@@ -213,21 +213,37 @@ def show_eqn(
             - If `options.PRINT_LABEL` is True, the key and label are printed.
             - The label is wrapped in a LaTeX command specified by `label_command` if it is not empty and the katex engine is not being used for rendering.
         """
-        text_label = (
-            rf"{options.EQ_PREFIX}{label[key]}{options.EQ_SUFFIX}"
-            if label.get(key)
-            else ""
-        )
+        
+        if isinstance(label, dict):
+            text_label = (
+                rf"{options.EQ_PREFIX}{label[key]}{options.EQ_SUFFIX}" 
+                if label.get(key)
+                else ""
+            )
+            if options.PRINT_LABEL:
+                print(f"{key}: {text_label}")
 
-        if options.PRINT_LABEL:
-            print(f"{key}: {text_label}")
+            return (
+                rf" {label_command}{{{text_label}}} "
+                if label.get(key)
+                and not options.katex  # don't add the label if there is no label to add, and if katex engine is used for rendering (i.e. jupyter notebook)
+                else ""
+            )
+        
+        if isinstance(label, str):
+            
+            text_label = label
+            
+            if options.PRINT_LABEL:
+                print(f"label: {text_label}")
 
-        return (
-            rf" {label_command}{{{text_label}}} "
-            if label.get(key)
-            and not options.katex  # don't add the label if there is no label to add, and if katex engine is used for rendering (i.e. jupyter notebook)
-            else ""
-        )
+            return (
+                rf" {label_command}{{{text_label}}} "
+                if not options.katex  # don't add the label if there is no label to add, and if katex engine is used for rendering (i.e. jupyter notebook)
+                else ""
+            )
+
+        
 
     # check if environment is a special (starred "cases*" and "split*" are not valid latex environment, but they need to pass the "*" operator to the "equation" outer environment)
     if environment.replace("*", "") in ["cases", "split"]:
@@ -240,7 +256,7 @@ def show_eqn(
 
         # wrap inner cases|split in outer "align"
         wrap = (
-            f"\\begin{{{env}}}{rf"{options.EQ_PREFIX}{label}{options.EQ_SUFFIX}" if isinstance(label, str) else ''}\n",  # for an equation environment, only one label is allowed
+            f"\\begin{{{env}}}{attach_label(list(keys)[0])}\n",  # for an equation environment, only one label is allowed
             f"\t\\left\\{{\\begin{{{environment}}}",
             f"\t\n\\end{{{environment}}}\\right.",
             f"\n\\end{{{env}}}",

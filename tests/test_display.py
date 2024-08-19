@@ -94,6 +94,14 @@ def test_replace_all():
     assert r"\text{per}" in result.data
     assert r"\text{otherwise}" not in result.data
     assert r"\text{altrimenti}" in result.data
+    
+def test_label():
+    expr = {
+        x: 1, 
+        y: 2,
+    }
+    result = show_eqn(expr, label="single_label")
+    assert r"single_label" in result.data
 
 
 
