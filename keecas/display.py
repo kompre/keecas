@@ -240,7 +240,7 @@ def show_eqn(
 
         # wrap inner cases|split in outer "align"
         wrap = (
-            f"\\begin{{{env}}}{attach_label(list(keys)[0])}\n",  # for an equation environment, only one label is allowed
+            f"\\begin{{{env}}}{rf"{options.EQ_PREFIX}{label}{options.EQ_SUFFIX}" if isinstance(label, str) else ''}\n",  # for an equation environment, only one label is allowed
             f"\t\\left\\{{\\begin{{{environment}}}",
             f"\t\n\\end{{{environment}}}\\right.",
             f"\n\\end{{{env}}}",
