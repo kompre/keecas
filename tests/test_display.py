@@ -100,7 +100,7 @@ def test_label():
         x: 1, 
         y: 2,
     }
-    result = show_eqn(expr, label="single_label")
+    result = show_eqn(expr, environment='cases',  label="single_label", debug=True)
     assert r"single_label" in result.data
 
 

@@ -230,7 +230,7 @@ def show_eqn(
                 else ""
             )
         
-        if isinstance(label, str):
+        if isinstance(label, str) and not key:
             
             text_label = rf"{options.EQ_PREFIX}{label}{options.EQ_SUFFIX}"
             
@@ -242,6 +242,8 @@ def show_eqn(
                 if not options.katex  # don't add the label if there is no label to add, and if katex engine is used for rendering (i.e. jupyter notebook)
                 else ""
             )
+            
+        return ""
 
         
 
@@ -256,7 +258,7 @@ def show_eqn(
 
         # wrap inner cases|split in outer "align"
         wrap = (
-            f"\\begin{{{env}}}{attach_label(list(keys)[0])}\n",  # for an equation environment, only one label is allowed
+            f"\\begin{{{env}}}{attach_label(None)}\n",  # for an equation environment, only one label is allowed
             f"\t\\left\\{{\\begin{{{environment}}}",
             f"\t\n\\end{{{environment}}}\\right.",
             f"\n\\end{{{env}}}",
