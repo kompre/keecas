@@ -1,6 +1,14 @@
+# %% inserimento immagini in documento come link markdown
+import os
+from pathlib import Path
+from IPython.display import Markdown
+
 # %% flatten dict across yaml
 import flatten_dict as fd
-import yaml
+from ruamel.yaml import YAML
+
+yaml = YAML()
+yaml.preserve_quotes = True
 
 
 def load_data(main: str, updated_value: str) -> dict:
@@ -13,13 +21,13 @@ def load_data(main: str, updated_value: str) -> dict:
     # caricamento dati esistenti (generati automaticamente)
     with open(main, "r") as m:
         try:
-            _main = fd.flatten(yaml.safe_load(m))
+            _main = fd.flatten(yaml.load(m))
         except ValueError:
             _main = {}
 
     # caricamento dei metadata (inseriti manualmente)
     with open(updated_value, "r") as m:
-        _updated_value = fd.flatten(yaml.safe_load(m))
+        _updated_value = fd.flatten(yaml.load(m))
 
     return fd.unflatten(_main | _updated_value)
 
@@ -71,11 +79,6 @@ def escape_var(names, dict_of_subs=None, **args):
         del frame  # break cyclic dependencies as stated in inspect docs
 
     return syms
-
-# %% inserimento immagini in documento come link markdown
-import os
-from pathlib import Path
-from IPython.display import Markdown
 
 
 def insert_images(source_path, dest_path=".", fig_opt=""):
