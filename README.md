@@ -1,0 +1,68 @@
+
+
+# keecas
+
+A module for performing symbolic and units-aware calculations in a jupyter notebook. 
+
+## Introduction
+
+keecas is a Python module designed to simplify symbolic and units-aware calculations. It leverages well-known Python modules such as `sympy`, `pint`, and `pipe` to provide a convenient and easy-to-use interface.
+
+It's meant to be used in a interactive environment such as jupyter notebook. It produces latex amsmath code that can be rendered by the notebook, displaying nicely formatted math expression. 
+
+It's been developed to be used for [Quarto](https://quarto.org) rendered pdf documents, and it provides some specific features such as cross-reference support for equation.
+
+
+## Features
+
+*   Symbolic expression and computation using `sympy`
+*   Units-aware calculations using `pint`
+*   pipe style functions with `pipe`
+
+## Examples
+
+For a quick start, check out the [hello_world.ipynb](examples/hello_world.ipynb) example, which demonstrates how to use keecas to calculate the maximum bending moment for a simple beam.
+
+## Installation
+
+To install keecas, run the following command:
+
+```bash
+pip install keecas
+```
+
+or 
+
+```bash
+uv add keecas
+```
+
+
+
+## Dependencies
+
+keecas depends on the following packages:
+
+*   `flatten-dict`
+*   `ipython`
+*   `pint`
+*   `pipe`
+*   `regex`
+*   `ruamel-yaml`
+*   `sympy`
+
+## Testing
+
+To run the tests, use the following command:
+
+```bash
+pytest
+```
+
+## License
+
+keecas is licensed under the [MIT License](https://opensource.org/licenses/MIT).
+
+## Acknowledgments
+
+keecas is built on top of the excellent work of the `sympy`, `pint`, and `pipe` communities. We would like to thank the authors and maintainers of these projects for their contributions to the scientific Python ecosystem.
