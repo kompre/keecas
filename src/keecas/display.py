@@ -35,11 +35,10 @@ class options:
     default_environment = "align"
     default_label_command = r"\label"
     col_wrap = [
-        {
-            object: ("", ""),
-        },
+        None,
         {
             Basic: ("=", ""),
+            Markdown|str: (r"\qquad", ""),
             object: ("", ""),
         },
     ]
@@ -193,7 +192,7 @@ def show_eqn(
 
     ### col_wrap
     # adjust size of the col_wrap; assume None as default (for compatibility with earlier versions)
-    col_wrap = create_dataframe(seed=col_wrap, keys=keys, width=num_cols)
+    col_wrap = create_dataframe(seed=col_wrap, keys=keys, width=num_cols, default_value=col_wrap[-1])
 
     # generate label dict if none is passed
     if not label:
