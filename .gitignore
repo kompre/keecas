@@ -10,3 +10,5 @@ __pycache__
 ./keecas.egg-info/*
 
 *egg-info/*
+
+.DS*
