@@ -442,14 +442,3 @@ def _col_wrap(cw: None | str | tuple[str, str] | dict, value) -> tuple[str, str]
                 return col_wraps
     
     return ("", "")
-
-
-if __name__ == "__main__":
-    x, y = symbols("x y")
-    show_eqn(
-        {
-            x: 1,
-        },
-        label={x: "banana"},
-        debug=True,
-    )
