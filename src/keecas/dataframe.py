@@ -219,16 +219,15 @@ class Dataframe(dict):
         print(self.dict_repr())
 
 
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Any
 
 
 def create_dataframe(
     keys: List[str],
     width: int,
-    seed: Union[any, List, Dict, "Dataframe"] = None,
-    default_value: any = None,
+    seed: Union[Any, List, Dict, Dataframe] = None,
+    default_value: Any = None,
 ) -> Dataframe:
-
     df = Dataframe()
 
     if not isinstance(seed, (list, dict, Dataframe)):
