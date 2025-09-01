@@ -8,7 +8,7 @@ from sympy.physics.units.util import quantity_simplify as sympy_quantity_simplif
 from sympy import topological_sort, default_sort_key
 from itertools import permutations
 from inspect import currentframe
-from keecas.display import wrap_floats
+from .display import wrap_floats
 
 
 def order_subs(subs: dict) -> list[tuple]:
