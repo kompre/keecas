@@ -28,8 +28,6 @@ sp.init_printing(mul_symbol=options.default_mul_symbol, order="none")
 platex = lambda x: latex(x, mode="inline", mul_symbol=options.default_mul_symbol)
 
 ## common sympy functions
-
-
 __all__ = [
     "Dataframe",
     "show_eqn",
@@ -50,3 +48,6 @@ __all__ = [
     "Matrix",
     "platex",
 ]
+
+# import version
+from .version import __version__
