@@ -34,6 +34,14 @@ class options:
     default_mul_symbol = r"\,"
     default_environment = "align"
     default_label_command = r"\label"
+    col_wrap = [
+        None,
+        {
+            Basic: ("=", ""),
+            Markdown|str: (r"\qquad", ""),
+            object: ("", ""),
+        },
+    ]
 
 
 from itertools import chain, zip_longest
@@ -134,10 +142,7 @@ def show_eqn(
         environment = options.default_environment
 
     if not col_wrap:
-        col_wrap = [
-            None,
-            ("=", ""),
-        ]  # no wrapping for the key element (first columns), then '=' sign for the second column
+        col_wrap = options.col_wrap
 
     # warning message in case of too many labels provided
     single_label_env = ["equation", "cases", "split"]
@@ -170,25 +175,24 @@ def show_eqn(
     num_cols = eqns.width + 1
 
     # generate the matrix (list[list]]) of keys, many values (first element is the key)
-    matrix = {k: [k] + [vv for vv in v] for k, v in eqns.items()}
+    # matrix = {k: [k] + [vv for vv in v] for k, v in eqns.items()}
     # print(f'{matrix=}')
 
     # create float_format (dict)
     if isinstance(float_format, tuple):
-        float_format = create_dataframe(seed=float_format[0], default_value=float_format[1], keys=keys, width=num_cols)
+        float_format = create_dataframe(
+            seed=float_format[0],
+            default_value=float_format[1],
+            keys=keys,
+            width=num_cols,
+        )
     else:
         float_format = create_dataframe(seed=float_format, keys=keys, width=num_cols)
     # print(f'{float_format=}')
 
     ### col_wrap
     # adjust size of the col_wrap; assume None as default (for compatibility with earlier versions)
-    col_wrap = create_dataframe(seed=col_wrap, keys=keys, width=num_cols)
-
-    for k, v in col_wrap.items():
-        # clean the none value in wrapper with tuple
-        col_wrap[k] = [cw if cw is not None else ("", "") for cw in v]
-        # substitute single value with tuple, assuming last item is ''
-        col_wrap[k] = [cw if isinstance(cw, tuple) else (cw, "") for cw in col_wrap[k]]
+    col_wrap = create_dataframe(seed=col_wrap, keys=keys, width=num_cols, default_value=col_wrap[-1])
 
     # generate label dict if none is passed
     if not label:
@@ -213,10 +217,10 @@ def show_eqn(
             - If `options.PRINT_LABEL` is True, the key and label are printed.
             - The label is wrapped in a LaTeX command specified by `label_command` if it is not empty and the katex engine is not being used for rendering.
         """
-        
+
         if isinstance(label, dict):
             text_label = (
-                rf"{options.EQ_PREFIX}{label[key]}{options.EQ_SUFFIX}" 
+                rf"{options.EQ_PREFIX}{label[key]}{options.EQ_SUFFIX}"
                 if label.get(key)
                 else ""
             )
@@ -229,11 +233,11 @@ def show_eqn(
                 and not options.katex  # don't add the label if there is no label to add, and if katex engine is used for rendering (i.e. jupyter notebook)
                 else ""
             )
-        
+
         if isinstance(label, str) and not key:
-            
+
             text_label = rf"{options.EQ_PREFIX}{label}{options.EQ_SUFFIX}"
-            
+
             if options.PRINT_LABEL:
                 print(f"label: {text_label}" if text_label else None)
 
@@ -242,10 +246,8 @@ def show_eqn(
                 if not options.katex  # don't add the label if there is no label to add, and if katex engine is used for rendering (i.e. jupyter notebook)
                 else ""
             )
-            
-        return ""
 
-        
+        return ""
 
     # check if environment is a special (starred "cases*" and "split*" are not valid latex environment, but they need to pass the "*" operator to the "equation" outer environment)
     if environment.replace("*", "") in ["cases", "split"]:
@@ -278,15 +280,15 @@ def show_eqn(
 
     # generate the rows
     body_lines = {}
-    for key, list_values in matrix.items():
+    for key, list_values in eqns.items():
         body_lines[key] = " ".join(
             [
                 format_decimal_numbers(
-                    f'{ f"{cw[0]}{myprint_latex(v, **kwargs)}{cw[-1]}" if v is not None else " " } {s}',
+                    f'{ f"{_col_wrap(cw,v)[0]}{myprint_latex(v, **kwargs)}{_col_wrap(cw, v)[-1]}" if v is not None else " " } {s}',
                     ff,
                 )
                 for v, s, cw, ff in zip_longest(
-                    list_values,
+                    ([key] + list_values),
                     sep,
                     col_wrap[key],
                     float_format[key],
@@ -424,12 +426,19 @@ def latex_inline_dict(var, mapping: dict, **kwargs):
     return f"{wrap[0]}{_latex(var)} = {_latex(mapping[var])}{wrap[1]}"
 
 
-if __name__ == "__main__":
-    x, y = symbols("x y")
-    show_eqn(
-        {
-            x: 1,
-        },
-        label={x: "banana"},
-        debug=True,
-    )
+def _col_wrap(cw: None | str | tuple[str, str] | dict, value) -> tuple[str, str]:
+    if not cw:
+        return ("", "")
+    
+    if isinstance(cw, str):
+        return cw, ""
+    
+    if isinstance(cw, tuple):
+        return cw
+    
+    if isinstance(cw, dict):
+        for type, col_wraps in cw.items():
+            if isinstance(value, type):
+                return col_wraps
+    
+    return ("", "")
