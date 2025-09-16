@@ -12,14 +12,19 @@ class Dataframe(dict[Hashable, List[Any]]):
         """
         Initialize a Dataframe.
 
-        If the first argument is a list of dict, it is considered as a list of
-        rows, and the Dataframe is initialized accordingly. Otherwise, the
-        Dataframe is initialized with the given positional and keyword
-        arguments.
+        If the first argument is a list of dictionaries, each dictionary represents
+        a sequence of values that will populate columns in the LaTeX align block.
+        The keys become row labels and values are collected into lists.
+        Otherwise, the Dataframe is initialized from a single dictionary or keyword
+        arguments, where keys become row labels and values are converted to lists
+        of equal length using filler for missing values 
+        (single values become single-item lists).
 
-        :param args: positional arguments to be passed to __setitem__
-        :param filler: value to be used to fill missing values in the dataframe
-        :param kwargs: keyword arguments to be passed to __setitem__
+        Args:
+            *args: If first arg is list of dicts, initializes from sequences.
+                   Otherwise, expects at most one dictionary.
+            filler: Value used to fill missing entries when sequences have different lengths
+            **kwargs: Additional key-value pairs for initialization
         """
         super().__init__()
         self._width: int = 0
