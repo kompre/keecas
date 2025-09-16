@@ -17,11 +17,10 @@ from typing import Union, List, Dict
 
 from .dataframe import *
 
-# DEFINITION OF DEFAULT VALUES
-
 # default values for labels
 from dataclasses import dataclass
 
+from .config import *
 
 @dataclass
 class options:
@@ -42,6 +41,7 @@ class options:
             object: ("", ""),
         },
     ]
+
 
 
 from itertools import chain, zip_longest
@@ -249,7 +249,7 @@ def show_eqn(
 
         return ""
 
-    # check if environment is a special (starred "cases*" and "split*" are not valid latex environment, but they need to pass the "*" operator to the "equation" outer environment)
+    # check if environment is special (starred "cases*" and "split*" are not valid latex environment, but they need to pass the "*" operator to the "equation" outer environment)
     if environment.replace("*", "") in ["cases", "split"]:
 
         # determine if outer env is starred

@@ -2,12 +2,28 @@ import copy
 
 from itertools import chain
 
+from typing import List, Union, Dict, Any, Optional, Tuple, Self, Hashable
 
-class Dataframe(dict):
-    def __init__(self, *args, filler=None, **kwargs):
+from sympy import Dict as sympy_dict
+
+
+class Dataframe(dict[Hashable, List[Any]]):
+    def __init__(self, *args: Any, filler: Any = None, **kwargs: Any) -> None:
+        """
+        Initialize a Dataframe.
+
+        If the first argument is a list of dict, it is considered as a list of
+        rows, and the Dataframe is initialized accordingly. Otherwise, the
+        Dataframe is initialized with the given positional and keyword
+        arguments.
+
+        :param args: positional arguments to be passed to __setitem__
+        :param filler: value to be used to fill missing values in the dataframe
+        :param kwargs: keyword arguments to be passed to __setitem__
+        """
         super().__init__()
-        self._width = 0
-        self._filler = filler
+        self._width: int = 0
+        self._filler: Any = filler
 
         if (
             args
@@ -18,19 +34,42 @@ class Dataframe(dict):
         else:
             self._update_initial(*args, **kwargs)
 
-    def _init_from_list_of_dicts(self, list_of_dicts):
-        if not list_of_dicts:
-            return
+    def _init_from_list_of_dicts(self, list_of_dicts: List[Dict[Hashable, Any]]) -> None:
+        """
+        Initialize the Dataframe from a list of dictionaries.
 
-        keys = list(
-            list_of_dicts[0].keys()
-        )  # the keys are determined by the first dict (order is important!)
-        for key in keys:
+        Each dictionary in the list represents a sequence of values that will
+        populate the columns of the LaTeX align block. The keys become row
+        labels and their order is preserved from the first dictionary.
+
+        Args:
+            list_of_dicts: List of dictionaries where each dict represents a sequence.
+                          The first dict determines the row labels/keys.
+
+        Example:
+            Input: [{'x': 1, 'y': 'a'}, {'x': 2, 'y': 'b'}, {'x': 3}]
+            Result: {'x': [1, 2, 3], 'y': ['a', 'b', filler_value]}
+        """
+        # the keys are determined by the first dict (order is important!)
+        for key in list_of_dicts[0].keys():
             self[key] = [d.get(key, self._filler) for d in list_of_dicts]
 
         self._width = len(list_of_dicts)
 
-    def _update_initial(self, *args, **kwargs):
+    def _update_initial(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Initialize the Dataframe from dictionary arguments.
+
+        Handles initialization when the input is a dictionary or keyword arguments,
+        converting single values to lists and ensuring all columns have consistent length.
+
+        Args:
+            *args: Positional arguments (expects at most one dictionary)
+            **kwargs: Keyword arguments representing column data
+
+        Raises:
+            TypeError: If more than one positional argument is provided
+        """
         if args:
             if len(args) > 1:
                 raise TypeError(
@@ -50,15 +89,31 @@ class Dataframe(dict):
         self._width = max(len(value) for value in self.values()) if self else 0
         self._validate_and_fill_data()
 
-    def _validate_and_fill_data(self):
-        if not self:
-            return
+    def _validate_and_fill_data(self) -> None:
+        """
+        Ensure all columns have consistent length by padding with filler values.
 
+        Extends shorter columns to match the maximum width using the filler value.
+        This maintains the tabular structure where all rows have the same number of columns.
+        """
         for key, value in self.items():
             if len(value) < self._width:
                 self[key] = value + [self._filler] * (self._width - len(value))
 
-    def update(self, *args, **kwargs):
+    def update(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Update the Dataframe with new data, extending width as needed.
+
+        Similar to dict.update() but maintains tabular structure by ensuring
+        all columns have consistent length after the update.
+
+        Args:
+            *args: Positional arguments (expects at most one dictionary)
+            **kwargs: Keyword arguments representing new column data
+
+        Raises:
+            TypeError: If more than one positional argument is provided
+        """
         if args:
             if len(args) > 1:
                 raise TypeError(
@@ -98,7 +153,20 @@ class Dataframe(dict):
         # Update width
         self._width = max_length
 
-    def append(self, other, strict=True):
+    def append(self, other: Union['Dataframe', Dict[Hashable, Any], Any], strict: bool = True) -> None:
+        """
+        Append a single row to the Dataframe.
+
+        Args:
+            other: Data to append as a new row. Can be:
+                  - Dataframe: Uses first row of the other Dataframe
+                  - Dict: Uses values from the dictionary
+                  - Any: Uses the same value for all columns
+            strict: If True, only considers keys that exist in self
+
+        Note:
+            This adds exactly one row, increasing width by 1.
+        """
         if isinstance(other, Dataframe):
             if strict:
                 other = {key: other[key] for key in self.keys() if key in other}
@@ -121,7 +189,20 @@ class Dataframe(dict):
 
         self._width += 1
 
-    def extend(self, other, strict=True):
+    def extend(self, other: Union['Dataframe', Dict[Hashable, Any], List[Any]], strict: bool = True) -> None:
+        """
+        Extend the Dataframe by adding multiple rows from another source.
+
+        Args:
+            other: Data to extend with. Can be:
+                  - Dataframe: Adds all rows from the other Dataframe
+                  - Dict: Converts to Dataframe and extends
+                  - List: Extends each column with the list values
+            strict: If True, only considers keys that exist in self
+
+        Raises:
+            ValueError: If other is not a supported type for extension
+        """
         if isinstance(other, Dataframe):
             # filter keys
             if strict:
@@ -183,14 +264,38 @@ class Dataframe(dict):
                 "Cannot extend Dataframe with this type. Use 'append' for single values."
             )
 
-    def __add__(self, other):
+    def __add__(self, other: Union['Dataframe', Dict[Hashable, Any], List[Any]]) -> 'Dataframe':
+        """
+        Create a new Dataframe by extending this one with other data.
+
+        Args:
+            other: Data to add (Dataframe, dict, or list)
+
+        Returns:
+            New Dataframe containing combined data
+
+        Note:
+            Uses strict=False, so new columns from other will be added.
+        """
         # if not isinstance(other, Dataframe):
         #     raise ValueError("Can only add Dataframe to Dataframe")
         result = copy.deepcopy(Dataframe(self))
         result.extend(other, strict=False)
         return result
 
-    def __or__(self, other):
+    def __or__(self, other: Union['Dataframe', Dict[Hashable, Any]]) -> 'Dataframe':
+        """
+        Create a new Dataframe by updating this one with other data (| operator).
+
+        Args:
+            other: Data to merge (Dataframe or dict)
+
+        Returns:
+            New Dataframe with updated data
+
+        Note:
+            Similar to dict merge - existing keys are updated, new keys are added.
+        """
         # if not isinstance(other, Dataframe):
         #     raise ValueError("Can only perform '|' operation with Dataframe")
         result = copy.deepcopy(Dataframe(self))
@@ -198,37 +303,39 @@ class Dataframe(dict):
         return result
 
     @property
-    def width(self):
+    def width(self) -> int:
+        """Number of columns in the Dataframe."""
         return self._width
 
     @property
-    def length(self):
+    def length(self) -> int:
+        """Number of rows in the Dataframe."""
         return len(self)
 
     @property
-    def shape(self):
+    def shape(self) -> Tuple[int, int]:
+        """Shape of the Dataframe as (columns, rows)."""
         return (self.length, self.width)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Dataframe({self.dict_repr()}, shape={self.shape})"
 
-    def dict_repr(self):
+    def dict_repr(self) -> str:
+        """Get string representation as a regular dictionary."""
         return super().__repr__()
 
-    def print_dict(self):
+    def print_dict(self) -> None:
+        """Print the Dataframe as a regular dictionary."""
         print(self.dict_repr())
 
 
-from typing import List, Union, Dict, Any
-
-
 def create_dataframe(
-    keys: List[str],
+    keys: List[Hashable],
     width: int,
-    seed: Union[Any, List, Dict, Dataframe] = None,
+    seed: Optional[Union[Any, List[Any], Dict[Hashable, Any], Dataframe]] = None,
     default_value: Any = None,
 ) -> Dataframe:
-    df = Dataframe()
+    df: Dataframe = Dataframe()
 
     if not isinstance(seed, (list, dict, Dataframe)):
         # Single value seed (can be of any type)
