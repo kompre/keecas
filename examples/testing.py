@@ -25,3 +25,12 @@ print(
 print(f'{df.width=}')
 print(f'{df.length=}')
 print(f'{df.shape=}')
+
+df1 = Dataframe({"a": [1, 2], "b": [3, 4]})
+df2 = Dataframe({"b": [7], "c": [9]})
+df3 = df1 | df2
+print(df3)
+
+
+print(Dataframe([]))
+

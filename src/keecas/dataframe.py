@@ -2,7 +2,7 @@ import copy
 
 from itertools import chain
 
-from typing import List, Union, Dict, Any, Optional, Tuple, Self, Hashable
+from typing import List, Dict, Any, Optional, Tuple, Self, Hashable
 
 from sympy import Dict as sympy_dict
 
@@ -55,6 +55,11 @@ class Dataframe(dict[Hashable, List[Any]]):
             Input: [{'x': 1, 'y': 'a'}, {'x': 2, 'y': 'b'}, {'x': 3}]
             Result: {'x': [1, 2, 3], 'y': ['a', 'b', filler_value]}
         """
+        # Handle empty list case
+        if not list_of_dicts:
+            self._width = 0
+            return
+
         # the keys are determined by the first dict (order is important!)
         for key in list_of_dicts[0].keys():
             self[key] = [d.get(key, self._filler) for d in list_of_dicts]
@@ -158,7 +163,7 @@ class Dataframe(dict[Hashable, List[Any]]):
         # Update width
         self._width = max_length
 
-    def append(self, other: Union['Dataframe', Dict[Hashable, Any], Any], strict: bool = True) -> None:
+    def append(self, other: 'Dataframe' | Dict[Hashable, Any] | Any, strict: bool = True) -> None:
         """
         Append a single row to the Dataframe.
 
@@ -170,8 +175,12 @@ class Dataframe(dict[Hashable, List[Any]]):
             strict: If True, only considers keys that exist in self
 
         Note:
-            This adds exactly one row, increasing width by 1.
+            This adds exactly one row, increasing width by 1 only if there are keys to append to.
         """
+        # Only proceed if there are existing keys to append to
+        if not self.keys():
+            return
+
         if isinstance(other, Dataframe):
             if strict:
                 other = {key: other[key] for key in self.keys() if key in other}
@@ -194,7 +203,7 @@ class Dataframe(dict[Hashable, List[Any]]):
 
         self._width += 1
 
-    def extend(self, other: Union['Dataframe', Dict[Hashable, Any], List[Any]], strict: bool = True) -> None:
+    def extend(self, other: 'Dataframe' | Dict[Hashable, Any] | List[Any], strict: bool = True) -> None:
         """
         Extend the Dataframe by adding multiple rows from another source.
 
@@ -269,7 +278,7 @@ class Dataframe(dict[Hashable, List[Any]]):
                 "Cannot extend Dataframe with this type. Use 'append' for single values."
             )
 
-    def __add__(self, other: Union['Dataframe', Dict[Hashable, Any], List[Any]]) -> 'Dataframe':
+    def __add__(self, other: 'Dataframe' | Dict[Hashable, Any] | List[Any]) -> 'Dataframe':
         """
         Create a new Dataframe by extending this one with other data.
 
@@ -288,7 +297,7 @@ class Dataframe(dict[Hashable, List[Any]]):
         result.extend(other, strict=False)
         return result
 
-    def __or__(self, other: Union['Dataframe', Dict[Hashable, Any]]) -> 'Dataframe':
+    def __or__(self, other: 'Dataframe' | Dict[Hashable, Any]) -> 'Dataframe':
         """
         Create a new Dataframe by updating this one with other data (| operator).
 
@@ -337,9 +346,33 @@ class Dataframe(dict[Hashable, List[Any]]):
 def create_dataframe(
     keys: List[Hashable],
     width: int,
-    seed: Optional[Union[Any, List[Any], Dict[Hashable, Any], Dataframe]] = None,
+    seed: Optional[Any | List[Any] | Dict[Hashable, Any] | Dataframe] = None,
     default_value: Any = None,
 ) -> Dataframe:
+    """
+    Create a Dataframe with specified keys and width, initialized with seed values.
+
+    Args:
+        keys: List of keys (row labels) for the dataframe
+        width: Number of columns (width) for the dataframe
+        seed: Initial values to populate the dataframe. Can be:
+            - Scalar: Same value repeated across all cells
+            - List: Values applied to all rows, padded with default_value
+            - Dict: Per-key initialization (supports mixed list/scalar values)
+            - Dataframe: Copy values from existing dataframe
+            - None: Fill all cells with default_value
+        default_value: Value used to fill missing entries
+
+    Returns:
+        New Dataframe with specified shape and initial values
+
+    Example:
+        >>> create_dataframe(['x', 'y'], 3, seed=0)
+        Dataframe({'x': [0, 0, 0], 'y': [0, 0, 0]}, shape=(2, 3))
+
+        >>> create_dataframe(['a', 'b'], 2, seed=[1, 2], default_value=-1)
+        Dataframe({'a': [1, 2], 'b': [1, 2]}, shape=(2, 2))
+    """
     df: Dataframe = Dataframe()
 
     if not isinstance(seed, (list, dict, Dataframe)):
@@ -378,5 +411,8 @@ def create_dataframe(
     for key in keys:
         if key not in df:
             df[key] = [default_value] * width
+
+    # Set the width correctly
+    df._width = width
 
     return df
