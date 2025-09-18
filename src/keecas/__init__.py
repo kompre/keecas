@@ -5,7 +5,8 @@ from .dataframe import Dataframe
 from .display import (
     options,
     show_eqn,
-    verifica,
+    check,
+    verifica,  # backward compatibility alias
     dict_to_eq,
     eq_to_dict,
 )
@@ -32,7 +33,8 @@ __all__ = [
     "Dataframe",
     "show_eqn",
     "options",
-    "verifica",
+    "check",
+    "verifica",  # backward compatibility alias
     "dict_to_eq",
     "eq_to_dict",
     "pc",

@@ -8,12 +8,12 @@ language = "en"
 # Custom translation overrides
 # These have higher priority than built-in language translations
 [localization.custom_translations]
-"for" = "per"
-"otherwise" = "altrimenti"
-"True" = "VERO"
-"False" = "FALSO"
-"VERIFICATO" = "VERIFICATO ✓"
-"NON VERIFICATO" = "NON VERIFICATO ✗"
+# "for" = "per"
+# "otherwise" = "altrimenti"
+# "True" = "VERO"
+# "False" = "FALSO"
+# "VERIFICATO" = "VERIFICATO ✓"
+# "NON VERIFICATO" = "NON VERIFICATO ✗"
 
 # You can also add completely custom keys
-"custom_term" = "termine personalizzato"
+# "custom_term" = "termine personalizzato"

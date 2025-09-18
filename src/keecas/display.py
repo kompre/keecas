@@ -13,6 +13,8 @@ from sympy import (
 from IPython.display import Markdown, display
 import re
 
+from pint import Quantity
+
 from typing import Union, List, Dict
 
 from .dataframe import *
@@ -38,7 +40,7 @@ class options:
     col_wrap = [
         None,
         {
-            Basic: ("=", ""),
+            Basic|Quantity|int|float: ("=", ""),
             Markdown|str: (r"\qquad", ""),
             object: ("", ""),
         },
@@ -49,8 +51,8 @@ class options:
 from itertools import chain, zip_longest
 
 
-# determina esito verifica
-def verifica(lhs, rhs, test=Le, language: str = None, substitutions: dict = None) -> Markdown:
+# check verification result
+def check(lhs, rhs, test=Le, language: str = None, substitutions: dict = None) -> Markdown:
     """Determines if the left-hand side (lhs) is less than or equal to
     the right-hand side (rhs) based on the provided test function.
 
@@ -80,6 +82,12 @@ def verifica(lhs, rhs, test=Le, language: str = None, substitutions: dict = None
         case "StrictGreaterThan":
             symbol_if_true = r">"
             symbol_if_false = r"\le"
+        case "Equality":
+            symbol_if_true = r"="
+            symbol_if_false = r"\neq"
+        case "Unequality":
+            symbol_if_true = r"\neq"
+            symbol_if_false = r"="
 
     # Use document language from options if not specified
     doc_language = language or options.language
@@ -96,6 +104,10 @@ def verifica(lhs, rhs, test=Le, language: str = None, substitutions: dict = None
         return Markdown(
             rf"\textcolor{{red}}{{\left[{symbol_if_false}{rhs}\quad \textbf{{{not_verified_text}}}\right]}}"
         )
+
+
+# Backward compatibility alias
+verifica = check
 
 
 def show_eqn(

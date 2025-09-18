@@ -23,6 +23,7 @@ dev = [
     "pytest<9.0.0,>=8.3.2",
     "ipykernel<7.0.0,>=6.29.5",
     "toml>=0.10.2",
+    "quarto-cli>=1.8.24",
 ]
 
 [build-system]
