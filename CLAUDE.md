@@ -251,7 +251,22 @@ For complete details, see `docs/CONVENTIONS.md`.
 - Primary use case is in Jupyter notebooks for engineering calculations
 - LaTeX output is rendered via IPython.display.Markdown
 - Supports both KaTeX (VS Code) and standard LaTeX rendering
-- Example notebook: `examples/hello_world.ipynb`
+- Example notebooks: `examples/hello_world.ipynb`, `examples/quarto_example/quarto_example.ipynb`
+
+### Quarto Examples and Automation
+- Quarto examples are organized in subdirectories under `examples/` (e.g., `examples/quarto_example/`)
+- Each Quarto example directory contains:
+  - `.ipynb`: Source Jupyter notebook
+  - `.qmd`: Generated Quarto markdown (auto-generated)
+  - `.pdf`, `.html`: Rendered documents (auto-generated)
+  - `_files/`: Supporting assets (auto-generated)
+- **Git Hook Automation**: Pre-commit hook automatically converts and renders notebooks
+  - Install with: `bash scripts/install-hooks.sh`
+  - When committing `.ipynb` files in `examples/`, the hook:
+    1. Converts notebook to QMD using `quarto convert`
+    2. Renders to PDF and HTML with `--execute` flag
+    3. Adds all generated files to the commit
+  - Skip automation with: `git commit --no-verify`
 
 ## Important Notes
 

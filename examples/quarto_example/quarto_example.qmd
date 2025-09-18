@@ -14,7 +14,15 @@ jupyter: python3
 This example demonstrates all the key features of `keecas` for symbolic and units-aware calculations in a Quarto document.
 
 ```{python}
-# for fast start import *# from keecas import *# or (preferred explicit imports)from keecas import symbols, u, pc, show_eqn, options, check
+# for quick start import *
+# from keecas import *
+
+# or explicit import (this is about all you need)
+from keecas import symbols, u, pc, show_eqn, options, check
+```
+
+```{python}
+options.language = "en"
 ```
 
 ::: {.callout-note}

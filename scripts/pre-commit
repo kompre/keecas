@@ -1,0 +1,110 @@
+#!/bin/bash
+#
+# Pre-commit hook for automatic Quarto notebook rendering
+# This hook automatically converts and renders Jupyter notebooks when they are committed
+#
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}🔍 Checking for notebook changes...${NC}"
+
+# Get list of staged .ipynb files
+staged_notebooks=$(git diff --cached --name-only --diff-filter=ACM | grep '\.ipynb$' | grep -E '^examples/')
+
+if [ -z "$staged_notebooks" ]; then
+    echo -e "${GREEN}✅ No notebook changes detected in examples/ directory${NC}"
+    exit 0
+fi
+
+echo -e "${YELLOW}📔 Found notebook changes:${NC}"
+echo "$staged_notebooks" | sed 's/^/  - /'
+
+# Check if quarto is available
+if ! command -v quarto &> /dev/null; then
+    echo -e "${RED}❌ Error: quarto command not found${NC}"
+    echo -e "${RED}   Please install Quarto CLI or add it to PATH${NC}"
+    echo -e "${RED}   You can skip this hook with: git commit --no-verify${NC}"
+    exit 1
+fi
+
+# Process each notebook
+success=true
+for notebook in $staged_notebooks; do
+    echo -e "${BLUE}🔄 Processing: $notebook${NC}"
+
+    # Get the directory and base name
+    notebook_dir=$(dirname "$notebook")
+    notebook_base=$(basename "$notebook" .ipynb)
+
+    # Convert to QMD
+    echo -e "  📝 Converting to QMD..."
+    if ! quarto convert "$notebook" 2>/dev/null; then
+        echo -e "${RED}❌ Failed to convert $notebook to QMD${NC}"
+        success=false
+        continue
+    fi
+
+    # Render to PDF
+    echo -e "  📄 Rendering to PDF..."
+    if ! quarto render "$notebook" --execute --to pdf --quiet 2>/dev/null; then
+        echo -e "${RED}❌ Failed to render $notebook to PDF${NC}"
+        success=false
+        continue
+    fi
+
+    # Render to HTML
+    echo -e "  🌐 Rendering to HTML..."
+    if ! quarto render "$notebook" --execute --to html --quiet 2>/dev/null; then
+        echo -e "${RED}❌ Failed to render $notebook to HTML${NC}"
+        success=false
+        continue
+    fi
+
+    # Add generated files to staging area
+    qmd_file="${notebook_dir}/${notebook_base}.qmd"
+    pdf_file="${notebook_dir}/${notebook_base}.pdf"
+    html_file="${notebook_dir}/${notebook_base}.html"
+
+    echo -e "  ➕ Adding generated files to staging area..."
+
+    # Add files if they exist
+    if [ -f "$qmd_file" ]; then
+        git add "$qmd_file"
+        echo -e "    ✅ Added: $qmd_file"
+    fi
+
+    if [ -f "$pdf_file" ]; then
+        git add "$pdf_file"
+        echo -e "    ✅ Added: $pdf_file"
+    fi
+
+    if [ -f "$html_file" ]; then
+        git add "$html_file"
+        echo -e "    ✅ Added: $html_file"
+    fi
+
+    # Add any generated files directory (e.g., for images)
+    files_dir="${notebook_dir}/${notebook_base}_files"
+    if [ -d "$files_dir" ]; then
+        git add "$files_dir"
+        echo -e "    ✅ Added: $files_dir/"
+    fi
+
+    echo -e "${GREEN}✅ Successfully processed: $notebook${NC}"
+done
+
+if [ "$success" = false ]; then
+    echo -e "${RED}❌ Some notebooks failed to process${NC}"
+    echo -e "${RED}   Fix the errors above or use: git commit --no-verify${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}🎉 All notebooks processed successfully!${NC}"
+echo -e "${GREEN}   Generated files have been added to this commit${NC}"
+
+exit 0
