@@ -97,7 +97,7 @@ def parse_expr(
     """
     
     if not local_dict:
-        local_dict = currentframe().f_back.f_back.f_back.f_locals
+        local_dict = dict(currentframe().f_back.f_back.f_back.f_locals)
 
     if "transformations" not in kwargs:
         kwargs["transformations"] = T[:11]

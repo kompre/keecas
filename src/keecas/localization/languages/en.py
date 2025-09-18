@@ -9,7 +9,11 @@ TRANSLATIONS = {
     "for": "for",
     "otherwise": "otherwise",
 
-    # Boolean verification states
+    # Boolean verification states (proper English keys)
+    "VERIFIED": "VERIFIED",
+    "NOT_VERIFIED": "NOT VERIFIED",
+
+    # Backward compatibility (deprecated - use VERIFIED/NOT_VERIFIED)
     "VERIFICATO": "VERIFIED",
     "NON VERIFICATO": "NOT VERIFIED",
 

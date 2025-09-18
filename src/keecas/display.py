@@ -25,26 +25,49 @@ from dataclasses import dataclass
 from .config import *
 from .localization import translate
 
-@dataclass
 class options:
-    EQ_PREFIX: str = "eq-"
-    EQ_SUFFIX: str = ""
-    VERTICAL_SKIP: str = "8pt"
-    PRINT_LABEL: bool = False
-    DEBUG = False
-    katex = False
-    default_mul_symbol = r"\,"
-    default_environment = "align"
-    default_label_command = r"\label"
-    language: str = None  # Document-level language override (None = use global/config)
-    col_wrap = [
-        None,
-        {
-            Basic|Quantity|int|float: ("=", ""),
-            Markdown|str: (r"\qquad", ""),
-            object: ("", ""),
-        },
-    ]
+    """Configuration options for keecas display functions."""
+
+    def __init__(self):
+        self.EQ_PREFIX: str = "eq-"
+        self.EQ_SUFFIX: str = ""
+        self.VERTICAL_SKIP: str = "8pt"
+        self.PRINT_LABEL: bool = False
+        self.DEBUG = False
+        self.katex = False
+        self.default_mul_symbol = r"\,"
+        self.default_environment = "align"
+        self.default_label_command = r"\label"
+        self._language: str = None  # Private storage for language
+        self.col_wrap = [
+            None,
+            {
+                Basic|Quantity|int|float: ("=", ""),
+                Markdown|str: (r"\qquad", ""),
+                object: ("", ""),
+            },
+        ]
+
+    @property
+    def language(self) -> str:
+        """Document-level language override (None = use global/config)."""
+        return self._language
+
+    @language.setter
+    def language(self, value: str):
+        """Set language and automatically update Pint locale."""
+        self._language = value
+        # Update Pint locale when language changes
+        try:
+            from .pint_sympy import update_pint_locale
+            update_pint_locale(value)
+        except ImportError:
+            # Handle case where pint_sympy module is not available
+            pass
+
+
+# Create global options instance
+options = options()
 
 
 
@@ -93,8 +116,8 @@ def check(lhs, rhs, test=Le, language: str = None, substitutions: dict = None) -
     doc_language = language or options.language
 
     # Get localized verification text
-    verified_text = translate("VERIFICATO", language=doc_language, substitutions=substitutions)
-    not_verified_text = translate("NON VERIFICATO", language=doc_language, substitutions=substitutions)
+    verified_text = translate("VERIFIED", language=doc_language, substitutions=substitutions)
+    not_verified_text = translate("NOT_VERIFIED", language=doc_language, substitutions=substitutions)
 
     if test(lhs, rhs):
         return Markdown(

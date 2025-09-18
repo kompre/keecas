@@ -88,12 +88,20 @@ def test_show_eqn():
     assert r"y & =2" in result.data
 
 def test_replace_all():
+    from keecas.localization import set_language
+
+    # Set language to Italian for this test
+    set_language("it")
+
     expr = {x: "Piecewise((0, x < 0), (x, x >= 0))" | pc.parse_expr}
     result = show_eqn(expr)
     assert r"\text{for}" not in result.data
     assert r"\text{per}" in result.data
     assert r"\text{otherwise}" not in result.data
     assert r"\text{altrimenti}" in result.data
+
+    # Reset to English
+    set_language("en")
     
 def test_label():
     expr = {

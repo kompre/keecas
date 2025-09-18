@@ -31,10 +31,20 @@ class LocalizationManager:
 
     def _load_builtin_languages(self) -> None:
         """Load built-in language definitions."""
-        from .languages import en, it
+        import importlib
+        import pkgutil
+        from . import languages
 
-        self._languages["en"] = en.TRANSLATIONS
-        self._languages["it"] = it.TRANSLATIONS
+        # Discover all language modules dynamically
+        for importer, modname, ispkg in pkgutil.iter_modules(languages.__path__):
+            if modname != '__init__':  # Skip __init__.py
+                try:
+                    lang_module = importlib.import_module(f'.languages.{modname}', __package__)
+                    if hasattr(lang_module, 'TRANSLATIONS'):
+                        self._languages[modname] = lang_module.TRANSLATIONS
+                except ImportError:
+                    # Skip modules that can't be imported
+                    pass
 
     def set_language(self, language: str) -> None:
         """Set the global language."""

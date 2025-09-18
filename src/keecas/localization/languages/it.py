@@ -5,11 +5,15 @@ Contains Italian translations for all LaTeX/SymPy strings used in keecas.
 """
 
 TRANSLATIONS = {
-    # SymPy LaTeX words (currently hardcoded in display.py)
+    # SymPy LaTeX words
     "for": "per",
     "otherwise": "altrimenti",
 
-    # Boolean verification states (currently hardcoded in verifica function)
+    # Boolean verification states (proper English keys)
+    "VERIFIED": "VERIFICATO",
+    "NOT_VERIFIED": "NON VERIFICATO",
+
+    # Backward compatibility (deprecated)
     "VERIFICATO": "VERIFICATO",
     "NON VERIFICATO": "NON VERIFICATO",
 

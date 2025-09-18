@@ -4,8 +4,66 @@ from sympy.physics.units.util import convert_to
 
 from sympy import nsimplify, sympify
 
-unitregistry = pint.UnitRegistry()
+
+def _get_locale_from_keecas():
+    """Get current locale from keecas localization system."""
+    try:
+        from .localization.config import get_language_from_config
+        from .localization import get_language
+
+        # Try to get language from config first, then from current language
+        lang = get_language_from_config() or get_language()
+
+        # Map keecas language codes to locale identifiers
+        locale_map = {
+            'en': 'en_US',
+            'it': 'it_IT',
+            'fr': 'fr_FR',
+            'de': 'de_DE',
+            'es': 'es_ES',
+            'pt': 'pt_PT',
+            'nl': 'nl_NL',
+            'da': 'da_DK',
+            'sv': 'sv_SE',
+            'no': 'nb_NO',
+        }
+
+        return locale_map.get(lang, 'en_US')
+    except ImportError:
+        # Fallback if localization system not available
+        return 'en_US'
+
+
+# Initialize UnitRegistry with locale support
+unitregistry = pint.UnitRegistry(fmt_locale=_get_locale_from_keecas())
 unitregistry.formatter.default_format = ".2f~P"
+
+
+def update_pint_locale(language: str = None):
+    """Update pint locale based on keecas language setting.
+
+    Args:
+        language: Optional language code. If None, gets from keecas config.
+    """
+    if language is None:
+        locale_str = _get_locale_from_keecas()
+    else:
+        locale_map = {
+            'en': 'en_US',
+            'it': 'it_IT',
+            'fr': 'fr_FR',
+            'de': 'de_DE',
+            'es': 'es_ES',
+            'pt': 'pt_PT',
+            'nl': 'nl_NL',
+            'da': 'da_DK',
+            'sv': 'sv_SE',
+            'no': 'nb_NO',
+        }
+        locale_str = locale_map.get(language, 'en_US')
+
+    # Update the locale in the existing registry
+    unitregistry.formatter.set_locale(locale_str)
 
 def pint_to_sympy(quantity: unitregistry.Quantity):
     """convert pint quantity to sympy quantity

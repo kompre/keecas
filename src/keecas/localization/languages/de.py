@@ -1,0 +1,34 @@
+"""
+German translations.
+
+Contains German translations for all LaTeX/SymPy strings used in keecas.
+"""
+
+TRANSLATIONS = {
+    # SymPy LaTeX words
+    "for": "für",
+    "otherwise": "andernfalls",
+
+    # Boolean verification states
+    "VERIFIED": "BESTÄTIGT",
+    "NOT_VERIFIED": "NICHT BESTÄTIGT",
+
+    # Backward compatibility (deprecated)
+    "VERIFICATO": "BESTÄTIGT",
+    "NON VERIFICATO": "NICHT BESTÄTIGT",
+
+    # Common mathematical terms
+    "True": "Wahr",
+    "False": "Falsch",
+
+    # Additional terms that might be useful
+    "if": "wenn",
+    "then": "dann",
+    "else": "sonst",
+    "and": "und",
+    "or": "oder",
+    "not": "nicht",
+}
+
+# Export for easier access
+__all__ = ["TRANSLATIONS"]

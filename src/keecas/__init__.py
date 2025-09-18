@@ -15,7 +15,7 @@ from .display import (
 from . import pipe_command as pc
 
 # initialize pint
-from .pint_sympy import unitregistry as u
+from .pint_sympy import unitregistry as u, update_pint_locale
 
 u.formatter.default_format = ".2f~P"
 
@@ -39,6 +39,7 @@ __all__ = [
     "eq_to_dict",
     "pc",
     "u",
+    "update_pint_locale",  # Pint localization control
     "sp",
     "latex",
     "Eq",

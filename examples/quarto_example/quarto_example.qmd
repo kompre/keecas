@@ -22,7 +22,7 @@ from keecas import symbols, u, pc, show_eqn, options, check
 ```
 
 ```{python}
-options.language = "en"
+options.language = "it"
 ```
 
 ::: {.callout-note}
