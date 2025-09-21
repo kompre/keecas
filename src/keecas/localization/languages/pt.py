@@ -9,6 +9,11 @@ TRANSLATIONS = {
     "for": "para",
     "otherwise": "caso contrário",
 
+    # Domain/Range labels from SymPy LaTeX output
+    "Domain: ": "Domínio: ",
+    "Domain on ": "Domínio em ",
+    "Range": "Intervalo",
+
     # Boolean verification states
     "VERIFIED": "VERIFICADO",
     "NOT_VERIFIED": "NÃO VERIFICADO",

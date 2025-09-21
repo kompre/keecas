@@ -22,56 +22,12 @@ from .dataframe import *
 # default values for labels
 from dataclasses import dataclass
 
-from .config import *
+from .config import get_options, get_config_manager
 from .localization import translate
 
-class options:
-    """Configuration options for keecas display functions."""
-
-    def __init__(self):
-        self.EQ_PREFIX: str = "eq-"
-        self.EQ_SUFFIX: str = ""
-        self.VERTICAL_SKIP: str = "8pt"
-        self.PRINT_LABEL: bool = False
-        self.DEBUG = False
-        self.katex = False
-        self.default_mul_symbol = r"\,"
-        self.default_environment = "align"
-        self.default_label_command = r"\label"
-        self._language: str = None  # Private storage for language
-        self.col_wrap = [
-            None,
-            {
-                Basic|Quantity|int|float: ("=", ""),
-                Markdown|str: (r"\qquad", ""),
-                object: ("", ""),
-            },
-        ]
-
-    @property
-    def language(self) -> str:
-        """Document-level language override (None = use global/config)."""
-        return self._language
-
-    @language.setter
-    def language(self, value: str):
-        """Set language and automatically update Pint locale and localization manager."""
-        self._language = value
-        # Update global localization manager when document language changes
-        if value is not None:
-            from .localization import set_language
-            set_language(value)
-        # Update Pint locale when language changes
-        try:
-            from .pint_sympy import update_pint_locale
-            update_pint_locale(value)
-        except ImportError:
-            # Handle case where pint_sympy module is not available
-            pass
-
-
-# Create global options instance
-options = options()
+# Use the unified configuration system
+options = get_options()
+_config_manager = get_config_manager()
 
 
 
@@ -464,6 +420,11 @@ def _get_localized_replacements(language: str = None, substitutions: dict = None
     return {
         r"\bfor\b": translate("for", language=language, substitutions=substitutions),
         r"\botherwise\b": translate("otherwise", language=language, substitutions=substitutions),
+
+        # Domain/Range labels from SymPy LaTeX output (match \text{...} patterns)
+        r"\\text\{Domain: \}": f"\\text{{{translate('Domain: ', language=language, substitutions=substitutions)}}}",
+        r"\\text\{Domain on \}": f"\\text{{{translate('Domain on ', language=language, substitutions=substitutions)}}}",
+        r"\\text\{Range\}": f"\\text{{{translate('Range', language=language, substitutions=substitutions)}}}",
     }
 
 def get_replacement_dict(language: str = None, substitutions: dict = None):

@@ -17,7 +17,9 @@ from . import pipe_command as pc
 # initialize pint
 from .pint_sympy import unitregistry as u, update_pint_locale
 
-u.formatter.default_format = ".2f~P"
+# Use configuration for pint format
+from .config import get_options
+u.formatter.default_format = get_options().pint_default_format
 
 # initialize sympy
 import sympy as sp

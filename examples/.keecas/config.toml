@@ -1,0 +1,13 @@
+EQ_PREFIX = "eq-"
+EQ_SUFFIX = ""
+VERTICAL_SKIP = "8pt"
+PRINT_LABEL = false
+DEBUG = false
+katex = false
+default_mul_symbol = "\\,"
+default_environment = "align"
+default_label_command = "\\label"
+pint_default_format = ".2f~P"
+disable_pint_locale = false
+
+[custom_translations]
