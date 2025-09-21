@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.24">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Introduction</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="hello_world_files/libs/clipboard/clipboard.min.js"></script>
+<script src="hello_world_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="hello_world_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="hello_world_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="hello_world_files/libs/quarto-html/popper.min.js"></script>
+<script src="hello_world_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="hello_world_files/libs/quarto-html/anchor.min.js"></script>
+<link href="hello_world_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="hello_world_files/libs/quarto-html/quarto-syntax-highlighting-dc55a5b9e770e841cd82e46aadbfb9b0.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="hello_world_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="hello_world_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="hello_world_files/libs/bootstrap/bootstrap-63e4a8b0d2c6203430a6fc6938059644.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Introduction</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><code>keecas</code> is a module for performing symbolic and units-aware calculations. It has been developed to be used mainly in a jupyter notebook’s interactive environments, which then could be rendered as pdf by <a href="https://quarto.org/">quarto</a>.</p>
+<p><code>keecas</code> leverage some well known python modules, wrapping some of their functions with sensisble defaults, aiming to reduce boiler plate code and be quick to use. Some of the modules used are:</p>
+<dl>
+<dt><code>sympy</code></dt>
+<dd>
+for all symbolic expression and computation
+</dd>
+<dt><code>pint</code></dt>
+<dd>
+convenient unit registry; <code>pint</code> quantities can be converted in <code>sympy.physics.units</code> directly
+</dd>
+<dt><code>pipe</code></dt>
+<dd>
+some of the most used <code>sympy</code> functions are wrapped in <code>pipe</code> object, so that they can be used in a sequential fashion
+</dd>
+</dl>
+<section id="quick-start" class="level2">
+<h2 class="anchored" data-anchor-id="quick-start">Quick Start</h2>
+<p>Let’s start with a bare minimum example: let’s calculate the maximum bending moment (<span class="math inline">\(M_{Sd}\)</span>) for a beam of span <span class="math inline">\(l\)</span>, simply supported at the end (pinned), uniformly loaded (<span class="math inline">\(q\)</span>).</p>
+<div id="b5728ebc" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># import everything from keecas</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> keecas <span class="im">import</span> symbols, u, pc, show_eqn</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> keecas <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># some notable imports:</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># - `symbols`: function to define symbols from sympy module</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># - `u`: unit registry from pint module</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># - `pc`: short for `keecas.pipe_command` where are the most used sympy function are defined as pipe object</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="3659cd84" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>config.col_wrap[<span class="dv">1</span>][<span class="bu">object</span>] <span class="op">=</span> (<span class="st">'='</span>, <span class="st">''</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="996d59e5" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define the symbols with symbols() from `sympy`</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>q, l, M_Sd <span class="op">=</span> symbols(<span class="vs">r'q, l, M_{Sd}'</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># define the parameters with units support provided by `pint` (`u` is the unit registry)</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    q: S(<span class="dv">5</span><span class="op">*</span>u(<span class="st">'kN/m'</span>)),</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    l: S(<span class="dv">400</span><span class="op">*</span>u.cm),</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># define the symbolic expression</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>_e <span class="op">=</span> {</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    M_Sd: <span class="st">"q*l^2/8"</span> <span class="co"># the expression is written as a simple string</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">|</span> pc.parse_expr <span class="co"># function that will parse the expression (from `sympy`)</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co"># evaluate the expression in `_e`</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>_v <span class="op">=</span> {</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    k: v</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">|</span> pc.subs(_e<span class="op">|</span>_p) <span class="co"># subistitute the symbol contained in the joined dict _e|_p (from `sympy`)</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">|</span> pc.convert_to([u.kN, u.m]) <span class="co"># convert the expression (from `sympy`) to the preferred units (list of `pint` units)</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">|</span> pc.N <span class="co"># elavuate the expression as decimal (from `sympy`)</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k,v <span class="kw">in</span> _e.items() <span class="co"># get all the expression contained in _e</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="co"># add some description</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>_d <span class="op">=</span> {</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    M_Sd: <span class="st">"max bending moment"</span>, </span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    q: <span class="st">"uniform load"</span>,</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    l: <span class="st">"span of the beam"</span>,</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="co"># create the latex expression (amsmath) to be displayed as Markdown object</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>show_eqn(</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    [_p<span class="op">|</span>_e, _v, _d], <span class="co"># list of dict to be shown</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    float_format<span class="op">=</span><span class="st">'</span><span class="sc">{:.2f}</span><span class="st">'</span>, <span class="co"># precision of floats</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="co"># col_wrap=[ # columns wrappers</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    <span class="co">#     None, # wrapping for the 1st column (key of first dict in the main argument list -&gt; `_p|_e` )</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    <span class="co">#     '=', # add '=' sign before the 2nd column (value of first dict in the main argument list -&gt; `_p|_e`)</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    <span class="co">#     '=', # add '=' sign before the 3rd column (value of second dict in the main argument list -&gt; `_v`)</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>    <span class="co">#     (r'\quad(', ')') # wrap the 4th column with '\quad(' on the left and ')' on the right (value of the third dict in the main argument list -&gt; `_d`)</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ]  </span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="3">
+<p><span class="math display">\[\begin{align}
+q &amp; =\dfrac{5.00{\,}\text{kN}}{\text{m}} &amp;   &amp; \qquad\mathtt{\text{uniform load}}  \\[8pt]
+l &amp; =400{\,}\text{cm} &amp;   &amp; \qquad\mathtt{\text{span of the beam}}  \\[8pt]
+M_{Sd} &amp; =\dfrac{q{\,}l^{2}}{8} &amp; =10.00{\,}\text{kN}{\,}\text{m} &amp; \qquad\mathtt{\text{max bending moment}}
+\end{align}\]</span></p>
+</div>
+</div>
+<section id="explanation" class="level3">
+<h3 class="anchored" data-anchor-id="explanation">Explanation</h3>
+<p>What is a math equation if not a mapping between the left hand side (LHS) and the right hand side (RHS) of the equal sign? Therefore the simplest and easy to write python container we can write is a <code>dict</code> were the LHS is the key, and RHS is the value.</p>
+<p>In the above example we have provided 3 different <code>dict</code>:</p>
+<dl>
+<dt><code>_p</code></dt>
+<dd>
+dict containg all the parameters
+</dd>
+<dt><code>_e</code></dt>
+<dd>
+dict containg all the symbolic, unevaluated, expression
+</dd>
+<dt><code>_v</code></dt>
+<dd>
+dict containg the evaluated expression, written as a dict comprehension of the <code>k</code>, <code>v</code> pairs of <code>_e</code>
+</dd>
+</dl>
+<p>All the dict are then combined in a list to be used of <code>show_eqn</code>, the funtcion that will create a latex block (amsmath) to be displayed as a Markdown object by the jupyter notebook (KaTeX in case of vscode)</p>
+<p>The main argument of the <code>show_eqn</code> function can be a <code>dict</code> or a <code>list[dict]</code>. The key, value pairs of the first dict will be displayed as 1st and 2nd columns of the latex amsmath block, while only the value of the subsequent dict will be shown in the following columns if there is a key match (note that <code>_v</code> does not contain neither <code>q</code> or <code>l</code> keys, so nothing is shown in the output for that 3rd column.)</p>
+<p>We can have a look at the latex code by passing <code>debug=True</code> to the function or setting globally <code>options.DEBUG=True</code></p>
+<div id="99cf6ece" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># options.DEBUG = True </span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>show_eqn(</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    [_p<span class="op">|</span>_e, _v, _d], <span class="co"># list of dict to be shown</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    float_format<span class="op">=</span><span class="st">'</span><span class="sc">{:.2f}</span><span class="st">'</span>, <span class="co"># precision of floats</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># col_wrap=[ # columns wrappers</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">#     None, # wrapping for the 1st column (key of first dict in the main argument list -&gt; `_p|_e` )</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">#     '=', # add '=' sign before the 2nd column (value of first dict in the main argument list -&gt; `_p|_e`)</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">#     '=', # add '=' sign before the 3rd column (value of second dict in the main argument list -&gt; `_v`)</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">#     (r'\quad(', ')') # wrap the 4th column with '\quad(' on the left and ')' on the right (value of the third dict in the main argument list -&gt; `_d`)</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ],</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    debug<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>\begin{align}
+q &amp; =\dfrac{5.00{\,}\text{kN}}{\text{m}} &amp;   &amp; \qquad\mathtt{\text{uniform load}}  \\[8pt]
+ l &amp; =400{\,}\text{cm} &amp;   &amp; \qquad\mathtt{\text{span of the beam}}  \\[8pt]
+ M_{Sd} &amp; =\dfrac{q{\,}l^{2}}{8} &amp; =10.00{\,}\text{kN}{\,}\text{m} &amp; \qquad\mathtt{\text{max bending moment}} 
+\end{align}</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="4">
+<p><span class="math display">\[\begin{align}
+q &amp; =\dfrac{5.00{\,}\text{kN}}{\text{m}} &amp;   &amp; \qquad\mathtt{\text{uniform load}}  \\[8pt]
+l &amp; =400{\,}\text{cm} &amp;   &amp; \qquad\mathtt{\text{span of the beam}}  \\[8pt]
+M_{Sd} &amp; =\dfrac{q{\,}l^{2}}{8} &amp; =10.00{\,}\text{kN}{\,}\text{m} &amp; \qquad\mathtt{\text{max bending moment}}
+\end{align}\]</span></p>
+</div>
+</div>
+</section>
+</section>
+<section id="a-more-structured-example-simple-beam" class="level2">
+<h2 class="anchored" data-anchor-id="a-more-structured-example-simple-beam">A more structured example: Simple Beam</h2>
+<p>In the previous example all the <code>dict</code> were prepended by <code>_</code>: that because those dict are not really meant to be preserved further than the cell they are defined. They are meant to only collect the expressions/parameters of the cell to be displayed, and then discarded. To preserve all the expression/parameters of the notebook wwe will initialize a named dict.</p>
+<div id="e1dacd36" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># this dict will act as namespace for all the expressions/parameters defined in this file (could be used in other notebook)</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>simple_beam <span class="op">=</span> {</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">'parameters'</span> : (params <span class="op">:=</span> {}), <span class="co"># params is the dict that will collect all the params of this notebook</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'expressions'</span>: (eqn <span class="op">:=</span> {}), <span class="co"># eqn is the dict that will collect all the eqn of this notebook</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>We will calculate the notable values for a simple supported beam with a uniform load in ULS condition for bending and shear, and SLS condition for deflection.</p>
+<p>The beam is characterized by this parameters:</p>
+<div id="7b4ab916" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>l, b_i <span class="op">=</span> symbols(<span class="vs">r"l, b_{i}"</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    l: <span class="dv">6</span><span class="op">*</span>u.m,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    b_i: <span class="dv">3</span><span class="op">*</span>u.m,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>params.update(_p) <span class="co"># save the parameters in the notebook dict</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>_d <span class="op">=</span> {</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    l: <span class="st">"span of the beam"</span>,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    b_i: <span class="st">"width of influence"</span>,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>show_eqn([_p, _d], col_wrap<span class="op">=</span>[<span class="va">None</span>, <span class="st">"="</span>, <span class="st">"&amp;"</span>], environment<span class="op">=</span><span class="st">"cases"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="6">
+<p><span class="math display">\[\begin{align}
+    \left\{\begin{aligned}
+l &amp; =\mathtt{\text{6.00 m}} &amp; &amp;\mathtt{\text{span of the beam}}  \\[8pt]
+b_{i} &amp; =\mathtt{\text{3.00 m}} &amp; &amp;\mathtt{\text{width of influence}}  
+\end{aligned}\right.
+\end{align}\]</span></p>
+</div>
+</div>
+<section id="actions" class="level3">
+<h3 class="anchored" data-anchor-id="actions">Actions</h3>
+<p>Let’s calculate the load applied to a simple beam.</p>
+<section id="loads" class="level4">
+<h4 class="anchored" data-anchor-id="loads">Loads</h4>
+<div id="2afa9186" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>G_1, G_2, Q_k <span class="op">=</span> symbols(<span class="vs">r"G_</span><span class="op">{1}</span><span class="vs">, G_</span><span class="op">{2}</span><span class="vs">, Q_{k}"</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># define the loads in whatever units you want</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    G_1: <span class="fl">2.5</span> <span class="op">*</span> u.kPa,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    G_2: <span class="dv">300</span> <span class="op">*</span> u(<span class="st">"daN/m^2"</span>),</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    Q_k: <span class="dv">4</span> <span class="op">*</span> u.kN <span class="op">/</span> u.m<span class="op">**</span><span class="dv">2</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>params.update(_p)  <span class="co"># save the parameters in the notebook dict</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>_d <span class="op">=</span> {</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    G_1: <span class="st">"permanent loads"</span>,</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    G_2: <span class="st">"permanent non structural"</span>,</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    Q_k: <span class="st">"live loads"</span>,</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">NOTE</span><span class="co">: values will be rendered as `pint` quantities because they are not being converted yet into `sympy` objects</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>show_eqn([_p, _d], col_wrap<span class="op">=</span>[<span class="va">None</span>, <span class="st">"="</span>, <span class="st">"&amp;"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="7">
+<p><span class="math display">\[\begin{align}
+G_{1} &amp; =\mathtt{\text{2.50 kPa}} &amp; &amp;\mathtt{\text{permanent loads}}  \\[8pt]
+G_{2} &amp; =\mathtt{\text{300.00 decanewton/m²}} &amp; &amp;\mathtt{\text{permanent non structural}}  \\[8pt]
+Q_{k} &amp; =\mathtt{\text{4.00 kilonewton/m²}} &amp; &amp;\mathtt{\text{live loads}}
+\end{align}\]</span></p>
+</div>
+</div>
+</section>
+<section id="safety-coefficients-for-loads" class="level4">
+<h4 class="anchored" data-anchor-id="safety-coefficients-for-loads">Safety coefficients for loads</h4>
+<div id="c1546d73" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>gamma_G1, gamma_G2, gamma_Qk <span class="op">=</span> symbols(<span class="vs">r'</span><span class="er">\</span><span class="vs">gamma_{G_</span><span class="op">{1}</span><span class="vs">}, </span><span class="er">\</span><span class="vs">gamma_{G_</span><span class="op">{2}</span><span class="vs">} , </span><span class="er">\</span><span class="vs">gamma_{Q_{k}}'</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    gamma_G1: <span class="fl">1.3</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    gamma_G2: <span class="fl">1.5</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    gamma_Qk: <span class="fl">1.5</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>params.update(_p)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="co"># since _p is being redefined in this cell, it will only display the content of this cell</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>show_eqn(_p)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="8">
+<p><span class="math display">\[\begin{align}
+\gamma_{G_{1}} &amp; =1.3  \\[8pt]
+\gamma_{G_{2}} &amp; =1.5  \\[8pt]
+\gamma_{Q_{k}} &amp; =1.5
+\end{align}\]</span></p>
+</div>
+</div>
+</section>
+<section id="applied-forces" class="level4">
+<h4 class="anchored" data-anchor-id="applied-forces">Applied forces</h4>
+<p>The applied load are multiplied for the width of influence <span class="math inline">\(b_i\)</span> of the beam:</p>
+<div id="e4bbad21" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>F_d, F_k <span class="op">=</span> symbols(<span class="vs">r"F_{d}, F_{k}"</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>_e <span class="op">=</span> {</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    F_k: <span class="st">"(G_1 + G_2 + Q_k)*b_i"</span> <span class="op">|</span> pc.parse_expr,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    F_d: <span class="st">"(gamma_G1*G_1+gamma_G2*G_2+gamma_Qk*Q_k)*b_i"</span> <span class="op">|</span> pc.parse_expr,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>eqn.update(_e)  <span class="co"># save the expressions in the notebook dict</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>_v <span class="op">=</span> {</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    k: (</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>        v</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> pc.subs(eqn <span class="op">|</span> params)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> pc.convert_to([u.kN, u.m])</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> pc.N</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> pc.as_two_terms(as_mul<span class="op">=</span><span class="va">True</span>) <span class="co"># this will display nicely the values and units in the show_eqn function</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k, v <span class="kw">in</span> _e.items()</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>_d <span class="op">=</span>{</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>    F_k: <span class="st">"(SLS)"</span>, </span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>    F_d: <span class="st">"(ULS)"</span>,</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>show_eqn([_e, _v, _d], col_wrap<span class="op">=</span>[<span class="va">None</span>, <span class="st">"="</span>, <span class="st">"="</span>, <span class="st">"&amp;"</span>], float_format<span class="op">=</span><span class="st">'</span><span class="sc">{:.2f}</span><span class="st">'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="9">
+<p><span class="math display">\[\begin{align}
+F_{k} &amp; =\left(G_{1} + G_{2} + Q_{k}\right){\,}b_{i} &amp; =28.50{\,}\dfrac{\text{kN}}{\text{m}} &amp; &amp;\mathtt{\text{(SLS)}}  \\[8pt]
+F_{d} &amp; =\left(\gamma_{G_{1}}{\,}G_{1} + \gamma_{G_{2}}{\,}G_{2} + \gamma_{Q_{k}}{\,}Q_{k}\right){\,}b_{i} &amp; =41.25{\,}\dfrac{\text{kN}}{\text{m}} &amp; &amp;\mathtt{\text{(ULS)}}
+\end{align}\]</span></p>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="uls-bending-moment-and-shear" class="level2">
+<h2 class="anchored" data-anchor-id="uls-bending-moment-and-shear">ULS: Bending Moment and Shear</h2>
+<p>We calculate the bending moment and shear in ULS condition:</p>
+<div id="7a85eeb1" class="cell" data-execution_count="10">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>M_Sd, V_Sd <span class="op">=</span> symbols(<span class="vs">r"M_{Sd}, V_{Sd}"</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>_e <span class="op">=</span> {</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    M_Sd: <span class="st">"F_d * l^2 / 8"</span> <span class="op">|</span> pc.parse_expr,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    V_Sd: <span class="st">"F_d * l / 2"</span> <span class="op">|</span> pc.parse_expr,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>eqn.update(_e)  <span class="co"># save the expressions in the notebook dict</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>_v <span class="op">=</span> {</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    k: (</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>        v</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> pc.subs(eqn <span class="op">|</span> params)</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> pc.convert_to([u.kN, u.m])</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> pc.N</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> pc.as_two_terms(as_mul<span class="op">=</span><span class="va">True</span>) <span class="co"># this will display nicely the values and units in the show_eqn function</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k, v <span class="kw">in</span> _e.items()</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a><span class="co"># we can be finer with the float format options</span></span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>_f <span class="op">=</span> {</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>    M_Sd: <span class="st">'</span><span class="sc">{:.3f}</span><span class="st">'</span>,</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>    V_Sd: <span class="st">'</span><span class="sc">{:.0f}</span><span class="st">'</span>,</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>show_eqn([_e, _v, _d], col_wrap<span class="op">=</span>[<span class="va">None</span>, <span class="st">"="</span>, <span class="st">"="</span>, <span class="st">"&amp;"</span>], float_format<span class="op">=</span>_f)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="10">
+<p><span class="math display">\[\begin{align}
+M_{Sd} &amp; =\dfrac{F_{d}{\,}l^{2}}{8} &amp; =185.625{\,}\text{kN}{\,}\text{m} &amp;    \\[8pt]
+V_{Sd} &amp; =\dfrac{F_{d}{\,}l}{2} &amp; =124{\,}\text{kN} &amp;   
+\end{align}\]</span></p>
+</div>
+</div>
+</section>
+<section id="sls-deflection" class="level2">
+<h2 class="anchored" data-anchor-id="sls-deflection">SLS: deflection</h2>
+<p>We calculate the deflection of the beam with the following equation:</p>
+<div id="1dce37f9" class="cell" data-execution_count="11">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>f, E, J <span class="op">=</span> symbols(<span class="vs">r"f , E, J"</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># since we want to collect display the expression as two separate terms (5/384) and (F_k * l^4 / (E *J)), we will wrap in `S()` (singleton from sympy); uncomment the line to see the different display results</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>_e <span class="op">=</span> {</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># f : " (5/384) * (F_k * l^4 / (E *J))" | pc.parse_expr,</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    f : <span class="st">" S(5/384) * S(F_k * l^4 / (E *J))"</span> <span class="op">|</span> pc.parse_expr,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># f : " N(5/384) * S(F_k * l^4 / (E *J))" | pc.parse_expr, # th N() will evaluate the fraction to a decimal</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>eqn.update(_e) </span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>show_eqn(_e)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="11">
+<p><span class="math display">\[\begin{align}
+f &amp; =\dfrac{5}{384}{\,}\dfrac{F_{k}{\,}l^{4}}{E{\,}J}
+\end{align}\]</span></p>
+</div>
+</div>
+<p>Assuming a <code>IPE270</code> beam, the deflection results</p>
+<div id="92f37f11" class="cell" data-execution_count="12">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    E: <span class="dv">210000</span> <span class="op">*</span> u(<span class="st">"MPa"</span>),</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    J: <span class="dv">8356</span><span class="op">*</span>u.cm<span class="op">**</span><span class="dv">4</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>params.update(_p)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>_v <span class="op">=</span> {</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    k: (</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>        v</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> pc.subs(eqn <span class="op">|</span> params)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> pc.convert_to([u.kN, u.mm])</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> pc.N</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k, v <span class="kw">in</span> _e.items()</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="co"># I evaluate a simple expression that has not its own symbol defined</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>__v <span class="op">=</span> {</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>    k: k <span class="op">|</span> pc.subs(eqn <span class="op">|</span> params) <span class="op">|</span> pc.convert_to([u.kN, u.mm]) <span class="op">|</span> pc.N <span class="cf">for</span> k <span class="kw">in</span> [l<span class="op">/</span>f]</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>_d <span class="op">=</span> {</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>    l<span class="op">/</span>f: <span class="st">"ratio span of the beam / deflection"</span>,</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>show_eqn([_p<span class="op">|</span>_v<span class="op">|</span>__v, _d], col_wrap<span class="op">=</span>[<span class="va">None</span>, <span class="st">"="</span>], float_format<span class="op">=</span><span class="st">'</span><span class="sc">{:.2f}</span><span class="st">'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="12">
+<p><span class="math display">\[\begin{align}
+E &amp; =\mathtt{\text{210000.00 MPa}} &amp;    \\[8pt]
+J &amp; =\mathtt{\text{8356.00 cm⁴}} &amp;    \\[8pt]
+f &amp; =27.41{\,}\text{mm} &amp;    \\[8pt]
+\dfrac{l}{f} &amp; =218.92 &amp; =\mathtt{\text{ratio span of the beam / deflection}}
+\end{align}\]</span></p>
+</div>
+</div>
+<div id="72f0c057" class="cell" data-execution_count="13">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>config.language <span class="op">=</span> <span class="st">"it"</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>show_eqn(</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">'verifica'</span> : verifica(<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="13">
+<p><span class="math display">\[\begin{align}
+\mathtt{\text{verifica}} &amp; \qquad\textcolor{green}{\left[\le1\quad \textbf{VERIFICATO}\right]}
+\end{align}\]</span></p>
+</div>
+</div>
+<div id="cf45cf85" class="cell" data-execution_count="14">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>show_eqn(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">'piecewise'</span>: <span class="st">'''Piecewise(</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="st">            (1, x&lt;0), </span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="st">            (2, True),</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="st">        )</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="st">        '''</span> <span class="op">|</span> pc.parse_expr</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="14">
+<p><span class="math display">\[\begin{align}
+\mathtt{\text{piecewise}} &amp; =\begin{cases} 1 &amp; \text{per}\: x &lt; 0 \\[8pt]2 &amp; \text{altrimenti} \end{cases}
+\end{align}\]</span></p>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
