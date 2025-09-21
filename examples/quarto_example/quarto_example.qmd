@@ -5,6 +5,7 @@ format:
   html: default
   pdf: default
 echo: false
+keep-tex: false
 jupyter: python3
 ---
 
