@@ -13,11 +13,11 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}🔍 Checking for notebook changes...${NC}"
 
-# Get list of staged .ipynb files
-staged_notebooks=$(git diff --cached --name-only --diff-filter=ACM | grep '\.ipynb$' | grep -E '^examples/')
+# Get list of staged .ipynb files in quarto_example directory only
+staged_notebooks=$(git diff --cached --name-only --diff-filter=ACM | grep '\.ipynb$' | grep -E '^examples/quarto_example/')
 
 if [ -z "$staged_notebooks" ]; then
-    echo -e "${GREEN}✅ No notebook changes detected in examples/ directory${NC}"
+    echo -e "${GREEN}✅ No notebook changes detected in examples/quarto_example/ directory${NC}"
     exit 0
 fi
 

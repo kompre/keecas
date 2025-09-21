@@ -11,6 +11,9 @@ from .display import (
     eq_to_dict,
 )
 
+# configuration
+from .config import config
+
 # pipe_command
 from . import pipe_command as pc
 
@@ -35,6 +38,7 @@ __all__ = [
     "Dataframe",
     "show_eqn",
     "options",
+    "config",  # New configuration interface
     "check",
     "verifica",  # backward compatibility alias
     "dict_to_eq",

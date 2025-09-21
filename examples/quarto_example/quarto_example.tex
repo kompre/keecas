@@ -1,0 +1,340 @@
+% Options for packages loaded elsewhere
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+  letterpaper,
+  DIV=11,
+  numbers=noendperiod]{scrartcl}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+% Make \paragraph and \subparagraph free-standing
+\makeatletter
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}{
+    \@ifstar
+      \xxxParagraphStar
+      \xxxParagraphNoStar
+  }
+  \newcommand{\xxxParagraphStar}[1]{\oldparagraph*{#1}\mbox{}}
+  \newcommand{\xxxParagraphNoStar}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}{
+    \@ifstar
+      \xxxSubParagraphStar
+      \xxxSubParagraphNoStar
+  }
+  \newcommand{\xxxSubParagraphStar}[1]{\oldsubparagraph*{#1}\mbox{}}
+  \newcommand{\xxxSubParagraphNoStar}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+\makeatother
+
+
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+
+
+
+
+
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+
+
+ 
+
+
+\KOMAoption{captions}{tableheading}
+\makeatletter
+\@ifpackageloaded{tcolorbox}{}{\usepackage[skins,breakable]{tcolorbox}}
+\@ifpackageloaded{fontawesome5}{}{\usepackage{fontawesome5}}
+\definecolor{quarto-callout-color}{HTML}{909090}
+\definecolor{quarto-callout-note-color}{HTML}{0758E5}
+\definecolor{quarto-callout-important-color}{HTML}{CC1914}
+\definecolor{quarto-callout-warning-color}{HTML}{EB9113}
+\definecolor{quarto-callout-tip-color}{HTML}{00A047}
+\definecolor{quarto-callout-caution-color}{HTML}{FC5300}
+\definecolor{quarto-callout-color-frame}{HTML}{acacac}
+\definecolor{quarto-callout-note-color-frame}{HTML}{4582ec}
+\definecolor{quarto-callout-important-color-frame}{HTML}{d9534f}
+\definecolor{quarto-callout-warning-color-frame}{HTML}{f0ad4e}
+\definecolor{quarto-callout-tip-color-frame}{HTML}{02b875}
+\definecolor{quarto-callout-caution-color-frame}{HTML}{fd7e14}
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Keecas Quarto Example},
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+
+\title{Keecas Quarto Example}
+\author{}
+\date{}
+\begin{document}
+\maketitle
+
+\renewcommand*\contentsname{Table of contents}
+{
+\hypersetup{linkcolor=}
+\setcounter{tocdepth}{3}
+\tableofcontents
+}
+
+\section{How to use keecas in a Quarto
+document}\label{how-to-use-keecas-in-a-quarto-document}
+
+This example demonstrates all the key features of \texttt{keecas} for
+symbolic and units-aware calculations in a Quarto document.
+
+\begin{tcolorbox}[enhanced jigsaw, coltitle=black, toprule=.15mm, colback=white, rightrule=.15mm, colbacktitle=quarto-callout-note-color!10!white, leftrule=.75mm, colframe=quarto-callout-note-color-frame, toptitle=1mm, bottomtitle=1mm, titlerule=0mm, opacitybacktitle=0.6, arc=.35mm, opacityback=0, breakable, bottomrule=.15mm, title=\textcolor{quarto-callout-note-color}{\faInfo}\hspace{0.5em}{Note}, left=2mm]
+
+If the rendering engine is \texttt{KaTeX} (i.e.~Jupyter notebook), the
+label command \texttt{\textbackslash{}label\{\}} will result in a
+\texttt{ParseError}. The latex code will work when rendering by
+\texttt{quarto\ render}, but since you may want to see the result before
+rendering the document, an option to disable the
+\texttt{\textbackslash{}label\{\}} command is provided.
+
+When rendering with \texttt{quarto} you can have two options:
+
+\begin{itemize}
+\tightlist
+\item
+  if \texttt{qmd} files, then everything is fine
+\item
+  if \texttt{ipynb} files, then pass the \texttt{-\/-execute} flag to
+  \texttt{quarto\ render} to rerender the notebook
+\end{itemize}
+
+\end{tcolorbox}
+
+\subsection{Basic Symbolic Math with
+Units}\label{basic-symbolic-math-with-units}
+
+Define symbols and calculate basic engineering quantities:
+
+\begin{align}
+F & =\mathtt{\text{10.00 kilonewton}} &   & \quad(\mathtt{\text{applied force}})  \label{eq-QUARTO_EXAMPLE-F}  \\[8pt]
+ A & =\mathtt{\text{50.00 cm²}} &   & \quad(\mathtt{\text{cross-sectional area}})  \label{eq-QUARTO_EXAMPLE-A}  \\[8pt]
+ \sigma & =\dfrac{F}{A} & =2.00{\,}\text{MPa} & \quad(\mathtt{\text{normal stress}})  \label{eq-QUARTO_EXAMPLE-sigma} 
+\end{align}
+
+\subsection{Pipe Commands Demonstration}\label{sec-pipe}
+
+Using pipe operators for functional composition:
+
+\begin{align}
+x & \mathtt{\text{3.00 m}} &    \\[8pt]
+ y & \mathtt{\text{4.00 m}} &    \\[8pt]
+ d & =x^{2} + y^{2} & =25.0{\,}\text{m}^{2} 
+\end{align}
+
+\subsection{Different LaTeX
+Environments}\label{different-latex-environments}
+
+\subsubsection{Cases Environment}\label{cases-environment}
+
+\begin{align}
+    \left\{\begin{aligned}
+E_{steel} & =\mathtt{\text{200.00 gigapascal}} & &\mathtt{\text{steel elastic modulus}}  \\[8pt]
+ E_{concrete} & =\mathtt{\text{30.00 gigapascal}} & &\mathtt{\text{concrete elastic modulus}}   
+\end{aligned}\right.
+\end{align}
+
+\subsubsection{Equation Environment with Labels}\label{sec-beam-calc}
+
+Calculate beam deflection with cross-references:
+
+\begin{align}
+\delta & =\dfrac{5{\,}q{\,}L^{4}}{384{\,}E{\,}I} & =15.949{\,}\text{mm}  \label{eq-QUARTO_EXAMPLE-delta} 
+\end{align}
+
+\begin{tcolorbox}[enhanced jigsaw, coltitle=black, toprule=.15mm, colback=white, rightrule=.15mm, colbacktitle=quarto-callout-note-color!10!white, leftrule=.75mm, colframe=quarto-callout-note-color-frame, toptitle=1mm, bottomtitle=1mm, titlerule=0mm, opacitybacktitle=0.6, arc=.35mm, opacityback=0, breakable, bottomrule=.15mm, title=\textcolor{quarto-callout-note-color}{\faInfo}\hspace{0.5em}{Note}, left=2mm]
+
+labels emitted by \texttt{show\_eqn} are latex labels, therefore they
+need to be referenced with \texttt{\textbackslash{}eqref\{\}} or
+\texttt{\textbackslash{}ref\{\}} latex commands.
+
+\end{tcolorbox}
+
+The deflection calculated in \ref{eq-QUARTO_EXAMPLE-delta} shows
+acceptable values for serviceability.
+
+\textbf{?@eq-QUARTO\_EXAMPLE-delta}
+
+\subsection{Verification Function}\label{verification-function}
+
+Using the \texttt{check} function for design checks:
+
+\begin{align}
+\sigma_{Sd} & \mathtt{\text{20.00 MPa}} &    \\[8pt]
+ \tau_{Sd} & \mathtt{\text{15.00 MPa}} &    \\[8pt]
+ \sigma_{Rd} & \mathtt{\text{250.00 MPa}} &    \\[8pt]
+ \tau_{Rd} & \mathtt{\text{75.00 MPa}} &    \\[8pt]
+ \dfrac{\sigma_{Sd}}{\sigma_{Rd}} & =0.080 & \qquad\textcolor{green}{\left[\le1.0\quad \textbf{VERIFIED}\right]}  \\[8pt]
+ \dfrac{\tau_{Sd}}{\tau_{Rd}} & =0.200 & \qquad\textcolor{green}{\left[\le1.0\quad \textbf{VERIFIED}\right]} 
+\end{align}
+
+The type of comparison in the \texttt{check} function can be specified,
+as well the value to be specified against.
+
+\begin{align}
+a & =3 & &\textcolor{red}{\left[>1\quad \textbf{NOT VERIFIED}\right]}  \\[8pt]
+ b & =4 & &\textcolor{green}{\left[>2\quad \textbf{VERIFIED}\right]}  \\[8pt]
+ c & =5 & &\textcolor{red}{\left[\ge3\quad \textbf{NOT VERIFIED}\right]}  \\[8pt]
+ d & =6 & &\textcolor{green}{\left[\ge4\quad \textbf{VERIFIED}\right]}  \\[8pt]
+ f & =7 & &\textcolor{red}{\left[\neq5\quad \textbf{NOT VERIFIED}\right]} 
+\end{align}
+
+\subsection{Subs get ordered}\label{subs-get-ordered}
+
+Substitution will get ordered and sorted automatically, so you can use a
+symbol before mapping to a value.
+
+\begin{align}
+a & =3 &    \\[8pt]
+ b & =4 &    \\[8pt]
+ d & =\dfrac{\sqrt{a^{2} + b^{2}}}{c} & =0.417  \\[8pt]
+ c & =a{\,}b & =12.000 
+\end{align}
+
+\subsection{Summary}\label{summary}
+
+This example demonstrated:
+
+\begin{itemize}
+\tightlist
+\item
+  Basic symbolic math with units
+\item
+  Pipe command usage (see Section~\ref{sec-pipe})
+\item
+  Different LaTeX environments (align, cases, equation)
+\item
+  Label and cross-reference functionality
+\item
+  Dataframe operations
+\item
+  Verification functions
+\item
+  Complex symbolic manipulations
+\end{itemize}
+
+All calculations in Section~\ref{sec-beam-calc} show that keecas
+provides a powerful interface for engineering calculations in Quarto
+documents.
+
+
+
+
+\end{document}

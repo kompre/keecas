@@ -10,6 +10,12 @@ import subprocess
 import os
 from pathlib import Path
 import toml
+import signal
+import time
+import socket
+import webbrowser
+import shutil
+import tempfile
 try:
     from importlib.metadata import version
 except ImportError:
@@ -62,6 +68,83 @@ def open_with_system_editor(file_path):
         return False
 
 
+def find_free_port(start_port=8888, max_attempts=10):
+    """Find a free port starting from start_port."""
+    for port in range(start_port, start_port + max_attempts):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('localhost', port))
+                return port
+        except OSError:
+            continue
+    return None
+
+
+def get_templates_dir():
+    """Get the templates directory path."""
+    # Get the package installation directory
+    import keecas
+    package_dir = Path(keecas.__file__).parent
+    # Look for templates in parent directory (for development)
+    templates_dir = package_dir.parent.parent / "templates"
+    if templates_dir.exists():
+        return templates_dir
+
+    # Look for templates in package directory (for installed package)
+    templates_dir = package_dir / "templates"
+    if templates_dir.exists():
+        return templates_dir
+
+    # Fallback - try relative to current directory
+    templates_dir = Path("templates")
+    return templates_dir
+
+
+def copy_template_to_workdir(template_name, work_dir):
+    """Copy a template notebook to the working directory."""
+    templates_dir = get_templates_dir()
+    template_path = templates_dir / f"{template_name}.ipynb"
+
+    if not template_path.exists():
+        raise FileNotFoundError(f"Template '{template_name}' not found at {template_path}")
+
+    work_dir = Path(work_dir)
+    work_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy template with a unique name if file exists
+    target_name = f"{template_name}.ipynb"
+    target_path = work_dir / target_name
+
+    counter = 1
+    while target_path.exists():
+        target_name = f"{template_name}_{counter}.ipynb"
+        target_path = work_dir / target_name
+        counter += 1
+
+    shutil.copy2(template_path, target_path)
+    return target_path
+
+
+def check_jupyter_available():
+    """Check if Jupyter is available."""
+    try:
+        result = subprocess.run(['jupyter', '--version'],
+                              capture_output=True, text=True, check=True)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+
+
+def check_jupyterlab_available():
+    """Check if JupyterLab is available."""
+    try:
+        result = subprocess.run(['jupyter', 'lab', '--version'],
+                              capture_output=True, text=True, check=True)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+
+
 def cmd_init(args):
     """Initialize a new configuration file."""
     config_manager = get_config_manager()
@@ -70,18 +153,21 @@ def cmd_init(args):
 
     success = config_manager.init_config(
         global_config=global_config,
-        force=args.force
+        force=args.force,
+        comment_style=getattr(args, 'comment_style', '##')
     )
 
     if success:
         config_type = "global" if global_config else "local"
         config_path = config_manager.get_config_path(global_config)
         print(f"Initialized {config_type} configuration file: {config_path}")
+        if hasattr(args, 'comment_style') and args.comment_style != '##':
+            print(f"Using comment style: '{args.comment_style}'")
     else:
         sys.exit(1)
 
 
-def cmd_edit(args):
+def cmd_config_edit(args):
     """Edit configuration file in the user's preferred editor."""
     config_manager = get_config_manager()
     # Handle mutually exclusive group default
@@ -113,6 +199,162 @@ def cmd_edit(args):
     except FileNotFoundError:
         print(f"Error: Editor '{editor}' not found")
         print("Set the EDITOR environment variable to your preferred editor")
+        sys.exit(1)
+
+
+def cmd_edit(args):
+    """Launch Jupyter server with keecas notebook templates."""
+    # Check if requested interface is available
+    use_lab = getattr(args, 'lab', False)
+
+    if use_lab:
+        if not check_jupyterlab_available():
+            print("Error: JupyterLab is not available.")
+            print("Please install JupyterLab: pip install jupyterlab")
+            sys.exit(1)
+    else:
+        if not check_jupyter_available():
+            print("Error: Jupyter is not available.")
+            print("Please install Jupyter: pip install jupyter")
+            sys.exit(1)
+
+    # Find free port
+    port = find_free_port(args.port)
+    if port is None:
+        print(f"Error: Could not find a free port starting from {args.port}")
+        sys.exit(1)
+
+    # Set up working directory
+    work_dir = Path(args.dir).resolve()
+    work_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy template if specified
+    notebook_path = None
+    if args.template:
+        try:
+            notebook_path = copy_template_to_workdir(args.template, work_dir)
+            print(f"Created notebook from template '{args.template}': {notebook_path}")
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
+            # List available templates
+            templates_dir = get_templates_dir()
+            if templates_dir.exists():
+                templates = [f.stem for f in templates_dir.glob("*.ipynb")]
+                if templates:
+                    print(f"Available templates: {', '.join(templates)}")
+            sys.exit(1)
+
+    # Prepare Jupyter command
+    if use_lab:
+        jupyter_cmd = [
+            'jupyter', 'lab',
+            '--port', str(port),
+            '--notebook-dir', str(work_dir),
+        ]
+    else:
+        jupyter_cmd = [
+            'jupyter', 'notebook',
+            '--port', str(port),
+            '--notebook-dir', str(work_dir),
+        ]
+
+    if not args.browser:
+        jupyter_cmd.append('--no-browser')
+
+    # Add token configuration for security
+    if hasattr(args, 'token') and args.token:
+        jupyter_cmd.extend(['--IdentityProvider.token', args.token])
+    else:
+        # Disable authentication for local development convenience
+        jupyter_cmd.extend(['--IdentityProvider.token='])
+
+    interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
+    print(f"Starting {interface_name} server on port {port}...")
+    print(f"Working directory: {work_dir}")
+
+    # Start Jupyter server
+    try:
+        # Start server in background
+        process = subprocess.Popen(
+            jupyter_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        # Wait a moment for server to start
+        time.sleep(2)
+
+        # Check if process is still running
+        if process.poll() is not None:
+            stdout, stderr = process.communicate()
+            print("Error: Jupyter server failed to start")
+            if stderr:
+                print(f"Error output: {stderr}")
+            sys.exit(1)
+
+        # Build server URL
+        server_url = f"http://localhost:{port}"
+
+        if notebook_path and args.browser:
+            # Open specific notebook
+            if use_lab:
+                notebook_url = f"{server_url}/lab/tree/{notebook_path.name}"
+            else:
+                notebook_url = f"{server_url}/notebooks/{notebook_path.name}"
+            interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
+            print(f"Opening notebook in {interface_name}: {notebook_url}")
+            webbrowser.open(notebook_url)
+        elif args.browser:
+            # Open Jupyter tree view
+            interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
+            print(f"Opening {interface_name} in browser: {server_url}")
+            webbrowser.open(server_url)
+        else:
+            interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
+            print(f"{interface_name} server running at: {server_url}")
+            if notebook_path:
+                if use_lab:
+                    notebook_url = f"{server_url}/lab/tree/{notebook_path.name}"
+                else:
+                    notebook_url = f"{server_url}/notebooks/{notebook_path.name}"
+                print(f"Notebook available at: {notebook_url}")
+
+        print(f"Server PID: {process.pid}")
+        print("Press Ctrl+C to stop the server")
+
+        # Set up signal handler for graceful shutdown
+        def signal_handler(sig, frame):
+            interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
+            print(f"\nStopping {interface_name} server...")
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                print(f"Force killing {interface_name} server...")
+                process.kill()
+            sys.exit(0)
+
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+
+        # Wait for process to complete
+        try:
+            process.wait()
+        except KeyboardInterrupt:
+            signal_handler(signal.SIGINT, None)
+
+    except FileNotFoundError:
+        interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
+        print(f"Error: {interface_name} command not found")
+        if use_lab:
+            print("Please install JupyterLab: pip install jupyterlab")
+        else:
+            print("Please install Jupyter: pip install jupyter")
+        sys.exit(1)
+    except Exception as e:
+        interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
+        print(f"Error starting {interface_name} server: {e}")
         sys.exit(1)
 
 
@@ -240,6 +482,22 @@ def create_parser():
     # Add main subparsers
     main_subparsers = parser.add_subparsers(dest='main_command', help='Main commands')
 
+    # Edit command - Launch Jupyter server with templates
+    edit_main_parser = main_subparsers.add_parser('edit', help='Launch Jupyter server with keecas templates')
+    edit_main_parser.add_argument('--port', type=int, default=8888,
+                                 help='Port for Jupyter server (default: 8888)')
+    edit_main_parser.add_argument('--dir', default='.',
+                                 help='Working directory for notebooks (default: current directory)')
+    edit_main_parser.add_argument('--template',
+                                 help='Template notebook to create (e.g., quickstart)')
+    edit_main_parser.add_argument('--no-browser', dest='browser', action='store_false', default=True,
+                                 help="Don't open browser automatically")
+    edit_main_parser.add_argument('--token',
+                                 help='Security token for Jupyter server (default: disabled for local use)')
+    edit_main_parser.add_argument('--lab', action='store_true', default=False,
+                                 help='Use JupyterLab instead of classic Jupyter Notebook')
+    edit_main_parser.set_defaults(func=cmd_edit)
+
     # Config subcommand
     config_parser = main_subparsers.add_parser('config', help='Configuration management')
     config_subparsers = config_parser.add_subparsers(dest='command', help='Configuration commands')
@@ -253,6 +511,8 @@ def create_parser():
                           help='Initialize local configuration file (default)')
     init_parser.add_argument('--force', action='store_true',
                            help='Overwrite existing configuration file')
+    init_parser.add_argument('--comment-style', dest='comment_style', default='##',
+                           help='Comment style for values to uncomment (default: "##")')
     init_parser.set_defaults(func=cmd_init)
 
     # Edit command
@@ -262,7 +522,7 @@ def create_parser():
                           help='Edit global configuration file')
     edit_group.add_argument('--local', dest='local_config', action='store_true',
                           help='Edit local configuration file (default)')
-    edit_parser.set_defaults(func=cmd_edit)
+    edit_parser.set_defaults(func=cmd_config_edit)
 
     # Open command
     open_parser = config_subparsers.add_parser('open', help='Open configuration file with system default editor')
@@ -311,7 +571,7 @@ def main():
     args = parser.parse_args()
 
     # Handle main command routing
-    if args.main_command == 'config':
+    if args.main_command in ('config', 'edit'):
         if not hasattr(args, 'func'):
             parser.print_help()
             sys.exit(1)

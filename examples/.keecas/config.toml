@@ -1,13 +1,32 @@
-EQ_PREFIX = "eq-"
-EQ_SUFFIX = ""
-VERTICAL_SKIP = "8pt"
-PRINT_LABEL = false
-DEBUG = false
-katex = false
-default_mul_symbol = "\\,"
-default_environment = "align"
-default_label_command = "\\label"
-pint_default_format = ".2f~P"
-disable_pint_locale = false
+# Keecas Local Configuration
+# ===================================
+## Project-specific settings for keecas symbolic math calculations
+## Remove '#' to activate settings (local configs inherit from global)
 
-[custom_translations]
+[latex]
+## LaTeX equation generation
+# eq_prefix = "eq-"
+# eq_suffix = ""
+# vertical_skip = "8pt"
+# default_environment = "align"
+# default_label_command = "\\label"
+
+[display]
+## Display and debugging
+# print_label = false
+# debug = false
+# katex = false
+# default_mul_symbol = "\\,"
+
+[language]
+## Language settings (de, es, fr, it, pt, da, nl, no, sv, en)
+# language = "en"
+# disable_pint_locale = false
+
+[units]
+## Pint quantity formatting
+# pint_default_format = ".2f~P"
+
+[translations]
+## Custom mathematical terms (e.g., "VERIFIED" = "VERIFICATO")
+## Add custom translations here

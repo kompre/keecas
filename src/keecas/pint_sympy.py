@@ -282,6 +282,15 @@ def pint_to_sympy(quantity: unitregistry.Quantity):
 pint.Quantity._sympy_ = lambda x: pint_to_sympy(x)
 pint.Unit._sympy_ = lambda x: pint_to_sympy(1 * x)
 
+# Initialize locale on module import
+try:
+    # Always set a default locale, even for English
+    default_locale = _find_best_locale('en', fallback_to_english=False)
+    if default_locale:
+        unitregistry.formatter.set_locale(default_locale)
+except Exception:
+    pass  # If initialization fails, continue without locale
+
 
 if __name__ == "__main__":
     u = unitregistry
