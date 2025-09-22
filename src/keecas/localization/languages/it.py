@@ -14,13 +14,9 @@ TRANSLATIONS = {
     "Domain on ": "Dominio su ",
     "Range": "Intervallo",
 
-    # Boolean verification states (proper English keys)
+    # Boolean verification states
     "VERIFIED": "VERIFICATO",
     "NOT_VERIFIED": "NON VERIFICATO",
-
-    # Backward compatibility (deprecated)
-    "VERIFICATO": "VERIFICATO",
-    "NON VERIFICATO": "NON VERIFICATO",
 
     # Common mathematical terms
     "True": "Vero",

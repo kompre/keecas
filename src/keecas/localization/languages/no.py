@@ -18,10 +18,6 @@ TRANSLATIONS = {
     "VERIFIED": "VERIFISERT",
     "NOT_VERIFIED": "IKKE VERIFISERT",
 
-    # Backward compatibility (deprecated)
-    "VERIFICATO": "VERIFISERT",
-    "NON VERIFICATO": "IKKE VERIFISERT",
-
     # Common mathematical terms
     "True": "Sann",
     "False": "Usann",

@@ -18,10 +18,6 @@ TRANSLATIONS = {
     "VERIFIED": "BESTÄTIGT",
     "NOT_VERIFIED": "NICHT BESTÄTIGT",
 
-    # Backward compatibility (deprecated)
-    "VERIFICATO": "BESTÄTIGT",
-    "NON VERIFICATO": "NICHT BESTÄTIGT",
-
     # Common mathematical terms
     "True": "Wahr",
     "False": "Falsch",

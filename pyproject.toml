@@ -21,6 +21,11 @@ version = "0.1.2"
 description = "A set of tools for symbolic math computation done in a jupyter notebook, aimed specifically for Quarto. It is based mostly on sympy."
 readme = "README.md"
 
+[project.urls]
+Homepage = "https://github.com/kompre/keecas"
+Repository = "https://github.com/kompre/keecas"
+Issues = "https://github.com/kompre/keecas/issues"
+
 [project.scripts]
 keecas = "keecas.cli:main"
 

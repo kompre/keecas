@@ -16,10 +16,13 @@ uv run pytest
 ```
 
 ### CLI Interface
-The project includes a comprehensive CLI for configuration management:
+The project includes a comprehensive CLI for configuration management and Jupyter integration:
 ```bash
 # Show version
 keecas --version
+
+# Jupyter development environment with templates
+keecas edit [--template quickstart] [--lab] [--port 8888] [--dir ./]
 
 # Configuration management
 keecas config init [--global|--local] [--force]     # Initialize config
@@ -379,3 +382,27 @@ For complete details, see `docs/CONVENTIONS.md`.
 - **Fallback Strategy**: Unsupported languages gracefully fall back to English units
 - **Persistence Fix**: No more "sticky" locales from previous language settings
 - **Conservative English**: English locale only changes when explicitly switching from other languages
+
+## Claude Code Session Management
+
+### Documentation Updates Before Commits
+IMPORTANT: Always update project documentation before making significant commits to maintain context across sessions:
+
+1. **DEVELOPMENT_CONTEXT.md**: Update with current session work, implementation details, and status
+2. **CLAUDE.md**: Ensure architecture changes, new CLI features, and conventions are documented
+3. **README.md**: Update with user-facing features and installation instructions
+4. **Test documentation**: Update testing strategy and coverage notes
+
+### Memory Management Practices
+- Use TodoWrite tool proactively for complex multi-step tasks
+- Complete todos as work finishes to maintain accurate progress tracking
+- Update documentation before major commits to preserve session context
+- Document new patterns, conventions, and architectural decisions immediately
+- Maintain DEVELOPMENT_CONTEXT.md as a session-to-session handoff document
+
+### Key Files for Context Preservation
+- `CLAUDE.md`: Project architecture, conventions, CLI usage
+- `DEVELOPMENT_CONTEXT.md`: Current work status, recent changes, technical decisions
+- `pyproject.toml`: Dependencies, build configuration, CLI entry points
+- `src/keecas/__init__.py`: Module structure and main exports
+- `examples/`: Working examples and templates for reference

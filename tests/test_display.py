@@ -2,7 +2,7 @@ import pytest
 from sympy import symbols, Eq, Le, StrictLessThan, GreaterThan, Basic
 from IPython.display import Markdown
 from keecas.display import (
-    verifica,
+    check,
     show_eqn,
     myprint_latex,
     wrap_floats,
@@ -18,21 +18,21 @@ from keecas import pipe_command as pc
 x, y = symbols("x y")
 
 
-def test_verifica():
+def test_check():
     # Test for Le (Less Than or Equal To)
     x = 1
     y = 2
-    result = verifica(x, y, test=Le)
+    result = check(x, y, test=Le)
     assert isinstance(result, Markdown)
     assert r"\textcolor{green}" in result.data
 
     # Test for GreaterThan
-    result = verifica(x, y, test=GreaterThan)
+    result = check(x, y, test=GreaterThan)
     assert isinstance(result, Markdown)
     assert r"\textcolor{red}" in result.data
 
     # Test for StrictLessThan
-    result = verifica(x, y, test=StrictLessThan)
+    result = check(x, y, test=StrictLessThan)
     assert isinstance(result, Markdown)
     assert r"\textcolor{green}" in result.data
 

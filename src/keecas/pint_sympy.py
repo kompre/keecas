@@ -5,6 +5,7 @@ from sympy.physics.units.util import convert_to
 from sympy import nsimplify, sympify
 import locale
 import subprocess
+from typing import Optional
 
 
 def _get_available_locales():
@@ -84,7 +85,7 @@ def _find_best_locale(language_code, fallback_to_english=True):
 def _get_locale_from_keecas():
     """Get current locale from keecas localization system."""
     try:
-        from .localization.config import get_language_from_config
+        from .localization import get_language_from_config
         from .localization import get_language
 
         # Try to get language from config first, then from current language
@@ -114,7 +115,7 @@ def _get_locale_from_keecas():
 def _get_safe_init_locale():
     """Get a safe locale for UnitRegistry initialization."""
     try:
-        from .localization.config import get_language_from_config
+        from .localization import get_language_from_config
         from .localization import get_language
 
         config_lang = get_language_from_config()
@@ -138,48 +139,122 @@ else:
 unitregistry.formatter.default_format = ".2f~P"
 
 
+def _get_current_pint_locale() -> Optional[str]:
+    """Get the current pint locale setting."""
+    try:
+        return getattr(unitregistry.formatter, '_locale', None)
+    except AttributeError:
+        return None
+
+
+def _detect_pint_mode_on_language_change(new_language: str) -> str:
+    """Detect if user has manually changed pint locale.
+
+    Returns 'manual' if user has made manual changes, 'auto' otherwise.
+    """
+    try:
+        from .config import get_config_manager
+        config = get_config_manager()
+        current_keecas_lang = config.options.language_config.language or 'en'
+        current_pint_locale = _get_current_pint_locale()
+
+        if not current_pint_locale:
+            return 'auto'  # No pint locale set
+
+        # Map expected pint locale for current keecas language
+        expected_locale = _find_best_locale(current_keecas_lang)
+
+        # If pint locale doesn't match what keecas would have set, user changed it manually
+        if current_pint_locale != expected_locale:
+            return 'manual'
+
+        return 'auto'
+    except Exception:
+        return 'auto'  # Default to auto if detection fails
+
+
+def _was_pint_imported_before_keecas() -> bool:
+    """Check if pint was imported before keecas (indicates manual setup)."""
+    import sys
+    # This is a heuristic - if we detect common manual pint usage patterns
+    try:
+        # Check if there are external references to pint registries
+        pint_module = sys.modules.get('pint')
+        if pint_module and hasattr(pint_module, '_APPLICATION_REGISTRY'):
+            app_reg = pint_module._APPLICATION_REGISTRY
+            if app_reg and app_reg is not unitregistry:
+                return True  # Different registry suggests manual setup
+        return False
+    except Exception:
+        return False
+
+
 def update_pint_locale(language: str = None, verbose: bool = False):
-    """Update pint locale based on keecas language setting.
+    """Update pint locale based on keecas language setting with smart mode detection.
 
     Args:
         language: Optional language code. If None, gets from keecas config.
         verbose: If True, print debugging information about locale changes.
     """
-    # Don't set locale for default English or None
-    if language is None:
-        from .localization.config import get_language_from_config
-        from .localization import get_language
+    from .config import get_config_manager
+    config = get_config_manager()
 
-        # Get language from config system
+    # Check if pint locale sync is disabled
+    if config.options.language_config.disable_pint_locale:
+        if verbose:
+            print("Pint locale sync disabled by configuration")
+        return
+
+    # Get or determine the target language
+    if language is None:
+        from .localization import get_language_from_config
+        from .localization import get_language
         config_lang = get_language_from_config()
         current_lang = get_language()
+        language = config_lang or current_lang or 'en'
 
-        # Only set locale if explicitly configured (not default)
-        if not config_lang and current_lang == 'en':
+    # Smart mode detection
+    if config.options.language_config.pint_language_mode == 'auto':
+        # Check if we should switch to manual mode
+        if _was_pint_imported_before_keecas():
+            config.options.language_config.pint_language_mode = 'manual'
             if verbose:
-                print("Skipping locale setting for default English")
-            return  # Don't set locale for default English
+                print("Detected pint was imported before keecas - switching to manual mode")
+        else:
+            # Check if user has manually changed pint locale
+            detected_mode = _detect_pint_mode_on_language_change(language)
+            if detected_mode == 'manual':
+                config.options.language_config.pint_language_mode = 'manual'
+                if verbose:
+                    print("Detected manual pint locale change - switching to manual mode")
 
-        language = config_lang or current_lang
+    # Only proceed if in auto mode
+    if config.options.language_config.pint_language_mode == 'manual':
+        if verbose:
+            print("Pint language mode is 'manual' - skipping automatic locale sync")
+        return
 
     # Handle English locale setting
-    from .localization.config import get_language_from_config
-    if language == 'en' and not get_language_from_config():
-        # Check if we currently have a non-English locale set
-        # If so, we should reset to English rather than skip
-        current_quantity = 1 * unitregistry('cm**2')
-        current_result = f'{current_quantity:.3f}'.lower()
-        has_non_english_locale = not ('centimeter' in current_result or current_result.count('**') == 0)
+    if language == 'en':
+        from .localization import get_language_from_config
+        config_lang = get_language_from_config()
 
-        if has_non_english_locale:
-            # We have a non-English locale, should reset to English
-            if verbose:
-                print("Resetting to English locale from non-English locale")
-        else:
-            # Already English or no locale set, skip to avoid unnecessary changes
-            if verbose:
-                print("Skipping locale setting for unconfigured English (already English)")
-            return
+        if not config_lang:
+            # Check if we currently have a non-English locale set
+            # If so, we should reset to English rather than skip
+            current_quantity = 1 * unitregistry('cm**2')
+            current_result = f'{current_quantity:.3f}'.lower()
+            has_non_english_locale = not ('centimeter' in current_result or current_result.count('**') == 0)
+
+            if has_non_english_locale:
+                # We have a non-English locale, should reset to English
+                if verbose:
+                    print("Resetting to English locale from non-English locale")
+            else:
+                # Already English or no locale set, skip to avoid unnecessary changes
+                if verbose:
+                    print("Skipping locale setting for unconfigured English (already English)")
+                return
 
     # Find the best available locale for this language
     locale_str = _find_best_locale(language, fallback_to_english=True)

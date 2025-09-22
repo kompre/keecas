@@ -38,6 +38,7 @@ class LanguageConfig:
     """Language and localization configuration."""
     _language: Optional[str] = field(default=None, init=False)
     disable_pint_locale: bool = False
+    pint_language_mode: str = "auto"  # "auto" or "manual"
 
     @property
     def language(self) -> Optional[str]:
@@ -233,6 +234,7 @@ class ConfigOptions:
             },
             'language': {
                 'disable_pint_locale': self.language_config.disable_pint_locale,
+                'pint_language_mode': self.language_config.pint_language_mode,
             },
             'units': {
                 'pint_default_format': self.units.pint_default_format,
@@ -272,27 +274,6 @@ class ConfigOptions:
                     if hasattr(self.units, key):
                         setattr(self.units, key, value)
             elif section_key == 'translations' and isinstance(section_data, dict):
-                self.translations.translations.update(section_data)
-            # Backward compatibility for flat structure and old section names
-            elif section_key == 'latex_output' and isinstance(section_data, dict):
-                for key, value in section_data.items():
-                    if hasattr(self.latex, key):
-                        setattr(self.latex, key, value)
-            elif section_key == 'display_behavior' and isinstance(section_data, dict):
-                for key, value in section_data.items():
-                    if hasattr(self.display, key):
-                        setattr(self.display, key, value)
-            elif section_key == 'internationalization' and isinstance(section_data, dict):
-                for key, value in section_data.items():
-                    if key == 'language':
-                        self.language_config.language = value
-                    elif hasattr(self.language_config, key):
-                        setattr(self.language_config, key, value)
-            elif section_key == 'units_formatting' and isinstance(section_data, dict):
-                for key, value in section_data.items():
-                    if hasattr(self.units, key):
-                        setattr(self.units, key, value)
-            elif section_key == 'custom_translations' and isinstance(section_data, dict):
                 self.translations.translations.update(section_data)
             elif hasattr(self, section_key):
                 setattr(self, section_key, section_data)

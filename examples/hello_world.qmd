@@ -316,10 +316,10 @@ show_eqn([_p|_v|__v, _d], col_wrap=[None, "="], float_format='{:.2f}')
 ```
 
 ```{python}
-config.language = "it"
+config.language = "jp"
 show_eqn(
     {
-        'verifica' : verifica(1, 1)
+        'verifica' : check(1, 1)
     }
 )
 ```
@@ -335,4 +335,5 @@ show_eqn(
     }
 )
 ```
+
 

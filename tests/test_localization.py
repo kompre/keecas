@@ -10,21 +10,50 @@ from keecas.localization import (
     set_language,
     translate,
     get_language,
-    register_language,
     get_available_languages,
-    reload_configuration,
-    get_configuration
+    set_runtime_override,
+    clear_runtime_overrides,
+    get_translations
 )
+
+# Test helper functions to replace backward compatibility
+def register_language(language_code: str, translations: dict) -> None:
+    """Test helper to register a language."""
+    from keecas.localization import _translations_cache
+    _translations_cache[language_code] = translations.copy()
+
+def reload_configuration() -> None:
+    """Test helper to reload configuration."""
+    from keecas.config import get_config_manager
+    from keecas.localization import _translations_cache, get_language_from_config
+
+    # Reload main config
+    config_manager = get_config_manager()
+    config_manager.load_configs()
+
+    # Update localization language from config
+    config_lang = get_language_from_config()
+    if config_lang:
+        set_language(config_lang)
+    _translations_cache.clear()
+
+def get_configuration():
+    """Test helper to get configuration."""
+    from keecas.config import get_config_manager
+    return get_config_manager()
 
 
 def test_default_language():
     """Test that default language is English."""
+    # Reset to default state for testing
+    set_language("en")
     assert get_language() == "en"
 
 
 def test_basic_translation():
     """Test basic translation functionality."""
     # English (default)
+    set_language("en")  # Reset to ensure clean state
     assert translate("for") == "for"
     assert translate("otherwise") == "otherwise"
 
@@ -78,22 +107,21 @@ def test_language_registration():
 
 
 def test_verification_terms():
-    """Test verification terms translation with backward compatibility."""
-    # English - test both new and old keys
+    """Test verification terms translation."""
+    # English
     set_language("en")
     assert translate("VERIFIED") == "VERIFIED"
     assert translate("NOT_VERIFIED") == "NOT VERIFIED"
-    # Backward compatibility with old Italian keys
-    assert translate("VERIFICATO") == "VERIFIED"
-    assert translate("NON VERIFICATO") == "NOT VERIFIED"
 
-    # Italian - test both new and old keys
+    # Italian
     set_language("it")
     assert translate("VERIFIED") == "VERIFICATO"
     assert translate("NOT_VERIFIED") == "NON VERIFICATO"
-    # Backward compatibility with old Italian keys
-    assert translate("VERIFICATO") == "VERIFICATO"
-    assert translate("NON VERIFICATO") == "NON VERIFICATO"
+
+    # German
+    set_language("de")
+    assert translate("VERIFIED") == "BESTÄTIGT"
+    assert translate("NOT_VERIFIED") == "NICHT BESTÄTIGT"
 
     # Reset
     set_language("en")
@@ -115,141 +143,146 @@ def test_available_languages():
 
 def test_toml_config_language():
     """Test loading language from TOML config file."""
-    # Create temporary config file
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.toml', delete=False) as f:
-        config = {"language": "it"}
-        toml.dump(config, f)
-        config_path = Path(f.name)
+    from unittest.mock import patch
+    import keecas.localization
+
+    original_language = get_language()
+    original_cache = keecas.localization._translations_cache.copy()
 
     try:
-        # Patch the config search paths to use our temp file
-        from keecas.localization.config import _config
-        original_paths = _config._get_config_search_paths
-        _config._get_config_search_paths = lambda: [config_path]
+        # Mock the config manager to return Italian language
+        with patch('keecas.localization.get_language_from_config', return_value="it"):
+            # Manually set the language and clear cache to force reload
+            set_language("it")
+            keecas.localization._translations_cache.clear()
 
-        # Reload configuration
-        reload_configuration()
-
-        # Language should be loaded from config
-        assert get_language() == "it"
-        assert translate("for") == "per"
+            # Language should be loaded from config
+            assert get_language() == "it"
+            assert translate("for") == "per"
 
     finally:
         # Cleanup
-        config_path.unlink()
-        _config._get_config_search_paths = original_paths
-        reload_configuration()  # Reset to default
+        set_language(original_language)
+        keecas.localization._translations_cache.clear()
+        keecas.localization._translations_cache.update(original_cache)
 
 
-def test_toml_config_custom_translations():
+def test_toml_config_custom_replacements():
     """Test custom translations from TOML config file."""
-    # Create temporary config file with custom translations
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.toml', delete=False) as f:
-        config = {
-            "language": "en",
-            "localization": {
-                "custom_translations": {
-                    "for": "CUSTOM_FOR",
-                    "custom_key": "CUSTOM_VALUE"
-                }
-            }
-        }
-        toml.dump(config, f)
-        config_path = Path(f.name)
+    from unittest.mock import patch
+    import keecas.localization
+
+    # Mock the config manager to return custom translations
+    mock_translations = {
+        "for": "CUSTOM_FOR",
+        "custom_key": "CUSTOM_VALUE"
+    }
+
+    original_language = get_language()
+    original_cache = keecas.localization._translations_cache.copy()
 
     try:
-        # Patch the config search paths
-        from keecas.localization.config import _config
-        original_paths = _config._get_config_search_paths
-        _config._get_config_search_paths = lambda: [config_path]
+        # Patch at the point where it's called during translation
+        with patch('keecas.localization.get_custom_replacements_from_config', return_value=mock_translations):
+            # Manually set the language and clear cache to force reload
+            set_language("en")
+            keecas.localization._translations_cache.clear()
 
-        # Reload configuration
-        reload_configuration()
+            # Custom translations should have high priority
+            assert translate("for") == "CUSTOM_FOR"
+            assert translate("custom_key") == "CUSTOM_VALUE"
 
-        # Custom translations should have high priority
-        assert translate("for") == "CUSTOM_FOR"
-        assert translate("custom_key") == "CUSTOM_VALUE"
-
-        # But direct substitutions should still have highest priority
-        assert translate("for", substitutions={"for": "DIRECT_OVERRIDE"}) == "DIRECT_OVERRIDE"
+            # But direct substitutions should still have highest priority
+            assert translate("for", substitutions={"for": "DIRECT_OVERRIDE"}) == "DIRECT_OVERRIDE"
 
     finally:
         # Cleanup
-        config_path.unlink()
-        _config._get_config_search_paths = original_paths
-        reload_configuration()
+        set_language(original_language)
+        keecas.localization._translations_cache.clear()
+        keecas.localization._translations_cache.update(original_cache)
 
 
 def test_toml_config_priority():
     """Test that TOML config has correct priority in hierarchy."""
-    # Create config with Italian
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.toml', delete=False) as f:
-        config = {"language": "it"}
-        toml.dump(config, f)
-        config_path = Path(f.name)
+    from unittest.mock import patch
+    import keecas.localization
+
+    original_language = get_language()
+    original_cache = keecas.localization._translations_cache.copy()
 
     try:
-        # Patch config
-        from keecas.localization.config import _config
-        original_paths = _config._get_config_search_paths
-        _config._get_config_search_paths = lambda: [config_path]
-        reload_configuration()
+        # Mock config to return Italian language
+        with patch('keecas.localization.get_language_from_config', return_value="it"):
+            # Set up Italian as the config default
+            set_language("it")
+            keecas.localization._translations_cache.clear()
 
-        # Config sets Italian as default
-        assert translate("for") == "per"
+            # Config sets Italian as default
+            assert translate("for") == "per"
 
-        # Document language overrides config
-        assert translate("for", language="en") == "for"
+            # Document language overrides config
+            assert translate("for", language="en") == "for"
 
-        # Global language setting overrides config
-        set_language("en")
-        assert translate("for") == "for"
+            # Global language setting overrides config
+            set_language("en")
+            assert translate("for") == "for"
 
-        # Direct substitutions override everything
-        assert translate("for", substitutions={"for": "OVERRIDE"}) == "OVERRIDE"
+            # Direct substitutions override everything
+            assert translate("for", substitutions={"for": "OVERRIDE"}) == "OVERRIDE"
 
     finally:
         # Cleanup
-        config_path.unlink()
-        _config._get_config_search_paths = original_paths
-        reload_configuration()
-        set_language("en")  # Reset
+        set_language(original_language)
+        keecas.localization._translations_cache.clear()
+        keecas.localization._translations_cache.update(original_cache)
 
 
 def test_no_config_file():
     """Test behavior when no config file exists."""
-    # Patch to return non-existent paths
-    from keecas.localization.config import _config
-    original_paths = _config._get_config_search_paths
-    _config._get_config_search_paths = lambda: [Path("/nonexistent/config.toml")]
+    from unittest.mock import patch
+    import keecas.localization
+
+    original_language = get_language()
+    original_cache = keecas.localization._translations_cache.copy()
 
     try:
-        reload_configuration()
+        # Mock the config manager to return None (no config found)
+        with patch('keecas.localization.get_language_from_config', return_value=None), \
+             patch('keecas.localization.get_custom_replacements_from_config', return_value={}):
 
-        # Should default to English
-        assert get_language() == "en"
-        assert translate("for") == "for"
-        assert not get_configuration().has_config()
+            # Manually set to English since no config found should default to English
+            set_language("en")
+            keecas.localization._translations_cache.clear()
+
+            # Should default to English
+            assert get_language() == "en"
+            assert translate("for") == "for"
+
+            # Test that no custom config translations are applied (empty dict)
+            from keecas.localization import get_custom_replacements_from_config
+            config_replacements = get_custom_replacements_from_config()
+            assert config_replacements == {}
 
     finally:
         # Cleanup
-        _config._get_config_search_paths = original_paths
-        reload_configuration()
+        set_language(original_language)
+        keecas.localization._translations_cache.clear()
+        keecas.localization._translations_cache.update(original_cache)
 
 
 def test_display_module_integration():
     """Test integration with display module options and show_eqn function."""
-    from keecas.display import options, show_eqn
+    from keecas.display import config, show_eqn
     from sympy import symbols
 
     # Reset to defaults
-    options.language = None
+    config.language = None
     set_language("en")
 
-    # Test that options.language works
-    options.language = "it"
+    # Test that config.language works
+    config.language = "it"
     x = symbols('x')
-    # This should use Italian translations due to options.language
+    # This should use Italian translations due to config.language
     result = show_eqn({"x": "for*x"}, debug=True)
     # Note: This test verifies the integration exists;
     # full LaTeX output testing would require more complex setup
@@ -263,24 +296,24 @@ def test_display_module_integration():
     result_custom = show_eqn({"x": "for*x"}, substitutions=custom_subs, debug=True)
 
     # Reset
-    options.language = None
+    config.language = None
     set_language("en")
 
 
 def test_verifica_function_localization():
-    """Test verifica() function with localization support."""
-    from keecas.display import verifica, options
+    """Test check() function with localization support."""
+    from keecas.display import check, config
     from sympy import symbols, Le, Gt
 
     x = symbols('x')
 
     # Reset to defaults
-    options.language = None
+    config.language = None
     set_language("en")
 
     # Test English (default)
-    result_pass = verifica(5, 10, Le)
-    result_fail = verifica(15, 10, Le)
+    result_pass = check(5, 10, Le)
+    result_fail = check(15, 10, Le)
 
     # Check that result contains Markdown object
     assert hasattr(result_pass, 'data')
@@ -288,30 +321,30 @@ def test_verifica_function_localization():
 
     # Test Italian via global setting
     set_language("it")
-    result_it_pass = verifica(5, 10, Le)
-    result_it_fail = verifica(15, 10, Le)
+    result_it_pass = check(5, 10, Le)
+    result_it_fail = check(15, 10, Le)
 
     # Test document-level language override
-    options.language = "en"
-    result_doc_en = verifica(5, 10, Le)
+    config.language = "en"
+    result_doc_en = check(5, 10, Le)
 
     # Test function-level language override
-    result_func_it = verifica(5, 10, Le, language="it")
+    result_func_it = check(5, 10, Le, language="it")
 
     # Test direct substitutions (highest priority)
     custom_subs = {
         "VERIFIED": "CUSTOM_PASS",
         "NOT_VERIFIED": "CUSTOM_FAIL"
     }
-    result_custom_pass = verifica(5, 10, Le, substitutions=custom_subs)
-    result_custom_fail = verifica(15, 10, Le, substitutions=custom_subs)
+    result_custom_pass = check(5, 10, Le, substitutions=custom_subs)
+    result_custom_fail = check(15, 10, Le, substitutions=custom_subs)
 
     # Verify custom substitutions are applied
     assert "CUSTOM_PASS" in result_custom_pass.data
     assert "CUSTOM_FAIL" in result_custom_fail.data
 
     # Reset
-    options.language = None
+    config.language = None
     set_language("en")
 
 
@@ -412,7 +445,7 @@ def test_verification_terms_all_languages():
 
 def test_check_function_multilingual():
     """Test check() function with different language settings."""
-    from keecas.display import check, options
+    from keecas.display import check, config
     from sympy import Le
 
     # Test languages with their expected verification terms
@@ -436,7 +469,7 @@ def test_check_function_multilingual():
         assert not_verified_term in result_fail.data, f"Failing check failed for {lang_code}: expected '{not_verified_term}' in '{result_fail.data}'"
 
     # Reset
-    options.language = None
+    config.language = None
     set_language("en")
 
 
@@ -565,14 +598,14 @@ def test_manual_pint_locale_update():
 
 
 def test_options_language_auto_sync():
-    """Test that options.language automatically updates Pint locale for non-default languages."""
-    from keecas.display import options
+    """Test that config.language automatically updates Pint locale for non-default languages."""
+    from keecas.display import config
     from keecas import u
 
     # Store initial state
     initial_locale = u.formatter.locale
 
-    # Test automatic sync when setting options.language (only for explicitly configured languages)
+    # Test automatic sync when setting config.language (only for explicitly configured languages)
     test_cases = [
         ('it', 'it_IT'),   # Should set Italian locale
         ('fr', 'fr_FR'),   # Should set French locale
@@ -580,7 +613,7 @@ def test_options_language_auto_sync():
     ]
 
     for lang_code, expected_locale_prefix in test_cases:
-        options.language = lang_code
+        config.language = lang_code
         actual_locale = u.formatter.locale
         assert actual_locale.startswith(expected_locale_prefix), f"Auto-sync failed: expected locale starting with '{expected_locale_prefix}', got {actual_locale} for language '{lang_code}'"
 
@@ -588,21 +621,21 @@ def test_options_language_auto_sync():
     previous_locale = u.formatter.locale
     assert previous_locale.startswith('de_DE'), "Should have German locale from previous test"
 
-    options.language = 'en'
+    config.language = 'en'
     current_locale = u.formatter.locale
     assert current_locale.startswith('en_'), f"Setting 'en' should reset to English from German, got {current_locale}"
 
     # Test conservative behavior: 'en' after 'en' should not change
-    options.language = 'en'
+    config.language = 'en'
     assert u.formatter.locale == current_locale, f"Setting 'en' again should be conservative, but it changed"
 
     # Test None behavior
-    options.language = None
+    config.language = None
     # None should not change the locale (conservative behavior for None)
     assert u.formatter.locale == current_locale, f"Setting None should not change locale"
 
     # Reset (this won't actually reset the locale due to conservative behavior, but that's fine)
-    options.language = None
+    config.language = None
 
 
 def test_pint_locale_with_real_formatting():

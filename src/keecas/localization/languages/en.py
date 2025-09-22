@@ -14,17 +14,21 @@ TRANSLATIONS = {
     "Domain on ": "Domain on ",
     "Range": "Range",
 
-    # Boolean verification states (proper English keys)
+    # Boolean verification states
     "VERIFIED": "VERIFIED",
     "NOT_VERIFIED": "NOT VERIFIED",
 
-    # Backward compatibility (deprecated - use VERIFIED/NOT_VERIFIED)
-    "VERIFICATO": "VERIFIED",
-    "NON VERIFICATO": "NOT VERIFIED",
-
-    # Common mathematical terms that might need translation
+    # Common mathematical terms
     "True": "True",
     "False": "False",
+
+    # Additional terms that might be useful
+    "if": "if",
+    "then": "then",
+    "else": "else",
+    "and": "and",
+    "or": "or",
+    "not": "not",
 }
 
 # Export for easier access
