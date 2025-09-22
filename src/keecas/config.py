@@ -67,6 +67,28 @@ class TranslationsConfig:
 
 
 @dataclass
+class CheckTemplateConfig:
+    """Check function template configuration."""
+    success_template: str = r"$\textcolor{{green}}{{\left[{symbol}{rhs}\quad \textbf{{{verified_text}}}\right]}}$"
+    failure_template: str = r"$\textcolor{{red}}{{\left[{symbol}{rhs}\quad \textbf{{{not_verified_text}}}\right]}}$"
+    # Named template sets
+    template_sets: Dict[str, Dict[str, str]] = field(default_factory=lambda: {
+        "default": {
+            "success": r"$\textcolor{{green}}{{\left[{symbol}{rhs}\quad \textbf{{{verified_text}}}\right]}}$",
+            "failure": r"$\textcolor{{red}}{{\left[{symbol}{rhs}\quad \textbf{{{not_verified_text}}}\right]}}$"
+        },
+        "boxed": {
+            "success": r"\colorbox{{green}}{{${symbol}{rhs} \; \checkmark \; \textbf{{{verified_text}}}$}}",
+            "failure": r"\colorbox{{red}}{{${symbol}{rhs} \; \times \; \textbf{{{not_verified_text}}}$}}"
+        },
+        "minimal": {
+            "success": r"${symbol}{rhs} \,\textcolor{{green}}{{\checkmark}}$",
+            "failure": r"${symbol}{rhs} \,\textcolor{{red}}{{\times}}$"
+        }
+    })
+
+
+@dataclass
 class ConfigOptions:
     """
     Unified configuration for Keecas with proper TOML sections.
@@ -76,6 +98,7 @@ class ConfigOptions:
     language_config: LanguageConfig = field(default_factory=LanguageConfig)
     units: UnitsConfig = field(default_factory=UnitsConfig)
     translations: TranslationsConfig = field(default_factory=TranslationsConfig)
+    check_templates: CheckTemplateConfig = field(default_factory=CheckTemplateConfig)
 
     def __post_init__(self):
         """Set up cross-references for language propagation."""
@@ -239,6 +262,11 @@ class ConfigOptions:
             'units': {
                 'pint_default_format': self.units.pint_default_format,
             },
+            'check_templates': {
+                'success_template': self.check_templates.success_template,
+                'failure_template': self.check_templates.failure_template,
+                'template_sets': self.check_templates.template_sets,
+            },
         }
 
         # Add language if set
@@ -275,6 +303,10 @@ class ConfigOptions:
                         setattr(self.units, key, value)
             elif section_key == 'translations' and isinstance(section_data, dict):
                 self.translations.translations.update(section_data)
+            elif section_key == 'check_templates' and isinstance(section_data, dict):
+                for key, value in section_data.items():
+                    if hasattr(self.check_templates, key):
+                        setattr(self.check_templates, key, value)
             elif hasattr(self, section_key):
                 setattr(self, section_key, section_data)
 
@@ -551,12 +583,27 @@ class ConfigManager:
                 toml_line = toml.dumps({key: display_val}).strip()
                 return f'# {toml_line}'
 
+        # Helper function to format template strings as TOML literal strings
+        def format_template(template_str, comment=False):
+            # Use literal string format (single quotes) for TOML
+            formatted = f"'{template_str}'"
+            return f"# {formatted}" if comment else formatted
+
+        # Helper function to format template assignment lines
+        def format_template_line(key, template_str, comment=False):
+            formatted_template = f"'{template_str}'"
+            if comment:
+                return f"# {key} = {formatted_template}"
+            else:
+                return f"{key} = {formatted_template}"
+
         # Extract inherited values for local config
         latex_inherited = global_values.get('latex', {})
         display_inherited = global_values.get('display', {})
         language_inherited = global_values.get('language', {})
         units_inherited = global_values.get('units', {})
         translations_inherited = global_values.get('translations', {})
+        check_templates_inherited = global_values.get('check_templates', {})
 
         template = f'''# Keecas {config_type} Configuration
 # {"=" * (len(config_type) + 30)}
@@ -590,6 +637,24 @@ class ConfigManager:
 [translations]
 ## Custom mathematical terms (e.g., "VERIFIED" = "VERIFICATO")
 {"## Inherited from global config" if not is_global and translations_inherited else "## Add custom translations here"}
+
+[check_templates]
+## Check function templates (use literal strings 'string' for LaTeX)
+{format_template_line("success_template", defaults.check_templates.success_template, comment=(not is_global and not check_templates_inherited.get("success_template")))}
+{format_template_line("failure_template", defaults.check_templates.failure_template, comment=(not is_global and not check_templates_inherited.get("failure_template")))}
+
+## Named template sets
+{f"[check_templates.template_sets.default]" if is_global else "# [check_templates.template_sets.default]"}
+{format_template_line("success", defaults.check_templates.template_sets['default']['success'], comment=not is_global)}
+{format_template_line("failure", defaults.check_templates.template_sets['default']['failure'], comment=not is_global)}
+
+{f"[check_templates.template_sets.boxed]" if is_global else "# [check_templates.template_sets.boxed]"}
+{format_template_line("success", defaults.check_templates.template_sets['boxed']['success'], comment=not is_global)}
+{format_template_line("failure", defaults.check_templates.template_sets['boxed']['failure'], comment=not is_global)}
+
+{f"[check_templates.template_sets.minimal]" if is_global else "# [check_templates.template_sets.minimal]"}
+{format_template_line("success", defaults.check_templates.template_sets['minimal']['success'], comment=not is_global)}
+{format_template_line("failure", defaults.check_templates.template_sets['minimal']['failure'], comment=not is_global)}
 '''
 
         # Add inherited custom translations for local config

@@ -406,3 +406,4 @@ IMPORTANT: Always update project documentation before making significant commits
 - `pyproject.toml`: Dependencies, build configuration, CLI entry points
 - `src/keecas/__init__.py`: Module structure and main exports
 - `examples/`: Working examples and templates for reference
+- backward compatibility is not an issue since it will a major update

@@ -15,7 +15,7 @@ import re
 
 from pint import Quantity
 
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Optional, Literal
 
 from .dataframe import *
 
@@ -34,8 +34,52 @@ config = _config_manager.options
 from itertools import chain, zip_longest
 
 
+# Template choice type for IDE autocomplete
+TemplateChoice = Literal["default", "boxed", "minimal"]
+
+
+# Template processing helpers for check function
+def _get_check_templates(template_name=None, success_override=None, failure_override=None):
+    """Get check templates from config or overrides."""
+    # Use overrides if provided
+    if success_override and failure_override:
+        return {
+            'success': success_override,
+            'failure': failure_override
+        }
+
+    # Use named template set if specified
+    if template_name and template_name in config.check_templates.template_sets:
+        template_set = config.check_templates.template_sets[template_name]
+        return {
+            'success': template_set['success'],
+            'failure': template_set['failure']
+        }
+
+    # Fall back to default config templates
+    return {
+        'success': config.check_templates.success_template,
+        'failure': config.check_templates.failure_template
+    }
+
+
+def _format_check_template(template, **variables):
+    """Format template string with variable substitution."""
+    try:
+        return template.format(**variables)
+    except KeyError as e:
+        # If template is missing required variables, fall back to default
+        warn(f"Template missing variable {e}, using default template")
+        default_template = config.check_templates.success_template if variables.get('test_result') else config.check_templates.failure_template
+        return default_template.format(**variables)
+
+
 # check verification result
-def check(lhs, rhs, test=Le, **kwargs) -> Markdown:
+def check(lhs, rhs, test=Le,
+          template: Optional[TemplateChoice] = None,
+          success_template: Optional[str] = None,
+          failure_template: Optional[str] = None,
+          **kwargs) -> Markdown:
     """Determines if the left-hand side (lhs) is less than or equal to
     the right-hand side (rhs) based on the provided test function.
 
@@ -44,15 +88,17 @@ def check(lhs, rhs, test=Le, **kwargs) -> Markdown:
         rhs (sympy.Expr): The right-hand side expression.
         test (sympy.GreaterThan, sympy.LessThan, sympy.GreaterThanEqual, sympy.LessThanEqual, optional):
             The test function to apply. Defaults to Le (less than or equal to).
+        template (TemplateChoice, optional): Named template set to use ("default", "boxed", "minimal").
+        success_template (str, optional): Custom success template override with variables like {symbol}, {rhs}, {verified_text}, etc.
+        failure_template (str, optional): Custom failure template override with variables like {symbol}, {rhs}, {not_verified_text}, etc.
         **kwargs: Optional keyword arguments including:
             language (str): Document-level language override for verification text.
-                If not provided, uses global language settings.
-            substitutions (dict): Direct substitution dictionary for custom verification text
-                (highest priority).
+            substitutions (dict): Direct substitution dictionary for custom verification text.
 
     Returns:
-        Markdown: A Markdown object containing the formatted string indicating the verification result (green for success, red for failure).
+        Markdown: A Markdown object containing the formatted string indicating the verification result.
     """
+    # Determine comparison symbols based on test type
     match test.__name__:
         case "LessThan":
             symbol_if_true = r"\le"
@@ -73,22 +119,48 @@ def check(lhs, rhs, test=Le, **kwargs) -> Markdown:
             symbol_if_true = r"\neq"
             symbol_if_false = r"="
 
-    # Extract localization parameters from kwargs
+    # Extract template parameters (explicit args take precedence over kwargs for backward compatibility)
+    template_name = template or kwargs.get('template')
+    success_template_param = success_template or kwargs.get('success_template')
+    failure_template_param = failure_template or kwargs.get('failure_template')
     language = kwargs.get('language')
     substitutions = kwargs.get('substitutions')
+
+    # Get templates
+    templates = _get_check_templates(template_name, success_template_param, failure_template_param)
 
     # Get localized verification text
     verified_text = translate("VERIFIED", language=language, substitutions=substitutions)
     not_verified_text = translate("NOT_VERIFIED", language=language, substitutions=substitutions)
 
-    if test(lhs, rhs):
-        return Markdown(
-            rf"\textcolor{{green}}{{\left[{symbol_if_true}{rhs}\quad \textbf{{{verified_text}}}\right]}}"
-        )
+    # Perform the test
+    test_result = test(lhs, rhs)
+
+    # Select template and symbol based on result
+    if test_result:
+        template_str = templates['success']
+        symbol = symbol_if_true
+        color = "green"
+        result_text = verified_text
     else:
-        return Markdown(
-            rf"\textcolor{{red}}{{\left[{symbol_if_false}{rhs}\quad \textbf{{{not_verified_text}}}\right]}}"
-        )
+        template_str = templates['failure']
+        symbol = symbol_if_false
+        color = "red"
+        result_text = not_verified_text
+
+    # Format template with variables
+    formatted_result = _format_check_template(
+        template_str,
+        symbol=symbol,
+        rhs=latex(rhs),
+        verified_text=verified_text,
+        not_verified_text=not_verified_text,
+        color=color,
+        test_result=test_result,
+        result_text=result_text
+    )
+
+    return Markdown(formatted_result)
 
 
 
@@ -343,7 +415,7 @@ def myprint_latex(expr: Basic | str | Markdown, **kwargs) -> str:
         str: The LaTeX string representation of the mathematical expression.
     """
     if isinstance(expr, Markdown):
-        return expr.data
+        return rf'\text{{{expr.data}}}'
 
     return latex(expr, **kwargs)
 

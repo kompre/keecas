@@ -20,6 +20,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -87,7 +122,14 @@ window.Quarto = {
   </ul></li>
   <li><a href="#verification-function" id="toc-verification-function" class="nav-link" data-scroll-target="#verification-function">Verification Function</a></li>
   <li><a href="#subs-get-ordered" id="toc-subs-get-ordered" class="nav-link" data-scroll-target="#subs-get-ordered">Subs get ordered</a></li>
-  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#check-function-templates" id="toc-check-function-templates" class="nav-link" data-scroll-target="#check-function-templates">Check Function Templates</a>
+  <ul class="collapse">
+  <li><a href="#custom-templates" id="toc-custom-templates" class="nav-link" data-scroll-target="#custom-templates">Custom Templates</a></li>
+  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a>
+  <ul class="collapse">
+  <li><a href="#template-configuration" id="toc-template-configuration" class="nav-link" data-scroll-target="#template-configuration">Template Configuration</a></li>
+  </ul></li>
   </ul></li>
   </ul>
 <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="..\..\quarto_example.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
@@ -127,7 +169,7 @@ Note
 </div>
 <div class="callout-body-container callout-body">
 <p>If the rendering engine is <code>KaTeX</code> (i.e.&nbsp;Jupyter notebook), the label command <code>\label{}</code> will result in a <code>ParseError</code>. The latex code will work when rendering by <code>quarto render</code>, but since you may want to see the result before rendering the document, an option to disable the <code>\label{}</code> command is provided.</p>
-<p>When rendering with <code>quarto</code> you can have two options:</p>
+<p>When rendering with <code>quarto</code> you can have two config:</p>
 <ul>
 <li>if <code>qmd</code> files, then everything is fine</li>
 <li>if <code>ipynb</code> files, then pass the <code>--execute</code> flag to <code>quarto render</code> to rerender the notebook</li>
@@ -196,10 +238,10 @@ Note
 </div>
 <div class="callout-body-container callout-body">
 <p>labels emitted by <code>show_eqn</code> are latex labels, therefore they need to be referenced with <code>\eqref{}</code> or <code>\ref{}</code> latex commands.</p>
+<p><strong>?@eq-QUARTO_EXAMPLE-delta</strong> will not work</p>
 </div>
 </div>
 <p>The deflection calculated in <span class="math inline">\(\ref{eq-QUARTO_EXAMPLE-delta}\)</span> shows acceptable values for serviceability.</p>
-<p><strong>?@eq-QUARTO_EXAMPLE-delta</strong></p>
 </section>
 </section>
 <section id="verification-function" class="level2">
@@ -212,8 +254,8 @@ Note
 \tau_{Sd} &amp; \mathtt{\text{15.00 MPa}} &amp;    \\[8pt]
 \sigma_{Rd} &amp; \mathtt{\text{250.00 MPa}} &amp;    \\[8pt]
 \tau_{Rd} &amp; \mathtt{\text{75.00 MPa}} &amp;    \\[8pt]
-\dfrac{\sigma_{Sd}}{\sigma_{Rd}} &amp; =0.080 &amp; \qquad\textcolor{green}{\left[\le1.0\quad \textbf{VERIFIED}\right]}  \\[8pt]
-\dfrac{\tau_{Sd}}{\tau_{Rd}} &amp; =0.200 &amp; \qquad\textcolor{green}{\left[\le1.0\quad \textbf{VERIFIED}\right]}
+\dfrac{\sigma_{Sd}}{\sigma_{Rd}} &amp; =0.080 &amp; \qquad\text{$\textcolor{green}{\left[\le1.0\quad \textbf{VERIFIED}\right]}$}  \\[8pt]
+\dfrac{\tau_{Sd}}{\tau_{Rd}} &amp; =0.200 &amp; \qquad\text{$\textcolor{green}{\left[\le1.0\quad \textbf{VERIFIED}\right]}$}
 \end{align}\]</span></p>
 </div>
 </div>
@@ -221,11 +263,11 @@ Note
 <div id="cell-20" class="cell" data-execution_count="10">
 <div class="cell-output cell-output-display cell-output-markdown" data-execution_count="9">
 <p><span class="math display">\[\begin{align}
-a &amp; =3 &amp; &amp;\textcolor{red}{\left[&gt;1\quad \textbf{NOT VERIFIED}\right]}  \\[8pt]
-b &amp; =4 &amp; &amp;\textcolor{green}{\left[&gt;2\quad \textbf{VERIFIED}\right]}  \\[8pt]
-c &amp; =5 &amp; &amp;\textcolor{red}{\left[\ge3\quad \textbf{NOT VERIFIED}\right]}  \\[8pt]
-d &amp; =6 &amp; &amp;\textcolor{green}{\left[\ge4\quad \textbf{VERIFIED}\right]}  \\[8pt]
-f &amp; =7 &amp; &amp;\textcolor{red}{\left[\neq5\quad \textbf{NOT VERIFIED}\right]}
+a &amp; =3 &amp; &amp;\text{$\textcolor{red}{\left[&gt;1\quad \textbf{NOT VERIFIED}\right]}$}  \\[8pt]
+b &amp; =4 &amp; &amp;\text{$\textcolor{green}{\left[&gt;2\quad \textbf{VERIFIED}\right]}$}  \\[8pt]
+c &amp; =5 &amp; &amp;\text{$\textcolor{red}{\left[\ge3\quad \textbf{NOT VERIFIED}\right]}$}  \\[8pt]
+d &amp; =6 &amp; &amp;\text{$\textcolor{green}{\left[\ge4\quad \textbf{VERIFIED}\right]}$}  \\[8pt]
+f &amp; =7 &amp; &amp;\text{$\textcolor{red}{\left[\neq5\quad \textbf{NOT VERIFIED}\right]}$}
 \end{align}\]</span></p>
 </div>
 </div>
@@ -233,8 +275,21 @@ f &amp; =7 &amp; &amp;\textcolor{red}{\left[\neq5\quad \textbf{NOT VERIFIED}\rig
 <section id="subs-get-ordered" class="level2">
 <h2 class="anchored" data-anchor-id="subs-get-ordered">Subs get ordered</h2>
 <p>Substitution will get ordered and sorted automatically, so you can use a symbol before mapping to a value.</p>
-<div id="cell-22" class="cell" data-execution_count="11">
+</section>
+<section id="check-function-templates" class="level2">
+<h2 class="anchored" data-anchor-id="check-function-templates">Check Function Templates</h2>
+<p>The <code>check</code> function supports customizable templates for different visual styles:</p>
+<div id="cell-23" class="cell" data-execution_count="11">
 <div class="cell-output cell-output-display cell-output-markdown" data-execution_count="10">
+<p><span class="math display">\[\begin{align}
+\mathtt{\text{Default}} &amp; :\text{$\textcolor{green}{\left[\le1.0\quad \textbf{VERIFIED}\right]}$}  \\[8pt]
+\mathtt{\text{Boxed}} &amp; :\text{\colorbox{green}{$\le1.0 \; \checkmark \; \textbf{VERIFIED}$}}  \\[8pt]
+\mathtt{\text{Minimal}} &amp; :\text{$\le1.0 {\,}\textcolor{green}{\checkmark}$}
+\end{align}\]</span></p>
+</div>
+</div>
+<div id="cell-24" class="cell" data-execution_count="12">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="11">
 <p><span class="math display">\[\begin{align}
 a &amp; =3 &amp;    \\[8pt]
 b &amp; =4 &amp;    \\[8pt]
@@ -243,6 +298,18 @@ c &amp; =a{\,}b &amp; =12.000
 \end{align}\]</span></p>
 </div>
 </div>
+<section id="custom-templates" class="level3">
+<h3 class="anchored" data-anchor-id="custom-templates">Custom Templates</h3>
+<p>You can also use completely custom templates:</p>
+<div id="cell-26" class="cell" data-execution_count="13">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="12">
+<p><span class="math display">\[\begin{align}
+\mathtt{\text{Pass}} &amp; :\text{✅ $\le1.0$ \textbf{PASS}}  \\[8pt]
+\mathtt{\text{Fail}} &amp; :\text{❌ $&gt;1.0$ \textbf{FAIL}}
+\end{align}\]</span></p>
+</div>
+</div>
+</section>
 </section>
 <section id="summary" class="level2">
 <h2 class="anchored" data-anchor-id="summary">Summary</h2>
@@ -257,6 +324,14 @@ c &amp; =a{\,}b &amp; =12.000
 <li>Complex symbolic manipulations</li>
 </ul>
 <p>All calculations in <a href="#sec-beam-calc" class="quarto-xref">Section&nbsp;1.3.2</a> show that keecas provides a powerful interface for engineering calculations in Quarto documents.</p>
+<section id="template-configuration" class="level3">
+<h3 class="anchored" data-anchor-id="template-configuration">Template Configuration</h3>
+<p>Templates can also be configured globally via TOML config files:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[check_templates.template_sets.minimal]</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">success</span> <span class="op">=</span> <span class="st">'</span><span class="vs">${symbol}{rhs} \,\textcolor{{green}}{{\checkmark}}$</span><span class="st">'</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="dt">failure</span> <span class="op">=</span> <span class="st">'</span><span class="vs">${symbol}{rhs} \,\textcolor{{red}}{{\times}}$</span><span class="st">'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This allows you to set project-wide or user-wide styling for all check functions.</p>
+</section>
 </section>
 </section>
 

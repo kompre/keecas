@@ -30,3 +30,13 @@
 [translations]
 ## Custom mathematical terms (e.g., "VERIFIED" = "VERIFICATO")
 ## Add custom translations here
+
+[check_templates]
+## Check function templates
+# success_template = "\\textcolor{{green}}{{\\left[{symbol}{rhs}\\quad \\textbf{{{verified_text}}}\\right]}}"
+# failure_template = "\\textcolor{{red}}{{\\left[{symbol}{rhs}\\quad \\textbf{{{not_verified_text}}}\\right]}}"
+
+## Named template sets (boxed, minimal, etc.)
+## Format: [check_templates.template_sets.SETNAME]
+## success = "template string"
+## failure = "template string"
