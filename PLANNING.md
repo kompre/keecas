@@ -2,7 +2,7 @@
 
 **Date**: 2025-09-22
 **Session**: Next phase development planning
-**Previous Work**: Archived in `PLANNING-ARCHIVE-2025-09-22.md`
+**Previous Work**: Archived in `.claude/archive/PLANNING-ARCHIVE-2025-09-22.md`
 
 ## Workflow
 1. **Planning**: Add brief notes below
@@ -69,7 +69,7 @@ User comments and and answers will be added here inside comment blocks <!-- comm
 
 ## Archive Reference
 
-Previous completed work has been moved to `PLANNING-ARCHIVE-2025-09-22.md` including:
+Previous completed work has been moved to `.claude/archive/PLANNING-ARCHIVE-2025-09-22.md` including:
 - Complete localization module refactor (3 phases)
 - Configuration system cleanup and unification
 - Project metadata and dynamic URL implementation
