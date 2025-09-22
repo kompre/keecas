@@ -22,52 +22,12 @@ from .dataframe import *
 # default values for labels
 from dataclasses import dataclass
 
-from .config import *
+from .config import get_options, get_config_manager
 from .localization import translate
 
-class options:
-    """Configuration options for keecas display functions."""
-
-    def __init__(self):
-        self.EQ_PREFIX: str = "eq-"
-        self.EQ_SUFFIX: str = ""
-        self.VERTICAL_SKIP: str = "8pt"
-        self.PRINT_LABEL: bool = False
-        self.DEBUG = False
-        self.katex = False
-        self.default_mul_symbol = r"\,"
-        self.default_environment = "align"
-        self.default_label_command = r"\label"
-        self._language: str = None  # Private storage for language
-        self.col_wrap = [
-            None,
-            {
-                Basic|Quantity|int|float: ("=", ""),
-                Markdown|str: (r"\qquad", ""),
-                object: ("", ""),
-            },
-        ]
-
-    @property
-    def language(self) -> str:
-        """Document-level language override (None = use global/config)."""
-        return self._language
-
-    @language.setter
-    def language(self, value: str):
-        """Set language and automatically update Pint locale."""
-        self._language = value
-        # Update Pint locale when language changes
-        try:
-            from .pint_sympy import update_pint_locale
-            update_pint_locale(value)
-        except ImportError:
-            # Handle case where pint_sympy module is not available
-            pass
-
-
-# Create global options instance
-options = options()
+# Use the unified configuration system
+options = get_options()
+_config_manager = get_config_manager()
 
 
 
@@ -75,7 +35,7 @@ from itertools import chain, zip_longest
 
 
 # check verification result
-def check(lhs, rhs, test=Le, language: str = None, substitutions: dict = None) -> Markdown:
+def check(lhs, rhs, test=Le, **kwargs) -> Markdown:
     """Determines if the left-hand side (lhs) is less than or equal to
     the right-hand side (rhs) based on the provided test function.
 
@@ -84,10 +44,11 @@ def check(lhs, rhs, test=Le, language: str = None, substitutions: dict = None) -
         rhs (sympy.Expr): The right-hand side expression.
         test (sympy.GreaterThan, sympy.LessThan, sympy.GreaterThanEqual, sympy.LessThanEqual, optional):
             The test function to apply. Defaults to Le (less than or equal to).
-        language (str, optional): Document-level language override for verification text.
-            If None, uses options.language or global settings.
-        substitutions (dict, optional): Direct substitution dictionary for custom verification text
-            (highest priority).
+        **kwargs: Optional keyword arguments including:
+            language (str): Document-level language override for verification text.
+                If not provided, uses global language settings.
+            substitutions (dict): Direct substitution dictionary for custom verification text
+                (highest priority).
 
     Returns:
         Markdown: A Markdown object containing the formatted string indicating the verification result (green for success, red for failure).
@@ -112,12 +73,13 @@ def check(lhs, rhs, test=Le, language: str = None, substitutions: dict = None) -
             symbol_if_true = r"\neq"
             symbol_if_false = r"="
 
-    # Use document language from options if not specified
-    doc_language = language or options.language
+    # Extract localization parameters from kwargs
+    language = kwargs.get('language')
+    substitutions = kwargs.get('substitutions')
 
     # Get localized verification text
-    verified_text = translate("VERIFIED", language=doc_language, substitutions=substitutions)
-    not_verified_text = translate("NOT_VERIFIED", language=doc_language, substitutions=substitutions)
+    verified_text = translate("VERIFIED", language=language, substitutions=substitutions)
+    not_verified_text = translate("NOT_VERIFIED", language=language, substitutions=substitutions)
 
     if test(lhs, rhs):
         return Markdown(
@@ -142,8 +104,6 @@ def show_eqn(
     col_wrap: list[None | tuple] = None,
     float_format: str = None,
     debug: bool = None,
-    language: str = None,
-    substitutions: dict = None,
     **kwargs,
 ) -> Markdown:
     """
@@ -158,9 +118,10 @@ def show_eqn(
         col_wrap (list[None | tuple], optional): The column wrapping specification for the Dataframe. Defaults to [None, ('=', '')].
         float_format (str, optional): The float format specification for the Dataframe. Defaults to None.
         debug (bool, optional): Whether to enable debug mode. Defaults to options.DEBUG.
-        language (str, optional): Document-level language override for translations. If None, uses options.language or global settings.
-        substitutions (dict, optional): Direct substitution dictionary for custom translations (highest priority).
-        **kwargs: Additional keyword arguments to be passed to the `myprint_latex` function.
+        **kwargs: Additional keyword arguments including:
+            language (str): Document-level language override for translations. If not provided, uses global language settings.
+            substitutions (dict): Direct substitution dictionary for custom translations (highest priority).
+            Other kwargs are passed to the `myprint_latex` function.
 
     Returns:
         Markdown: The LaTeX equation or equation array displayed as a Markdown object.
@@ -182,12 +143,15 @@ def show_eqn(
         - The `**kwargs` argument can be any additional keyword arguments to be passed to the `myprint_latex` function.
     """
 
-    # set defualt values
+    # set default values
     if not debug:
         debug = options.DEBUG
 
     if not "mul_symbol" in kwargs:
         kwargs["mul_symbol"] = options.default_mul_symbol
+
+    # Filter out localization parameters that shouldn't go to myprint_latex
+    latex_kwargs = {k: v for k, v in kwargs.items() if k not in ['language', 'substitutions']}
 
     if not environment:
         environment = options.default_environment
@@ -335,7 +299,7 @@ def show_eqn(
         body_lines[key] = " ".join(
             [
                 format_decimal_numbers(
-                    f'{ f"{_col_wrap(cw,v)[0]}{myprint_latex(v, **kwargs)}{_col_wrap(cw, v)[-1]}" if v is not None else " " } {s}',
+                    f'{ f"{_col_wrap(cw,v)[0]}{myprint_latex(v, **latex_kwargs)}{_col_wrap(cw, v)[-1]}" if v is not None else " " } {s}',
                     ff,
                 )
                 for v, s, cw, ff in zip_longest(
@@ -355,7 +319,7 @@ def show_eqn(
     body = join_token.join(body_lines.values())
 
     # clean the body
-    body = replace_all(body, language=language, substitutions=substitutions)
+    body = replace_all(body, language=kwargs.get('language'), substitutions=kwargs.get('substitutions'))
 
     template = template.replace("___body___", body)
 
@@ -456,6 +420,11 @@ def _get_localized_replacements(language: str = None, substitutions: dict = None
     return {
         r"\bfor\b": translate("for", language=language, substitutions=substitutions),
         r"\botherwise\b": translate("otherwise", language=language, substitutions=substitutions),
+
+        # Domain/Range labels from SymPy LaTeX output (match \text{...} patterns)
+        r"\\text\{Domain: \}": f"\\text{{{translate('Domain: ', language=language, substitutions=substitutions)}}}",
+        r"\\text\{Domain on \}": f"\\text{{{translate('Domain on ', language=language, substitutions=substitutions)}}}",
+        r"\\text\{Range\}": f"\\text{{{translate('Range', language=language, substitutions=substitutions)}}}",
     }
 
 def get_replacement_dict(language: str = None, substitutions: dict = None):
@@ -463,7 +432,7 @@ def get_replacement_dict(language: str = None, substitutions: dict = None):
     Get complete replacement dictionary combining base and localized replacements.
 
     Args:
-        language: Document-level language override
+        language: Document-level language override (if None, uses global language settings)
         substitutions: Direct substitution dictionary
 
     Returns:
@@ -485,16 +454,14 @@ def replace_all(body, reps=None, language=None, substitutions=None):
     Args:
         body: Text to process
         reps: Custom replacement dictionary (overrides default)
-        language: Document-level language override (uses options.language if None)
+        language: Document-level language override (if None, uses global language settings)
         substitutions: Direct substitution dictionary
 
     Returns:
         Processed text with replacements applied
     """
     if reps is None:
-        # Use document language from options if not specified
-        doc_language = language or options.language
-        reps = get_replacement_dict(language=doc_language, substitutions=substitutions)
+        reps = get_replacement_dict(language=language, substitutions=substitutions)
 
     for pattern, repl in reps.items():
         body = regex.sub(pattern, repl, body)

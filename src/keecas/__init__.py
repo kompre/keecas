@@ -11,13 +11,18 @@ from .display import (
     eq_to_dict,
 )
 
+# configuration
+from .config import config
+
 # pipe_command
 from . import pipe_command as pc
 
 # initialize pint
 from .pint_sympy import unitregistry as u, update_pint_locale
 
-u.formatter.default_format = ".2f~P"
+# Use configuration for pint format
+from .config import get_options
+u.formatter.default_format = get_options().pint_default_format
 
 # initialize sympy
 import sympy as sp
@@ -33,6 +38,7 @@ __all__ = [
     "Dataframe",
     "show_eqn",
     "options",
+    "config",  # New configuration interface
     "check",
     "verifica",  # backward compatibility alias
     "dict_to_eq",

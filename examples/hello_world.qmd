@@ -1,0 +1,338 @@
+---
+title: Introduction
+jupyter: python3
+---
+
+
+`keecas` is a module for performing symbolic and units-aware calculations. It has been developed to be used mainly in a jupyter notebook's interactive environments, which then could be rendered as pdf by [quarto](https://quarto.org/).
+
+`keecas` leverage some well known python modules, wrapping some of their functions with sensisble defaults, aiming to reduce boiler plate code and be quick to use. Some of the modules used are:
+
+`sympy`
+: for all symbolic expression and computation
+
+`pint`
+: convenient unit registry; `pint` quantities can be converted in `sympy.physics.units` directly
+
+`pipe`
+: some of the most used `sympy` functions are wrapped in `pipe` object, so that they can be used in a sequential fashion
+
+
+
+## Quick Start
+
+Let's start with a bare minimum example: let's calculate the maximum bending moment ($M_{Sd}$) for a beam of span $l$, simply supported at the end (pinned), uniformly loaded ($q$).
+
+```{python}
+# import everything from keecas
+from keecas import symbols, u, pc, show_eqn
+from keecas import *
+
+
+# some notable imports:
+# - `symbols`: function to define symbols from sympy module
+# - `u`: unit registry from pint module
+# - `pc`: short for `keecas.pipe_command` where are the most used sympy function are defined as pipe object
+```
+
+```{python}
+config.col_wrap[1][object] = ('=', '')
+```
+
+```{python}
+# define the symbols with symbols() from `sympy`
+q, l, M_Sd = symbols(r'q, l, M_{Sd}')
+
+# define the parameters with units support provided by `pint` (`u` is the unit registry)
+_p = {
+    q: S(5*u('kN/m')),
+    l: S(400*u.cm),
+}
+
+# define the symbolic expression
+_e = {
+    M_Sd: "q*l^2/8" # the expression is written as a simple string
+    | pc.parse_expr # function that will parse the expression (from `sympy`)
+}
+
+# evaluate the expression in `_e`
+_v = {
+    k: v
+    | pc.subs(_e|_p) # subistitute the symbol contained in the joined dict _e|_p (from `sympy`)
+    | pc.convert_to([u.kN, u.m]) # convert the expression (from `sympy`) to the preferred units (list of `pint` units)
+    | pc.N # elavuate the expression as decimal (from `sympy`)
+    for k,v in _e.items() # get all the expression contained in _e
+}
+
+# add some description
+_d = {
+    M_Sd: "max bending moment", 
+    q: "uniform load",
+    l: "span of the beam",
+}
+
+# create the latex expression (amsmath) to be displayed as Markdown object
+show_eqn(
+    [_p|_e, _v, _d], # list of dict to be shown
+    float_format='{:.2f}', # precision of floats
+    # col_wrap=[ # columns wrappers
+    #     None, # wrapping for the 1st column (key of first dict in the main argument list -> `_p|_e` )
+    #     '=', # add '=' sign before the 2nd column (value of first dict in the main argument list -> `_p|_e`)
+    #     '=', # add '=' sign before the 3rd column (value of second dict in the main argument list -> `_v`)
+    #     (r'\quad(', ')') # wrap the 4th column with '\quad(' on the left and ')' on the right (value of the third dict in the main argument list -> `_d`)
+    # ]  
+)
+```
+
+### Explanation
+
+What is a math equation if not a mapping between the left hand side (LHS) and the right hand side (RHS) of the equal sign? Therefore the simplest and easy to write python container we can write is a `dict` were the LHS is the key, and RHS is the value.
+
+In the above example we have provided 3 different `dict`:
+
+`_p`
+: dict containg all the parameters
+
+`_e`
+: dict containg all the symbolic, unevaluated, expression
+
+`_v`
+: dict containg the evaluated expression, written as a dict comprehension of the `k`, `v` pairs of `_e`
+
+All the dict are then combined in a list to be used of `show_eqn`, the funtcion that will create a latex block (amsmath) to be displayed as a Markdown object by the jupyter notebook (KaTeX in case of vscode)
+
+The main argument of the `show_eqn` function can be a `dict` or a `list[dict]`. The key, value pairs of the first dict will be displayed as 1st and 2nd columns of the latex amsmath block, while only the value of the subsequent dict will be shown in the following columns if there is a key match (note that `_v` does not contain neither `q` or `l` keys, so nothing is shown in the output for that 3rd column.)
+
+
+We can have a look at the latex code by passing `debug=True` to the function or setting globally `options.DEBUG=True`
+
+```{python}
+# options.DEBUG = True 
+
+show_eqn(
+    [_p|_e, _v, _d], # list of dict to be shown
+    float_format='{:.2f}', # precision of floats
+    # col_wrap=[ # columns wrappers
+    #     None, # wrapping for the 1st column (key of first dict in the main argument list -> `_p|_e` )
+    #     '=', # add '=' sign before the 2nd column (value of first dict in the main argument list -> `_p|_e`)
+    #     '=', # add '=' sign before the 3rd column (value of second dict in the main argument list -> `_v`)
+    #     (r'\quad(', ')') # wrap the 4th column with '\quad(' on the left and ')' on the right (value of the third dict in the main argument list -> `_d`)
+    # ],
+    debug=True,
+)
+```
+
+## A more structured example: Simple Beam
+
+In the previous example all the `dict` were prepended by `_`: that because those dict are not really meant to be preserved further than the cell they are defined. They are meant to only collect the expressions/parameters of the cell to be displayed, and then discarded. To preserve all the expression/parameters of the notebook wwe will initialize a named dict.
+
+```{python}
+# this dict will act as namespace for all the expressions/parameters defined in this file (could be used in other notebook)
+simple_beam = {
+    'parameters' : (params := {}), # params is the dict that will collect all the params of this notebook
+    'expressions': (eqn := {}), # eqn is the dict that will collect all the eqn of this notebook
+}
+```
+
+We will calculate the notable values for a simple supported beam with a uniform load in ULS condition for bending and shear, and SLS condition for deflection.
+
+The beam is characterized by this parameters:
+
+```{python}
+l, b_i = symbols(r"l, b_{i}")
+
+_p = {
+    l: 6*u.m,
+    b_i: 3*u.m,
+}
+params.update(_p) # save the parameters in the notebook dict
+
+_d = {
+    l: "span of the beam",
+    b_i: "width of influence",
+}
+
+show_eqn([_p, _d], col_wrap=[None, "=", "&"], environment="cases")
+```
+
+### Actions
+
+Let's calculate the load applied to a simple beam.
+
+#### Loads
+
+```{python}
+G_1, G_2, Q_k = symbols(r"G_{1}, G_{2}, Q_{k}")
+
+
+# define the loads in whatever units you want
+_p = {
+    G_1: 2.5 * u.kPa,
+    G_2: 300 * u("daN/m^2"),
+    Q_k: 4 * u.kN / u.m**2,
+}
+params.update(_p)  # save the parameters in the notebook dict
+
+_d = {
+    G_1: "permanent loads",
+    G_2: "permanent non structural",
+    Q_k: "live loads",
+}
+
+# NOTE: values will be rendered as `pint` quantities because they are not being converted yet into `sympy` objects
+show_eqn([_p, _d], col_wrap=[None, "=", "&"])
+```
+
+#### Safety coefficients for loads
+
+```{python}
+gamma_G1, gamma_G2, gamma_Qk = symbols(r'\gamma_{G_{1}}, \gamma_{G_{2}} , \gamma_{Q_{k}}')
+
+_p = {
+    gamma_G1: 1.3,
+    gamma_G2: 1.5,
+    gamma_Qk: 1.5,
+}
+params.update(_p)
+
+# since _p is being redefined in this cell, it will only display the content of this cell
+show_eqn(_p)
+```
+
+#### Applied forces
+
+The applied load are multiplied for the width of influence $b_i$ of the beam:
+
+```{python}
+F_d, F_k = symbols(r"F_{d}, F_{k}")
+
+_e = {
+    F_k: "(G_1 + G_2 + Q_k)*b_i" | pc.parse_expr,
+    F_d: "(gamma_G1*G_1+gamma_G2*G_2+gamma_Qk*Q_k)*b_i" | pc.parse_expr,
+}
+eqn.update(_e)  # save the expressions in the notebook dict
+
+_v = {
+    k: (
+        v
+        | pc.subs(eqn | params)
+        | pc.convert_to([u.kN, u.m])
+        | pc.N
+        | pc.as_two_terms(as_mul=True) # this will display nicely the values and units in the show_eqn function
+    )
+    for k, v in _e.items()
+}
+
+_d ={
+    F_k: "(SLS)", 
+    F_d: "(ULS)",
+}
+
+show_eqn([_e, _v, _d], col_wrap=[None, "=", "=", "&"], float_format='{:.2f}')
+```
+
+## ULS: Bending Moment and Shear
+
+We calculate the bending moment and shear in ULS condition:
+
+
+```{python}
+M_Sd, V_Sd = symbols(r"M_{Sd}, V_{Sd}")
+
+_e = {
+    M_Sd: "F_d * l^2 / 8" | pc.parse_expr,
+    V_Sd: "F_d * l / 2" | pc.parse_expr,
+}
+eqn.update(_e)  # save the expressions in the notebook dict
+
+_v = {
+    k: (
+        v
+        | pc.subs(eqn | params)
+        | pc.convert_to([u.kN, u.m])
+        | pc.N
+        | pc.as_two_terms(as_mul=True) # this will display nicely the values and units in the show_eqn function
+    )
+    for k, v in _e.items()
+}
+
+# we can be finer with the float format options
+_f = {
+    M_Sd: '{:.3f}',
+    V_Sd: '{:.0f}',
+}
+
+show_eqn([_e, _v, _d], col_wrap=[None, "=", "=", "&"], float_format=_f)
+```
+
+## SLS: deflection
+
+We calculate the deflection of the beam with the following equation:
+
+```{python}
+f, E, J = symbols(r"f , E, J")
+
+# since we want to collect display the expression as two separate terms (5/384) and (F_k * l^4 / (E *J)), we will wrap in `S()` (singleton from sympy); uncomment the line to see the different display results
+_e = {
+    # f : " (5/384) * (F_k * l^4 / (E *J))" | pc.parse_expr,
+    f : " S(5/384) * S(F_k * l^4 / (E *J))" | pc.parse_expr,
+    # f : " N(5/384) * S(F_k * l^4 / (E *J))" | pc.parse_expr, # th N() will evaluate the fraction to a decimal
+    
+}
+eqn.update(_e) 
+
+show_eqn(_e)
+```
+
+Assuming a `IPE270` beam, the deflection results
+
+```{python}
+_p = {
+    E: 210000 * u("MPa"),
+    J: 8356*u.cm**4
+}
+params.update(_p)
+
+_v = {
+    k: (
+        v
+        | pc.subs(eqn | params)
+        | pc.convert_to([u.kN, u.mm])
+        | pc.N
+    )
+    for k, v in _e.items()
+}
+
+# I evaluate a simple expression that has not its own symbol defined
+__v = {
+    k: k | pc.subs(eqn | params) | pc.convert_to([u.kN, u.mm]) | pc.N for k in [l/f]
+}
+
+_d = {
+    l/f: "ratio span of the beam / deflection",
+}
+
+show_eqn([_p|_v|__v, _d], col_wrap=[None, "="], float_format='{:.2f}')
+```
+
+```{python}
+config.language = "it"
+show_eqn(
+    {
+        'verifica' : verifica(1, 1)
+    }
+)
+```
+
+```{python}
+show_eqn(
+    {
+        'piecewise': '''Piecewise(
+            (1, x<0), 
+            (2, True),
+        )
+        ''' | pc.parse_expr
+    }
+)
+```
+

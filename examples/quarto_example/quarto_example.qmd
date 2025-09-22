@@ -5,6 +5,7 @@ format:
   html: default
   pdf: default
 echo: false
+keep-tex: false
 jupyter: python3
 ---
 
@@ -22,7 +23,7 @@ from keecas import symbols, u, pc, show_eqn, options, check
 ```
 
 ```{python}
-options.language = "it"
+options.language = "en"
 ```
 
 ::: {.callout-note}

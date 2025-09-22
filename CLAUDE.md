@@ -11,6 +11,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing
 ```bash
 pytest
+# or with uv:
+uv run pytest
+```
+
+### CLI Interface
+The project includes a comprehensive CLI for configuration management:
+```bash
+# Show version
+keecas --version
+
+# Configuration management
+keecas config init [--global|--local] [--force]     # Initialize config
+keecas config edit [--global|--local]               # Edit with terminal editor
+keecas config open [--global|--local]               # Open with system editor
+keecas config show [--global|--local]               # Show configuration
+keecas config path [--global|--local]               # Show config file paths
+keecas config reset [--global|--local] [--force]    # Reset to defaults
 ```
 
 ### Building
@@ -58,9 +75,25 @@ uv sync
 4. **Pint-SymPy Bridge** (`src/keecas/pint_sympy.py`)
    - Integrates Pint unit registry with SymPy symbolic expressions
    - Provides `unitregistry as u` for unit definitions
+   - **Locale Support**: Automatic locale management for international unit formatting
+   - **Language Integration**: 5 fully supported languages (de, es, fr, it, pt) with English fallback for others
+   - **Conservative Behavior**: Intelligent locale switching that preserves system defaults
 
-5. **Configuration** (`src/keecas/config.py`)
-   - Default values for display options
+5. **Configuration System** (`src/keecas/config.py`)
+   - **Unified TOML Configuration**: `.keecas/config.toml` files for global and local settings
+   - **Hierarchical Priority**: Local > Global > Defaults
+   - **Dynamic Propagation**: Configuration changes automatically update Pint locale and localization
+   - **CLI Integration**: Full command-line interface for configuration management
+
+6. **CLI Interface** (`src/keecas/cli.py`)
+   - **Cross-platform Configuration Management**: Edit configs with terminal or system editors
+   - **Version Display**: Built-in version information and help
+   - **Consistent Interface**: All commands support explicit `--global` and `--local` flags
+
+7. **Localization System** (`src/keecas/localization/`)
+   - **Multi-language Support**: 10 languages with domain-specific translations
+   - **SymPy Integration**: Localized mathematical terms (Domain, Range, verification terms)
+   - **Automatic Sync**: Language changes propagate to Pint unit formatting
 
 ### Key Design Patterns
 
@@ -194,9 +227,53 @@ options.katex = True              # Disable \label{} for KaTeX compatibility
 options.PRINT_LABEL = True        # Print labels in dev mode
 options.EQ_PREFIX = r"eq-PREFIX-" # Label prefixing
 
+# Language and localization (automatic Pint sync)
+options.language = 'it'           # Sets both keecas and Pint locales
+# Supported: 'de', 'es', 'fr', 'it', 'pt' (full)
+# Fallback: 'da', 'nl', 'no', 'sv', 'en' (English units)
+
 # Initialize global dicts
 params = {}
 eqn = {}
+```
+
+### Configuration Files
+
+Keecas uses a hierarchical TOML configuration system:
+
+**File Locations:**
+- **Global**: `~/.keecas/config.toml` (user-wide settings)
+- **Local**: `<project>/.keecas/config.toml` (project-specific settings)
+
+**Priority Order:** Local > Global > Defaults
+
+**CLI Management:**
+```bash
+# Initialize configuration files
+keecas config init --global     # Create global config
+keecas config init --local      # Create local config
+
+# Edit configurations
+keecas config edit --global     # Terminal editor ($EDITOR)
+keecas config open --local      # System default editor (GUI)
+
+# View configurations
+keecas config show             # Show merged config
+keecas config show --global    # Show only global
+keecas config path             # Show file locations
+```
+
+**Example Configuration:**
+```toml
+# .keecas/config.toml
+language = "it"                    # Italian units and localization
+katex = true                       # KaTeX compatibility mode
+EQ_PREFIX = "eq-"                  # Equation label prefix
+pint_default_format = ".3f~P"      # Pint number formatting
+disable_pint_locale = false       # Allow automatic locale setting
+
+[custom_translations]
+"VERIFIED" = "VERIFICATO"          # Custom term translations
 ```
 
 ### Symbol Naming Conventions
@@ -245,7 +322,10 @@ For complete details, see `docs/CONVENTIONS.md`.
 ### Testing Strategy
 - Tests are located in `tests/` directory
 - Test files follow pattern `test_*.py`
-- Key test areas: dataframe operations, display formatting, pipe commands
+- Key test areas: dataframe operations, display formatting, pipe commands, localization, configuration
+- **Comprehensive Locale Testing**: Tests cover Pint locale behavior, fallback scenarios, and persistence issues
+- **CLI Testing**: Configuration management and cross-platform editor detection
+- **Integration Testing**: Multi-language support and automatic synchronization
 
 ### Jupyter Notebook Integration
 - Primary use case is in Jupyter notebooks for engineering calculations
@@ -275,4 +355,27 @@ For complete details, see `docs/CONVENTIONS.md`.
 - Built specifically for Quarto document generation
 - LaTeX output includes engineering-specific formatting (equation numbering, cross-references)
 - Float formatting and unit conversion are key features for engineering documentation
-- when defining symbols prefer latex notation: instead of symbols('gamma'), use symbols(r'\gamma'). This way you can have complex latex symbol; if a symbol has a comma, escape it with `\`: tau_1_Rd = symbols(r'\tau_{1\,Rd}')
+- **CLI Entry Point**: `keecas` command available after installation via `pyproject.toml` script entry
+- **TOML Dependency**: Added `toml>=0.10.2` for configuration file support
+- **Cross-platform Compatibility**: CLI works on Linux (xdg-open), macOS (open), Windows (start)
+- **Locale Management**: Conservative behavior ensures system locales aren't disrupted
+- When defining symbols prefer LaTeX notation: instead of symbols('gamma'), use symbols(r'\gamma'). This way you can have complex LaTeX symbols; if a symbol has a comma, escape it with `\`: tau_1_Rd = symbols(r'\tau_{1\,Rd}')
+
+## Language and Localization Support
+
+### Fully Supported Languages (5)
+- **German (de)**: `Zentimeter` units, complete mathematical term translations
+- **Spanish (es)**: `centímetro` units, complete mathematical term translations
+- **French (fr)**: `centimètre` units, complete mathematical term translations
+- **Italian (it)**: `centimetro` units, complete mathematical term translations
+- **Portuguese (pt)**: `centímetro` units, complete mathematical term translations
+
+### Fallback Languages (5)
+- **Danish (da)**, **Dutch (nl)**, **Norwegian (no)**, **Swedish (sv)**: English units with keecas term translations
+- **English (en)**: Default behavior, conservative locale handling
+
+### Automatic Behavior
+- **Configuration Changes**: `options.language = 'it'` automatically updates both keecas and Pint locales
+- **Fallback Strategy**: Unsupported languages gracefully fall back to English units
+- **Persistence Fix**: No more "sticky" locales from previous language settings
+- **Conservative English**: English locale only changes when explicitly switching from other languages

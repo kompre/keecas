@@ -794,11 +794,14 @@ source = { editable = "." }
 dependencies = [
     { name = "flatten-dict" },
     { name = "ipython" },
+    { name = "jupyter" },
+    { name = "notebook" },
     { name = "pint" },
     { name = "pipe" },
     { name = "regex" },
     { name = "ruamel-yaml" },
     { name = "sympy" },
+    { name = "toml" },
 ]
 
 [package.dev-dependencies]
@@ -806,18 +809,20 @@ dev = [
     { name = "ipykernel" },
     { name = "pytest" },
     { name = "quarto-cli" },
-    { name = "toml" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "flatten-dict", specifier = ">=0.4.2,<1.0.0" },
     { name = "ipython", specifier = ">=8.26.0,<9.0.0" },
+    { name = "jupyter", specifier = ">=1.1.1,<2.0.0" },
+    { name = "notebook", specifier = ">=7.2.2,<8.0.0" },
     { name = "pint", specifier = ">=0.24.3,<1.0.0" },
     { name = "pipe", specifier = ">=2.2,<3.0" },
     { name = "regex", specifier = ">=2024.7.24,<2025.0.0" },
     { name = "ruamel-yaml", specifier = ">=0.18.6,<1.0.0" },
     { name = "sympy", specifier = ">=1.13.1,<2.0.0" },
+    { name = "toml", specifier = ">=0.10.2" },
 ]
 
 [package.metadata.requires-dev]
@@ -825,7 +830,6 @@ dev = [
     { name = "ipykernel", specifier = ">=6.29.5,<7.0.0" },
     { name = "pytest", specifier = ">=8.3.2,<9.0.0" },
     { name = "quarto-cli", specifier = ">=1.8.24" },
-    { name = "toml", specifier = ">=0.10.2" },
 ]
 
 [[package]]

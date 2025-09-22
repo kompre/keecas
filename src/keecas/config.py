@@ -1,27 +1,638 @@
-# DEFINITION OF DEFAULT VALUES
+"""
+Unified Configuration Management for Keecas.
 
-from dataclasses import dataclass
+Manages all configuration options with TOML file support, priority handling,
+and dynamic propagation to affected subsystems.
+"""
 
+import os
+import toml
+from dataclasses import dataclass, field, asdict
+from pathlib import Path
+from typing import Optional, Dict, Any, Union
 from sympy import Basic
 from IPython.display import Markdown
 
 
 @dataclass
-class defaults:
-    EQ_PREFIX: str = "eq-"
-    EQ_SUFFIX: str = ""
-    VERTICAL_SKIP: str = "8pt"
-    PRINT_LABEL: bool = False
-    DEBUG = False
-    katex = False
-    default_mul_symbol = r"\,"
-    default_environment = "align"
-    default_label_command = r"\label"
-    col_wrap = [
+class LatexConfig:
+    """LaTeX equation output configuration."""
+    eq_prefix: str = "eq-"
+    eq_suffix: str = ""
+    vertical_skip: str = "8pt"
+    default_environment: str = "align"
+    default_label_command: str = r"\label"
+
+
+@dataclass
+class DisplayConfig:
+    """Display and debugging behavior configuration."""
+    print_label: bool = False
+    debug: bool = False
+    katex: bool = False
+    default_mul_symbol: str = r"\,"
+
+
+@dataclass
+class LanguageConfig:
+    """Language and localization configuration."""
+    _language: Optional[str] = field(default=None, init=False)
+    disable_pint_locale: bool = False
+
+    @property
+    def language(self) -> Optional[str]:
+        """Document-level language override (None = use global/config)."""
+        return self._language
+
+    @language.setter
+    def language(self, value: Optional[str]):
+        """Set language and automatically update Pint locale and localization manager."""
+        self._language = value
+        # Trigger propagation through the config manager
+        if hasattr(self, '_config_manager_ref'):
+            self._config_manager_ref._propagate_changes('language', value)
+
+
+@dataclass
+class UnitsConfig:
+    """Units formatting configuration."""
+    pint_default_format: str = ".2f~P"
+
+
+@dataclass
+class TranslationsConfig:
+    """Custom term translations configuration."""
+    translations: Dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
+class ConfigOptions:
+    """
+    Unified configuration for Keecas with proper TOML sections.
+    """
+    latex: LatexConfig = field(default_factory=LatexConfig)
+    display: DisplayConfig = field(default_factory=DisplayConfig)
+    language_config: LanguageConfig = field(default_factory=LanguageConfig)
+    units: UnitsConfig = field(default_factory=UnitsConfig)
+    translations: TranslationsConfig = field(default_factory=TranslationsConfig)
+
+    def __post_init__(self):
+        """Set up cross-references for language propagation."""
+        self.language_config._config_manager_ref = getattr(self, '_config_manager_ref', None)
+
+    # Backward compatibility properties
+    @property
+    def EQ_PREFIX(self) -> str:
+        return self.latex.eq_prefix
+
+    @EQ_PREFIX.setter
+    def EQ_PREFIX(self, value: str):
+        self.latex.eq_prefix = value
+
+    @property
+    def EQ_SUFFIX(self) -> str:
+        return self.latex.eq_suffix
+
+    @EQ_SUFFIX.setter
+    def EQ_SUFFIX(self, value: str):
+        self.latex.eq_suffix = value
+
+    @property
+    def VERTICAL_SKIP(self) -> str:
+        return self.latex.vertical_skip
+
+    @VERTICAL_SKIP.setter
+    def VERTICAL_SKIP(self, value: str):
+        self.latex.vertical_skip = value
+
+    @property
+    def PRINT_LABEL(self) -> bool:
+        return self.display.print_label
+
+    @PRINT_LABEL.setter
+    def PRINT_LABEL(self, value: bool):
+        self.display.print_label = value
+
+    @property
+    def DEBUG(self) -> bool:
+        return self.display.debug
+
+    @DEBUG.setter
+    def DEBUG(self, value: bool):
+        self.display.debug = value
+
+    @property
+    def katex(self) -> bool:
+        return self.display.katex
+
+    @katex.setter
+    def katex(self, value: bool):
+        self.display.katex = value
+
+    @property
+    def default_mul_symbol(self) -> str:
+        return self.display.default_mul_symbol
+
+    @default_mul_symbol.setter
+    def default_mul_symbol(self, value: str):
+        self.display.default_mul_symbol = value
+
+    @property
+    def default_environment(self) -> str:
+        return self.latex.default_environment
+
+    @default_environment.setter
+    def default_environment(self, value: str):
+        self.latex.default_environment = value
+
+    @property
+    def default_label_command(self) -> str:
+        return self.latex.default_label_command
+
+    @default_label_command.setter
+    def default_label_command(self, value: str):
+        self.latex.default_label_command = value
+
+    @property
+    def language_setting(self) -> Optional[str]:
+        return self.language_config.language
+
+    @language_setting.setter
+    def language_setting(self, value: Optional[str]):
+        self.language_config.language = value
+
+    # Backward compatibility - delegate to language_setting
+    def get_language(self) -> Optional[str]:
+        return self.language_setting
+
+    def set_language(self, value: Optional[str]):
+        self.language_setting = value
+
+    # Backward compatibility property for options.language
+    # Note: This shadows the language field, but that's intentional for backward compatibility
+    @property
+    def language(self) -> Optional[str]:
+        return self.language_setting
+
+    @language.setter
+    def language(self, value: Optional[str]):
+        self.language_setting = value
+
+    @property
+    def pint_default_format(self) -> str:
+        return self.units.pint_default_format
+
+    @pint_default_format.setter
+    def pint_default_format(self, value: str):
+        self.units.pint_default_format = value
+
+    @property
+    def disable_pint_locale(self) -> bool:
+        return self.language_config.disable_pint_locale
+
+    @disable_pint_locale.setter
+    def disable_pint_locale(self, value: bool):
+        self.language_config.disable_pint_locale = value
+
+    @property
+    def custom_translations_dict(self) -> Dict[str, str]:
+        return self.translations.translations
+
+    @custom_translations_dict.setter
+    def custom_translations_dict(self, value: Dict[str, str]):
+        self.translations.translations = value
+
+    # Complex options (not easily serializable to TOML)
+    col_wrap: list = field(default_factory=lambda: [
         None,
         {
             Basic: ("=", ""),
-            Markdown|str: (r"\qquad", ""),
+            Markdown: (r"\qquad", ""),
+            str: (r"\qquad", ""),
+            int: ("=", ""),
+            float: ("=", ""),
             object: ("", ""),
         },
-    ]
+    ])
+
+    def to_toml_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary suitable for TOML serialization."""
+        data = {
+            'latex': {
+                'eq_prefix': self.latex.eq_prefix,
+                'eq_suffix': self.latex.eq_suffix,
+                'vertical_skip': self.latex.vertical_skip,
+                'default_environment': self.latex.default_environment,
+                'default_label_command': self.latex.default_label_command,
+            },
+            'display': {
+                'print_label': self.display.print_label,
+                'debug': self.display.debug,
+                'katex': self.display.katex,
+                'default_mul_symbol': self.display.default_mul_symbol,
+            },
+            'language': {
+                'disable_pint_locale': self.language_config.disable_pint_locale,
+            },
+            'units': {
+                'pint_default_format': self.units.pint_default_format,
+            },
+        }
+
+        # Add language if set
+        if self.language_config.language is not None:
+            data['language']['language'] = self.language_config.language
+
+        # Add custom translations if any
+        if self.translations.translations:
+            data['translations'] = self.translations.translations
+
+        return data
+
+    def update_from_dict(self, data: Dict[str, Any]) -> None:
+        """Update configuration from dictionary (loaded from TOML)."""
+        for section_key, section_data in data.items():
+            if section_key == 'latex' and isinstance(section_data, dict):
+                for key, value in section_data.items():
+                    if hasattr(self.latex, key):
+                        setattr(self.latex, key, value)
+            elif section_key == 'display' and isinstance(section_data, dict):
+                for key, value in section_data.items():
+                    if hasattr(self.display, key):
+                        setattr(self.display, key, value)
+            elif section_key == 'language' and isinstance(section_data, dict):
+                for key, value in section_data.items():
+                    if key == 'language':
+                        # Use the property setter to trigger propagation
+                        self.language_config.language = value
+                    elif hasattr(self.language_config, key):
+                        setattr(self.language_config, key, value)
+            elif section_key == 'units' and isinstance(section_data, dict):
+                for key, value in section_data.items():
+                    if hasattr(self.units, key):
+                        setattr(self.units, key, value)
+            elif section_key == 'translations' and isinstance(section_data, dict):
+                self.translations.translations.update(section_data)
+            # Backward compatibility for flat structure and old section names
+            elif section_key == 'latex_output' and isinstance(section_data, dict):
+                for key, value in section_data.items():
+                    if hasattr(self.latex, key):
+                        setattr(self.latex, key, value)
+            elif section_key == 'display_behavior' and isinstance(section_data, dict):
+                for key, value in section_data.items():
+                    if hasattr(self.display, key):
+                        setattr(self.display, key, value)
+            elif section_key == 'internationalization' and isinstance(section_data, dict):
+                for key, value in section_data.items():
+                    if key == 'language':
+                        self.language_config.language = value
+                    elif hasattr(self.language_config, key):
+                        setattr(self.language_config, key, value)
+            elif section_key == 'units_formatting' and isinstance(section_data, dict):
+                for key, value in section_data.items():
+                    if hasattr(self.units, key):
+                        setattr(self.units, key, value)
+            elif section_key == 'custom_translations' and isinstance(section_data, dict):
+                self.translations.translations.update(section_data)
+            elif hasattr(self, section_key):
+                setattr(self, section_key, section_data)
+
+
+class ConfigManager:
+    """
+    Manages configuration files, priority loading, and option propagation.
+
+    Priority order: API overrides > Local config > Global config > Defaults
+    """
+
+    def __init__(self):
+        self._options = ConfigOptions()
+        # Set back-reference for language propagation
+        self._options._config_manager_ref = self
+        self._options.language_config._config_manager_ref = self
+        self._global_config_path = self._get_global_config_path()
+        self._local_config_path = self._get_local_config_path()
+        self._loaded_files = []
+        self.load_configs()
+
+    def _get_global_config_path(self) -> Path:
+        """Get path to global configuration file."""
+        if os.name == "nt":  # Windows
+            config_dir = Path(os.environ.get("USERPROFILE", "")) / ".keecas"
+        else:  # Linux/Mac
+            config_dir = Path.home() / ".keecas"
+
+        return config_dir / "config.toml"
+
+    def _get_local_config_path(self) -> Path:
+        """Get path to local configuration file."""
+        return Path.cwd() / ".keecas" / "config.toml"
+
+    def load_configs(self) -> None:
+        """Load configurations from files in priority order."""
+        self._loaded_files = []
+
+        # Load global config first (lower priority)
+        if self._global_config_path.exists():
+            try:
+                with open(self._global_config_path, "r", encoding="utf-8") as f:
+                    global_config = toml.load(f)
+                self._options.update_from_dict(global_config)
+                self._loaded_files.append(str(self._global_config_path))
+            except (toml.TomlDecodeError, OSError) as e:
+                print(f"Warning: Could not load global config from {self._global_config_path}: {e}")
+
+        # Load local config second (higher priority)
+        if self._local_config_path.exists():
+            try:
+                with open(self._local_config_path, "r", encoding="utf-8") as f:
+                    local_config = toml.load(f)
+                self._options.update_from_dict(local_config)
+                self._loaded_files.append(str(self._local_config_path))
+            except (toml.TomlDecodeError, OSError) as e:
+                print(f"Warning: Could not load local config from {self._local_config_path}: {e}")
+
+    def save_config(self, global_config: bool = False, force: bool = False) -> bool:
+        """
+        Save current configuration to file.
+
+        Args:
+            global_config: If True, save to global config file
+            force: If True, overwrite existing file
+
+        Returns:
+            True if saved successfully, False otherwise
+        """
+        config_path = self._global_config_path if global_config else self._local_config_path
+
+        if config_path.exists() and not force:
+            print(f"Config file already exists: {config_path}")
+            print("Use --force to overwrite or edit the existing file.")
+            return False
+
+        # Ensure directory exists
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            config_dict = self._options.to_toml_dict()
+            with open(config_path, "w", encoding="utf-8") as f:
+                toml.dump(config_dict, f)
+            print(f"Configuration saved to: {config_path}")
+            return True
+        except OSError as e:
+            print(f"Error saving config to {config_path}: {e}")
+            return False
+
+    def init_config(self, global_config: bool = False, force: bool = False, comment_style: str = "##") -> bool:
+        """Initialize a new configuration file with parametrizable template."""
+        config_path = self._global_config_path if global_config else self._local_config_path
+
+        if config_path.exists() and not force:
+            print(f"Config file already exists: {config_path}")
+            print("Use --force to overwrite or edit the existing file.")
+            return False
+
+        # Ensure directory exists
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            template_content = self._generate_config_template(
+                is_global=global_config,
+                comment_style=comment_style
+            )
+            with open(config_path, "w", encoding="utf-8") as f:
+                f.write(template_content)
+            config_type = "global" if global_config else "local"
+            print(f"Configuration template created at: {config_path} ({config_type})")
+            return True
+        except OSError as e:
+            print(f"Error creating config template at {config_path}: {e}")
+            return False
+
+    def get_config_path(self, global_config: bool = False) -> Path:
+        """Get path to configuration file."""
+        return self._global_config_path if global_config else self._local_config_path
+
+    def show_config(self, global_config: Optional[bool] = None) -> Dict[str, Any]:
+        """
+        Show current configuration.
+
+        Args:
+            global_config: If True, show only global config. If False, only local.
+                          If None, show merged configuration.
+        """
+        if global_config is True:
+            # Show only global config
+            if self._global_config_path.exists():
+                with open(self._global_config_path, "r") as f:
+                    return toml.load(f)
+            return {}
+        elif global_config is False:
+            # Show only local config
+            if self._local_config_path.exists():
+                with open(self._local_config_path, "r") as f:
+                    return toml.load(f)
+            return {}
+        else:
+            # Show merged configuration
+            return self._options.to_toml_dict()
+
+    def reset_config(self, global_config: bool = False) -> bool:
+        """Reset configuration file to defaults."""
+        config_path = self._global_config_path if global_config else self._local_config_path
+
+        if not config_path.exists():
+            print(f"No config file exists at: {config_path}")
+            return False
+
+        try:
+            # Create default options and save
+            default_options = ConfigOptions()
+            config_dict = default_options.to_toml_dict()
+            with open(config_path, "w", encoding="utf-8") as f:
+                toml.dump(config_dict, f)
+            print(f"Configuration reset to defaults: {config_path}")
+            # Reload configs
+            self.load_configs()
+            return True
+        except OSError as e:
+            print(f"Error resetting config at {config_path}: {e}")
+            return False
+
+    def get_option(self, key: str, default: Any = None) -> Any:
+        """Get configuration option value."""
+        return getattr(self._options, key, default)
+
+    def set_option(self, key: str, value: Any, propagate: bool = True) -> None:
+        """
+        Set configuration option and optionally propagate changes.
+
+        Args:
+            key: Option name
+            value: Option value
+            propagate: Whether to propagate changes to affected subsystems
+        """
+        if hasattr(self._options, key):
+            setattr(self._options, key, value)
+            if propagate:
+                self._propagate_changes(key, value)
+        else:
+            raise ValueError(f"Unknown configuration option: {key}")
+
+    def _propagate_changes(self, key: str, value: Any) -> None:
+        """Propagate configuration changes to affected subsystems."""
+        # Language changes affect both Pint and LocalizationManager
+        if key == "language" and value is not None:
+            self._update_pint_language(value)
+            self._update_localization_language(value)
+
+        # Pint format changes
+        elif key == "pint_default_format":
+            self._update_pint_format(value)
+
+        # SymPy printing options
+        elif key == "default_mul_symbol":
+            self._update_sympy_printing()
+
+    def _update_pint_language(self, language: str) -> None:
+        """Update Pint locale based on language setting."""
+        # Check if Pint locale is disabled
+        if self._options.disable_pint_locale:
+            return
+
+        try:
+            from .pint_sympy import update_pint_locale
+            update_pint_locale(language)
+        except ImportError:
+            pass  # Module not available
+
+    def _update_localization_language(self, language: str) -> None:
+        """Update LocalizationManager language."""
+        try:
+            from .localization import set_language
+            set_language(language)
+        except ImportError:
+            pass  # Module not available
+
+    def _update_pint_format(self, format_str: str) -> None:
+        """Update Pint default format."""
+        try:
+            from .pint_sympy import u
+            u.formatter.default_format = format_str
+        except ImportError:
+            pass  # Module not available
+
+    def _update_sympy_printing(self) -> None:
+        """Update SymPy printing settings."""
+        try:
+            import sympy as sp
+            sp.init_printing(mul_symbol=self._options.default_mul_symbol, order="none")
+        except ImportError:
+            pass  # Module not available
+
+    @property
+    def options(self) -> ConfigOptions:
+        """Get current configuration options."""
+        return self._options
+
+    def get_loaded_files(self) -> list:
+        """Get list of successfully loaded configuration files."""
+        return self._loaded_files.copy()
+
+    def _generate_config_template(self, is_global: bool = True, comment_style: str = "##") -> str:
+        """Generate a clean, parametrizable configuration template."""
+        defaults = ConfigOptions()
+
+        # Load global config values if this is a local config
+        global_values = {}
+        if not is_global and self._global_config_path.exists():
+            try:
+                with open(self._global_config_path, "r", encoding="utf-8") as f:
+                    global_data = toml.load(f)
+                    temp_config = ConfigOptions()
+                    temp_config.update_from_dict(global_data)
+                    global_values = temp_config.to_toml_dict()
+            except Exception:
+                pass  # Use defaults if global config can't be loaded
+
+        config_type = "Global" if is_global else "Local"
+        config_scope = "user-wide" if is_global else "project-specific"
+
+        # Helper function to format values
+        def format_value(section_name, key, default_val, inherited_val=None):
+            if is_global:
+                # Global config: all values active
+                toml_line = toml.dumps({key: default_val}).strip()
+                return toml_line
+            else:
+                # Local config: show inherited values but commented with # for easy toggle
+                display_val = inherited_val if inherited_val is not None else default_val
+                toml_line = toml.dumps({key: display_val}).strip()
+                return f'# {toml_line}'
+
+        # Extract inherited values for local config
+        latex_inherited = global_values.get('latex', {})
+        display_inherited = global_values.get('display', {})
+        language_inherited = global_values.get('language', {})
+        units_inherited = global_values.get('units', {})
+        translations_inherited = global_values.get('translations', {})
+
+        template = f'''# Keecas {config_type} Configuration
+# {"=" * (len(config_type) + 30)}
+## {config_scope.capitalize()} settings for keecas symbolic math calculations
+## Remove '#' to activate settings (local configs inherit from global)
+
+[latex]
+## LaTeX equation generation
+{format_value("latex", "eq_prefix", defaults.latex.eq_prefix, latex_inherited.get("eq_prefix"))}
+{format_value("latex", "eq_suffix", defaults.latex.eq_suffix, latex_inherited.get("eq_suffix"))}
+{format_value("latex", "vertical_skip", defaults.latex.vertical_skip, latex_inherited.get("vertical_skip"))}
+{format_value("latex", "default_environment", defaults.latex.default_environment, latex_inherited.get("default_environment"))}
+{format_value("latex", "default_label_command", defaults.latex.default_label_command, latex_inherited.get("default_label_command"))}
+
+[display]
+## Display and debugging
+{format_value("display", "print_label", defaults.display.print_label, display_inherited.get("print_label"))}
+{format_value("display", "debug", defaults.display.debug, display_inherited.get("debug"))}
+{format_value("display", "katex", defaults.display.katex, display_inherited.get("katex"))}
+{format_value("display", "default_mul_symbol", defaults.display.default_mul_symbol, display_inherited.get("default_mul_symbol"))}
+
+[language]
+## Language settings (de, es, fr, it, pt, da, nl, no, sv, en)
+{format_value("language", "language", "en", language_inherited.get("language")) if is_global or language_inherited.get("language") else '# language = "en"'}
+{format_value("language", "disable_pint_locale", defaults.language_config.disable_pint_locale, language_inherited.get("disable_pint_locale"))}
+
+[units]
+## Pint quantity formatting
+{format_value("units", "pint_default_format", defaults.units.pint_default_format, units_inherited.get("pint_default_format"))}
+
+[translations]
+## Custom mathematical terms (e.g., "VERIFIED" = "VERIFICATO")
+{"## Inherited from global config" if not is_global and translations_inherited else "## Add custom translations here"}
+'''
+
+        # Add inherited custom translations for local config
+        if not is_global and translations_inherited:
+            for key, value in translations_inherited.items():
+                template += f'# "{key}" = "{value}"\n'
+
+        return template
+
+
+# Global configuration manager instance
+_config_manager = ConfigManager()
+
+
+def get_config_manager() -> ConfigManager:
+    """Get the global configuration manager instance."""
+    return _config_manager
+
+
+def get_options() -> ConfigOptions:
+    """Get current configuration options (backward compatibility)."""
+    return _config_manager.options
+
+
+# Create backward-compatible options instance and new config alias
+options = _config_manager.options
+config = _config_manager.options  # New 1:1 mapping with config files
