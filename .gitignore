@@ -7,6 +7,8 @@ __pycache__
 .venv
 
 .*/*
+!.claude/
+!.claude/**
 ./keecas.egg-info/*
 
 *egg-info/*
