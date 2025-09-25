@@ -1,17 +1,23 @@
-# %% inserimento immagini in documento come link markdown
+"""Utility functions for YAML processing, symbol handling, and image insertion.
+
+This module provides helper functions for working with configuration files,
+SymPy symbol manipulation, and Markdown image display in Jupyter notebooks.
+"""
+
 import os
 from pathlib import Path
-from IPython.display import Markdown
-
-# %% flatten dict across yaml
+from typing import Any
+from IPython.display import Markdown, display
 import flatten_dict as fd
 from ruamel.yaml import YAML
+from sympy import Basic, symbols
+from sympy.core.function import FunctionClass
 
 yaml = YAML()
 yaml.preserve_quotes = True
 
 
-def load_data(main: str, updated_value: str) -> dict:
+def load_data(main: str, updated_value: str) -> dict[str, Any]:
     # Check if main file exists
     if not os.path.exists(main):
         # Create an empty file and return an empty dict
@@ -33,14 +39,14 @@ def load_data(main: str, updated_value: str) -> dict:
 
 
 # %% SYMPY
-def escape_name(symbol_name, dict_of_subs={}):
+def escape_name(symbol_name: Any, dict_of_subs: dict[str, str] | None = None) -> str:
     name = str(symbol_name)
     for old, new in dict_of_subs.items():
         name = name.replace(old, new)
     return name
 
 
-def escape_var(names, dict_of_subs=None, **args):
+def escape_var(names: str | Any, dict_of_subs: dict[str, str] | None = None, **args: Any) -> Any:
     """estensione di sympy:var() con l'introduzione di una lista di sostituzioni per escapare i nomi dei simboli
 
     Args:
@@ -81,7 +87,7 @@ def escape_var(names, dict_of_subs=None, **args):
     return syms
 
 
-def insert_images(source_path, dest_path=".", fig_opt=""):
+def insert_images(source_path: str | Path, dest_path: str | Path = ".", fig_opt: str = "") -> None:
     images = []
 
     # filtra lista di immagini -> path object

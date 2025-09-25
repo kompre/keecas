@@ -9,6 +9,7 @@ import sys
 import subprocess
 import os
 from pathlib import Path
+from typing import Any
 import toml
 import signal
 import time
@@ -24,7 +25,7 @@ except ImportError:
 from .config import get_config_manager
 
 
-def get_version():
+def get_version() -> str:
     """Get the current version of keecas."""
     try:
         return version("keecas")
@@ -32,12 +33,12 @@ def get_version():
         return "unknown"
 
 
-def get_editor():
+def get_editor() -> str:
     """Get the preferred text editor from environment variables."""
     return os.environ.get('EDITOR') or os.environ.get('VISUAL') or 'nano'
 
 
-def get_system_editor():
+def get_system_editor() -> str:
     """Get the system default editor command for opening files."""
     import platform
     system = platform.system().lower()
@@ -53,7 +54,7 @@ def get_system_editor():
         return "xdg-open"
 
 
-def open_with_system_editor(file_path):
+def open_with_system_editor(file_path: Path | str) -> bool:
     """Open a file with the system default editor."""
     system_editor = get_system_editor()
     try:
@@ -68,7 +69,7 @@ def open_with_system_editor(file_path):
         return False
 
 
-def find_free_port(start_port=8888, max_attempts=10):
+def find_free_port(start_port: int = 8888, max_attempts: int = 10) -> int | None:
     """Find a free port starting from start_port."""
     for port in range(start_port, start_port + max_attempts):
         try:
@@ -80,7 +81,7 @@ def find_free_port(start_port=8888, max_attempts=10):
     return None
 
 
-def get_templates_dir():
+def get_templates_dir() -> Path:
     """Get the templates directory path."""
     # Get the package installation directory
     import keecas
@@ -100,7 +101,7 @@ def get_templates_dir():
     return templates_dir
 
 
-def copy_template_to_workdir(template_name, work_dir):
+def copy_template_to_workdir(template_name: str, work_dir: Path | str) -> Path:
     """Copy a template notebook to the working directory."""
     templates_dir = get_templates_dir()
     template_path = templates_dir / f"{template_name}.ipynb"
@@ -125,7 +126,7 @@ def copy_template_to_workdir(template_name, work_dir):
     return target_path
 
 
-def check_jupyter_available():
+def check_jupyter_available() -> bool:
     """Check if Jupyter is available."""
     try:
         result = subprocess.run(['jupyter', '--version'],
@@ -135,7 +136,7 @@ def check_jupyter_available():
         return False
 
 
-def check_jupyterlab_available():
+def check_jupyterlab_available() -> bool:
     """Check if JupyterLab is available."""
     try:
         result = subprocess.run(['jupyter', 'lab', '--version'],
@@ -145,7 +146,7 @@ def check_jupyterlab_available():
         return False
 
 
-def cmd_init(args):
+def cmd_init(args: argparse.Namespace) -> None:
     """Initialize a new configuration file."""
     config_manager = get_config_manager()
     # Handle mutually exclusive group default
@@ -167,7 +168,7 @@ def cmd_init(args):
         sys.exit(1)
 
 
-def cmd_config_edit(args):
+def cmd_config_edit(args: argparse.Namespace) -> None:
     """Edit configuration file in the user's preferred editor."""
     config_manager = get_config_manager()
     # Handle mutually exclusive group default
@@ -202,7 +203,7 @@ def cmd_config_edit(args):
         sys.exit(1)
 
 
-def cmd_edit(args):
+def cmd_edit(args: argparse.Namespace) -> None:
     """Launch Jupyter server with keecas notebook templates."""
     # Check if requested interface is available
     use_lab = getattr(args, 'lab', False)
@@ -358,7 +359,7 @@ def cmd_edit(args):
         sys.exit(1)
 
 
-def cmd_open(args):
+def cmd_open(args: argparse.Namespace) -> None:
     """Open configuration file with the system default editor."""
     config_manager = get_config_manager()
     # Handle mutually exclusive group default
@@ -389,7 +390,7 @@ def cmd_open(args):
         sys.exit(1)
 
 
-def cmd_show(args):
+def cmd_show(args: argparse.Namespace) -> None:
     """Show current configuration."""
     config_manager = get_config_manager()
 
@@ -424,7 +425,7 @@ def cmd_show(args):
         print(f"\nLoaded from: {', '.join(loaded_files)}")
 
 
-def cmd_path(args):
+def cmd_path(args: argparse.Namespace) -> None:
     """Show path to configuration files."""
     config_manager = get_config_manager()
 
@@ -450,7 +451,7 @@ def cmd_path(args):
         print(f"Local config:  {local_path} {local_exists}")
 
 
-def cmd_reset(args):
+def cmd_reset(args: argparse.Namespace) -> None:
     """Reset configuration to defaults."""
     config_manager = get_config_manager()
     # Handle mutually exclusive group default
@@ -468,7 +469,7 @@ def cmd_reset(args):
         sys.exit(1)
 
 
-def create_parser():
+def create_parser() -> argparse.ArgumentParser:
     """Create and configure the argument parser."""
     keecas_version = get_version()
     parser = argparse.ArgumentParser(
@@ -565,7 +566,7 @@ def create_parser():
     return parser
 
 
-def main():
+def main() -> None:
     """Main CLI entry point."""
     parser = create_parser()
     args = parser.parse_args()

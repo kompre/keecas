@@ -1,15 +1,26 @@
+"""Pint-SymPy integration with automatic locale management.
+
+This module bridges Pint unit registry with SymPy symbolic expressions,
+providing seamless conversion between physical quantities and symbolic math.
+Includes smart locale detection and automatic synchronization with keecas
+language settings.
+"""
+
 import pint
 import sympy.physics.units as sympy_units
 from sympy.physics.units.util import convert_to
-
 from sympy import nsimplify, sympify
 import locale
 import subprocess
-from typing import Optional
+from typing import Any
 
 
-def _get_available_locales():
-    """Get list of available system locales."""
+def _get_available_locales() -> list[str]:
+    """Get list of available system locales from the system.
+
+    Returns:
+        List of available locale strings, fallback to common locales if command fails
+    """
     try:
         # Try to get locales from locale -a command
         result = subprocess.run(['locale', '-a'], capture_output=True, text=True, timeout=5)
@@ -22,8 +33,15 @@ def _get_available_locales():
     return ['C', 'C.UTF-8', 'POSIX']
 
 
-def _check_locale_available(locale_str):
-    """Check if a specific locale is available on the system."""
+def _check_locale_available(locale_str: str) -> bool:
+    """Check if a specific locale is available on the system.
+
+    Args:
+        locale_str: Locale string to test (e.g., 'en_US.UTF-8')
+
+    Returns:
+        True if locale is available and can be set, False otherwise
+    """
     if not locale_str:
         return False
 
@@ -37,12 +55,18 @@ def _check_locale_available(locale_str):
         return False
 
 
-def _find_best_locale(language_code, fallback_to_english=True):
+def _find_best_locale(language_code: str, fallback_to_english: bool = True) -> str | None:
     """Find the best available locale for a given language code.
 
     Args:
-        language_code: The language code to find a locale for
+        language_code: Two-letter language code (e.g., 'en', 'it', 'fr')
         fallback_to_english: If True, fallback to English for unsupported languages
+
+    Returns:
+        Best matching locale string, or None if no suitable locale found
+
+    Notes:
+        Tries multiple locale variants in order of preference for each language
     """
     if not language_code:
         return None
@@ -82,8 +106,15 @@ def _find_best_locale(language_code, fallback_to_english=True):
     return None
 
 
-def _get_locale_from_keecas():
-    """Get current locale from keecas localization system."""
+def _get_locale_from_keecas() -> str:
+    """Get current locale from keecas localization system.
+
+    Returns:
+        Locale identifier based on current keecas language setting
+
+    Notes:
+        Maps keecas language codes to standard locale identifiers
+    """
     try:
         from .localization import get_language_from_config
         from .localization import get_language
@@ -112,8 +143,16 @@ def _get_locale_from_keecas():
 
 
 # Initialize UnitRegistry with safe locale support
-def _get_safe_init_locale():
-    """Get a safe locale for UnitRegistry initialization."""
+def _get_safe_init_locale() -> str | None:
+    """Get a safe locale for UnitRegistry initialization.
+
+    Returns:
+        Locale string if explicitly configured, None for system default
+
+    Notes:
+        Only returns locale if user has explicitly configured a language,
+        avoiding unwanted locale changes for default English users
+    """
     try:
         from .localization import get_language_from_config
         from .localization import get_language
@@ -139,8 +178,12 @@ else:
 unitregistry.formatter.default_format = ".2f~P"
 
 
-def _get_current_pint_locale() -> Optional[str]:
-    """Get the current pint locale setting."""
+def _get_current_pint_locale() -> str | None:
+    """Get the current pint locale setting.
+
+    Returns:
+        Current locale string set in pint formatter, or None if not set
+    """
     try:
         return getattr(unitregistry.formatter, '_locale', None)
     except AttributeError:
@@ -150,7 +193,14 @@ def _get_current_pint_locale() -> Optional[str]:
 def _detect_pint_mode_on_language_change(new_language: str) -> str:
     """Detect if user has manually changed pint locale.
 
-    Returns 'manual' if user has made manual changes, 'auto' otherwise.
+    Args:
+        new_language: New language being set by keecas
+
+    Returns:
+        'manual' if user has made manual pint locale changes, 'auto' otherwise
+
+    Notes:
+        Compares current pint locale with expected locale for keecas language
     """
     try:
         from .config import get_config_manager
@@ -189,12 +239,17 @@ def _was_pint_imported_before_keecas() -> bool:
         return False
 
 
-def update_pint_locale(language: str = None, verbose: bool = False):
+def update_pint_locale(language: str | None = None, verbose: bool = False) -> None:
     """Update pint locale based on keecas language setting with smart mode detection.
 
     Args:
-        language: Optional language code. If None, gets from keecas config.
-        verbose: If True, print debugging information about locale changes.
+        language: Two-letter language code. If None, gets from keecas config
+        verbose: If True, print debugging information about locale changes
+
+    Notes:
+        - Automatically switches to manual mode if user intervention is detected
+        - Respects disable_pint_locale configuration setting
+        - Handles fallback scenarios for unsupported languages
     """
     from .config import get_config_manager
     config = get_config_manager()
@@ -296,12 +351,19 @@ def update_pint_locale(language: str = None, verbose: bool = False):
                 print("Failed to set any locale, keeping current")
             pass
 
-def pint_to_sympy(quantity: unitregistry.Quantity):
-    """convert pint quantity to sympy quantity
+def pint_to_sympy(quantity: pint.Quantity) -> Any:
+    """Convert pint quantity to sympy quantity.
 
     Args:
-        quantity (UnitRegistry.Quantity): a quantity defined with the pint module
+        quantity: A Pint Quantity object with magnitude and units
 
+    Returns:
+        SymPy expression combining magnitude and units as symbolic quantities
+
+    Notes:
+        - Automatically creates new SymPy units if they don't exist
+        - Maintains unit relationships and dimensional analysis
+        - Handles both prefixed and non-prefixed units
     """
     # divide and extract the magnitude from the units: it will generate a two elements tuple, where the first item will be the magnitude and the second ona a tuple of tuples; each nested tuple is composed by two elements, the unit proper and the exponent to which is elevated; the tuples are supposed to be multiplied together.
 

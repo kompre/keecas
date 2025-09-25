@@ -9,7 +9,7 @@ import os
 import toml
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Optional, Dict, Any, Union
+from typing import Any
 from sympy import Basic
 from IPython.display import Markdown
 
@@ -36,17 +36,17 @@ class DisplayConfig:
 @dataclass
 class LanguageConfig:
     """Language and localization configuration."""
-    _language: Optional[str] = field(default=None, init=False)
+    _language: str | None = field(default=None, init=False)
     disable_pint_locale: bool = False
     pint_language_mode: str = "auto"  # "auto" or "manual"
 
     @property
-    def language(self) -> Optional[str]:
+    def language(self) -> str | None:
         """Document-level language override (None = use global/config)."""
         return self._language
 
     @language.setter
-    def language(self, value: Optional[str]):
+    def language(self, value: str | None):
         """Set language and automatically update Pint locale and localization manager."""
         self._language = value
         # Trigger propagation through the config manager
@@ -63,7 +63,7 @@ class UnitsConfig:
 @dataclass
 class TranslationsConfig:
     """Custom term translations configuration."""
-    translations: Dict[str, str] = field(default_factory=dict)
+    translations: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -72,7 +72,7 @@ class CheckTemplateConfig:
     success_template: str = r"$\textcolor{{green}}{{\left[{symbol}{rhs}\quad \textbf{{{verified_text}}}\right]}}$"
     failure_template: str = r"$\textcolor{{red}}{{\left[{symbol}{rhs}\quad \textbf{{{not_verified_text}}}\right]}}$"
     # Named template sets
-    template_sets: Dict[str, Dict[str, str]] = field(default_factory=lambda: {
+    template_sets: dict[str, dict[str, str]] = field(default_factory=lambda: {
         "default": {
             "success": r"$\textcolor{{green}}{{\left[{symbol}{rhs}\quad \textbf{{{verified_text}}}\right]}}$",
             "failure": r"$\textcolor{{red}}{{\left[{symbol}{rhs}\quad \textbf{{{not_verified_text}}}\right]}}$"
@@ -178,28 +178,28 @@ class ConfigOptions:
         self.latex.default_label_command = value
 
     @property
-    def language_setting(self) -> Optional[str]:
+    def language_setting(self) -> str | None:
         return self.language_config.language
 
     @language_setting.setter
-    def language_setting(self, value: Optional[str]):
+    def language_setting(self, value: str | None):
         self.language_config.language = value
 
     # Backward compatibility - delegate to language_setting
-    def get_language(self) -> Optional[str]:
+    def get_language(self) -> str | None:
         return self.language_setting
 
-    def set_language(self, value: Optional[str]):
+    def set_language(self, value: str | None):
         self.language_setting = value
 
     # Backward compatibility property for options.language
     # Note: This shadows the language field, but that's intentional for backward compatibility
     @property
-    def language(self) -> Optional[str]:
+    def language(self) -> str | None:
         return self.language_setting
 
     @language.setter
-    def language(self, value: Optional[str]):
+    def language(self, value: str | None):
         self.language_setting = value
 
     @property
@@ -219,11 +219,11 @@ class ConfigOptions:
         self.language_config.disable_pint_locale = value
 
     @property
-    def custom_translations_dict(self) -> Dict[str, str]:
+    def custom_translations_dict(self) -> dict[str, str]:
         return self.translations.translations
 
     @custom_translations_dict.setter
-    def custom_translations_dict(self, value: Dict[str, str]):
+    def custom_translations_dict(self, value: dict[str, str]):
         self.translations.translations = value
 
     # Complex options (not easily serializable to TOML)
@@ -239,7 +239,7 @@ class ConfigOptions:
         },
     ])
 
-    def to_toml_dict(self) -> Dict[str, Any]:
+    def to_toml_dict(self) -> dict[str, Any]:
         """Convert to dictionary suitable for TOML serialization."""
         data = {
             'latex': {
@@ -279,7 +279,7 @@ class ConfigOptions:
 
         return data
 
-    def update_from_dict(self, data: Dict[str, Any]) -> None:
+    def update_from_dict(self, data: dict[str, Any]) -> None:
         """Update configuration from dictionary (loaded from TOML)."""
         for section_key, section_data in data.items():
             if section_key == 'latex' and isinstance(section_data, dict):
@@ -426,7 +426,7 @@ class ConfigManager:
         """Get path to configuration file."""
         return self._global_config_path if global_config else self._local_config_path
 
-    def show_config(self, global_config: Optional[bool] = None) -> Dict[str, Any]:
+    def show_config(self, global_config: bool | None = None) -> dict[str, Any]:
         """
         Show current configuration.
 

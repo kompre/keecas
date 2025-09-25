@@ -1,3 +1,10 @@
+"""Keecas: Symbolic and units-aware calculations for Jupyter notebooks.
+
+This package combines SymPy (symbolic math), Pint (units), and Pipe (functional programming)
+to provide a streamlined interface for mathematical computations with LaTeX output,
+specifically designed for Quarto rendered PDF documents.
+"""
+
 # dataframe
 from .dataframe import Dataframe
 

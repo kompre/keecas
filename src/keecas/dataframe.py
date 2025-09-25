@@ -1,13 +1,18 @@
+"""Custom dictionary-like Dataframe class for tabular mathematical data.
+
+This module provides the Dataframe class, which maintains tabular structure
+where all rows have consistent column count. It's designed specifically for
+LaTeX equation rendering where keys represent row labels and values are lists
+that populate columns across each row.
+"""
+
 import copy
-
 from itertools import chain
-
-from typing import List, Dict, Any, Optional, Tuple, Self, Hashable
-
+from typing import Any, Hashable
 from sympy import Dict as sympy_dict
 
 
-class Dataframe(dict[Hashable, List[Any]]):
+class Dataframe(dict[Hashable, list[Any]]):
     def __init__(self, *args: Any, filler: Any = None, **kwargs: Any) -> None:
         """
         Initialize a Dataframe.
@@ -39,7 +44,7 @@ class Dataframe(dict[Hashable, List[Any]]):
         else:
             self._update_initial(*args, **kwargs)
 
-    def _init_from_list_of_dicts(self, list_of_dicts: List[Dict[Hashable, Any]]) -> None:
+    def _init_from_list_of_dicts(self, list_of_dicts: list[dict[Hashable, Any]]) -> None:
         """
         Initialize the Dataframe from a list of dictionaries.
 
@@ -163,7 +168,7 @@ class Dataframe(dict[Hashable, List[Any]]):
         # Update width
         self._width = max_length
 
-    def append(self, other: 'Dataframe' | Dict[Hashable, Any] | Any, strict: bool = True) -> None:
+    def append(self, other: 'Dataframe' | dict[Hashable, Any] | Any, strict: bool = True) -> None:
         """
         Append a single row to the Dataframe.
 
@@ -203,7 +208,7 @@ class Dataframe(dict[Hashable, List[Any]]):
 
         self._width += 1
 
-    def extend(self, other: 'Dataframe' | Dict[Hashable, Any] | List[Any], strict: bool = True) -> None:
+    def extend(self, other: 'Dataframe' | dict[Hashable, Any] | list[Any], strict: bool = True) -> None:
         """
         Extend the Dataframe by adding multiple rows from another source.
 
@@ -278,7 +283,7 @@ class Dataframe(dict[Hashable, List[Any]]):
                 "Cannot extend Dataframe with this type. Use 'append' for single values."
             )
 
-    def __add__(self, other: 'Dataframe' | Dict[Hashable, Any] | List[Any]) -> 'Dataframe':
+    def __add__(self, other: 'Dataframe' | dict[Hashable, Any] | list[Any]) -> 'Dataframe':
         """
         Create a new Dataframe by extending this one with other data.
 
@@ -297,7 +302,7 @@ class Dataframe(dict[Hashable, List[Any]]):
         result.extend(other, strict=False)
         return result
 
-    def __or__(self, other: 'Dataframe' | Dict[Hashable, Any]) -> 'Dataframe':
+    def __or__(self, other: 'Dataframe' | dict[Hashable, Any]) -> 'Dataframe':
         """
         Create a new Dataframe by updating this one with other data (| operator).
 
@@ -327,7 +332,7 @@ class Dataframe(dict[Hashable, List[Any]]):
         return len(self)
 
     @property
-    def shape(self) -> Tuple[int, int]:
+    def shape(self) -> tuple[int, int]:
         """Shape of the Dataframe as (columns, rows)."""
         return (self.length, self.width)
 
@@ -344,9 +349,9 @@ class Dataframe(dict[Hashable, List[Any]]):
 
 
 def create_dataframe(
-    keys: List[Hashable],
+    keys: list[Hashable],
     width: int,
-    seed: Optional[Any | List[Any] | Dict[Hashable, Any] | Dataframe] = None,
+    seed: Any | list[Any] | dict[Hashable, Any] | Dataframe | None = None,
     default_value: Any = None,
 ) -> Dataframe:
     """

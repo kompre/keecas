@@ -1,6 +1,15 @@
-# %% pipe command
+"""Pipe command decorators for functional composition of mathematical operations.
+
+This module provides @Pipe decorated functions that enable chain operations
+like: expr | pc.subs(vals) | pc.convert_to(units) | pc.N
+
+All functions are designed to work with SymPy expressions and support
+functional programming patterns for mathematical computation workflows.
+"""
+
+from typing import Any
 from pipe import Pipe
-from sympy.parsing.sympy_parser import parse_expr as sympy_parse_expr
+from sympy.parsing.sympy_parser import parse_expr as sympy_parse_expr, T
 from sympy import Basic, sympify, S, Mul, MatrixBase, UnevaluatedExpr
 from sympy.core.function import UndefinedFunction
 from sympy.physics.units.util import convert_to as sympy_convert_to
@@ -11,15 +20,17 @@ from inspect import currentframe
 from .display import wrap_floats
 
 
-def order_subs(subs: dict) -> list[tuple]:
-    """Reorders the substitutions using topological order, ensuring that
-    the order of elements passed to the subs function is exhaustive.
+def order_subs(subs: dict[Basic, Any]) -> list[tuple[Basic, Any]]:
+    """Reorder substitutions using topological order for dependency resolution.
+
+    Ensures that substitutions are applied in the correct order when variables
+    depend on each other (e.g., y depends on x, so x must be substituted first).
 
     Args:
-        subs (dict): Dictionary of substitutions to perform (VERTICES).
+        subs: Dictionary of substitutions where keys are variables and values are expressions
 
     Returns:
-        list: Ordered list of substitutions.
+        Ordered list of substitution tuples for exhaustive application
     """
 
     # Generate edges between each vertex
@@ -34,16 +45,26 @@ def order_subs(subs: dict) -> list[tuple]:
 @Pipe
 def subs(
     expression: Basic,
-    substitution: dict,
-    sorted=True,
+    substitution: dict[Basic, Any],
+    sorted: bool = True,
     # simplify_quantity=True, **kwargs
 ) -> Basic:
 
-    # filter out None expressions from the expression
-    if expression is None:
-        return
+    """Apply substitutions to a SymPy expression.
 
-    # filter out non Basic expressions from the substitution dict
+    Args:
+        expression: SymPy expression to apply substitutions to
+        substitution: Dictionary mapping variables to their replacement values
+        sorted: Whether to apply topological sorting for dependency resolution
+
+    Returns:
+        Expression with substitutions applied, or None if input expression is None
+    """
+    # Filter out None expressions
+    if expression is None:
+        return None
+
+    # Filter out non-Basic expressions from substitution dict
     substitution = {
         lhs: rhs
         for lhs, rhs in substitution.items()
@@ -63,37 +84,65 @@ def subs(
 
 @Pipe
 def N(expression: Basic, precision: int = 15) -> Basic:
+    """Numerically evaluate a SymPy expression to specified precision.
+
+    Args:
+        expression: SymPy expression to evaluate
+        precision: Number of decimal digits for evaluation
+
+    Returns:
+        Numerically evaluated SymPy expression
+    """
     return expression.evalf(precision)
 
 
 @Pipe
-def convert_to(expression: Basic, units=1) -> Basic:
+def convert_to(expression: Basic, units: Any = 1) -> Basic:
+    """Convert expression to specified units.
+
+    Args:
+        expression: SymPy expression with units
+        units: Target units for conversion
+
+    Returns:
+        Expression converted to target units
+    """
     return sympy_convert_to(expression, target_units=units)
 
 
 @Pipe
 def doit(expression: Basic) -> Basic:
+    """Evaluate unevaluated operations in a SymPy expression.
+
+    Args:
+        expression: SymPy expression with unevaluated operations
+
+    Returns:
+        Expression with operations evaluated
+    """
     return expression.doit()
 
 
-from sympy.parsing.sympy_parser import T
 
 
 @Pipe
 def parse_expr(
-    expression: Basic, local_dict: dict = None, evaluate=False, **kwargs
+    expression: str, local_dict: dict[str, Any] | None = None, evaluate: bool = False, **kwargs: Any
 ) -> Basic:
-    """
-    Parses a mathematical expression into a SymPy expression object.
+    """Parse a mathematical expression string into a SymPy expression object.
 
-    Parameters:
-        expression (Basic): The mathematical expression to parse.
-        local_dict (dict, optional): A dictionary of local variables to use during parsing. If None is passed, then the current frame's local variables will be used.
-        evaluate (bool, optional): Whether to evaluate the expression during parsing. Defaults to False.
-        **kwargs: Additional keyword arguments to pass to the SymPy parser.
+    Args:
+        expression: String representation of the mathematical expression
+        local_dict: Dictionary of local variables for parsing context.
+                   If None, uses caller's local variables.
+        evaluate: Whether to evaluate the expression during parsing
+        **kwargs: Additional arguments passed to SymPy parser
 
     Returns:
-        Basic: The parsed SymPy expression object.
+        Parsed SymPy expression object
+
+    Notes:
+        Uses default transformations T[:11] if not specified in kwargs
     """
     
     if not local_dict:
@@ -110,19 +159,18 @@ def parse_expr(
 
 @Pipe
 def quantity_simplify(
-    expression: Basic, across_dimensions=True, unit_system="SI", **kwargs
+    expression: Basic, across_dimensions: bool = True, unit_system: str = "SI", **kwargs: Any
 ) -> Basic:
-    """
-    Simplifies a given expression by applying quantity simplification.
+    """Simplify expression by applying quantity simplification.
 
-    Parameters:
-        expression (Basic): The expression to simplify.
-        across_dimensions (bool): Whether to simplify across dimensions. Defaults to True.
-        unit_system (str): The unit system to use for simplification. Defaults to "SI".
-        **kwargs: Additional keyword arguments to pass to the underlying sympy_quantity_simplify function.
+    Args:
+        expression: SymPy expression to simplify
+        across_dimensions: Whether to simplify across dimensions
+        unit_system: Unit system for simplification ("SI", "CGS", etc.)
+        **kwargs: Additional arguments for sympy_quantity_simplify
 
     Returns:
-        Basic: The simplified expression.
+        Simplified SymPy expression
     """
     
     return sympy_quantity_simplify(
@@ -133,17 +181,23 @@ def quantity_simplify(
 @Pipe
 def as_two_terms(
     expression: Basic,
-    as_mul=False,
-) -> Basic:
-    """
-    This function takes in a `Basic` expression and an optional boolean flag `as_mul`. 
-    It checks if the expression is an instance of `Mul`. If it is, it calls the `as_two_terms()` method on the expression. 
-    If the expression is not an instance of `Mul`, it checks if it is an instance of `MatrixBase`. 
-    If it is, it creates a set of units by iterating over the values of the matrix and getting the coefficients dictionary of each element. 
-    If the set of units has a length of 1, it assigns the only unit to `u`, divides the matrix by `u`, and assigns the result to `att`. 
-    If the set of units has a length greater than 1, it returns the original expression. 
-    If the expression is neither a `Mul` nor a `MatrixBase`, it returns the original expression. 
-    Finally, it returns `att` if `as_mul` is `False`, otherwise it returns `att` combined with `as_Mul`.
+    as_mul: bool = False,
+) -> Basic | tuple[Basic, Basic]:
+    """Split expression into magnitude and units components.
+
+    Separates multiplicative expressions or matrices into two terms,
+    typically magnitude and units for cleaner display.
+
+    Args:
+        expression: SymPy expression to split
+        as_mul: If True, return as unevaluated multiplication
+
+    Returns:
+        Two-term tuple or unevaluated multiplication, depending on as_mul.
+        Returns original expression if splitting is not applicable.
+
+    Notes:
+        For matrices, splits only if all elements share the same units.
     """
     if isinstance(expression, Mul):
         att = expression.as_two_terms()
@@ -161,15 +215,17 @@ def as_two_terms(
 
 
 @Pipe
-def as_Mul(expression: tuple[Basic]) -> Basic:
-    """
-    Multiplies two expressions together and returns the result as an unevaluated expression. (Ideally to nicely separate the magnitude from the units)
+def as_Mul(expression: tuple[Basic, Basic]) -> Basic:
+    """Create unevaluated multiplication from tuple of expressions.
 
-    Parameters:
-        expression (tuple[Basic]): A tuple containing two Basic expressions to be multiplied together.
+    Multiplies two expressions while keeping them visually separated,
+    ideal for displaying magnitude and units distinctly.
+
+    Args:
+        expression: Tuple containing two SymPy expressions to multiply
 
     Returns:
-        Basic: The result of multiplying the two expressions together as an unevaluated expression.
+        Unevaluated multiplication expression for clean display
     """
     
     return UnevaluatedExpr(expression[0]) * UnevaluatedExpr(expression[1])

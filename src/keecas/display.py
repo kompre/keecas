@@ -15,7 +15,7 @@ import re
 
 from pint import Quantity
 
-from typing import Union, List, Dict, Optional, Literal
+from typing import Any, Literal
 
 from .dataframe import *
 
@@ -39,7 +39,7 @@ TemplateChoice = Literal["default", "boxed", "minimal"]
 
 
 # Template processing helpers for check function
-def _get_check_templates(template_name=None, success_override=None, failure_override=None):
+def _get_check_templates(template_name: str | None = None, success_override: str | None = None, failure_override: str | None = None) -> dict[str, str]:
     """Get check templates from config or overrides."""
     # Use overrides if provided
     if success_override and failure_override:
@@ -63,7 +63,7 @@ def _get_check_templates(template_name=None, success_override=None, failure_over
     }
 
 
-def _format_check_template(template, **variables):
+def _format_check_template(template: str, **variables: Any) -> str:
     """Format template string with variable substitution."""
     try:
         return template.format(**variables)
@@ -75,11 +75,11 @@ def _format_check_template(template, **variables):
 
 
 # check verification result
-def check(lhs, rhs, test=Le,
-          template: Optional[TemplateChoice] = None,
-          success_template: Optional[str] = None,
-          failure_template: Optional[str] = None,
-          **kwargs) -> Markdown:
+def check(lhs: Basic, rhs: Basic, test=Le,
+          template: TemplateChoice | None = None,
+          success_template: str | None = None,
+          failure_template: str | None = None,
+          **kwargs: Any) -> Markdown:
     """Determines if the left-hand side (lhs) is less than or equal to
     the right-hand side (rhs) based on the provided test function.
 
@@ -166,15 +166,15 @@ def check(lhs, rhs, test=Le,
 
 
 def show_eqn(
-    eqns: dict | list[dict] | Dataframe,
-    environment: str = None,
+    eqns: dict[Basic, Any] | list[dict[Basic, Any]] | Dataframe,
+    environment: str | None = None,
     sep: str | list[str] = "&",
-    label: str | dict = None,
-    label_command: str = None,
-    col_wrap: list[None | tuple] = None,
-    float_format: str = None,
-    debug: bool = None,
-    **kwargs,
+    label: str | dict[str, str] | None = None,
+    label_command: str | None = None,
+    col_wrap: list[None | tuple[str, str]] | None = None,
+    float_format: str | None = None,
+    debug: bool | None = None,
+    **kwargs: Any,
 ) -> Markdown:
     """
     Generates a LaTeX equation or equation array based on the provided equations.
@@ -287,20 +287,19 @@ def show_eqn(
     if not label_command:
         label_command = config.default_label_command
 
-    def attach_label(key):
-        """
-        Attaches a label to a given key.
+    def attach_label(key: str | None) -> str:
+        """Attach a label to a given key.
 
-        Parameters:
-            key (str): The key to attach the label to.
+        Args:
+            key: The key to attach the label to, or None for single labels
 
         Returns:
-            str: The label attached to the key. If the label is empty or the katex engine is being used for rendering (i.e. in a Jupyter notebook), an empty string is returned.
+            LaTeX label command string, or empty string if no label or KaTeX mode
 
         Notes:
-            - The label is constructed using the `config.EQ_PREFIX`, the value of `label[key]`, and `config.EQ_SUFFIX`.
-            - If `config.PRINT_LABEL` is True, the key and label are printed.
-            - The label is wrapped in a LaTeX command specified by `label_command` if it is not empty and the katex engine is not being used for rendering.
+            - The label is constructed using config.EQ_PREFIX, label[key], and config.EQ_SUFFIX
+            - If config.PRINT_LABEL is True, the key and label are printed for debugging
+            - Labels are omitted in KaTeX mode for Jupyter notebook compatibility
         """
 
         if isinstance(label, dict):
@@ -423,7 +422,7 @@ def myprint_latex(expr: Basic | str | Markdown, **kwargs) -> str:
 import re
 
 
-def wrap_floats(text, wrapper=("", "")):
+def wrap_floats(text: str, wrapper: tuple[str, str] = ("", "")) -> str:
     # Define a regular expression pattern to match decimal numbers
     float_pattern = re.compile(r"-?\d+\.\d+")
 
@@ -437,7 +436,7 @@ def wrap_floats(text, wrapper=("", "")):
     return wrapped_text
 
 
-def format_decimal_numbers(text, format_string="{:.2f}"):
+def format_decimal_numbers(text: str | None, format_string: str | None = "{:.2f}") -> str | None:
     """
     Finds all decimal numbers in a string, applies a specified format,
     and substitutes them back into the string.
@@ -459,12 +458,12 @@ def format_decimal_numbers(text, format_string="{:.2f}"):
     return re.sub(r"-?\d+\.\d+", format_match, text)
 
 
-def dict_to_eq(result: dict):
+def dict_to_eq(result: dict[Basic, Any]) -> Eq | list[Eq]:
     eq = [Eq(k, v) for k, v in result.items()]
     return eq if len(eq) > 1 else eq[0]
 
 
-def eq_to_dict(result: Eq | list | tuple):
+def eq_to_dict(result: Eq | list[Eq] | tuple[Eq, ...]) -> dict[Basic, Any]:
     if hasattr(result, "__iter__"):
         return {x.lhs: x.rhs for x in result}
     else:
@@ -473,7 +472,7 @@ def eq_to_dict(result: Eq | list | tuple):
 
 import regex
 
-def _get_base_replacements():
+def _get_base_replacements() -> dict[str, str | callable]:
     """Get non-localizable replacements that are always applied."""
     return {
         r"\\frac": r"\\dfrac",  # first replace all frac with dfrac
@@ -485,7 +484,7 @@ def _get_base_replacements():
         r"\\,": r"{\,}",
     }
 
-def _get_localized_replacements(language: str = None, substitutions: dict = None):
+def _get_localized_replacements(language: str | None = None, substitutions: dict[str, str] | None = None) -> dict[str, str]:
     """Get localized replacements based on current language settings."""
     return {
         r"\bfor\b": translate("for", language=language, substitutions=substitutions),
@@ -497,7 +496,7 @@ def _get_localized_replacements(language: str = None, substitutions: dict = None
         r"\\text\{Range\}": f"\\text{{{translate('Range', language=language, substitutions=substitutions)}}}",
     }
 
-def get_replacement_dict(language: str = None, substitutions: dict = None):
+def get_replacement_dict(language: str | None = None, substitutions: dict[str, str] | None = None) -> dict[str, str | callable]:
     """
     Get complete replacement dictionary combining base and localized replacements.
 
@@ -517,7 +516,7 @@ replacement = get_replacement_dict()
 
 
 # %% replace all the key, value pair
-def replace_all(body, reps=None, language=None, substitutions=None):
+def replace_all(body: str, reps: dict[str, str | callable] | None = None, language: str | None = None, substitutions: dict[str, str] | None = None) -> str:
     """
     Replace patterns in body text using localization-aware replacements.
 
@@ -538,7 +537,7 @@ def replace_all(body, reps=None, language=None, substitutions=None):
     return body
 
 
-def latex_inline_dict(var, mapping: dict, **kwargs):
+def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> str:
     if not "mul_symbol" in kwargs:
         kwargs["mul_symbol"] = r"\,"
     match (mode := kwargs.get("mode")):
@@ -555,7 +554,7 @@ def latex_inline_dict(var, mapping: dict, **kwargs):
     return f"{wrap[0]}{_latex(var)} = {_latex(mapping[var])}{wrap[1]}"
 
 
-def _col_wrap(cw: None | str | tuple[str, str] | dict, value) -> tuple[str, str]:
+def _col_wrap(cw: None | str | tuple[str, str] | dict[type, tuple[str, str]], value: Any) -> tuple[str, str]:
     if not cw:
         return ("", "")
     

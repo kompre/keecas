@@ -383,6 +383,43 @@ For complete details, see `docs/CONVENTIONS.md`.
 - **Persistence Fix**: No more "sticky" locales from previous language settings
 - **Conservative English**: English locale only changes when explicitly switching from other languages
 
+## Task Planning and Management
+
+### `_todo` Directory Structure
+The project uses a structured planning system located in `_todo/`:
+
+```
+_todo/
+├── todo.md                    # Master task list written by user
+├── proposal/                  # Initial task proposals
+│   └── [task-name].md        # Claude's detailed plan awaiting user approval
+├── pending/                   # Active development files
+│   └── [task-name].md        # Approved tasks with progress updates
+└── completed/                 # Finished tasks archive
+    └── YYYY-MM-DD/           # Date-based folders for completion date
+        └── [task-name].md    # Final summary + insights
+```
+
+### Planning Workflow
+1. **Task Creation**: User writes tasks in `_todo/todo.md` with clear objectives and priorities
+2. **Proposal Phase**: Claude creates detailed proposal in `_todo/proposal/[task-name].md`
+   - Include original objective from todo.md and remove it from todo.md
+   - Break down into specific implementation steps
+   - Wait for user review, comments, and approval
+3. **Development Phase**: After user approval, move proposal to `_todo/pending/[task-name].md`
+   - Update file with implementation progress and activity summaries
+   - Use for ongoing development updates
+4. **Completion**: After task completion, move file to `_todo/completed/YYYY-MM-DD/`
+   - Update with final summary and insights
+   - Mark task as "Completed" in todo.md
+
+### Session Startup Protocol
+**IMPORTANT**: At the start of each session, always check:
+1. `_todo/todo.md` for new or updated tasks from the user
+2. `_todo/proposal/` for user-reviewed proposals ready to approve/implement
+3. `_todo/pending/` for active tasks requiring progress updates
+4. Current git status and recent commits for context
+
 ## Claude Code Session Management
 
 ### Documentation Updates Before Commits
@@ -392,6 +429,7 @@ IMPORTANT: Always update project documentation before making significant commits
 2. **CLAUDE.md**: Ensure architecture changes, new CLI features, and conventions are documented
 3. **README.md**: Update with user-facing features and installation instructions
 4. **Test documentation**: Update testing strategy and coverage notes
+5. **`_todo` Planning Files**: Update relevant planning files with progress and insights
 
 ### Memory Management Practices
 - Use TodoWrite tool proactively for complex multi-step tasks
@@ -399,10 +437,13 @@ IMPORTANT: Always update project documentation before making significant commits
 - Update documentation before major commits to preserve session context
 - Document new patterns, conventions, and architectural decisions immediately
 - Maintain DEVELOPMENT_CONTEXT.md as a session-to-session handoff document
+- Check `_todo/todo.md` at session start for user-defined tasks
 
 ### Key Files for Context Preservation
 - `CLAUDE.md`: Project architecture, conventions, CLI usage
-- `DEVELOPMENT_CONTEXT.md`: Current work status, recent changes, technical decisions
+- `_todo/todo.md`: Current user tasks and priorities
+- `_todo/proposal/`: Proposals awaiting user review and approval
+- `_todo/pending/`: Active development files requiring progress updates
 - `pyproject.toml`: Dependencies, build configuration, CLI entry points
 - `src/keecas/__init__.py`: Module structure and main exports
 - `examples/`: Working examples and templates for reference

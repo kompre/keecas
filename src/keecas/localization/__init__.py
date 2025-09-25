@@ -4,9 +4,9 @@ Provides simple translation dictionary lookup with config hierarchy support.
 """
 
 import importlib
-from typing import Dict, Optional
+from typing import Any
 
-def get_language_from_config() -> Optional[str]:
+def get_language_from_config() -> str | None:
     """Get language setting from main config system."""
     try:
         from ..config import get_config_manager
@@ -15,7 +15,7 @@ def get_language_from_config() -> Optional[str]:
     except Exception:
         return None
 
-def get_custom_replacements_from_config() -> Dict[str, str]:
+def get_custom_replacements_from_config() -> dict[str, str]:
     """Get custom replacements from main config system."""
     try:
         from ..config import get_config_manager
@@ -26,8 +26,8 @@ def get_custom_replacements_from_config() -> Dict[str, str]:
 
 # Global state
 _current_language = "en"
-_translations_cache: Dict[str, Dict[str, str]] = {}
-_runtime_overrides: Dict[str, str] = {}
+_translations_cache: dict[str, dict[str, str]] = {}
+_runtime_overrides: dict[str, str] = {}
 
 def _get_issues_url() -> str:
     """Get the GitHub issues URL from project metadata."""
@@ -53,7 +53,7 @@ def _get_issues_url() -> str:
     # Final fallback
     return "url not found in metadata"
 
-def _load_language_module(language: str) -> Dict[str, str]:
+def _load_language_module(language: str) -> dict[str, str]:
     """Load translations from a language module."""
     if language in _translations_cache:
         return _translations_cache[language]
@@ -82,7 +82,7 @@ def _load_language_module(language: str) -> Dict[str, str]:
 
     return {}
 
-def get_translations(language: Optional[str] = None) -> Dict[str, str]:
+def get_translations(language: str | None = None) -> dict[str, str]:
     """Get complete translation dictionary for a language.
 
     Hierarchy: runtime_overrides → config_replacements → language_file
@@ -101,7 +101,7 @@ def get_translations(language: Optional[str] = None) -> Dict[str, str]:
 
     return translations
 
-def translate(key: str, language: Optional[str] = None, substitutions: Optional[Dict[str, str]] = None) -> str:
+def translate(key: str, language: str | None = None, substitutions: dict[str, str] | None = None) -> str:
     """Translate a single key.
 
     Priority: direct substitutions → runtime → config → language file
@@ -126,7 +126,7 @@ def get_language() -> str:
     """Get current global language."""
     return _current_language
 
-def get_available_languages() -> list:
+def get_available_languages() -> list[str]:
     """Get list of available language codes."""
     import pkgutil
     from . import languages
