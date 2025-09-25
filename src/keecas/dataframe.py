@@ -6,6 +6,8 @@ LaTeX equation rendering where keys represent row labels and values are lists
 that populate columns across each row.
 """
 
+from __future__ import annotations
+
 import copy
 from itertools import chain
 from typing import Any, Hashable

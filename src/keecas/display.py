@@ -1,4 +1,6 @@
 # %%
+from __future__ import annotations
+
 from warnings import warn
 from sympy import (
     latex,
