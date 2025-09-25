@@ -4,13 +4,7 @@
 
 Write your tasks here following this format:
 
-### type annotation and docstring
-
-Review the current codebase and add type annotation and docstring where missing. Add useful comment for each function. Proceed one file at a time (make list to check it off, so I can review the work). Some files have been updated recently, while others are old and messier. 
-
-Do a check if the docstring provided are actually representing the underline function.
-
-Avoid using the object `Union`, but prefer `type1 | type2 | type3` instead.
+### 
 
 
 ## Instructions for Claude
