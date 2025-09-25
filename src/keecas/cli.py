@@ -101,7 +101,18 @@ def get_templates_dir() -> Path:
     return templates_dir
 
 
-def copy_template_to_workdir(template_name: str, work_dir: Path | str) -> Path:
+def generate_untitled_name(work_dir: Path | str) -> str:
+    """Generate an available untitled-N.ipynb filename."""
+    work_dir = Path(work_dir)
+    counter = 1
+    while True:
+        filename = f"untitled-{counter}.ipynb"
+        if not (work_dir / filename).exists():
+            return filename
+        counter += 1
+
+
+def copy_template_to_workdir(template_name: str, work_dir: Path | str, target_filename: str | None = None) -> Path:
     """Copy a template notebook to the working directory."""
     templates_dir = get_templates_dir()
     template_path = templates_dir / f"{template_name}.ipynb"
@@ -112,16 +123,18 @@ def copy_template_to_workdir(template_name: str, work_dir: Path | str) -> Path:
     work_dir = Path(work_dir)
     work_dir.mkdir(parents=True, exist_ok=True)
 
-    # Copy template with a unique name if file exists
-    target_name = f"{template_name}.ipynb"
+    # Use provided filename or generate one
+    if target_filename:
+        target_name = target_filename
+    else:
+        # Copy template with a unique name if file exists
+        target_name = f"{template_name}.ipynb"
+        counter = 1
+        while (work_dir / target_name).exists():
+            target_name = f"{template_name}_{counter}.ipynb"
+            counter += 1
+
     target_path = work_dir / target_name
-
-    counter = 1
-    while target_path.exists():
-        target_name = f"{template_name}_{counter}.ipynb"
-        target_path = work_dir / target_name
-        counter += 1
-
     shutil.copy2(template_path, target_path)
     return target_path
 
@@ -205,14 +218,39 @@ def cmd_config_edit(args: argparse.Namespace) -> None:
 
 def cmd_edit(args: argparse.Namespace) -> None:
     """Launch Jupyter server with keecas notebook templates."""
-    # Check if requested interface is available
-    use_lab = getattr(args, 'lab', False)
+    # Handle template listing
+    if getattr(args, 'list_templates', False):
+        templates_dir = get_templates_dir()
+        if templates_dir.exists():
+            templates = [f.stem for f in templates_dir.glob("*.ipynb")]
+            if templates:
+                print("Available templates:")
+                for template in sorted(templates):
+                    if template == 'minimal':
+                        print(f"  {template} (default) - Basic keecas setup")
+                    elif template == 'quickstart':
+                        print(f"  {template} - Comprehensive examples and patterns")
+                    else:
+                        print(f"  {template}")
+            else:
+                print("No templates found.")
+        else:
+            print("Templates directory not found.")
+        return
+
+    # Default to JupyterLab unless --no-lab is specified
+    use_lab = not getattr(args, 'no_lab', False)
 
     if use_lab:
         if not check_jupyterlab_available():
             print("Error: JupyterLab is not available.")
             print("Please install JupyterLab: pip install jupyterlab")
-            sys.exit(1)
+            print("Falling back to classic Jupyter Notebook...")
+            use_lab = False
+            if not check_jupyter_available():
+                print("Error: Jupyter is not available either.")
+                print("Please install Jupyter: pip install jupyter")
+                sys.exit(1)
     else:
         if not check_jupyter_available():
             print("Error: Jupyter is not available.")
@@ -226,15 +264,56 @@ def cmd_edit(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     # Set up working directory
-    work_dir = Path(args.dir).resolve()
-    work_dir.mkdir(parents=True, exist_ok=True)
+    use_temp = getattr(args, 'temp', False)
+    temp_dir = None
 
-    # Copy template if specified
+    if use_temp:
+        # Create temporary directory for session
+        temp_dir = tempfile.mkdtemp(prefix='keecas_session_')
+        work_dir = Path(temp_dir)
+        print(f"Created temporary session directory: {work_dir}")
+    else:
+        work_dir = Path(args.dir).resolve()
+        work_dir.mkdir(parents=True, exist_ok=True)
+
+    # Handle file argument and template creation
     notebook_path = None
-    if args.template:
+    target_file = getattr(args, 'file', None)
+
+    if target_file:
+        # File specified - either open existing or create new
+        target_path = work_dir / target_file
+
+        if target_path.exists():
+            # File exists - open it directly
+            notebook_path = target_path
+            print(f"Opening existing notebook: {notebook_path}")
+        else:
+            # File doesn't exist - create from template
+            template_name = args.template if hasattr(args, 'template') and args.template else 'minimal'
+            try:
+                notebook_path = copy_template_to_workdir(template_name, work_dir, target_file)
+                print(f"Created notebook from template '{template_name}': {notebook_path}")
+            except FileNotFoundError as e:
+                print(f"Error: {e}")
+                # List available templates
+                templates_dir = get_templates_dir()
+                if templates_dir.exists():
+                    templates = [f.stem for f in templates_dir.glob("*.ipynb")]
+                    if templates:
+                        print(f"Available templates: {', '.join(templates)}")
+                sys.exit(1)
+    else:
+        # No file specified - create with untitled name
+        template_name = args.template if hasattr(args, 'template') and args.template else 'minimal'
+        untitled_name = generate_untitled_name(work_dir)
+
         try:
-            notebook_path = copy_template_to_workdir(args.template, work_dir)
-            print(f"Created notebook from template '{args.template}': {notebook_path}")
+            notebook_path = copy_template_to_workdir(template_name, work_dir, untitled_name)
+            if template_name == 'minimal':
+                print(f"Created keecas notebook: {notebook_path}")
+            else:
+                print(f"Created notebook from template '{template_name}': {notebook_path}")
         except FileNotFoundError as e:
             print(f"Error: {e}")
             # List available templates
@@ -259,6 +338,11 @@ def cmd_edit(args: argparse.Namespace) -> None:
             '--notebook-dir', str(work_dir),
         ]
 
+    # Add file to open automatically if specified
+    if notebook_path:
+        relative_path = notebook_path.relative_to(work_dir)
+        jupyter_cmd.extend(['--ServerApp.file_to_run', str(relative_path)])
+
     if not args.browser:
         jupyter_cmd.append('--no-browser')
 
@@ -271,7 +355,11 @@ def cmd_edit(args: argparse.Namespace) -> None:
 
     interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
     print(f"Starting {interface_name} server on port {port}...")
-    print(f"Working directory: {work_dir}")
+    if use_temp:
+        print(f"Temporary session directory: {work_dir}")
+        print("Note: Files will be auto-cleaned when server stops")
+    else:
+        print(f"Working directory: {work_dir}")
 
     # Start Jupyter server
     try:
@@ -296,30 +384,20 @@ def cmd_edit(args: argparse.Namespace) -> None:
 
         # Build server URL
         server_url = f"http://localhost:{port}"
+        interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
 
-        if notebook_path and args.browser:
-            # Open specific notebook
-            if use_lab:
-                notebook_url = f"{server_url}/lab/tree/{notebook_path.name}"
+        if args.browser:
+            # Open in browser - Jupyter will automatically open the specified file
+            if notebook_path:
+                print(f"Opening notebook in {interface_name}: {notebook_path.name}")
             else:
-                notebook_url = f"{server_url}/notebooks/{notebook_path.name}"
-            interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
-            print(f"Opening notebook in {interface_name}: {notebook_url}")
-            webbrowser.open(notebook_url)
-        elif args.browser:
-            # Open Jupyter tree view
-            interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
-            print(f"Opening {interface_name} in browser: {server_url}")
+                print(f"Opening {interface_name} in browser")
             webbrowser.open(server_url)
         else:
-            interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
+            # No browser - just show URLs
             print(f"{interface_name} server running at: {server_url}")
             if notebook_path:
-                if use_lab:
-                    notebook_url = f"{server_url}/lab/tree/{notebook_path.name}"
-                else:
-                    notebook_url = f"{server_url}/notebooks/{notebook_path.name}"
-                print(f"Notebook available at: {notebook_url}")
+                print(f"Notebook will open automatically: {notebook_path.name}")
 
         print(f"Server PID: {process.pid}")
         print("Press Ctrl+C to stop the server")
@@ -334,6 +412,12 @@ def cmd_edit(args: argparse.Namespace) -> None:
             except subprocess.TimeoutExpired:
                 print(f"Force killing {interface_name} server...")
                 process.kill()
+
+            # Clean up temporary directory if used
+            if temp_dir and Path(temp_dir).exists():
+                print(f"Cleaning up temporary session: {temp_dir}")
+                shutil.rmtree(temp_dir, ignore_errors=True)
+
             sys.exit(0)
 
         signal.signal(signal.SIGINT, signal_handler)
@@ -485,18 +569,24 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Edit command - Launch Jupyter server with templates
     edit_main_parser = main_subparsers.add_parser('edit', help='Launch Jupyter server with keecas templates')
+    edit_main_parser.add_argument('file', nargs='?', default=None,
+                                 help='Notebook file to open or create (default: untitled-N.ipynb)')
     edit_main_parser.add_argument('--port', type=int, default=8888,
                                  help='Port for Jupyter server (default: 8888)')
     edit_main_parser.add_argument('--dir', default='.',
                                  help='Working directory for notebooks (default: current directory)')
     edit_main_parser.add_argument('--template',
-                                 help='Template notebook to create (e.g., quickstart)')
+                                 help='Template notebook to create (default: minimal, options: quickstart)')
     edit_main_parser.add_argument('--no-browser', dest='browser', action='store_false', default=True,
                                  help="Don't open browser automatically")
     edit_main_parser.add_argument('--token',
                                  help='Security token for Jupyter server (default: disabled for local use)')
-    edit_main_parser.add_argument('--lab', action='store_true', default=False,
-                                 help='Use JupyterLab instead of classic Jupyter Notebook')
+    edit_main_parser.add_argument('--no-lab', action='store_true', default=False,
+                                 help='Use classic Jupyter Notebook instead of JupyterLab (default: JupyterLab)')
+    edit_main_parser.add_argument('--list-templates', action='store_true',
+                                 help='List available templates and exit')
+    edit_main_parser.add_argument('--temp', action='store_true', default=False,
+                                 help='Create temporary notebook (auto-cleanup when server stops)')
     edit_main_parser.set_defaults(func=cmd_edit)
 
     # Config subcommand
