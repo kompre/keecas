@@ -19,7 +19,8 @@
       "Bash(grep:*)",
       "Bash(git reset:*)",
       "Bash(git mv:*)",
-      "Bash(uv run:*)"
+      "Bash(uv run:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

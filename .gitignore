@@ -6,8 +6,9 @@ __pycache__
 
 .venv
 
-.*/*
-.claude/
+# Ignore all dot folders and their contents
+.*/
+
 ./keecas.egg-info/*
 
 *egg-info/*
