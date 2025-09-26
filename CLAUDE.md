@@ -22,7 +22,7 @@ The project includes a comprehensive CLI for configuration management and Jupyte
 keecas --version
 
 # Jupyter development environment with templates
-keecas edit [--template quickstart] [--lab] [--port 8888] [--dir ./]
+keecas edit [file] [--template TEMPLATE] [--port PORT] [--dir DIR] [--no-browser] [--token TOKEN] [--no-lab] [--list-templates] [--temp]
 
 # Configuration management
 keecas config init [--global|--local] [--force]     # Initialize config
@@ -59,7 +59,8 @@ uv sync
 1. **Display Module** (`src/keecas/display.py`)
    - Central component for LaTeX equation rendering
    - `show_eqn()`: Main function that converts Python dicts to LaTeX amsmath environments
-   - `options` dataclass: Global configuration for equation formatting
+   - `config` object: Global configuration for equation formatting (unified TOML-based system)
+   - `check()`: Verification function with configurable templates for engineering calculations
    - Supports multiple equation environments (align, equation, cases, etc.)
    - Handles float formatting, column wrapping, and cross-referencing
 
@@ -78,6 +79,7 @@ uv sync
 4. **Pint-SymPy Bridge** (`src/keecas/pint_sympy.py`)
    - Integrates Pint unit registry with SymPy symbolic expressions
    - Provides `unitregistry as u` for unit definitions
+   - `update_pint_locale()`: Function for manual locale control
    - **Locale Support**: Automatic locale management for international unit formatting
    - **Language Integration**: 5 fully supported languages (de, es, fr, it, pt) with English fallback for others
    - **Conservative Behavior**: Intelligent locale switching that preserves system defaults
@@ -109,11 +111,11 @@ uv sync
 
 The main `__init__.py` exposes:
 - `Dataframe` class
-- Display functions (`show_eqn`, `options`, `verifica`, etc.)
+- Display functions (`show_eqn`, `config`, `check`, `dict_to_eq`, `eq_to_dict`)
 - Pipe commands as `pc` namespace
-- Unit registry as `u`
-- Common SymPy symbols and functions
-- LaTeX printing utilities
+- Unit registry as `u` and `update_pint_locale` function
+- Common SymPy symbols and functions (`symbols`, `latex`, `Eq`, `Le`, etc.)
+- LaTeX printing utilities (`platex`)
 
 ## Keecas Usage Conventions
 
@@ -127,16 +129,16 @@ Mathematical equations are mappings between LHS and RHS expressions. Use Python 
 
 ### Standard Dict Conventions
 
-| Dict | Purpose | Example |
-|------|---------|---------|
-| `_p` | Cell-local parameters | `_p = {F: 10*u.kN, A: 50*u.cm**2}` |
-| `_e` | Cell-local expressions | `_e = {sigma: "F / A" \| pc.parse_expr}` |
-| `_v` | Cell-local evaluated values | `_v = {k: v \| pc.subs(_e\|_p) \| pc.N for k,v in _e.items()}` |
-| `_d` | Cell-local descriptions | `_d = {F: "applied force", sigma: "stress"}` |
-| `_l` | Cell-local labels | `_l = {k: str(k) for k in _e.keys()}` |
-| `_c` | Cell-local checks | `_c = {k: check(v, 1.0) for k,v in _v.items()}` |
-| `params` | Global parameters | `params.update(_p)` for persistence |
-| `eqn` | Global expressions | `eqn.update(_e)` for persistence |
+| Dict     | Purpose                     | Example                                                        |
+| -------- | --------------------------- | -------------------------------------------------------------- |
+| `_p`     | Cell-local parameters       | `_p = {F: 10*u.kN, A: 50*u.cm**2}`                             |
+| `_e`     | Cell-local expressions      | `_e = {sigma: "F / A" \| pc.parse_expr}`                       |
+| `_v`     | Cell-local evaluated values | `_v = {k: v \| pc.subs(_e\|_p) \| pc.N for k,v in _e.items()}` |
+| `_d`     | Cell-local descriptions     | `_d = {F: "applied force", sigma: "stress"}`                   |
+| `_l`     | Cell-local labels           | `_l = {k: str(k) for k in _e.keys()}`                          |
+| `_c`     | Cell-local checks           | `_c = {k: check(v, 1.0) for k,v in _v.items()}`                |
+| `params` | Global parameters           | `params.update(_p)` for persistence                            |
+| `eqn`    | Global expressions          | `eqn.update(_e)` for persistence                               |
 
 ### Standard Cell Pattern
 
@@ -223,15 +225,15 @@ _e = {
 
 ```python
 # Preferred import style
-from keecas import symbols, u, pc, show_eqn, options, check
+from keecas import symbols, u, pc, show_eqn, config, check
 
 # Configuration for Quarto/KaTeX
-options.katex = True              # Disable \label{} for KaTeX compatibility
-options.PRINT_LABEL = True        # Print labels in dev mode
-options.EQ_PREFIX = r"eq-PREFIX-" # Label prefixing
+config.katex = True              # Disable \label{} for KaTeX compatibility
+config.print_label = True        # Print labels in dev mode
+config.eq_prefix = r"eq-PREFIX-" # Label prefixing
 
 # Language and localization (automatic Pint sync)
-options.language = 'it'           # Sets both keecas and Pint locales
+config.language = 'it'           # Sets both keecas and Pint locales
 # Supported: 'de', 'es', 'fr', 'it', 'pt' (full)
 # Fallback: 'da', 'nl', 'no', 'sv', 'en' (English units)
 
@@ -271,7 +273,7 @@ keecas config path             # Show file locations
 # .keecas/config.toml
 language = "it"                    # Italian units and localization
 katex = true                       # KaTeX compatibility mode
-EQ_PREFIX = "eq-"                  # Equation label prefix
+eq_prefix = "eq-"                  # Equation label prefix
 pint_default_format = ".3f~P"      # Pint number formatting
 disable_pint_locale = false       # Allow automatic locale setting
 
@@ -345,7 +347,7 @@ For complete details, see `docs/CONVENTIONS.md`.
   - `_files/`: Supporting assets (auto-generated)
 - **Git Hook Automation**: Pre-commit hook automatically converts and renders notebooks
   - Install with: `bash scripts/install-hooks.sh`
-  - When committing `.ipynb` files in `examples/`, the hook:
+  - When committing `.ipynb` files in `examples/quarto_example/`, the hook:
     1. Converts notebook to QMD using `quarto convert`
     2. Renders to PDF and HTML with `--execute` flag
     3. Adds all generated files to the commit
@@ -425,11 +427,10 @@ _todo/
 ### Documentation Updates Before Commits
 IMPORTANT: Always update project documentation before making significant commits to maintain context across sessions:
 
-1. **DEVELOPMENT_CONTEXT.md**: Update with current session work, implementation details, and status
-2. **CLAUDE.md**: Ensure architecture changes, new CLI features, and conventions are documented
-3. **README.md**: Update with user-facing features and installation instructions
-4. **Test documentation**: Update testing strategy and coverage notes
-5. **`_todo` Planning Files**: Update relevant planning files with progress and insights
+1. **CLAUDE.md**: Ensure architecture changes, new CLI features, and conventions are documented
+2. **README.md**: Update with user-facing features and installation instructions
+3. **Test documentation**: Update testing strategy and coverage notes
+4. **`_todo` Planning Files**: Update relevant planning files with progress and insights
 
 ### Memory Management Practices
 - Use TodoWrite tool proactively for complex multi-step tasks
