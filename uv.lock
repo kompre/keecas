@@ -874,7 +874,7 @@ dependencies = [
 dev = [
     { name = "ipykernel" },
     { name = "pytest" },
-    { name = "quarto-cli" },
+    { name = "pyyaml" },
 ]
 docs = [
     { name = "mkdocs" },
@@ -901,7 +901,7 @@ requires-dist = [
 dev = [
     { name = "ipykernel", specifier = ">=6.29.5,<7.0.0" },
     { name = "pytest", specifier = ">=8.3.2,<9.0.0" },
-    { name = "quarto-cli", specifier = ">=1.8.24" },
+    { name = "pyyaml", specifier = ">=6.0" },
 ]
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
@@ -1597,17 +1597,6 @@ wheels = [
 ]
 
 [[package]]
-name = "quarto-cli"
-version = "1.8.24"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "jupyter" },
-    { name = "nbclient" },
-    { name = "wheel" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d4/56/ffaac82f9479d256bfbfeeea6add1b5825dec4529dd0f6f609f7bfdc43c5/quarto_cli-1.8.24.tar.gz", hash = "sha256:a3a7777451f668551aa56f538f73eaa0c3f00174139709a78780d415ad9bb592", size = 4618, upload-time = "2025-09-12T16:25:39.459Z" }
-
-[[package]]
 name = "referencing"
 version = "0.36.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2054,15 +2043,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e6/30/fba0d96b4b5fbf5948ed3f4681f7da2f9f64512e1d303f94b4cc174c24a5/websocket_client-1.8.0.tar.gz", hash = "sha256:3239df9f44da632f96012472805d40a23281a991027ce11d2f45a6f24ac4c3da", size = 54648, upload-time = "2024-04-23T22:16:16.976Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5a/84/44687a29792a70e111c5c477230a72c4b957d88d16141199bf9acb7537a3/websocket_client-1.8.0-py3-none-any.whl", hash = "sha256:17b44cc997f5c498e809b22cdf2d9c7a9e71c02c8cc2b6c56e7c2d1239bfa526", size = 58826, upload-time = "2024-04-23T22:16:14.422Z" },
-]
-
-[[package]]
-name = "wheel"
-version = "0.45.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8a/98/2d9906746cdc6a6ef809ae6338005b3f21bb568bea3165cfc6a243fdc25c/wheel-0.45.1.tar.gz", hash = "sha256:661e1abd9198507b1409a20c02106d9670b2576e916d58f520316666abca6729", size = 107545, upload-time = "2024-11-23T00:18:23.513Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/2c/87f3254fd8ffd29e4c02732eee68a83a1d3c346ae39bc6822dcbcb697f2b/wheel-0.45.1-py3-none-any.whl", hash = "sha256:708e7481cc80179af0e556bbf0cc00b8444c7321e2700b8d8580231d13017248", size = 72494, upload-time = "2024-11-23T00:18:21.207Z" },
 ]
 
 [[package]]
