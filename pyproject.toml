@@ -33,7 +33,6 @@ keecas = "keecas.cli:main"
 dev = [
     "pytest<9.0.0,>=8.3.2",
     "ipykernel<7.0.0,>=6.29.5",
-    "quarto-cli>=1.8.24",
 ]
 docs = [
     "mkdocs>=1.6.1",

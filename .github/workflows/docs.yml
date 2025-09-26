@@ -43,13 +43,13 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        uv sync --group dev
+        uv sync
         uv pip install -e .
 
-    - name: Verify Quarto installation
-      run: |
-        quarto check
-        quarto --version
+    - name: Setup Quarto
+      uses: quarto-dev/quarto-actions/setup@v2
+      with:
+        version: release
 
     - name: Setup Pages
       id: pages
@@ -80,7 +80,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
 
-    environment: github-pages
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
     - name: Deploy to GitHub Pages
