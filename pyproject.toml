@@ -33,6 +33,7 @@ keecas = "keecas.cli:main"
 dev = [
     "pytest<9.0.0,>=8.3.2",
     "ipykernel<7.0.0,>=6.29.5",
+    "pyyaml>=6.0",
 ]
 docs = [
     "mkdocs>=1.6.1",

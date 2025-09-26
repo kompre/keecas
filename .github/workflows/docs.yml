@@ -43,13 +43,17 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        uv sync
+        uv sync --group dev
         uv pip install -e .
 
     - name: Setup Quarto
       uses: quarto-dev/quarto-actions/setup@v2
       with:
         version: release
+
+    - name: Configure Quarto Python environment
+      run: |
+        echo "QUARTO_PYTHON=$(uv run which python)" >> $GITHUB_ENV
 
     - name: Setup Pages
       id: pages
@@ -59,7 +63,7 @@ jobs:
     - name: Render Quarto Documentation
       run: |
         cd docs
-        quarto render
+        uv run quarto render
 
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
