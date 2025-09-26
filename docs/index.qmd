@@ -1,4 +1,7 @@
-# Keecas Documentation
+---
+title: "Keecas Documentation"
+subtitle: "Symbolic and units-aware calculations for Jupyter notebooks"
+---
 
 Welcome to Keecas, a Python package for symbolic and units-aware calculations in Jupyter notebooks, specifically designed for Quarto rendered PDF documents.
 
@@ -23,7 +26,8 @@ This combination provides a streamlined interface for mathematical computations 
 
 ## Quick Example
 
-```python
+```{python}
+#| eval: false
 from keecas import symbols, u, pc, show_eqn
 
 # Define symbols with LaTeX notation
@@ -51,23 +55,37 @@ show_eqn([_p | _e, _v])
 
 ## Getting Started
 
-- [Installation Guide](getting-started/installation.md) - Install Keecas and dependencies
-- [Quick Start](getting-started/quickstart.md) - Your first calculations with Keecas
-- [Configuration](getting-started/configuration.md) - Set up your preferences
+:::{.callout-tip}
+## New to Keecas?
+
+Start with our [Installation Guide](getting-started/installation.qmd) and [Quick Start Tutorial](getting-started/quickstart.qmd).
+:::
 
 ## Documentation Sections
 
-### [User Guide](user-guide/conventions.md)
-Learn the conventions, patterns, and best practices for using Keecas effectively.
+::: {.grid}
 
-### [API Reference](api-reference/display.md)
+::: {.g-col-6}
+### [Getting Started](getting-started/index.qmd)
+Learn how to install and configure Keecas for your projects.
+:::
+
+::: {.g-col-6}
+### [User Guide](user-guide/index.qmd)
+Discover conventions, patterns, and best practices for effective use.
+:::
+
+::: {.g-col-6}
+### [API Reference](api-reference/index.qmd)
 Complete reference for all functions, classes, and modules.
+:::
 
-### [CLI Reference](cli-reference/commands.md)
+::: {.g-col-6}
+### [CLI Reference](cli-reference/index.qmd)
 Command-line interface for configuration and Jupyter integration.
+:::
 
-### [Developer Guide](developer-guide/contributing.md)
-Information for contributors and developers extending Keecas.
+:::
 
 ## Community and Support
 

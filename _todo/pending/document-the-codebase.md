@@ -201,11 +201,20 @@ docs/
 - [x] Create User Guide section (conventions, examples)
 - [x] Test MkDocs build (successful)
 
-#### 🔄 In Progress
-- [ ] Create API Reference pages with autodoc
-- [ ] Add GitHub Actions for deployment
+#### 🔄 **PIVOT TO QUARTO** (User Request)
+- [x] Switch from MkDocs to Quarto (better fit for Jupyter/scientific docs)
+- [x] Create Quarto project structure
+- [x] Convert existing content to .qmd format
+- [x] Set up Quarto website configuration
+- [x] Test Quarto preview server ✅ **WORKING**
 
 #### ⏳ Next Steps
-- [ ] Create CLI Reference documentation
-- [ ] Add Developer Guide content
-- [ ] Complete remaining sections
+- [ ] Create remaining pages (installation, configuration, etc.)
+- [ ] Add real Jupyter notebook examples
+- [ ] Set up GitHub Actions for Quarto publishing
+- [ ] Complete API Reference with quartodoc
+
+#### 🚀 **CURRENT STATUS**
+**Quarto documentation site is running!**
+**Preview URL**: http://localhost:8080/
+**Command**: `cd docs-qmd && quarto preview --port 8080`

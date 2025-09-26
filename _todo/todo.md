@@ -21,7 +21,7 @@ When user approves a proposal:
 2. Update the file with implementation progress and activity summaries
 3. Use the pending file for ongoing development updates
 4. Write an executive summary after each major progress is complete, to the end of the file. 
-5. After editing the task.md open the file in the current IDE (if you're connected to it) for the user, presenting the changes.
+5. After editing the task.md open the file in the current IDE (VSCODE) for the user, presenting the changes.
 
 ### Completion Phase
 When tasks are completed:

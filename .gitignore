@@ -14,3 +14,12 @@ __pycache__
 *egg-info/*
 
 .DS*
+
+# Quarto
+/.quarto/
+**/*.quarto_ipynb
+_freeze/
+docs/_site/
+
+# MkDocs (legacy - removed)
+/site

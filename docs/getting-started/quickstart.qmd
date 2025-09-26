@@ -1,4 +1,6 @@
-# Quick Start
+---
+title: "Quick Start"
+---
 
 This guide will get you up and running with Keecas in just a few minutes.
 
@@ -8,7 +10,8 @@ Let's start with a simple engineering calculation - computing stress from force 
 
 ### 1. Import Keecas
 
-```python
+```{python}
+#| eval: false
 from keecas import symbols, u, pc, show_eqn, config
 ```
 
@@ -16,7 +19,8 @@ from keecas import symbols, u, pc, show_eqn, config
 
 Use LaTeX notation for beautiful symbol display:
 
-```python
+```{python}
+#| eval: false
 # Define symbols with LaTeX notation
 F, A, sigma = symbols(r"F, A, \sigma")
 ```
@@ -25,7 +29,8 @@ F, A, sigma = symbols(r"F, A, \sigma")
 
 Define your parameters with units:
 
-```python
+```{python}
+#| eval: false
 # Cell-local parameters
 _p = {
     F: 10 * u.kN,      # Force in kilonewtons
@@ -37,7 +42,8 @@ _p = {
 
 Create symbolic expressions:
 
-```python
+```{python}
+#| eval: false
 # Cell-local expressions
 _e = {
     sigma: "F / A" | pc.parse_expr
@@ -48,7 +54,8 @@ _e = {
 
 Compute values and display the results:
 
-```python
+```{python}
+#| eval: false
 # Evaluate expressions
 _v = {
     k: v | pc.subs(_e | _p) | pc.convert_to([u.MPa]) | pc.N
@@ -77,12 +84,14 @@ Keecas follows a consistent pattern:
 
 Keecas uses pipe operators (`|`) for functional composition:
 
-```python
+```{python}
+#| eval: false
 # Chain operations together
 result = expression | pc.subs(parameters) | pc.convert_to(units) | pc.N
 ```
 
 Common pipe commands:
+
 - `pc.parse_expr` - Parse string expressions
 - `pc.subs(dict)` - Substitute values
 - `pc.convert_to(units)` - Convert units
@@ -92,7 +101,8 @@ Common pipe commands:
 
 Set up basic configuration for your document:
 
-```python
+```{python}
+#| eval: false
 # Configuration for LaTeX output
 config.katex = True              # KaTeX compatibility
 config.eq_prefix = "eq-"         # Equation label prefix
@@ -103,7 +113,8 @@ config.language = 'en'           # Language/locale
 
 For complex calculations spanning multiple cells:
 
-```python
+```{python}
+#| eval: false
 # Setup cell (run once)
 params = {}  # Global parameters
 eqn = {}     # Global expressions
@@ -137,7 +148,8 @@ show_eqn([_p | _e, _v])
 
 Check if calculated values meet criteria:
 
-```python
+```{python}
+#| eval: false
 from keecas import check
 
 # Check if stress is within allowable limits
@@ -162,7 +174,7 @@ keecas edit --list-templates
 
 ## Next Steps
 
-- Learn more about [Configuration](configuration.md)
-- Explore [Conventions](../user-guide/conventions.md) for advanced patterns
-- Check out [Examples](../user-guide/examples.md) for real-world use cases
-- Review the [API Reference](../api-reference/display.md) for complete function documentation
+- Learn more about [Configuration](configuration.qmd)
+- Explore [Conventions](../user-guide/conventions.qmd) for advanced patterns
+- Check out [Examples](../user-guide/examples.qmd) for real-world use cases
+- Review the [API Reference](../api-reference/display.qmd) for complete function documentation
