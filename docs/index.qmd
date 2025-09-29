@@ -1,0 +1,98 @@
+---
+title: "Keecas Documentation"
+subtitle: "Symbolic and units-aware calculations for Jupyter notebooks"
+---
+
+Welcome to Keecas, a Python package for symbolic and units-aware calculations in Jupyter notebooks, specifically designed for Quarto rendered PDF documents.
+
+## What is Keecas?
+
+Keecas combines three powerful Python libraries:
+
+- **SymPy** - Symbolic mathematics
+- **Pint** - Physical units and quantities
+- **Pipe** - Functional programming patterns
+
+This combination provides a streamlined interface for mathematical computations with beautiful LaTeX output, perfect for engineering documentation and calculations.
+
+## Key Features
+
+- 🔢 **Symbolic Mathematics**: Work with symbolic expressions and equations
+- 📏 **Unit-Aware Calculations**: Automatic unit conversion and dimensional analysis
+- 📝 **LaTeX Output**: Beautiful equation rendering for documents
+- 📊 **Jupyter Integration**: Seamless notebook workflow
+- 🌍 **Internationalization**: Support for multiple languages and locales
+- ⚙️ **Configurable**: Flexible configuration system
+
+## Quick Example
+
+```{python}
+#| eval: false
+from keecas import symbols, u, pc, show_eqn
+
+# Define symbols with LaTeX notation
+F, A, sigma = symbols(r"F, A, \sigma")
+
+# Parameters with units
+_p = {
+    F: 10 * u.kN,
+    A: 50 * u.cm**2,
+}
+
+# Expressions
+_e = {
+    sigma: "F / A" | pc.parse_expr
+}
+
+# Evaluate and display
+_v = {
+    k: v | pc.subs(_e | _p) | pc.convert_to([u.MPa]) | pc.N
+    for k, v in _e.items()
+}
+
+show_eqn([_p | _e, _v])
+```
+
+## Getting Started
+
+:::{.callout-tip}
+## New to Keecas?
+
+Start with our [Installation Guide](getting-started/installation.qmd) and [Quick Start Tutorial](getting-started/quickstart.qmd).
+:::
+
+## Documentation Sections
+
+::: {.grid}
+
+::: {.g-col-6}
+### [Getting Started](getting-started/index.qmd)
+Learn how to install and configure Keecas for your projects.
+:::
+
+::: {.g-col-6}
+### [User Guide](user-guide/index.qmd)
+Discover conventions, patterns, and best practices for effective use.
+:::
+
+::: {.g-col-6}
+### [API Reference](api-reference/index.qmd)
+Complete reference for all functions, classes, and modules.
+:::
+
+::: {.g-col-6}
+### [CLI Reference](cli-reference/index.qmd)
+Command-line interface for configuration and Jupyter integration.
+:::
+
+:::
+
+## Community and Support
+
+- **GitHub Repository**: [kompre/keecas](https://github.com/kompre/keecas)
+- **Issues and Bug Reports**: [GitHub Issues](https://github.com/kompre/keecas/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/kompre/keecas/discussions)
+
+## License
+
+Keecas is released under the MIT License. See the [LICENSE](https://github.com/kompre/keecas/blob/main/LICENSE) file for details.

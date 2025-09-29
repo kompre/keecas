@@ -1,0 +1,516 @@
+---
+title: "Quarto Integration"
+---
+
+# Quarto Integration
+
+Keecas is specifically designed to work seamlessly with [Quarto](https://quarto.org/) for creating professional scientific and engineering documents with beautiful LaTeX output.
+
+## Why Quarto + Keecas?
+
+- **Professional PDF Output**: Full LaTeX support with proper equation numbering
+- **Cross-References**: Automatic equation labeling and referencing
+- **Multiple Formats**: Generate PDF, HTML, and Word documents from the same source
+- **Scientific Publishing**: Publication-ready documents with proper formatting
+- **Reproducible Reports**: Executable notebooks that generate consistent output
+
+## Basic Quarto Setup
+
+### Document Header
+
+Start your `.qmd` file with proper YAML frontmatter:
+
+```yaml
+---
+title: "Structural Analysis Report"
+author: "Your Name"
+date: today
+format:
+  pdf:
+    documentclass: article
+    include-in-header:
+      - text: |
+          \usepackage{amsmath}
+          \usepackage{amssymb}
+          \usepackage{siunitx}
+    number-sections: true
+    toc: true
+  html:
+    number-sections: true
+    toc: true
+    code-fold: true
+execute:
+  echo: false
+  warning: false
+---
+```
+
+### Keecas Configuration for Quarto
+
+```python
+from keecas import symbols, u, pc, show_eqn, config, check
+
+# Quarto-optimized settings
+config.katex = False             # Full LaTeX support in PDF
+config.eq_prefix = 'eq-beam-'    # Unique prefix for this document
+config.language = 'en'           # Set your language
+config.print_label = False       # Labels handled by Quarto
+
+# Initialize global containers
+params = {}
+eqn = {}
+```
+
+## Document Structure Patterns
+
+### Executive Summary Pattern
+
+Create professional reports with clear sections:
+
+```python
+#| label: setup
+#| include: false
+
+from keecas import *
+
+# Project configuration
+config.katex = False
+config.eq_prefix = 'eq-analysis-'
+params = {}
+eqn = {}
+```
+
+```markdown
+## 1. Introduction
+
+This report presents the structural analysis of a simply supported beam
+under uniform loading conditions.
+
+## 2. Geometry and Materials
+```
+
+```python
+#| label: geometry
+#| echo: false
+
+L, b, h, E = symbols(r"L, b, h, E")
+
+_p = {
+    L: 6 * u.m,
+    b: 300 * u.mm,
+    h: 500 * u.mm,
+    E: 210 * u.GPa,
+}
+params.update(_p)
+
+_d = {
+    L: "beam span",
+    b: "section width",
+    h: "section height",
+    E: "elastic modulus",
+}
+
+show_eqn([_p, _d], col_wrap=[None, "=", "&"], label=f"beam-properties")
+```
+
+### Cross-References in Text
+
+Reference equations directly in your prose:
+
+```markdown
+The beam geometry is defined in @eq-analysis-beam-properties, with a span
+of 6 m and rectangular cross-section of 300×500 mm.
+
+The maximum bending moment, calculated in @eq-analysis-moment, reaches
+112.5 kN·m at midspan.
+```
+
+### Professional Calculation Sections
+
+```markdown
+## 3. Load Analysis
+
+### 3.1 Applied Loads
+```
+
+```python
+#| label: loads
+#| echo: false
+
+q_permanent, q_live, gamma_G, gamma_Q = symbols(r"q_{\text{perm}}, q_{\text{live}}, \gamma_G, \gamma_Q")
+
+_p = {
+    q_permanent: 15 * u.kN/u.m,
+    q_live: 20 * u.kN/u.m,
+    gamma_G: 1.35,
+    gamma_Q: 1.5,
+}
+params.update(_p)
+
+_d = {
+    q_permanent: "permanent load",
+    q_live: "live load",
+    gamma_G: "permanent load factor",
+    gamma_Q: "live load factor",
+}
+
+show_eqn([_p, _d], col_wrap=[None, "=", "&"], label="loads")
+```
+
+```markdown
+### 3.2 Design Load Combination
+```
+
+```python
+#| label: design-load
+#| echo: false
+
+q_d = symbols(r"q_d")
+
+_e = {
+    q_d: "gamma_G * q_permanent + gamma_Q * q_live" | pc.parse_expr
+}
+eqn.update(_e)
+
+_v = {
+    k: v | pc.subs(eqn | params) | pc.convert_to([u.kN/u.m]) | pc.N
+    for k, v in _e.items()
+}
+
+_d = {q_d: "design load"}
+
+show_eqn([_e, _v, _d], col_wrap=[None, "=", "=", "&"], label="design-load")
+```
+
+## Advanced Quarto Features
+
+### Conditional Content
+
+Show different content based on output format:
+
+```python
+#| echo: false
+
+# Different precision for different outputs
+if config.katex:  # HTML output
+    precision = '{:.1f}'
+else:  # PDF output
+    precision = '{:.3f}'
+
+show_eqn([_e, _v], float_format=precision)
+```
+
+### Code Folding
+
+Hide implementation details while showing results:
+
+```python
+#| code-fold: true
+#| code-summary: "Show calculation details"
+
+# Complex calculation hidden by default
+M_max, sigma_max, delta_max = symbols(r"M_{\max}, \sigma_{\max}, \delta_{\max}")
+
+_e = {
+    M_max: "q_d * L^2 / 8" | pc.parse_expr,
+    sigma_max: "M_max * h / (2 * I)" | pc.parse_expr,
+    delta_max: "5 * q_d * L^4 / (384 * E * I)" | pc.parse_expr,
+}
+eqn.update(_e)
+
+# Section properties calculation
+I = symbols("I")
+_e_section = {I: "b * h^3 / 12" | pc.parse_expr}
+eqn.update(_e_section)
+
+_v = {
+    k: v | pc.subs(eqn | params) | pc.convert_to([u.kN, u.m, u.MPa, u.mm]) | pc.N
+    for k, v in _e.items()
+}
+
+show_eqn([_e, _v], label="analysis-results")
+```
+
+### Tabulated Results
+
+Create summary tables for key results:
+
+```python
+#| label: tbl-results
+#| tbl-cap: "Summary of Analysis Results"
+
+import pandas as pd
+
+# Extract results for table
+results_data = {
+    'Parameter': ['Maximum Moment', 'Maximum Stress', 'Maximum Deflection'],
+    'Symbol': ['$M_{\\max}$', '$\\sigma_{\\max}$', '$\\delta_{\\max}$'],
+    'Value': [
+        f"{(eqn[M_max] | pc.subs(params) | pc.convert_to([u.kN, u.m]) | pc.N):.1f}",
+        f"{(eqn[sigma_max] | pc.subs(params) | pc.convert_to([u.MPa]) | pc.N):.1f}",
+        f"{(eqn[delta_max] | pc.subs(params) | pc.convert_to([u.mm]) | pc.N):.1f}"
+    ],
+    'Limit': ['—', '355 MPa', 'L/250 = 24 mm'],
+    'Check': ['—', '✓ Pass', '✓ Pass']
+}
+
+df = pd.DataFrame(results_data)
+df.style.hide(axis="index")
+```
+
+## Verification and Checks
+
+### Professional Verification Sections
+
+```markdown
+## 4. Verification
+
+### 4.1 Strength Check
+```
+
+```python
+#| label: strength-check
+#| echo: false
+
+f_y, gamma_M0 = symbols(r"f_y, \gamma_{M0}")
+
+_p = {
+    f_y: 355 * u.MPa,
+    gamma_M0: 1.0,
+}
+params.update(_p)
+
+# Design resistance
+sigma_Rd = symbols(r"\sigma_{Rd}")
+_e = {sigma_Rd: "f_y / gamma_M0" | pc.parse_expr}
+eqn.update(_e)
+
+# Utilization ratio
+utilization = symbols(r"\eta")
+_e_check = {utilization: "sigma_max / sigma_Rd" | pc.parse_expr}
+eqn.update(_e_check)
+
+_v = {
+    k: v | pc.subs(eqn | params) | pc.N
+    for k, v in _e_check.items()
+}
+
+# Verification result
+_c = {
+    utilization: check(
+        (utilization | pc.subs(eqn | params) | pc.N).evalf(),
+        1.0,
+        template='standard'
+    )
+}
+
+show_eqn([_e_check, _v, _c], col_wrap=[None, "=", "=", "&"], label="strength-verification")
+```
+
+### Multi-Language Support
+
+For international projects:
+
+```python
+# Switch language for verification terms
+config.language = 'it'  # Italian verification terms
+
+verification_results = {
+    'verifica_resistenza': check(0.85, 1.0),
+    'verifica_deformazione': check(0.75, 1.0),
+}
+
+show_eqn(verification_results)
+```
+
+## Document Generation Workflow
+
+### Command Line Usage
+
+```bash
+# Preview during development
+quarto preview document.qmd
+
+# Render final PDF
+quarto render document.qmd --to pdf
+
+# Render multiple formats
+quarto render document.qmd --to pdf,html,docx
+
+# Execute and render
+quarto render document.qmd --execute
+```
+
+### Automated Workflows
+
+Create a `_quarto.yml` project file for consistent builds:
+
+```yaml
+project:
+  type: default
+
+format:
+  pdf:
+    documentclass: article
+    include-in-header:
+      - text: |
+          \usepackage{amsmath}
+          \usepackage{amssymb}
+          \usepackage{siunitx}
+    number-sections: true
+    colorlinks: true
+  html:
+    theme: cosmo
+    number-sections: true
+    code-fold: true
+
+execute:
+  freeze: auto
+```
+
+### Git Hooks Integration
+
+The keecas project includes git hooks for automatic Quarto rendering:
+
+```bash
+# Install the hooks
+bash scripts/install-hooks.sh
+
+# Now .ipynb files in examples/ are automatically converted and rendered
+git add examples/my_analysis.ipynb
+git commit -m "Add structural analysis"
+# Automatically generates .qmd, .pdf, and .html files
+```
+
+## Best Practices
+
+### Document Organization
+
+1. **Clear Structure**: Use numbered sections and descriptive headings
+2. **Executive Summary**: Start with key results and conclusions
+3. **Detailed Calculations**: Show work with proper equation labeling
+4. **Verification Sections**: Clearly present safety checks
+5. **Appendices**: Include detailed derivations or additional data
+
+### Code Organization
+
+```python
+# Use clear cell labels for organization
+#| label: fig-beam-diagram
+#| fig-cap: "Beam Loading Diagram"
+
+# Generate figures or diagrams here
+```
+
+```python
+#| label: sec-moment-calculation
+#| echo: false
+
+# Critical calculations with descriptive labels
+```
+
+### Output Control
+
+```python
+#| output: false
+# Setup and imports (hidden from output)
+
+#| echo: false
+# Show results but hide code
+
+#| code-fold: true
+# Show code optionally (HTML only)
+
+#| eval: false
+# Show code but don't execute
+```
+
+## Template Documents
+
+### Structural Analysis Report Template
+
+Create reusable templates for common document types:
+
+```yaml
+---
+title: "{{< meta project.title >}} - Structural Analysis"
+author: "{{< meta project.engineer >}}"
+date: today
+
+project:
+  title: "Project Name"
+  engineer: "Engineer Name"
+  client: "Client Name"
+
+format:
+  pdf:
+    template-partials:
+      - "templates/title-page.tex"
+    include-in-header:
+      - "templates/preamble.tex"
+---
+```
+
+### Calculation Worksheets
+
+```python
+# Standard worksheet header
+from keecas import *
+
+# Project-specific configuration
+config.katex = False
+config.eq_prefix = f'eq-{project_code}-'
+config.language = 'en'
+
+# Load project parameters
+with open('project_params.json') as f:
+    project_data = json.load(f)
+
+# Convert to Keecas parameters
+params = {
+    symbols(k)[0]: v * getattr(u, data['unit'])
+    for k, data in project_data.items()
+}
+```
+
+## Troubleshooting
+
+### Common Quarto Issues
+
+```python
+# Check if running in Quarto
+import os
+if 'QUARTO_PROJECT_DIR' in os.environ:
+    # Running in Quarto - adjust settings
+    config.katex = False
+    config.print_label = False
+```
+
+### LaTeX Compilation Issues
+
+```yaml
+# Add to YAML header for complex equations
+format:
+  pdf:
+    include-in-header:
+      - text: |
+          \usepackage{amsmath}
+          \usepackage{amssymb}
+          \usepackage{breqn}  # For automatic equation breaking
+```
+
+### Cross-Reference Issues
+
+```python
+# Ensure unique equation labels
+config.eq_prefix = f'eq-{document_id}-'
+
+# Check label generation
+show_eqn(_e, label=_l, debug=True)
+```
+
+## Next Steps
+
+- Explore the complete [Examples](examples.qmd) for more complex documents
+- Review [Conventions](conventions.qmd) for consistent equation formatting
+- Check the [Jupyter Integration](jupyter-integration.qmd) guide for development workflows
