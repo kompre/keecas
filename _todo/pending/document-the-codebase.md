@@ -236,3 +236,20 @@ docs/
 **Build Status**: ✅ All pages render successfully
 **Command**: `cd docs && quarto render`
 **Preview**: `cd docs && quarto preview`
+
+#### 🔄 **PENDING FUTURE TASKS**
+**Additional API Reference Automation Requirements:**
+
+1. **Update Docstrings for Quarto Compatibility**
+   - Review and enhance existing docstrings in all modules
+   - Ensure docstrings follow format compatible with Quarto autodoc
+   - Add examples and parameter descriptions where missing
+   - Standardize docstring format across the codebase
+
+2. **Implement Automatic API Reference Generation**
+   - Set up Quarto autodoc extension or equivalent
+   - Configure automatic docstring extraction from source code
+   - Integrate API reference generation into build process
+   - Ensure API docs stay synchronized with code changes
+
+**Rationale**: Manual API reference will eventually fall out of sync with the codebase. Automatic generation from docstrings ensures documentation stays current with code changes.
