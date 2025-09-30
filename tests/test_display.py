@@ -264,5 +264,134 @@ def test_check_explicit_parameter_precedence():
     assert r"\textcolor{green}" in result_default.data
 
 
+def test_environment_align():
+    """Test standard align environment."""
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="align", debug=True)
+    assert isinstance(result, Markdown)
+    assert r"\begin{align}" in result.data
+    assert r"\end{align}" in result.data
+    assert "&" in result.data  # separator
+    assert r"\\" in result.data  # line separator
+
+
+def test_environment_align_starred():
+    """Test starred align* environment."""
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="align*", debug=True)
+    assert isinstance(result, Markdown)
+    assert r"\begin{align*}" in result.data
+    assert r"\end{align*}" in result.data
+
+
+def test_environment_equation():
+    """Test equation environment (no separator, single label)."""
+    eqns = {x: 1}
+    result = show_eqn(eqns, environment="equation", debug=True)
+    assert isinstance(result, Markdown)
+    assert r"\begin{equation}" in result.data
+    assert r"\end{equation}" in result.data
+    assert "&" not in result.data  # no separator
+    assert r"\\" not in result.data  # no line separator for single equation
+
+
+def test_environment_gather():
+    """Test gather environment (no separator, multiple labels)."""
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="gather", debug=True)
+    assert isinstance(result, Markdown)
+    assert r"\begin{gather}" in result.data
+    assert r"\end{gather}" in result.data
+    assert "&" not in result.data  # no separator
+
+
+def test_environment_cases():
+    """Test nested cases environment."""
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="cases", label="test-label", debug=True)
+    assert isinstance(result, Markdown)
+    assert r"\begin{align}" in result.data
+    assert r"\end{align}" in result.data
+    assert r"\begin{aligned}" in result.data
+    assert r"\end{aligned}" in result.data
+    assert r"\left\{" in result.data
+    assert r"\right." in result.data
+
+
+def test_environment_cases_starred():
+    """Test nested cases* environment (starred outer)."""
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="cases*", debug=True)
+    assert isinstance(result, Markdown)
+    assert r"\begin{align*}" in result.data
+    assert r"\end{align*}" in result.data
+    assert r"\begin{aligned}" in result.data
+    assert r"\left\{" in result.data
+
+
+def test_environment_split():
+    """Test nested split environment."""
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="split", label="test-label", debug=True)
+    assert isinstance(result, Markdown)
+    assert r"\begin{align}" in result.data
+    assert r"\begin{aligned}" in result.data
+
+
+def test_environment_unknown_fallback():
+    """Test unknown environment falls back to align."""
+    import warnings
+    eqns = {x: 1, y: 2}
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = show_eqn(eqns, environment="nonexistent", debug=True)
+
+        # Check warning was issued
+        assert len(w) == 1
+        assert "Unknown environment" in str(w[0].message)
+
+        # Should fall back to align
+        assert r"\begin{align}" in result.data
+
+
+def test_environment_config_separator():
+    """Test environment configuration controls separator."""
+    from keecas.config import get_config_manager
+
+    config_manager = get_config_manager()
+
+    # Test that align uses & separator from config
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="align")
+    assert "&" in result.data
+
+    # Test that equation uses empty separator from config
+    result = show_eqn(eqns, environment="equation")
+    assert "&" not in result.data
+
+
+def test_environment_custom_from_config():
+    """Test custom environment definition from config."""
+    from keecas.config import get_config_manager
+
+    config_manager = get_config_manager()
+
+    # Add custom environment
+    config_manager.options.environments.environments["custom_test"] = {
+        "separator": "&",
+        "line_separator": r" \\" + "\n ",
+        "supports_multiple_labels": True,
+        "outer_environment": "align",
+        "inner_environment": None
+    }
+
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="custom_test", debug=True)
+
+    assert r"\begin{align}" in result.data
+    assert "&" in result.data
+
+
 if __name__ == "__main__":
     pytest.main()

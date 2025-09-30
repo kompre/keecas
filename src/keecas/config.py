@@ -89,6 +89,62 @@ class CheckTemplateConfig:
 
 
 @dataclass
+class EnvironmentConfig:
+    """LaTeX environment behavior configuration."""
+    environments: dict[str, dict[str, Any]] = field(default_factory=lambda: {
+        # Standard align environment
+        "align": {
+            "separator": "&",
+            "line_separator": r" \\" + "\n ",
+            "supports_multiple_labels": True,
+            "outer_environment": "align",
+            "inner_environment": None
+        },
+
+        # Standard equation environment
+        "equation": {
+            "separator": "",
+            "line_separator": "",
+            "supports_multiple_labels": False,
+            "outer_environment": "equation",
+            "inner_environment": None
+        },
+
+        # Standard gather environment
+        "gather": {
+            "separator": "",
+            "line_separator": r" \\" + "\n ",
+            "supports_multiple_labels": True,
+            "outer_environment": "gather",
+            "inner_environment": None
+        },
+
+        # Special cases environment - nested structure
+        # Produces: \begin{align}\left\{\begin{aligned}...\end{aligned}\right.\end{align}
+        "cases": {
+            "separator": "&",
+            "line_separator": r" \\" + "\n ",
+            "supports_multiple_labels": False,
+            "outer_environment": "align",
+            "inner_environment": "aligned",
+            "inner_prefix": r"\left\{",
+            "inner_suffix": r"\right.",
+            "label_position": "outer"
+        },
+
+        # Special split environment - nested structure
+        "split": {
+            "separator": "&",
+            "line_separator": r" \\" + "\n ",
+            "supports_multiple_labels": False,
+            "outer_environment": "align",
+            "inner_environment": "aligned",
+            "label_position": "outer"
+        }
+    })
+
+
+@dataclass
 class ConfigOptions:
     """
     Unified configuration for Keecas with proper TOML sections.
@@ -99,6 +155,7 @@ class ConfigOptions:
     units: UnitsConfig = field(default_factory=UnitsConfig)
     translations: TranslationsConfig = field(default_factory=TranslationsConfig)
     check_templates: CheckTemplateConfig = field(default_factory=CheckTemplateConfig)
+    environments: EnvironmentConfig = field(default_factory=EnvironmentConfig)
 
     def __post_init__(self):
         """Set up cross-references for language propagation."""
@@ -267,6 +324,7 @@ class ConfigOptions:
                 'failure_template': self.check_templates.failure_template,
                 'template_sets': self.check_templates.template_sets,
             },
+            'environments': self.environments.environments,
         }
 
         # Add language if set
@@ -307,6 +365,29 @@ class ConfigOptions:
                 for key, value in section_data.items():
                     if hasattr(self.check_templates, key):
                         setattr(self.check_templates, key, value)
+            elif section_key == 'environments' and isinstance(section_data, dict):
+                # Validate and update environment definitions
+                for env_name, env_config in section_data.items():
+                    if isinstance(env_config, dict):
+                        # Validate required fields
+                        required_fields = ['separator', 'line_separator', 'outer_environment']
+                        missing_fields = [f for f in required_fields if f not in env_config]
+                        if missing_fields:
+                            print(f"Warning: Environment '{env_name}' missing required fields: {missing_fields}")
+                            continue
+
+                        # Warn about unknown fields (typo detection)
+                        known_fields = {
+                            'separator', 'line_separator', 'supports_multiple_labels',
+                            'outer_environment', 'inner_environment', 'inner_prefix',
+                            'inner_suffix', 'outer_prefix', 'outer_suffix', 'label_position'
+                        }
+                        unknown_fields = set(env_config.keys()) - known_fields
+                        if unknown_fields:
+                            print(f"Warning: Environment '{env_name}' has unknown fields: {unknown_fields}")
+
+                        # Update environment
+                        self.environments.environments[env_name] = env_config
             elif hasattr(self, section_key):
                 setattr(self, section_key, section_data)
 

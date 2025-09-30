@@ -40,6 +40,105 @@ from itertools import chain, zip_longest
 TemplateChoice = Literal["default", "boxed", "minimal"]
 
 
+def _attach_label(label: str | dict[str, str] | None, key: str | None = None, label_command: str | None = None) -> str:
+    r"""Attach a label to a given key.
+
+    Args:
+        label: The label or label dictionary
+        key: The key to attach the label to, or None for single labels
+        label_command: LaTeX label command (e.g., r"\label")
+
+    Returns:
+        LaTeX label command string, or empty string if no label or KaTeX mode
+
+    Notes:
+        - The label is constructed using config.EQ_PREFIX, label[key], and config.EQ_SUFFIX
+        - If config.PRINT_LABEL is True, the key and label are printed for debugging
+        - Labels are omitted in KaTeX mode for Jupyter notebook compatibility
+    """
+    if not label_command:
+        label_command = config.default_label_command
+
+    if isinstance(label, dict):
+        text_label = (
+            rf"{config.EQ_PREFIX}{label[key]}{config.EQ_SUFFIX}"
+            if label.get(key)
+            else ""
+        )
+        if config.PRINT_LABEL:
+            print(f"{key}: {text_label}") if text_label else None
+
+        return (
+            rf" {label_command}{{{text_label}}} "
+            if label.get(key)
+            and not config.katex  # don't add the label if there is no label to add, and if katex engine is used for rendering (i.e. jupyter notebook)
+            else ""
+        )
+
+    if isinstance(label, str) and not key:
+
+        text_label = rf"{config.EQ_PREFIX}{label}{config.EQ_SUFFIX}"
+
+        if config.PRINT_LABEL:
+            print(f"label: {text_label}" if text_label else None)
+
+        return (
+            rf" {label_command}{{{text_label}}} "
+            if not config.katex  # don't add the label if there is no label to add, and if katex engine is used for rendering (i.e. jupyter notebook)
+            else ""
+        )
+
+    return ""
+
+
+def _generate_environment_template(environment: str, env_config: dict[str, Any], label: str | dict[str, str] | None, first_key: str | None = None, label_command: str | None = None) -> str:
+    """Generate complete LaTeX template with ___body___ placeholder.
+
+    Args:
+        environment: Environment name (may include '*' for starred variant)
+        env_config: Environment configuration dictionary
+        label: Label string or label dictionary
+        first_key: First key for single-label environments
+        label_command: LaTeX label command
+
+    Returns:
+        LaTeX template string with ___body___ placeholder
+    """
+    outer_env = env_config["outer_environment"]
+    inner_env = env_config.get("inner_environment")
+
+    # Handle starred environments
+    if "*" in environment:
+        outer_env += "*"
+
+    if inner_env is None:
+        # Standard environment: \begin{env}___body___\end{env}
+        outer_prefix = env_config.get("outer_prefix", "")
+        outer_suffix = env_config.get("outer_suffix", "")
+
+        # Single label environments attach label to begin statement
+        label_str = _attach_label(label, first_key, label_command) if not env_config.get('supports_multiple_labels', False) else ''
+
+        template = rf"{outer_prefix}\begin{{{outer_env}}}{label_str}" + "\n___body___\n" + rf"\end{{{outer_env}}}{outer_suffix}"
+    else:
+        # Nested environment: \begin{outer}\n\t\prefix\begin{inner}___body___\end{inner}\suffix\n\end{outer}
+        inner_prefix = env_config.get("inner_prefix", "")
+        inner_suffix = env_config.get("inner_suffix", "")
+        outer_prefix = env_config.get("outer_prefix", "")
+        outer_suffix = env_config.get("outer_suffix", "")
+
+        # Label goes on outer environment for nested structures
+        label_str = _attach_label(label, None, label_command)
+
+        template = rf"""{outer_prefix}\begin{{{outer_env}}}{label_str}
+	{inner_prefix}\begin{{{inner_env}}}
+___body___
+	\end{{{inner_env}}}{inner_suffix}
+\end{{{outer_env}}}{outer_suffix}"""
+
+    return template
+
+
 # Template processing helpers for check function
 def _get_check_templates(template_name: str | None = None, success_override: str | None = None, failure_override: str | None = None) -> dict[str, str]:
     """Get check templates from config or overrides."""
@@ -231,16 +330,22 @@ def show_eqn(
     if not col_wrap:
         col_wrap = config.col_wrap
 
+    # Get environment configuration
+    env_config = config.environments.environments.get(environment.replace("*", ""))
+    if not env_config:
+        warn(f"Unknown environment '{environment}', using 'align'")
+        env_config = config.environments.environments["align"]
+        environment = "align"
+
     # warning message in case of too many labels provided
-    single_label_env = ["equation", "cases", "split"]
-    if environment.replace("*", "") in single_label_env and isinstance(label, dict):
+    if not env_config.get('supports_multiple_labels', False) and isinstance(label, dict):
         warn(
             f"ATTENTION! label is a dict, while the {environment} does not support multiple labels"
         )
 
-    # handle edge case for 'equation' and 'gather' environment
-    if environment.replace("*", "") in ["equation", "gather"]:
-        sep = ""  # no separator in environment
+    # Use config separator if not explicitly overridden (default value check)
+    if sep == "&":
+        sep = env_config["separator"]
 
     # convert sep to a list: str-> list[str]
     if not isinstance(sep, list):
@@ -289,80 +394,9 @@ def show_eqn(
     if not label_command:
         label_command = config.default_label_command
 
-    def attach_label(key: str | None) -> str:
-        """Attach a label to a given key.
-
-        Args:
-            key: The key to attach the label to, or None for single labels
-
-        Returns:
-            LaTeX label command string, or empty string if no label or KaTeX mode
-
-        Notes:
-            - The label is constructed using config.EQ_PREFIX, label[key], and config.EQ_SUFFIX
-            - If config.PRINT_LABEL is True, the key and label are printed for debugging
-            - Labels are omitted in KaTeX mode for Jupyter notebook compatibility
-        """
-
-        if isinstance(label, dict):
-            text_label = (
-                rf"{config.EQ_PREFIX}{label[key]}{config.EQ_SUFFIX}"
-                if label.get(key)
-                else ""
-            )
-            if config.PRINT_LABEL:
-                print(f"{key}: {text_label}") if text_label else None
-
-            return (
-                rf" {label_command}{{{text_label}}} "
-                if label.get(key)
-                and not config.katex  # don't add the label if there is no label to add, and if katex engine is used for rendering (i.e. jupyter notebook)
-                else ""
-            )
-
-        if isinstance(label, str) and not key:
-
-            text_label = rf"{config.EQ_PREFIX}{label}{config.EQ_SUFFIX}"
-
-            if config.PRINT_LABEL:
-                print(f"label: {text_label}" if text_label else None)
-
-            return (
-                rf" {label_command}{{{text_label}}} "
-                if not config.katex  # don't add the label if there is no label to add, and if katex engine is used for rendering (i.e. jupyter notebook)
-                else ""
-            )
-
-        return ""
-
-    # check if environment is special (starred "cases*" and "split*" are not valid latex environment, but they need to pass the "*" operator to the "equation" outer environment)
-    if environment.replace("*", "") in ["cases", "split"]:
-
-        # determine if outer env is starred
-        env = "align*" if "*" in environment else "align"
-
-        # clear the cases|split environment from the star
-        environment = "aligned"
-
-        # wrap inner cases|split in outer "align"
-        wrap = (
-            f"\\begin{{{env}}}{attach_label(None)}\n",  # for an equation environment, only one label is allowed
-            f"\t\\left\\{{\\begin{{{environment}}}",
-            f"\t\n\\end{{{environment}}}\\right.",
-            f"\n\\end{{{env}}}",
-        )
-
-    else:
-        # do nothing
-        wrap = (
-            "",
-            f"\\begin{{{environment}}}{attach_label(list(keys)[0]) if environment.replace('*', '') in single_label_env else ''}",
-            f"\n\\end{{{environment}}}",
-            "",
-        )
-
-    # definition of the main template
-    template = f"{wrap[0]}{wrap[1]}\n___body___{wrap[2]}{wrap[3]}"
+    # Generate template using environment configuration
+    first_key = list(keys)[0] if keys else None
+    template = _generate_environment_template(environment, env_config, label, first_key, label_command)
 
     # generate the rows
     body_lines = {}
@@ -381,10 +415,10 @@ def show_eqn(
                     fillvalue="",
                 )
             ]
-        ) + attach_label(key)
+        ) + _attach_label(label, key, label_command)
 
-    # how to join the lines of the body
-    join_token = "" if "equation" in environment else " \\\\\n "
+    # Use line separator from environment config
+    join_token = env_config["line_separator"]
 
     # generate the body
     body = join_token.join(body_lines.values())
