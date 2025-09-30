@@ -19,6 +19,11 @@ When you see a tasks:
 When user approves a proposal:
 1. **Optional Feature Branch Creation**: If user explicitly requests a new branch for the task:
    ```bash
+   # Ensure dev branch is synced first
+   git checkout dev
+   git add . && git commit -m "sync: Commit pending changes"
+   git push origin dev
+
    # Create feature branch
    git checkout -b feature/[task-name]
 
@@ -29,6 +34,14 @@ When user approves a proposal:
 
    # Commit the removal
    git commit -m "feat: Focus branch on [task-name] task only"
+
+   # Also remove other pending tasks from tracking
+   git rm --cached _todo/pending/other-pending-task.md
+   git commit -m "feat: Remove other pending tasks from branch scope"
+
+   # Clean workspace by removing untracked files to avoid confusion
+   rm -rf _todo/proposal/  # Remove untracked proposal files
+   rm _todo/pending/other-pending-task.md  # Remove untracked pending files
    ```
    If no explicit branch request, continue development in current active branch.
 
