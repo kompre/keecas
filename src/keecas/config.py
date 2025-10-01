@@ -113,6 +113,9 @@ class EnvironmentDefinition:
         """Create from dictionary, filtering unknown keys."""
         valid_fields = {f.name for f in fields(cls)}
         filtered_data = {k: v for k, v in data.items() if k in valid_fields}
+        # Convert empty string to None for inner_environment
+        if 'inner_environment' in filtered_data and filtered_data['inner_environment'] == '':
+            filtered_data['inner_environment'] = None
         return cls(**filtered_data)
 
     def to_dict(self) -> dict[str, Any]:
@@ -666,6 +669,23 @@ class ConfigManager:
 {format_value("latex", "default_environment", defaults.latex.default_environment, latex_inherited.get("default_environment"))}
 {format_value("latex", "default_label_command", defaults.latex.default_label_command, latex_inherited.get("default_label_command"))}
 {format_value("latex", "default_mul_symbol", defaults.latex.default_mul_symbol, latex_inherited.get("default_mul_symbol"))}
+
+## LaTeX Environments
+## Customize built-in environments or define new ones
+## Built-in environments: align, equation, gather, cases, split, alignat
+##
+## Example custom environment:
+## [latex.environments.custom]
+## separator = "&"
+## line_separator = " \\\\\\n "
+## supports_multiple_labels = true
+## outer_environment = "align"
+## inner_environment = ""  # Optional nested environment
+## inner_prefix = ""       # Text before inner environment
+## inner_suffix = ""       # Text after inner environment
+## outer_prefix = ""       # Text before outer environment
+## outer_suffix = ""       # Text after outer environment
+## label_position = "outer"  # Where to place labels: "outer" or "inner"
 
 [display]
 ## Display and debugging

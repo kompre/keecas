@@ -24,5 +24,3 @@ __pycache__
 _freeze/
 docs/_site/
 
-# MkDocs (legacy - removed)
-/site
