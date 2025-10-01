@@ -147,15 +147,24 @@ def _get_safe_init_locale() -> str | None:
     """Get a safe locale for UnitRegistry initialization.
 
     Returns:
-        Locale string if explicitly configured, None for system default
+        Locale string if explicitly configured and Pint locale not disabled,
+        None to disable locale (preserves compact unit symbols)
 
     Notes:
-        Only returns locale if user has explicitly configured a language,
-        avoiding unwanted locale changes for default English users
+        Respects disable_pint_locale config to prevent locale from breaking
+        compact unit symbols (kN vs kilonewton)
     """
     try:
+        from .config import ConfigManager
         from .localization import get_language_from_config
-        from .localization import get_language
+
+        # Check if Pint locale is disabled
+        try:
+            cm = ConfigManager()
+            if cm._options.disable_pint_locale:
+                return None  # Explicitly disable locale
+        except Exception:
+            pass
 
         config_lang = get_language_from_config()
 
@@ -163,17 +172,18 @@ def _get_safe_init_locale() -> str | None:
         if config_lang:
             return _find_best_locale(config_lang)
 
-        # For default 'en', don't set any locale (use system default)
+        # For default 'en', don't set any locale
         return None
     except ImportError:
         return None
 
-# Initialize UnitRegistry without problematic locale by default
+# Initialize UnitRegistry respecting disable_pint_locale config
 init_locale = _get_safe_init_locale()
 if init_locale:
     unitregistry = pint.UnitRegistry(fmt_locale=init_locale)
 else:
-    unitregistry = pint.UnitRegistry()  # Use system default
+    # Explicitly pass None to prevent Pint from auto-detecting system locale
+    unitregistry = pint.UnitRegistry(fmt_locale=None)
 
 unitregistry.formatter.default_format = ".2f~P"
 
@@ -419,14 +429,10 @@ def pint_to_sympy(quantity: pint.Quantity) -> Any:
 pint.Quantity._sympy_ = lambda x: pint_to_sympy(x)
 pint.Unit._sympy_ = lambda x: pint_to_sympy(1 * x)
 
-# Initialize locale on module import
-try:
-    # Always set a default locale, even for English
-    default_locale = _find_best_locale('en', fallback_to_english=False)
-    if default_locale:
-        unitregistry.formatter.set_locale(default_locale)
-except Exception:
-    pass  # If initialization fails, continue without locale
+# REMOVED: Unconditional locale initialization
+# Locale is now controlled by config.language_config.disable_pint_locale
+# If disable_pint_locale=True (default), no locale is set, preserving compact symbols (kN vs kilonewton)
+# If disable_pint_locale=False, locale is set when language config is loaded
 
 
 if __name__ == "__main__":

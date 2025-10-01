@@ -508,5 +508,125 @@ def test_inline_environment_with_prefixes():
     assert r"\end{equation}}" in result.data
 
 
+def test_float_format_config_fallback():
+    """Test that float_format falls back to config.display.default_float_format."""
+    from keecas.display import config
+
+    # Save original value
+    original_format = config.display.default_float_format
+
+    try:
+        # Set config default
+        config.display.default_float_format = ".3f"
+
+        # Use show_eqn without explicit float_format
+        eqns = {x: 3.14159265}
+        result = show_eqn(eqns, debug=True)
+
+        # Should use config format (.3f)
+        assert "3.142" in result.data
+
+        # Explicit float_format should override config
+        result = show_eqn(eqns, float_format=".1f", debug=True)
+        assert "3.1" in result.data
+
+    finally:
+        # Restore original value
+        config.display.default_float_format = original_format
+
+
+def test_float_format_none_uses_config():
+    """Test that float_format=None explicitly uses config default."""
+    from keecas.display import config
+
+    original_format = config.display.default_float_format
+
+    try:
+        config.display.default_float_format = ".2f"
+
+        eqns = {x: 2.71828}
+        result = show_eqn(eqns, float_format=None, debug=True)
+
+        assert "2.72" in result.data
+
+    finally:
+        config.display.default_float_format = original_format
+
+
+def test_sep_none_uses_environment_separator():
+    """Test that sep=None uses environment-specific separator."""
+    # Test with align (separator = "&")
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="align", sep=None, debug=True)
+    assert "x & =1" in result.data
+
+    # Test with equation (separator = "")
+    eqns = {x: 1}
+    result = show_eqn(eqns, environment="equation", sep=None, debug=True)
+    assert "x  =1" in result.data  # Two spaces, no separator
+
+    # Test explicit override still works
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="align", sep="&&", debug=True)
+    assert "x && =1" in result.data
+
+
+def test_sep_default_is_environment_based():
+    """Test that omitting sep parameter uses environment separator."""
+    # Don't specify sep - should use environment default
+    eqns = {x: 1, y: 2}
+
+    # align environment - should use "&"
+    result = show_eqn(eqns, environment="align", debug=True)
+    assert "x & =1" in result.data
+
+    # equation environment - should use ""
+    eqns_single = {x: 1}
+    result = show_eqn(eqns_single, environment="equation", debug=True)
+    assert "x  =1" in result.data
+
+
+def test_float_format_validation():
+    """Test that invalid float formats raise clear errors."""
+    eqns = {x: 3.14159}
+
+    # Valid formats should work
+    valid_formats = [".3f", "{:.3f}", ":.3f", ".2e", "g", "<10.2f", "^8.1f"]
+    for fmt in valid_formats:
+        result = show_eqn(eqns, float_format=fmt, debug=True)
+        assert isinstance(result.data, str)
+
+    # Invalid formats should raise ValueError
+    invalid_formats = ["invalid", ".3x", "not_a_format"]
+    for fmt in invalid_formats:
+        with pytest.raises(ValueError, match="Invalid float_format"):
+            show_eqn(eqns, float_format=fmt, debug=True)
+
+
+def test_float_format_structure():
+    """Test that float_format supports same structures as eqns (dict, list, Dataframe)."""
+    # Test with dict structure - different format per key
+    eqns = {x: 3.14159, y: 2.71828}
+    float_format = {x: ".3f", y: ".2f"}
+    result = show_eqn(eqns, float_format=float_format, debug=True)
+    assert "3.142" in result.data  # x formatted with .3f
+    assert "2.72" in result.data   # y formatted with .2f
+
+    # Test with dict containing list - cell-by-cell formatting for multiple columns
+    eqns_list = [{x: 3.14159}, {x: 2.71828}]  # Creates: x & =3.14159 & =2.71828
+    # Format list must include key column (None for key, then formats for values)
+    float_format_with_list = {x: [None, ".3f", ".1f"]}  # None for key, then value formats
+    result = show_eqn(eqns_list, float_format=float_format_with_list, debug=True)
+    assert "3.142" in result.data  # First value column with .3f
+    assert "2.7" in result.data    # Second value column with .1f
+
+    # Test with tuple (seed, default) pattern - key uses one format, other keys use default
+    eqns = {x: 1.5, y: 2.5}
+    float_format = ({x: ".1f"}, ".2f")  # x uses .1f, y uses default .2f
+    result = show_eqn(eqns, float_format=float_format, debug=True)
+    assert "1.5" in result.data    # x with .1f
+    assert "2.50" in result.data   # y with .2f
+
+
 if __name__ == "__main__":
     pytest.main()

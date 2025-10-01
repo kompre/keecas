@@ -371,4 +371,111 @@ show_eqn(special_equations, float_format=".5f")
 
 ---
 
-**Status**: Revised based on user feedback. Ready for approval to proceed with implementation.
+## Implementation Progress
+
+### Session 2025-10-01: Complete Implementation
+
+**Completed Tasks:**
+
+1. ✅ **Added `default_float_format` to DisplayConfig**
+   - New optional field with `str | None = None` default
+   - Config serialization/deserialization updated
+   - Template generation with special None handling
+   - Generated config shows: `# default_float_format = ".3f"`
+
+2. ✅ **Changed `sep` default to `None`**
+   - Function signature: `sep: str | list[str] | None = None`
+   - Resolution logic: uses environment separator when None
+   - Breaking change documented for v1.0.0
+
+3. ✅ **Moved `pint_default_format` to DisplayConfig**
+   - Relocated from UnitsConfig to DisplayConfig (formatting concern)
+   - All formatting options now grouped in `[display]` section
+   - UnitsConfig reduced to empty placeholder (ready for removal)
+
+4. ✅ **Fixed Pint locale issue**
+   - Changed `disable_pint_locale` default: `False` → `True`
+   - Prevents Babel from expanding unit symbols (kN → kilonewton)
+   - Removed unconditional locale initialization at module import
+   - Config loading order: process disable_pint_locale BEFORE language
+   - Config template: `language = "en"` now commented by default
+
+5. ✅ **Moved `float_format` validation to `format_decimal_numbers()`**
+   - Validation now happens at correct level (per-cell, not global)
+   - Enhanced type signature: supports str | dict | list[dict] | Dataframe | tuple
+   - Smart wrapping: `.3f` → `{:.3f}`, `:0.3f` → `{:0.3f}`
+   - Validation by testing format with 1.0
+   - Clear error messages for invalid formats
+   - Enables cell-by-cell float formatting
+
+6. ✅ **Cleaned up float_format conversion logic**
+   - Removed fragile type check: `isinstance(...) and float_format and isinstance(...[0], dict)`
+   - Simplified to: `isinstance(float_format, list)` (same as eqns)
+   - Replaced verbose tuple unpacking with inline ternary operators
+   - Single-line conditional for seed and default_value
+
+7. ✅ **Test Coverage**
+   - Added 6 new tests for float_format and sep behavior
+   - Updated 5 localization tests for new Pint locale default
+   - Added `enable_pint_locale` pytest fixture
+   - All 104 tests passing
+   - Tests cover validation, fallback, environment resolution, and cell-by-cell formatting
+
+**Files Modified:**
+- `src/keecas/config.py` - DisplayConfig, pint_default_format move, disable_pint_locale default, template
+- `src/keecas/pint_sympy.py` - Pint locale initialization, disable_pint_locale respect
+- `src/keecas/display.py` - show_eqn(), format_decimal_numbers(), float_format conversion
+- `tests/test_display.py` - 6 new tests (validation, structure, fallback)
+- `tests/test_localization.py` - Updated 5 tests, added fixture
+- `CLAUDE.md` - Updated examples and breaking changes documentation
+
+**Technical Highlights:**
+
+**Float Format Structure Support:**
+```python
+# Dict - different format per key
+float_format = {x: ".3f", y: ".2f"}
+
+# List with values - cell-by-cell formatting
+float_format = {x: [None, ".3f", ".1f"]}  # None for key column
+
+# Tuple - seed with default
+float_format = ({x: ".1f"}, ".2f")
+```
+
+**Validation in format_decimal_numbers():**
+```python
+# Normalization
+".3f" → "{:.3f}"
+":0.3f" → "{:0.3f}"
+
+# Validation
+float_format.format(1.0)  # Raises ValueError if invalid
+```
+
+**Pint Locale Fix:**
+```python
+# Default behavior (disable_pint_locale=True)
+u('3.14*kN')  # Shows "3.14 kN" (compact symbols)
+
+# When enabled (disable_pint_locale=False)
+u('3.14*kN')  # Shows "3.14 kilonewton" (full words)
+```
+
+**Breaking Changes:**
+- `sep` parameter default: `"&"` → `None` (minimal impact)
+- `disable_pint_locale` default: `False` → `True` (preserves compact symbols)
+- Both changes documented and backward compatible for typical usage
+
+**Commits:**
+1. `4efc2b9` - feat: Add default_float_format config and environment-based sep
+2. `c007323` - refactor: Add float_format validation and remove hardcoded default
+3. `7235b4a` - fix: Handle None values in config template generation
+4. `3835f4f` - refactor: Move pint_default_format from units to display config
+5. `f2e4fef` - fix: Disable Pint locale by default to preserve compact unit symbols
+6. `7c50c9e` - refactor: Move float_format validation to format_decimal_numbers()
+7. `7a40f4b` - refactor: Clean up float_format conversion logic
+
+---
+
+**Status**: ✅ **COMPLETE** - Feature fully implemented and tested. All 104 tests passing. Ready for PR to dev branch.

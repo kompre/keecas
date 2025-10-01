@@ -37,13 +37,15 @@ class DisplayConfig:
     print_label: bool = False
     debug: bool = False
     katex: bool = False
+    default_float_format: str | None = None
+    pint_default_format: str = ".2f~P"
 
 
 @dataclass
 class LanguageConfig:
     """Language and localization configuration."""
     _language: str | None = field(default=None, init=False)
-    disable_pint_locale: bool = False
+    disable_pint_locale: bool = True  # Disable by default to preserve compact unit symbols
     pint_language_mode: str = "auto"  # "auto" or "manual"
 
     @property
@@ -63,7 +65,7 @@ class LanguageConfig:
 @dataclass
 class UnitsConfig:
     """Units formatting configuration."""
-    pint_default_format: str = ".2f~P"
+    pass
 
 
 @dataclass
@@ -262,11 +264,11 @@ class ConfigOptions:
 
     @property
     def pint_default_format(self) -> str:
-        return self.units.pint_default_format
+        return self.display.pint_default_format
 
     @pint_default_format.setter
     def pint_default_format(self, value: str):
-        self.units.pint_default_format = value
+        self.display.pint_default_format = value
 
     @property
     def disable_pint_locale(self) -> bool:
@@ -313,13 +315,12 @@ class ConfigOptions:
                 'print_label': self.display.print_label,
                 'debug': self.display.debug,
                 'katex': self.display.katex,
+                'default_float_format': self.display.default_float_format,
+                'pint_default_format': self.display.pint_default_format,
             },
             'language': {
                 'disable_pint_locale': self.language_config.disable_pint_locale,
                 'pint_language_mode': self.language_config.pint_language_mode,
-            },
-            'units': {
-                'pint_default_format': self.units.pint_default_format,
             },
             'check_templates': {
                 'success_template': self.check_templates.success_template,
@@ -355,8 +356,15 @@ class ConfigOptions:
                     if hasattr(self.display, key):
                         setattr(self.display, key, value)
             elif section_key == 'language' and isinstance(section_data, dict):
+                # Process disable_pint_locale FIRST to prevent unwanted locale changes
+                if 'disable_pint_locale' in section_data:
+                    self.language_config.disable_pint_locale = section_data['disable_pint_locale']
+
+                # Then process other language settings
                 for key, value in section_data.items():
-                    if key == 'language':
+                    if key == 'disable_pint_locale':
+                        continue  # Already processed
+                    elif key == 'language':
                         # Use the property setter to trigger propagation
                         self.language_config.language = value
                     elif hasattr(self.language_config, key):
@@ -637,15 +645,24 @@ class ConfigManager:
 
         # Helper function to format values
         def format_value(section_name, key, default_val, inherited_val=None):
+            # Special handling for None values
+            if default_val is None and (inherited_val is None or not is_global):
+                # Generate commented example for None default
+                example_values = {
+                    'default_float_format': '".3f"',  # Example format spec
+                }
+                example = example_values.get(key, '""')
+                return f'# {key} = {example}'
+
             if is_global:
                 # Global config: all values active
                 toml_line = toml.dumps({key: default_val}).strip()
-                return toml_line
+                return toml_line if toml_line else f'# {key} = ""'
             else:
                 # Local config: show inherited values but commented with # for easy toggle
                 display_val = inherited_val if inherited_val is not None else default_val
                 toml_line = toml.dumps({key: display_val}).strip()
-                return f'# {toml_line}'
+                return f'# {toml_line}' if toml_line else f'# {key} = ""'
 
         # Helper function to format template strings as TOML literal strings
         def format_template(template_str, comment=False):
@@ -706,14 +723,18 @@ class ConfigManager:
 {format_value("display", "debug", defaults.display.debug, display_inherited.get("debug"))}
 {format_value("display", "katex", defaults.display.katex, display_inherited.get("katex"))}
 
+## Float formatting (Python format spec: .2f, .3f, .2e, etc.)
+## Set default format for numeric values in equations
+{format_value("display", "default_float_format", defaults.display.default_float_format, display_inherited.get("default_float_format"))}
+
+## Pint quantity formatting (e.g., .2f~P, .3f~P)
+{format_value("display", "pint_default_format", defaults.display.pint_default_format, display_inherited.get("pint_default_format"))}
+
 [language]
 ## Language settings (de, es, fr, it, pt, da, nl, no, sv, en)
-{format_value("language", "language", "en", language_inherited.get("language")) if is_global or language_inherited.get("language") else '# language = "en"'}
+## Note: When disable_pint_locale=true, language only affects keecas term translations (not Pint units)
+{'# language = "en"' if is_global else ('# language = "en"' if not language_inherited.get("language") else format_value("language", "language", language_inherited.get("language"), None))}
 {format_value("language", "disable_pint_locale", defaults.language_config.disable_pint_locale, language_inherited.get("disable_pint_locale"))}
-
-[units]
-## Pint quantity formatting
-{format_value("units", "pint_default_format", defaults.units.pint_default_format, units_inherited.get("pint_default_format"))}
 
 [translations]
 ## Custom mathematical terms (e.g., "VERIFIED" = "VERIFICATO")
