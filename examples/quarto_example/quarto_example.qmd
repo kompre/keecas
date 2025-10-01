@@ -9,7 +9,6 @@ keep-tex: false
 jupyter: python3
 ---
 
-
 # How to use keecas in a Quarto document
 
 This example demonstrates all the key features of `keecas` for symbolic and units-aware calculations in a Quarto document.
@@ -41,15 +40,13 @@ When rendering with `quarto` you can have two config:
 #| eval: false
 
 # this option will not be set at rendering time (dev-mode)
-config.katex = True  # disable `\label command`
-config.PRINT_LABEL = (
-    True  # print interpolated labels for easy reference (e.g. copy and paste)
-)
+config.display.katex = True  # disable `\label command`
+config.display.print_label = True  # print interpolated labels for easy reference (e.g. copy and paste)
 ```
 
 ```{python}
 # set a prefix for the latex equation
-config.EQ_PREFIX = r"eq-QUARTO_EXAMPLE-"
+config.latex.eq_prefix = r"eq-QUARTO_EXAMPLE-"
 
 
 # Initialize notebook-global dictionaries for persistence across cells
@@ -123,17 +120,25 @@ show_eqn([_p | _e, _v])
 ### Cases Environment
 
 ```{python}
+config.language = 'it'
+```
+
+```{python}
+from sympy import S
+
 # Material properties
 E_steel, E_concrete = symbols("E_{steel}, E_{concrete}")
 
 _p = {
-    E_steel: 200 * u.GPa,
-    E_concrete: 30 * u.GPa,
+    E_steel: S(200 * u.GPa),
+    E_concrete: S(30 * u.GPa),
 }
+
+from IPython.display import Markdown
 
 _d = {E_steel: "steel elastic modulus", E_concrete: "concrete elastic modulus"}
 
-show_eqn([_p, _d], environment="cases", col_wrap=[None, "=", "&"])
+show_eqn([_p, _d], environment="align", col_wrap=[None, "=", "&"])
 ```
 
 ### Equation Environment with Labels {#sec-beam-calc}

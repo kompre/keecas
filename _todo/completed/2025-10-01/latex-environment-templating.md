@@ -1,10 +1,10 @@
 # LaTeX Environment Templating System
 
-**Status**: ❌ Rejected (PR #4 closed by user)
+**Status**: ✅ Completed (PR #4 rejected, bugs fixed, Task 4 completed)
 **Branch**: `feature/latex-environment-templating`
 **Started**: 2025-09-30
 **Completed**: 2025-10-01
-**PR**: #4 (closed)
+**PR**: #4 (closed), new PR pending
 
 ## Objective
 
@@ -784,9 +784,15 @@ outer_environment = "align"
 - Relocated from `DisplayConfig` → `LatexConfig`
 - Clean grouping of LaTeX formatting options
 
+✅ **Refinement 4**: Config Documentation (Task 4)
+- Auto-generated list of built-in environments (7 total: align, alignat, cases, equation, gather, rcases, split)
+- Comprehensive example with all `EnvironmentDefinition` fields
+- Field descriptions as inline comments
+- Empty string → None conversion for `inner_environment`
+
 ✅ **Code Cleanup**: Removed All Backward Compatibility
 - No legacy properties or migration code
-- Clean v2.0 API ready for major release
+- Clean v1.0 API ready for major release
 - -101 lines of compatibility cruft removed
 
 ### Breaking Changes (v2.0)

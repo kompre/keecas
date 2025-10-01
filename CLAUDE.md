@@ -63,10 +63,11 @@ uv sync
    - `check()`: Verification function with configurable templates for engineering calculations
    - **Environment System**: Template-based configuration for LaTeX environments
      - Dot notation access: `config.latex.environments.align.separator`
-     - Built-in: align, equation, gather, cases, split, alignat
+     - Built-in: align, alignat, cases, equation, gather, rcases, split (7 total)
      - User-extensible via `.keecas/config.toml` or `config.latex.environments.set()`
      - Inline definitions: Pass dict or `EnvironmentDefinition` to `show_eqn()`
      - Environment arguments support: `show_eqn(..., env_arg="{2}")` for alignat, etc.
+     - Auto-generated config docs: `keecas config init` includes comprehensive examples
    - Handles float formatting, column wrapping, and cross-referencing
 
 2. **Dataframe Module** (`src/keecas/dataframe.py`)
