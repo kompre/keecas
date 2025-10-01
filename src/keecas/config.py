@@ -665,13 +665,13 @@ class ConfigManager:
 {format_value("latex", "vertical_skip", defaults.latex.vertical_skip, latex_inherited.get("vertical_skip"))}
 {format_value("latex", "default_environment", defaults.latex.default_environment, latex_inherited.get("default_environment"))}
 {format_value("latex", "default_label_command", defaults.latex.default_label_command, latex_inherited.get("default_label_command"))}
+{format_value("latex", "default_mul_symbol", defaults.latex.default_mul_symbol, latex_inherited.get("default_mul_symbol"))}
 
 [display]
 ## Display and debugging
 {format_value("display", "print_label", defaults.display.print_label, display_inherited.get("print_label"))}
 {format_value("display", "debug", defaults.display.debug, display_inherited.get("debug"))}
 {format_value("display", "katex", defaults.display.katex, display_inherited.get("katex"))}
-{format_value("display", "default_mul_symbol", defaults.display.default_mul_symbol, display_inherited.get("default_mul_symbol"))}
 
 [language]
 ## Language settings (de, es, fr, it, pt, da, nl, no, sv, en)
