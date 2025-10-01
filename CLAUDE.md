@@ -252,7 +252,10 @@ eqn = {}
 **Note on v1.0.0 Changes:**
 - `sep` parameter now defaults to `None` (uses environment separator)
 - `config.display.default_float_format` added for global float formatting
+- `float_format` supports cell-by-cell formatting (dict, list, Dataframe, tuple structures)
 - Format specs can be with or without curly braces: `".3f"` or `"{:.3f}"`
+- `disable_pint_locale` default changed to `True` (preserves compact symbols like "kN")
+- `pint_default_format` moved from `[units]` to `[display]` section (formatting concern)
 
 ### Configuration Files
 
@@ -286,11 +289,12 @@ keecas config path             # Show file locations
 language = "it"                    # Italian units and localization
 katex = true                       # KaTeX compatibility mode
 eq_prefix = "eq-"                  # Equation label prefix
-pint_default_format = ".3f~P"      # Pint number formatting
-disable_pint_locale = false       # Allow automatic locale setting
+disable_pint_locale = true        # Default: True (preserves compact unit symbols like "kN")
+                                  # Set to false to enable locale (shows "kilonewton" instead)
 
 [display]
 default_float_format = ".3f"       # Default format for floats in equations
+pint_default_format = ".3f~P"      # Pint quantity formatting
 
 [custom_translations]
 "VERIFIED" = "VERIFICATO"          # Custom term translations
