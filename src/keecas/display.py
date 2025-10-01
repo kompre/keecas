@@ -32,7 +32,6 @@ _config_manager = get_config_manager()
 config = _config_manager.options
 
 
-
 from itertools import chain, zip_longest
 
 
@@ -40,7 +39,11 @@ from itertools import chain, zip_longest
 TemplateChoice = Literal["default", "boxed", "minimal"]
 
 
-def _attach_label(label: str | dict[str, str] | None, key: str | None = None, label_command: str | None = None) -> str:
+def _attach_label(
+    label: str | dict[str, str] | None,
+    key: str | None = None,
+    label_command: str | None = None,
+) -> str:
     r"""Attach a label to a given key.
 
     Args:
@@ -91,7 +94,14 @@ def _attach_label(label: str | dict[str, str] | None, key: str | None = None, la
     return ""
 
 
-def _generate_environment_template(environment: str, env_config, label: str | dict[str, str] | None, first_key: str | None = None, label_command: str | None = None, env_arg: str | None = None) -> str:
+def _generate_environment_template(
+    environment: str,
+    env_config,
+    label: str | dict[str, str] | None,
+    first_key: str | None = None,
+    label_command: str | None = None,
+    env_arg: str | None = None,
+) -> str:
     """Generate complete LaTeX template with ___body___ placeholder.
 
     Args:
@@ -122,9 +132,17 @@ def _generate_environment_template(environment: str, env_config, label: str | di
         outer_suffix = env_config.outer_suffix
 
         # Single label environments attach label to begin statement
-        label_str = _attach_label(label, first_key, label_command) if not env_config.supports_multiple_labels else ''
+        label_str = (
+            _attach_label(label, first_key, label_command)
+            if not env_config.supports_multiple_labels
+            else ""
+        )
 
-        template = rf"{outer_prefix}\begin{{{outer_env}}}{arg_str}{label_str}" + "\n___body___\n" + rf"\end{{{outer_env}}}{outer_suffix}"
+        template = (
+            rf"{outer_prefix}\begin{{{outer_env}}}{arg_str}{label_str}"
+            + "\n___body___\n"
+            + rf"\end{{{outer_env}}}{outer_suffix}"
+        )
     else:
         # Nested environment: \begin{outer}\n\t\prefix\begin{inner}{arg}___body___\end{inner}\suffix\n\end{outer}
         # Argument goes on inner environment by default
@@ -146,27 +164,25 @@ ___body___
 
 
 # Template processing helpers for check function
-def _get_check_templates(template_name: str | None = None, success_override: str | None = None, failure_override: str | None = None) -> dict[str, str]:
+def _get_check_templates(
+    template_name: str | None = None,
+    success_override: str | None = None,
+    failure_override: str | None = None,
+) -> dict[str, str]:
     """Get check templates from config or overrides."""
     # Use overrides if provided
     if success_override and failure_override:
-        return {
-            'success': success_override,
-            'failure': failure_override
-        }
+        return {"success": success_override, "failure": failure_override}
 
     # Use named template set if specified
     if template_name and template_name in config.check_templates.template_sets:
         template_set = config.check_templates.template_sets[template_name]
-        return {
-            'success': template_set['success'],
-            'failure': template_set['failure']
-        }
+        return {"success": template_set["success"], "failure": template_set["failure"]}
 
     # Fall back to default config templates
     return {
-        'success': config.check_templates.success_template,
-        'failure': config.check_templates.failure_template
+        "success": config.check_templates.success_template,
+        "failure": config.check_templates.failure_template,
     }
 
 
@@ -177,16 +193,24 @@ def _format_check_template(template: str, **variables: Any) -> str:
     except KeyError as e:
         # If template is missing required variables, fall back to default
         warn(f"Template missing variable {e}, using default template")
-        default_template = config.check_templates.success_template if variables.get('test_result') else config.check_templates.failure_template
+        default_template = (
+            config.check_templates.success_template
+            if variables.get("test_result")
+            else config.check_templates.failure_template
+        )
         return default_template.format(**variables)
 
 
 # check verification result
-def check(lhs: Basic, rhs: Basic, test=Le,
-          template: TemplateChoice | None = None,
-          success_template: str | None = None,
-          failure_template: str | None = None,
-          **kwargs: Any) -> Markdown:
+def check(
+    lhs: Basic,
+    rhs: Basic,
+    test=Le,
+    template: TemplateChoice | None = None,
+    success_template: str | None = None,
+    failure_template: str | None = None,
+    **kwargs: Any,
+) -> Markdown:
     """Determines if the left-hand side (lhs) is less than or equal to
     the right-hand side (rhs) based on the provided test function.
 
@@ -227,30 +251,36 @@ def check(lhs: Basic, rhs: Basic, test=Le,
             symbol_if_false = r"="
 
     # Extract template parameters (explicit args take precedence over kwargs for backward compatibility)
-    template_name = template or kwargs.get('template')
-    success_template_param = success_template or kwargs.get('success_template')
-    failure_template_param = failure_template or kwargs.get('failure_template')
-    language = kwargs.get('language')
-    substitutions = kwargs.get('substitutions')
+    template_name = template or kwargs.get("template")
+    success_template_param = success_template or kwargs.get("success_template")
+    failure_template_param = failure_template or kwargs.get("failure_template")
+    language = kwargs.get("language")
+    substitutions = kwargs.get("substitutions")
 
     # Get templates
-    templates = _get_check_templates(template_name, success_template_param, failure_template_param)
+    templates = _get_check_templates(
+        template_name, success_template_param, failure_template_param
+    )
 
     # Get localized verification text
-    verified_text = translate("VERIFIED", language=language, substitutions=substitutions)
-    not_verified_text = translate("NOT_VERIFIED", language=language, substitutions=substitutions)
+    verified_text = translate(
+        "VERIFIED", language=language, substitutions=substitutions
+    )
+    not_verified_text = translate(
+        "NOT_VERIFIED", language=language, substitutions=substitutions
+    )
 
     # Perform the test
     test_result = test(lhs, rhs)
 
     # Select template and symbol based on result
     if test_result:
-        template_str = templates['success']
+        template_str = templates["success"]
         symbol = symbol_if_true
         color = "green"
         result_text = verified_text
     else:
-        template_str = templates['failure']
+        template_str = templates["failure"]
         symbol = symbol_if_false
         color = "red"
         result_text = not_verified_text
@@ -264,12 +294,10 @@ def check(lhs: Basic, rhs: Basic, test=Le,
         not_verified_text=not_verified_text,
         color=color,
         test_result=test_result,
-        result_text=result_text
+        result_text=result_text,
     )
 
     return Markdown(formatted_result)
-
-
 
 
 def show_eqn(
@@ -337,7 +365,9 @@ def show_eqn(
         float_format = config.display.default_float_format
 
     # Filter out localization parameters that shouldn't go to myprint_latex
-    latex_kwargs = {k: v for k, v in kwargs.items() if k not in ['language', 'substitutions']}
+    latex_kwargs = {
+        k: v for k, v in kwargs.items() if k not in ["language", "substitutions"]
+    }
 
     # Handle inline environment definitions
     from keecas.config import EnvironmentDefinition
@@ -393,29 +423,24 @@ def show_eqn(
     # determine the number of columns (keys & value0 & value1 ...)
     num_cols = eqns.width + 1
 
-    # generate the matrix (list[list]]) of keys, many values (first element is the key)
-    # matrix = {k: [k] + [vv for vv in v] for k, v in eqns.items()}
-    # print(f'{matrix=}')
-
-    # create float_format (dict)
-    # Convert list of dicts to Dataframe first (same as eqns)
-    if isinstance(float_format, list) and float_format and isinstance(float_format[0], dict):
+    ### create float_format Dataframe
+    # Convert to Dataframe (same logic as eqns)
+    if isinstance(float_format, list):
         float_format = Dataframe(float_format)
 
-    if isinstance(float_format, tuple):
-        float_format = create_dataframe(
-            seed=float_format[0],
-            default_value=float_format[1],
-            keys=keys,
-            width=num_cols,
-        )
-    else:
-        float_format = create_dataframe(seed=float_format, keys=keys, width=num_cols)
-    # print(f'{float_format=}')
+    # if float_format is a tuple, then the second value of the tuple is assumed to be the default_value
+    float_format = create_dataframe(
+        seed=float_format[0] if isinstance(float_format, tuple) else float_format,
+        default_value=float_format[1] if isinstance(float_format, tuple) else None,
+        keys=keys,
+        width=num_cols
+    )
 
     ### col_wrap
-    # adjust size of the col_wrap; assume None as default (for compatibility with earlier versions)
-    col_wrap = create_dataframe(seed=col_wrap, keys=keys, width=num_cols, default_value=col_wrap[-1])
+    # adjust size of the col_wrap;
+    col_wrap = create_dataframe(
+        seed=col_wrap, keys=keys, width=num_cols, default_value=col_wrap[-1]
+    )
 
     # generate label dict if none is passed
     if not label:
@@ -427,7 +452,9 @@ def show_eqn(
 
     # Generate template using environment configuration
     first_key = list(keys)[0] if keys else None
-    template = _generate_environment_template(environment, env_config, label, first_key, label_command, env_arg)
+    template = _generate_environment_template(
+        environment, env_config, label, first_key, label_command, env_arg
+    )
 
     # generate the rows
     body_lines = {}
@@ -455,7 +482,9 @@ def show_eqn(
     body = join_token.join(body_lines.values())
 
     # clean the body
-    body = replace_all(body, language=kwargs.get('language'), substitutions=kwargs.get('substitutions'))
+    body = replace_all(
+        body, language=kwargs.get("language"), substitutions=kwargs.get("substitutions")
+    )
 
     template = template.replace("___body___", body)
 
@@ -481,7 +510,7 @@ def myprint_latex(expr: Basic | str | Markdown, **kwargs) -> str:
         str: The LaTeX string representation of the mathematical expression.
     """
     if isinstance(expr, Markdown):
-        return rf'\text{{{expr.data}}}'
+        return rf"\text{{{expr.data}}}"
 
     return latex(expr, **kwargs)
 
@@ -503,7 +532,9 @@ def wrap_floats(text: str, wrapper: tuple[str, str] = ("", "")) -> str:
     return wrapped_text
 
 
-def format_decimal_numbers(text: str | None, format_string: str | None = None) -> str | None:
+def format_decimal_numbers(
+    text: str | None, format_string: str | None = None
+) -> str | None:
     """
     Finds all decimal numbers in a string, applies a specified format,
     and substitutes them back into the string.
@@ -561,6 +592,7 @@ def eq_to_dict(result: Eq | list[Eq] | tuple[Eq, ...]) -> dict[Basic, Any]:
 
 import regex
 
+
 def _get_base_replacements() -> dict[str, str | callable]:
     """Get non-localizable replacements that are always applied."""
     return {
@@ -573,19 +605,26 @@ def _get_base_replacements() -> dict[str, str | callable]:
         r"\\,": r"{\,}",
     }
 
-def _get_localized_replacements(language: str | None = None, substitutions: dict[str, str] | None = None) -> dict[str, str]:
+
+def _get_localized_replacements(
+    language: str | None = None, substitutions: dict[str, str] | None = None
+) -> dict[str, str]:
     """Get localized replacements based on current language settings."""
     return {
         r"\bfor\b": translate("for", language=language, substitutions=substitutions),
-        r"\botherwise\b": translate("otherwise", language=language, substitutions=substitutions),
-
+        r"\botherwise\b": translate(
+            "otherwise", language=language, substitutions=substitutions
+        ),
         # Domain/Range labels from SymPy LaTeX output (match \text{...} patterns)
         r"\\text\{Domain: \}": f"\\text{{{translate('Domain: ', language=language, substitutions=substitutions)}}}",
         r"\\text\{Domain on \}": f"\\text{{{translate('Domain on ', language=language, substitutions=substitutions)}}}",
         r"\\text\{Range\}": f"\\text{{{translate('Range', language=language, substitutions=substitutions)}}}",
     }
 
-def get_replacement_dict(language: str | None = None, substitutions: dict[str, str] | None = None) -> dict[str, str | callable]:
+
+def get_replacement_dict(
+    language: str | None = None, substitutions: dict[str, str] | None = None
+) -> dict[str, str | callable]:
     """
     Get complete replacement dictionary combining base and localized replacements.
 
@@ -600,12 +639,18 @@ def get_replacement_dict(language: str | None = None, substitutions: dict[str, s
     replacements.update(_get_localized_replacements(language, substitutions))
     return replacements
 
+
 # Legacy replacement dict for backward compatibility
 replacement = get_replacement_dict()
 
 
 # %% replace all the key, value pair
-def replace_all(body: str, reps: dict[str, str | callable] | None = None, language: str | None = None, substitutions: dict[str, str] | None = None) -> str:
+def replace_all(
+    body: str,
+    reps: dict[str, str | callable] | None = None,
+    language: str | None = None,
+    substitutions: dict[str, str] | None = None,
+) -> str:
     """
     Replace patterns in body text using localization-aware replacements.
 
@@ -643,19 +688,21 @@ def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> s
     return f"{wrap[0]}{_latex(var)} = {_latex(mapping[var])}{wrap[1]}"
 
 
-def _col_wrap(cw: None | str | tuple[str, str] | dict[type, tuple[str, str]], value: Any) -> tuple[str, str]:
+def _col_wrap(
+    cw: None | str | tuple[str, str] | dict[type, tuple[str, str]], value: Any
+) -> tuple[str, str]:
     if not cw:
         return ("", "")
-    
+
     if isinstance(cw, str):
         return cw, ""
-    
+
     if isinstance(cw, tuple):
         return cw
-    
+
     if isinstance(cw, dict):
         for type, col_wraps in cw.items():
             if isinstance(value, type):
                 return col_wraps
-    
+
     return ("", "")
