@@ -45,7 +45,7 @@ class DisplayConfig:
 class LanguageConfig:
     """Language and localization configuration."""
     _language: str | None = field(default=None, init=False)
-    disable_pint_locale: bool = False
+    disable_pint_locale: bool = True  # Disable by default to preserve compact unit symbols
     pint_language_mode: str = "auto"  # "auto" or "manual"
 
     @property
@@ -356,8 +356,15 @@ class ConfigOptions:
                     if hasattr(self.display, key):
                         setattr(self.display, key, value)
             elif section_key == 'language' and isinstance(section_data, dict):
+                # Process disable_pint_locale FIRST to prevent unwanted locale changes
+                if 'disable_pint_locale' in section_data:
+                    self.language_config.disable_pint_locale = section_data['disable_pint_locale']
+
+                # Then process other language settings
                 for key, value in section_data.items():
-                    if key == 'language':
+                    if key == 'disable_pint_locale':
+                        continue  # Already processed
+                    elif key == 'language':
                         # Use the property setter to trigger propagation
                         self.language_config.language = value
                     elif hasattr(self.language_config, key):
@@ -725,7 +732,8 @@ class ConfigManager:
 
 [language]
 ## Language settings (de, es, fr, it, pt, da, nl, no, sv, en)
-{format_value("language", "language", "en", language_inherited.get("language")) if is_global or language_inherited.get("language") else '# language = "en"'}
+## Note: When disable_pint_locale=true, language only affects keecas term translations (not Pint units)
+{'# language = "en"' if is_global else ('# language = "en"' if not language_inherited.get("language") else format_value("language", "language", language_inherited.get("language"), None))}
 {format_value("language", "disable_pint_locale", defaults.language_config.disable_pint_locale, language_inherited.get("disable_pint_locale"))}
 
 [translations]

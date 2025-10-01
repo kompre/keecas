@@ -16,6 +16,18 @@ from keecas.localization import (
     get_translations
 )
 
+
+# Fixture to temporarily enable Pint locale for specific tests
+@pytest.fixture
+def enable_pint_locale():
+    """Temporarily enable Pint locale for tests that need it."""
+    from keecas import config
+    original_setting = config.language_config.disable_pint_locale
+    config.language_config.disable_pint_locale = False
+    yield
+    config.language_config.disable_pint_locale = original_setting
+
+
 # Test helper functions to replace backward compatibility
 def register_language(language_code: str, translations: dict) -> None:
     """Test helper to register a language."""
@@ -550,50 +562,61 @@ def test_word_boundary_protection():
 
 
 def test_pint_locale_initialization():
-    """Test that Pint locale is initialized correctly."""
+    """Test that Pint locale respects disable_pint_locale config."""
     from keecas.pint_sympy import unitregistry, _get_locale_from_keecas
     from keecas.localization import get_language
+    from keecas import config
 
     # Test that the function works
     locale_str = _get_locale_from_keecas()
     assert isinstance(locale_str, str)
     assert '_' in locale_str  # Should be format like 'en_US'
 
-    # Test that unitregistry has a locale
+    # Test that unitregistry has locale attribute
     assert hasattr(unitregistry.formatter, 'locale')
-    assert isinstance(unitregistry.formatter.locale, str)
+
+    # By default, disable_pint_locale=True, so locale should be None
+    assert config.language_config.disable_pint_locale is True
+    assert unitregistry.formatter.locale is None
 
 
 def test_manual_pint_locale_update():
     """Test manual Pint locale updates with improved locale handling."""
-    from keecas import update_pint_locale, u
+    from keecas import update_pint_locale, u, config
 
-    # Test with different languages (now expecting UTF-8 variants or available alternatives)
-    test_locales = {
-        'it': 'it_IT',   # Should set some Italian locale
-        'fr': 'fr_FR',   # Should set some French locale
-        'de': 'de_DE',   # Should set some German locale
-        'es': 'es_ES'    # Should set some Spanish locale
-    }
+    # Temporarily enable Pint locale for this test
+    original_setting = config.language_config.disable_pint_locale
+    config.language_config.disable_pint_locale = False
 
-    for lang_code, expected_locale_prefix in test_locales.items():
-        update_pint_locale(lang_code)
-        # Verify the locale was set (accept UTF-8 variants)
-        actual_locale = u.formatter.locale
-        assert actual_locale.startswith(expected_locale_prefix), f"Expected locale starting with '{expected_locale_prefix}', got {actual_locale}"
+    try:
+        # Test with different languages (now expecting UTF-8 variants or available alternatives)
+        test_locales = {
+            'it': 'it_IT',   # Should set some Italian locale
+            'fr': 'fr_FR',   # Should set some French locale
+            'de': 'de_DE',   # Should set some German locale
+            'es': 'es_ES'    # Should set some Spanish locale
+        }
 
-    # Test with 'en' - should use conservative behavior (may not change locale)
-    previous_locale = u.formatter.locale
-    update_pint_locale('en')
-    # 'en' might not change locale due to conservative behavior, so we don't assert a specific change
+        for lang_code, expected_locale_prefix in test_locales.items():
+            update_pint_locale(lang_code)
+            # Verify the locale was set (accept UTF-8 variants)
+            actual_locale = u.formatter.locale
+            assert actual_locale.startswith(expected_locale_prefix), f"Expected locale starting with '{expected_locale_prefix}', got {actual_locale}"
 
-    # Test with None (should use current keecas language if explicitly set)
-    set_language('it')
-    update_pint_locale(None)
-    # This should set Italian locale since it's explicitly configured
-    assert u.formatter.locale.startswith('it_IT'), f"Expected Italian locale, got {u.formatter.locale}"
+        # Test with 'en' - should use conservative behavior (may not change locale)
+        previous_locale = u.formatter.locale
+        update_pint_locale('en')
+        # 'en' might not change locale due to conservative behavior, so we don't assert a specific change
 
-    # Reset
+        # Test with None (should use current keecas language if explicitly set)
+        set_language('it')
+        update_pint_locale(None)
+        # This should set Italian locale since it's explicitly configured
+        assert u.formatter.locale.startswith('it_IT'), f"Expected Italian locale, got {u.formatter.locale}"
+
+    finally:
+        # Reset
+        config.language_config.disable_pint_locale = original_setting
     set_language("en")
 
 
@@ -602,36 +625,44 @@ def test_options_language_auto_sync():
     from keecas.display import config
     from keecas import u
 
-    # Store initial state
-    initial_locale = u.formatter.locale
+    # Temporarily enable Pint locale for this test
+    original_setting = config.language_config.disable_pint_locale
+    config.language_config.disable_pint_locale = False
 
-    # Test automatic sync when setting config.language (only for explicitly configured languages)
-    test_cases = [
-        ('it', 'it_IT'),   # Should set Italian locale
-        ('fr', 'fr_FR'),   # Should set French locale
-        ('de', 'de_DE'),   # Should set German locale
-    ]
+    try:
+        # Store initial state
+        initial_locale = u.formatter.locale
 
-    for lang_code, expected_locale_prefix in test_cases:
-        config.language = lang_code
-        actual_locale = u.formatter.locale
-        assert actual_locale.startswith(expected_locale_prefix), f"Auto-sync failed: expected locale starting with '{expected_locale_prefix}', got {actual_locale} for language '{lang_code}'"
+        # Test automatic sync when setting config.language (only for explicitly configured languages)
+        test_cases = [
+            ('it', 'it_IT'),   # Should set Italian locale
+            ('fr', 'fr_FR'),   # Should set French locale
+            ('de', 'de_DE'),   # Should set German locale
+        ]
 
-    # Test English reset behavior: 'en' should reset to English when coming from non-English
-    previous_locale = u.formatter.locale
-    assert previous_locale.startswith('de_DE'), "Should have German locale from previous test"
+        for lang_code, expected_locale_prefix in test_cases:
+            config.language = lang_code
+            actual_locale = u.formatter.locale
+            assert actual_locale.startswith(expected_locale_prefix), f"Auto-sync failed: expected locale starting with '{expected_locale_prefix}', got {actual_locale} for language '{lang_code}'"
 
-    config.language = 'en'
-    current_locale = u.formatter.locale
-    assert current_locale.startswith('en_'), f"Setting 'en' should reset to English from German, got {current_locale}"
+        # Test English reset behavior: 'en' should reset to English when coming from non-English
+        previous_locale = u.formatter.locale
+        assert previous_locale.startswith('de_DE'), "Should have German locale from previous test"
 
-    # Test conservative behavior: 'en' after 'en' should not change
-    config.language = 'en'
-    assert u.formatter.locale == current_locale, f"Setting 'en' again should be conservative, but it changed"
+        config.language = 'en'
+        current_locale = u.formatter.locale
+        assert current_locale.startswith('en_'), f"Setting 'en' should reset to English from German, got {current_locale}"
 
-    # Test None behavior
-    config.language = None
-    # None should not change the locale (conservative behavior for None)
+        # Test conservative behavior: 'en' after 'en' should not change
+        config.language = 'en'
+        assert u.formatter.locale == current_locale, f"Setting 'en' again should be conservative, but it changed"
+
+        # Test None behavior
+        config.language = None
+        # None should not change the locale (conservative behavior for None)
+    finally:
+        config.language_config.disable_pint_locale = original_setting
+        config.language = None
     assert u.formatter.locale == current_locale, f"Setting None should not change locale"
 
     # Reset (this won't actually reset the locale due to conservative behavior, but that's fine)
@@ -692,7 +723,7 @@ def test_pint_locale_edge_cases():
     update_pint_locale('en')
 
 
-def test_pint_locale_fallback_behavior():
+def test_pint_locale_fallback_behavior(enable_pint_locale):
     """Test proper fallback behavior for unsupported languages."""
     from keecas import update_pint_locale, u
     from keecas.localization import set_language
@@ -734,7 +765,7 @@ def test_pint_locale_fallback_behavior():
         assert 'centimeter' in result.lower(), f"Language {lang} should fallback to English, got: {result}"
 
 
-def test_pint_locale_supported_languages():
+def test_pint_locale_supported_languages(enable_pint_locale):
     """Test that all officially supported languages work correctly."""
     from keecas import update_pint_locale, u
     from keecas.localization import set_language
@@ -757,7 +788,7 @@ def test_pint_locale_supported_languages():
         assert expected_unit in result, f"Language {lang} should show '{expected_unit}', got: {result}"
 
 
-def test_pint_locale_persistence_fix():
+def test_pint_locale_persistence_fix(enable_pint_locale):
     """Test that the locale persistence issue is fixed."""
     from keecas import update_pint_locale, u
     from keecas.localization import set_language
@@ -790,7 +821,7 @@ def test_pint_locale_persistence_fix():
     assert 'centimetro' not in result, f"Danish should not show Italian units. Got: {result}"
 
 
-def test_pint_locale_english_reset_behavior():
+def test_pint_locale_english_reset_behavior(enable_pint_locale):
     """Test specific English reset behavior when coming from other languages."""
     from keecas import update_pint_locale, u
     from keecas.localization import set_language
