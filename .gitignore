@@ -9,6 +9,9 @@ __pycache__
 # Ignore all dot folders and their contents
 .*/
 
+# Exception: allow .github directory (for GitHub Actions workflows)
+!.github/
+
 ./keecas.egg-info/*
 
 *egg-info/*
@@ -21,5 +24,3 @@ __pycache__
 _freeze/
 docs/_site/
 
-# MkDocs (legacy - removed)
-/site

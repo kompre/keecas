@@ -264,5 +264,249 @@ def test_check_explicit_parameter_precedence():
     assert r"\textcolor{green}" in result_default.data
 
 
+def test_environment_align():
+    """Test standard align environment."""
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="align", debug=True)
+    assert isinstance(result, Markdown)
+    assert r"\begin{align}" in result.data
+    assert r"\end{align}" in result.data
+    assert "&" in result.data  # separator
+    assert r"\\" in result.data  # line separator
+
+
+def test_environment_align_starred():
+    """Test starred align* environment."""
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="align*", debug=True)
+    assert isinstance(result, Markdown)
+    assert r"\begin{align*}" in result.data
+    assert r"\end{align*}" in result.data
+
+
+def test_environment_equation():
+    """Test equation environment (no separator, single label)."""
+    eqns = {x: 1}
+    result = show_eqn(eqns, environment="equation", debug=True)
+    assert isinstance(result, Markdown)
+    assert r"\begin{equation}" in result.data
+    assert r"\end{equation}" in result.data
+    assert "&" not in result.data  # no separator
+    assert r"\\" not in result.data  # no line separator for single equation
+
+
+def test_environment_gather():
+    """Test gather environment (no separator, multiple labels)."""
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="gather", debug=True)
+    assert isinstance(result, Markdown)
+    assert r"\begin{gather}" in result.data
+    assert r"\end{gather}" in result.data
+    assert "&" not in result.data  # no separator
+
+
+def test_environment_cases():
+    """Test nested cases environment."""
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="cases", label="test-label", debug=True)
+    assert isinstance(result, Markdown)
+    assert r"\begin{align}" in result.data
+    assert r"\end{align}" in result.data
+    assert r"\begin{aligned}" in result.data
+    assert r"\end{aligned}" in result.data
+    assert r"\left\{" in result.data
+    assert r"\right." in result.data
+
+
+def test_environment_cases_starred():
+    """Test nested cases* environment (starred outer)."""
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="cases*", debug=True)
+    assert isinstance(result, Markdown)
+    assert r"\begin{align*}" in result.data
+    assert r"\end{align*}" in result.data
+    assert r"\begin{aligned}" in result.data
+    assert r"\left\{" in result.data
+
+
+def test_environment_split():
+    """Test nested split environment."""
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="split", label="test-label", debug=True)
+    assert isinstance(result, Markdown)
+    assert r"\begin{align}" in result.data
+    assert r"\begin{aligned}" in result.data
+
+
+def test_environment_unknown_fallback():
+    """Test unknown environment falls back to align."""
+    import warnings
+    eqns = {x: 1, y: 2}
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = show_eqn(eqns, environment="nonexistent", debug=True)
+
+        # Check warning was issued
+        assert len(w) == 1
+        assert "Unknown environment" in str(w[0].message)
+
+        # Should fall back to align
+        assert r"\begin{align}" in result.data
+
+
+def test_environment_config_separator():
+    """Test environment configuration controls separator."""
+    from keecas.config import get_config_manager
+
+    config_manager = get_config_manager()
+
+    # Test that align uses & separator from config
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="align")
+    assert "&" in result.data
+
+    # Test that equation uses empty separator from config
+    result = show_eqn(eqns, environment="equation")
+    assert "&" not in result.data
+
+
+def test_environment_custom_from_config():
+    """Test custom environment definition from config."""
+    from keecas.config import get_config_manager
+
+    config_manager = get_config_manager()
+
+    # Add custom environment
+    config_manager.options.latex.environments.set("custom_test", {
+        "separator": "&",
+        "line_separator": r" \\" + "\n ",
+        "supports_multiple_labels": True,
+        "outer_environment": "align",
+        "inner_environment": None
+    })
+
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="custom_test", debug=True)
+
+    assert r"\begin{align}" in result.data
+    assert "&" in result.data
+
+
+def test_environment_with_argument():
+    """Test environment with argument (alignat)."""
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="alignat", env_arg="{2}", debug=True)
+
+    assert r"\begin{alignat}{2}" in result.data
+    assert r"\end{alignat}" in result.data
+
+
+def test_environment_with_multiple_arguments():
+    """Test custom environment with multiple arguments."""
+    from keecas.config import get_config_manager
+
+    config_manager = get_config_manager()
+
+    # Add custom environment for testing
+    config_manager.options.latex.environments.set("test_multi_arg", {
+        "separator": "&",
+        "line_separator": r" \\" + "\n ",
+        "supports_multiple_labels": False,
+        "outer_environment": "customenv",
+        "inner_environment": None
+    })
+
+    eqns = {x: 1}
+    result = show_eqn(eqns, environment="test_multi_arg", env_arg="{2}{l}", debug=True)
+
+    assert r"\begin{customenv}{2}{l}" in result.data
+    assert r"\end{customenv}" in result.data
+
+
+def test_nested_environment_with_argument():
+    """Test nested environment with argument (argument on inner environment)."""
+    from keecas.config import get_config_manager
+
+    config_manager = get_config_manager()
+
+    # Add custom nested environment for testing
+    config_manager.options.latex.environments.set("test_nested_arg", {
+        "separator": "&",
+        "line_separator": r" \\" + "\n ",
+        "supports_multiple_labels": False,
+        "outer_environment": "equation",
+        "inner_environment": "aligned",
+        "inner_prefix": "",
+        "inner_suffix": ""
+    })
+
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="test_nested_arg", env_arg="{2}", debug=True)
+
+    # Argument should be on inner environment
+    assert r"\begin{equation}" in result.data
+    assert r"\begin{aligned}{2}" in result.data
+    assert r"\end{aligned}" in result.data
+    assert r"\end{equation}" in result.data
+
+
+def test_inline_environment_dict():
+    """Test passing environment definition as dict."""
+    eqns = {x: 1, y: 2}
+
+    inline_env = {
+        "separator": "&",
+        "line_separator": r" \\" + "\n ",
+        "supports_multiple_labels": True,
+        "outer_environment": "align"
+    }
+
+    result = show_eqn(eqns, environment=inline_env, debug=True)
+
+    assert r"\begin{align}" in result.data
+    assert "&" in result.data
+    assert r"\end{align}" in result.data
+
+
+def test_inline_environment_object():
+    """Test passing EnvironmentDefinition object."""
+    from keecas.config import EnvironmentDefinition
+
+    eqns = {x: 1}
+
+    inline_env = EnvironmentDefinition(
+        separator="",
+        line_separator="",
+        supports_multiple_labels=False,
+        outer_environment="equation"
+    )
+
+    result = show_eqn(eqns, environment=inline_env, debug=True)
+
+    assert r"\begin{equation}" in result.data
+    assert r"\end{equation}" in result.data
+
+
+def test_inline_environment_with_prefixes():
+    """Test inline environment with outer prefix/suffix."""
+    eqns = {x: 1}
+
+    inline_env = {
+        "separator": "",
+        "line_separator": "",
+        "supports_multiple_labels": False,
+        "outer_environment": "equation",
+        "outer_prefix": r"\boxed{",
+        "outer_suffix": "}"
+    }
+
+    result = show_eqn(eqns, environment=inline_env, debug=True)
+
+    assert r"\boxed{" in result.data
+    assert r"\begin{equation}" in result.data
+    assert r"\end{equation}}" in result.data
+
+
 if __name__ == "__main__":
     pytest.main()

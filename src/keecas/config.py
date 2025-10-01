@@ -7,7 +7,7 @@ and dynamic propagation to affected subsystems.
 
 import os
 import toml
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, asdict, fields
 from pathlib import Path
 from typing import Any
 from sympy import Basic
@@ -22,6 +22,13 @@ class LatexConfig:
     vertical_skip: str = "8pt"
     default_environment: str = "align"
     default_label_command: str = r"\label"
+    default_mul_symbol: str = r"\,"
+    environments: 'EnvironmentConfig' = field(default_factory=lambda: None)
+
+    def __post_init__(self):
+        """Initialize environments if not provided."""
+        if self.environments is None:
+            self.environments = EnvironmentConfig()
 
 
 @dataclass
@@ -30,7 +37,6 @@ class DisplayConfig:
     print_label: bool = False
     debug: bool = False
     katex: bool = False
-    default_mul_symbol: str = r"\,"
 
 
 @dataclass
@@ -89,6 +95,131 @@ class CheckTemplateConfig:
 
 
 @dataclass
+class EnvironmentDefinition:
+    """Single LaTeX environment definition."""
+    separator: str
+    line_separator: str
+    supports_multiple_labels: bool
+    outer_environment: str
+    inner_environment: str | None = None
+    inner_prefix: str = ""
+    inner_suffix: str = ""
+    outer_prefix: str = ""
+    outer_suffix: str = ""
+    label_position: str = "outer"
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> 'EnvironmentDefinition':
+        """Create from dictionary, filtering unknown keys."""
+        valid_fields = {f.name for f in fields(cls)}
+        filtered_data = {k: v for k, v in data.items() if k in valid_fields}
+        # Convert empty string to None for inner_environment
+        if 'inner_environment' in filtered_data and filtered_data['inner_environment'] == '':
+            filtered_data['inner_environment'] = None
+        return cls(**filtered_data)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary."""
+        return asdict(self)
+
+
+class EnvironmentConfig:
+    """LaTeX environment configurations accessible via dot notation.
+
+    Access environments as attributes: config.environments.align.separator
+    """
+    def __init__(self):
+        # Standard align environment
+        self.align = EnvironmentDefinition(
+            separator="&",
+            line_separator=r" \\" + "\n ",
+            supports_multiple_labels=True,
+            outer_environment="align",
+            inner_environment=None
+        )
+
+        # Standard equation environment
+        self.equation = EnvironmentDefinition(
+            separator="",
+            line_separator="",
+            supports_multiple_labels=False,
+            outer_environment="equation",
+            inner_environment=None
+        )
+
+        # Standard gather environment
+        self.gather = EnvironmentDefinition(
+            separator="",
+            line_separator=r" \\" + "\n ",
+            supports_multiple_labels=True,
+            outer_environment="gather",
+            inner_environment=None
+        )
+
+        # Special cases environment - nested structure
+        self.cases = EnvironmentDefinition(
+            separator="&",
+            line_separator=r" \\" + "\n ",
+            supports_multiple_labels=False,
+            outer_environment="align",
+            inner_environment="aligned",
+            inner_prefix=r"\left\{",
+            inner_suffix=r"\right.",
+            label_position="outer"
+        )
+        
+        # Special right cases environment - nested structure
+        self.rcases = EnvironmentDefinition(
+            separator="&",
+            line_separator=r" \\" + "\n ",
+            supports_multiple_labels=False,
+            outer_environment="align",
+            inner_environment="aligned",
+            inner_prefix=r"\left.",
+            inner_suffix=r"\right\}",
+            label_position="outer"
+        )
+
+
+        # Special split environment - nested structure
+        self.split = EnvironmentDefinition(
+            separator="&",
+            line_separator=r" \\" + "\n ",
+            supports_multiple_labels=False,
+            outer_environment="align",
+            inner_environment="aligned",
+            label_position="outer"
+        )
+
+        # alignat environment - requires argument for number of column pairs
+        self.alignat = EnvironmentDefinition(
+            separator="&",
+            line_separator=r" \\" + "\n ",
+            supports_multiple_labels=True,
+            outer_environment="alignat",
+            inner_environment=None
+        )
+
+    def get(self, name: str) -> EnvironmentDefinition | None:
+        """Get environment by name, returns None if not found."""
+        return getattr(self, name, None)
+
+    def set(self, name: str, definition: EnvironmentDefinition | dict[str, Any]) -> None:
+        """Set environment by name. Accepts EnvironmentDefinition or dict."""
+        if isinstance(definition, dict):
+            definition = EnvironmentDefinition.from_dict(definition)
+        setattr(self, name, definition)
+
+    def keys(self):
+        """Return environment names (attributes that are EnvironmentDefinition)."""
+        return [k for k, v in self.__dict__.items() if isinstance(v, EnvironmentDefinition)]
+
+    def items(self):
+        """Return (name, definition) pairs."""
+        return [(k, v) for k, v in self.__dict__.items() if isinstance(v, EnvironmentDefinition)]
+
+
+@dataclass
 class ConfigOptions:
     """
     Unified configuration for Keecas with proper TOML sections.
@@ -103,79 +234,6 @@ class ConfigOptions:
     def __post_init__(self):
         """Set up cross-references for language propagation."""
         self.language_config._config_manager_ref = getattr(self, '_config_manager_ref', None)
-
-    # Backward compatibility properties
-    @property
-    def EQ_PREFIX(self) -> str:
-        return self.latex.eq_prefix
-
-    @EQ_PREFIX.setter
-    def EQ_PREFIX(self, value: str):
-        self.latex.eq_prefix = value
-
-    @property
-    def EQ_SUFFIX(self) -> str:
-        return self.latex.eq_suffix
-
-    @EQ_SUFFIX.setter
-    def EQ_SUFFIX(self, value: str):
-        self.latex.eq_suffix = value
-
-    @property
-    def VERTICAL_SKIP(self) -> str:
-        return self.latex.vertical_skip
-
-    @VERTICAL_SKIP.setter
-    def VERTICAL_SKIP(self, value: str):
-        self.latex.vertical_skip = value
-
-    @property
-    def PRINT_LABEL(self) -> bool:
-        return self.display.print_label
-
-    @PRINT_LABEL.setter
-    def PRINT_LABEL(self, value: bool):
-        self.display.print_label = value
-
-    @property
-    def DEBUG(self) -> bool:
-        return self.display.debug
-
-    @DEBUG.setter
-    def DEBUG(self, value: bool):
-        self.display.debug = value
-
-    @property
-    def katex(self) -> bool:
-        return self.display.katex
-
-    @katex.setter
-    def katex(self, value: bool):
-        self.display.katex = value
-
-    @property
-    def default_mul_symbol(self) -> str:
-        return self.display.default_mul_symbol
-
-    @default_mul_symbol.setter
-    def default_mul_symbol(self, value: str):
-        self.display.default_mul_symbol = value
-
-    @property
-    def default_environment(self) -> str:
-        return self.latex.default_environment
-
-    @default_environment.setter
-    def default_environment(self, value: str):
-        self.latex.default_environment = value
-
-    @property
-    def default_label_command(self) -> str:
-        return self.latex.default_label_command
-
-    @default_label_command.setter
-    def default_label_command(self, value: str):
-        self.latex.default_label_command = value
 
     @property
     def language_setting(self) -> str | None:
@@ -248,12 +306,13 @@ class ConfigOptions:
                 'vertical_skip': self.latex.vertical_skip,
                 'default_environment': self.latex.default_environment,
                 'default_label_command': self.latex.default_label_command,
+                'default_mul_symbol': self.latex.default_mul_symbol,
+                'environments': {name: env.to_dict() for name, env in self.latex.environments.items()},
             },
             'display': {
                 'print_label': self.display.print_label,
                 'debug': self.display.debug,
                 'katex': self.display.katex,
-                'default_mul_symbol': self.display.default_mul_symbol,
             },
             'language': {
                 'disable_pint_locale': self.language_config.disable_pint_locale,
@@ -284,7 +343,12 @@ class ConfigOptions:
         for section_key, section_data in data.items():
             if section_key == 'latex' and isinstance(section_data, dict):
                 for key, value in section_data.items():
-                    if hasattr(self.latex, key):
+                    if key == 'environments' and isinstance(value, dict):
+                        # Handle nested environments under latex
+                        for env_name, env_config in value.items():
+                            if isinstance(env_config, dict):
+                                self.latex.environments.set(env_name, env_config)
+                    elif hasattr(self.latex, key):
                         setattr(self.latex, key, value)
             elif section_key == 'display' and isinstance(section_data, dict):
                 for key, value in section_data.items():
@@ -617,13 +681,30 @@ class ConfigManager:
 {format_value("latex", "vertical_skip", defaults.latex.vertical_skip, latex_inherited.get("vertical_skip"))}
 {format_value("latex", "default_environment", defaults.latex.default_environment, latex_inherited.get("default_environment"))}
 {format_value("latex", "default_label_command", defaults.latex.default_label_command, latex_inherited.get("default_label_command"))}
+{format_value("latex", "default_mul_symbol", defaults.latex.default_mul_symbol, latex_inherited.get("default_mul_symbol"))}
+
+## LaTeX Environments
+## Customize built-in environments or define new ones
+## Built-in environments: {", ".join(sorted(defaults.latex.environments.keys()))}
+##
+## Example custom environment:
+## [latex.environments.custom]
+## separator = "&"
+## line_separator = " \\\\\\n "
+## supports_multiple_labels = true
+## outer_environment = "align"
+## inner_environment = ""  # Optional nested environment
+## inner_prefix = ""       # Text before inner environment
+## inner_suffix = ""       # Text after inner environment
+## outer_prefix = ""       # Text before outer environment
+## outer_suffix = ""       # Text after outer environment
+## label_position = "outer"  # Where to place labels: "outer" or "inner"
 
 [display]
 ## Display and debugging
 {format_value("display", "print_label", defaults.display.print_label, display_inherited.get("print_label"))}
 {format_value("display", "debug", defaults.display.debug, display_inherited.get("debug"))}
 {format_value("display", "katex", defaults.display.katex, display_inherited.get("katex"))}
-{format_value("display", "default_mul_symbol", defaults.display.default_mul_symbol, display_inherited.get("default_mul_symbol"))}
 
 [language]
 ## Language settings (de, es, fr, it, pt, da, nl, no, sv, en)

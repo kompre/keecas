@@ -31,8 +31,8 @@ import sympy
 from sympy import latex, Eq, Le, symbols, Basic, Dict, S, ImmutableDenseMatrix as Matrix
 
 ## latex printing settings
-sympy.init_printing(mul_symbol=config.default_mul_symbol, order="none")
-platex = lambda x: latex(x, mode="inline", mul_symbol=config.default_mul_symbol)
+sympy.init_printing(mul_symbol=config.latex.default_mul_symbol, order="none")
+platex = lambda x: latex(x, mode="inline", mul_symbol=config.latex.default_mul_symbol)
 
 ## common sympy functions
 __all__ = [
