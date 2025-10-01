@@ -167,6 +167,19 @@ class EnvironmentConfig:
             inner_suffix=r"\right.",
             label_position="outer"
         )
+        
+        # Special right cases environment - nested structure
+        self.rcases = EnvironmentDefinition(
+            separator="&",
+            line_separator=r" \\" + "\n ",
+            supports_multiple_labels=False,
+            outer_environment="align",
+            inner_environment="aligned",
+            inner_prefix=r"\left.",
+            inner_suffix=r"\right\}",
+            label_position="outer"
+        )
+
 
         # Special split environment - nested structure
         self.split = EnvironmentDefinition(
@@ -672,7 +685,7 @@ class ConfigManager:
 
 ## LaTeX Environments
 ## Customize built-in environments or define new ones
-## Built-in environments: align, equation, gather, cases, split, alignat
+## Built-in environments: {", ".join(sorted(defaults.latex.environments.keys()))}
 ##
 ## Example custom environment:
 ## [latex.environments.custom]
