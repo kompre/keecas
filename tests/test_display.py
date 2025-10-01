@@ -586,5 +586,22 @@ def test_sep_default_is_environment_based():
     assert "x  =1" in result.data
 
 
+def test_float_format_validation():
+    """Test that invalid float formats raise clear errors."""
+    eqns = {x: 3.14159}
+
+    # Valid formats should work
+    valid_formats = [".3f", "{:.3f}", ":.3f", ".2e", "g", "<10.2f", "^8.1f"]
+    for fmt in valid_formats:
+        result = show_eqn(eqns, float_format=fmt, debug=True)
+        assert isinstance(result.data, str)
+
+    # Invalid formats should raise ValueError
+    invalid_formats = ["invalid", ".3x", "not_a_format"]
+    for fmt in invalid_formats:
+        with pytest.raises(ValueError, match="Invalid float_format"):
+            show_eqn(eqns, float_format=fmt, debug=True)
+
+
 if __name__ == "__main__":
     pytest.main()

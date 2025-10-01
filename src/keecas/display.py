@@ -336,9 +336,22 @@ def show_eqn(
     if float_format is None:
         float_format = config.display.default_float_format
 
-    # Wrap format spec with curly braces if needed
-    if float_format and not float_format.startswith("{"):
-        float_format = "{:" + float_format + "}"
+    # Normalize and validate float format spec
+    if float_format:
+        if not float_format.startswith("{"):
+            # Handle common cases
+            if float_format.startswith(":"):
+                # User provided ":0.3f" -> "{:0.3f}"
+                float_format = "{" + float_format + "}"
+            else:
+                # User provided ".3f" -> "{:.3f}"
+                float_format = "{:" + float_format + "}"
+
+        # Validate by attempting to format a test value
+        try:
+            _ = float_format.format(1.0)
+        except (ValueError, KeyError) as e:
+            raise ValueError(f"Invalid float_format '{float_format}': {e}")
 
     # Filter out localization parameters that shouldn't go to myprint_latex
     latex_kwargs = {k: v for k, v in kwargs.items() if k not in ['language', 'substitutions']}
@@ -503,14 +516,15 @@ def wrap_floats(text: str, wrapper: tuple[str, str] = ("", "")) -> str:
     return wrapped_text
 
 
-def format_decimal_numbers(text: str | None, format_string: str | None = "{:.2f}") -> str | None:
+def format_decimal_numbers(text: str | None, format_string: str | None = None) -> str | None:
     """
     Finds all decimal numbers in a string, applies a specified format,
     and substitutes them back into the string.
 
     Args:
         text: The string to search for decimal numbers.
-        format_string: The format string to apply to the decimal numbers.
+        format_string: The format string to apply to the decimal numbers (e.g., "{:.3f}").
+                      If None, no formatting is applied.
 
     Returns:
         The formatted string.
