@@ -3,6 +3,7 @@
 **Status**: Updated for v1.0.0 (post LaTeX Environment Templating)
 **Original Date**: Pre-v1.0.0
 **Updated**: 2025-10-01
+**Current Version**: 0.1.2 → Target: 1.0.0
 
 ## Original Objective
 
@@ -58,6 +59,9 @@ From HTML comments in original proposal:
 - **Environment logic**: "defer to environment template config" - ✅ done
 - **Migration tools**: "no" - breaking changes acceptable
 - **Backward compatibility**: "Prefer a clean codebase rather than having non breaking patches all over"
+- **col_wrap**: "let put aside for now" - defer simplification
+- **sep**: "Yes, separator should be defined by the environment template applied"
+- **Version**: "check the pyproject file for current version. Until publishing to main, we're on track for 1.0.0"
 
 ### Analysis of Current `show_eqn` Signature
 
@@ -65,18 +69,20 @@ From HTML comments in original proposal:
 def show_eqn(
     eqns: dict[Basic, Any] | list[dict[Basic, Any]] | Dataframe,
     environment: str | dict[str, Any] | None = None,    # ✅ Already configurable
-    sep: str | list[str] = "&",                         # ⚠️ Partially configurable (via environment)
+    sep: str | list[str] = "&",                         # ⚠️ Should defer to environment
     label: str | dict[str, str] | None = None,          # ❌ Not applicable to config
     label_command: str | None = None,                   # ✅ Already configurable
-    col_wrap: list[None | tuple[str, str]] | None = None,  # ❌ Needs config
-    float_format: str | None = None,                    # ❌ Needs config (user note!)
+    col_wrap: list[None | tuple[str, str]] | None = None,  # ⏸️ Deferred
+    float_format: str | None = None,                    # ❌ Needs config
     debug: bool | None = None,                          # ✅ Already configurable
     env_arg: str | None = None,                         # ❌ Environment-specific, not global
     **kwargs: Any,
 ) -> Markdown:
 ```
 
-### 1. **col_wrap** (Priority: HIGH)
+### 1. **col_wrap** (Priority: DEFERRED)
+
+**User Decision:** "Let put aside for now" - keep current implementation
 
 **Current State:**
 ```python
@@ -94,53 +100,20 @@ col_wrap: list = field(default_factory=lambda: [
 ])
 ```
 
-**Problems:**
-- Complex type-based dict makes TOML serialization impossible
-- Hardcoded in `ConfigOptions` as a field (not in a config dataclass)
-- Not part of any TOML-serializable config section
-- Users must either accept this default or specify `col_wrap` on every `show_eqn()` call
-
-<!--  -->
-
-
-
-**Proposal:** Simplify to string-based wrapping
-
+**Current Behavior (line 410 in display.py):**
 ```python
-@dataclass
-class DisplayConfig:
-    print_label: bool = False
-    debug: bool = False
-    katex: bool = False
-    default_col_wrap_left: str | None = None   # NEW: First column wrap
-    default_col_wrap_right: str = "="          # NEW: Subsequent columns wrap
+col_wrap = create_dataframe(seed=col_wrap, keys=keys, width=num_cols, default_value=col_wrap[-1])
 ```
 
-**TOML Configuration:**
-```toml
-[display]
-default_col_wrap_left = ""      # or omit for null
-default_col_wrap_right = "="
-```
+**User Requirements Met:**
+- ✅ Accepts list of tuples: `[None, ("=", "")]`
+- ✅ Last element becomes default for following columns via `default_value=col_wrap[-1]`
+- ✅ Passed to `create_dataframe()` which handles per-row dataframe creation
 
-**Implementation in `show_eqn()`:**
-```python
-# Line 360-361 (current)
-if not col_wrap:
-    col_wrap = config.col_wrap
-
-# Proposed change
-if not col_wrap:
-    col_wrap = [
-        config.display.default_col_wrap_left,
-        (config.display.default_col_wrap_right, "")
-    ]
-```
-
-**Breaking Change:**
-- Remove complex type-based dict
-- Users with custom `config.col_wrap` must migrate to new fields
-- Simpler, TOML-compatible structure
+**No Changes for v1.0.0:**
+- Current implementation already meets user requirements
+- Type-based dict complexity can be addressed in future iteration
+- Focus on `float_format` and `sep` instead
 
 ### 2. **float_format** (Priority: HIGH)
 
@@ -162,7 +135,7 @@ class DisplayConfig:
 **TOML Configuration:**
 ```toml
 [display]
-default_float_format = ".3f"  # or omit for null
+# default_float_format = ".3f"  # Uncomment to set default
 ```
 
 **Implementation in `show_eqn()`:**
@@ -172,9 +145,11 @@ if float_format is None:
     float_format = config.display.default_float_format
 ```
 
-**Backward Compatible:** No breaking changes, just adds a default fallback.
+**Impact:** Backward compatible - no breaking changes, just adds a default fallback.
 
-### 3. **sep** (Priority: LOW - Already Mostly Handled)
+### 3. **sep** (Priority: HIGH)
+
+**User Approval:** "Yes, separator should be defined by the environment template applied"
 
 **Current Implementation (lines 370-372):**
 ```python
@@ -183,10 +158,9 @@ if sep == "&":
     sep = env_config.separator
 ```
 
-**Analysis:**
-- Already defers to environment config when user doesn't override
+**Problems:**
 - Fragile: depends on detecting the default value `"&"`
-- Works correctly but could be cleaner
+- Not explicit that environment config is the source of truth
 
 **Proposal:** Make environment separator the explicit default
 
@@ -202,70 +176,54 @@ def show_eqn(
 
 Then:
 ```python
-# Resolve separator
+# Resolve separator (cleaner logic)
 if sep is None:
     sep = env_config.separator
 ```
 
-**Breaking Change:** Minimal - only affects code that checks `sep == "&"` explicitly.
+**Breaking Change:** Minimal - only affects code that explicitly checks `if sep == "&"` - rare.
 
 ---
 
 ## Revised Implementation Plan
 
-### Phase 1: Config Structure Enhancement (1 day)
+### Phase 1: Config Structure for float_format (0.5 day)
 
 **Tasks:**
 1. Add to `DisplayConfig`:
    ```python
-   default_col_wrap_left: str | None = None
-   default_col_wrap_right: str = "="
    default_float_format: str | None = None
    ```
 
 2. Update TOML serialization in `ConfigOptions.to_dict()`:
-   - Add `default_col_wrap_left`, `default_col_wrap_right`, `default_float_format` to `display` section
+   - Add `default_float_format` to `display` section
 
 3. Update TOML deserialization in `ConfigOptions.update_from_dict()`:
-   - Handle new fields in `display` section
+   - Handle new field in `display` section
 
 4. Update `_generate_config_template()`:
-   - Add commented examples for new fields
-   - Document `default_col_wrap_left` and `default_col_wrap_right` usage
-   - Document `default_float_format` usage
-
-5. Remove `col_wrap` field from `ConfigOptions`:
-   - Delete lines 288-298 in config.py
-   - Will be replaced by dynamic generation from new fields
+   - Add commented example for `default_float_format`
+   - Document usage and format spec examples
 
 **Files:** `src/keecas/config.py`
 
-### Phase 2: Parameter Resolution in show_eqn (1 day)
+### Phase 2: Parameter Resolution (0.5 day)
 
 **Tasks:**
-1. **float_format resolution** (line ~330):
+1. **float_format resolution** (line ~330 in display.py):
    ```python
    if float_format is None:
        float_format = config.display.default_float_format
    ```
 
-2. **col_wrap resolution** (line ~360):
-   ```python
-   if not col_wrap:
-       col_wrap = [
-           config.display.default_col_wrap_left,
-           (config.display.default_col_wrap_right, "")
-       ]
-   ```
-
-3. **sep resolution** (line ~370):
+2. **sep resolution** (line ~370):
    ```python
    # Change function signature default from "&" to None
    if sep is None:
        sep = env_config.separator
    ```
 
-4. Update function signature:
+3. Update function signature:
    ```python
    def show_eqn(
        eqns: dict[Basic, Any] | list[dict[Basic, Any]] | Dataframe,
@@ -283,40 +241,26 @@ if sep is None:
 
 **Files:** `src/keecas/display.py`
 
-### Phase 3: Simplify col_wrap Structure (1 day)
-
-**Tasks:**
-1. **Remove type-based dict complexity:**
-   - Current `create_dataframe()` handles `{Basic: ("=", ""), str: (r"\qquad", "")}`
-   - Simplify to just handle `(left, right)` tuples
-
-2. **Update `create_dataframe()` helper** (if needed):
-   - Review lines 408-410 in display.py
-   - Ensure it works with simplified structure
-
-3. **Test with existing notebooks:**
-   - Ensure backward compatibility path works
-   - Document migration for users with custom `config.col_wrap`
-
-**Files:** `src/keecas/display.py`
-
-### Phase 4: Testing and Documentation (1 day)
+### Phase 3: Testing and Documentation (1 day)
 
 **Tasks:**
 1. **Tests:**
    - Test `float_format` fallback to config
-   - Test `col_wrap` fallback to config
-   - Test `sep` environment-based default
-   - Test parameter precedence: explicit > config > hardcoded
-   - Test TOML config loading for new fields
+   - Test `float_format=None` uses config value
+   - Test explicit `float_format` overrides config
+   - Test `sep=None` uses environment separator
+   - Test parameter precedence: explicit > environment > config > hardcoded
+   - Test TOML config loading for `default_float_format`
 
 2. **Documentation:**
-   - Update `CLAUDE.md` with new config options
-   - Update docstrings in `show_eqn()`
-   - Add migration notes for v1.0.0 → v2.0.0
+   - Update `CLAUDE.md` with `default_float_format` option
+   - Update `show_eqn()` docstring
+   - Document `sep=None` behavior change
+   - Add migration notes for v0.1.x → v1.0.0
 
 3. **Config template:**
-   - Ensure `keecas config init` includes new fields with clear comments
+   - Ensure `keecas config init` includes `default_float_format` with examples
+   - Add comments explaining format spec syntax (e.g., `.3f`, `.2e`)
 
 **Files:** `tests/test_display.py`, `CLAUDE.md`, `src/keecas/display.py`
 
@@ -325,60 +269,44 @@ if sep is None:
 ## Benefits
 
 ### 1. User Experience
-- **Consistency:** Set formatting once in config, applies everywhere
+- **Consistency:** Set `float_format` once in config, applies everywhere
 - **Less Boilerplate:** No need to repeat `float_format=".3f"` in every cell
-- **Project Defaults:** Local config for project-specific preferences
+- **Project Defaults:** Local config for project-specific formatting preferences
+- **Clean Separator Logic:** Explicit environment-based defaults
 
 ### 2. Code Quality
-- **Simplicity:** Remove complex type-based dict from `col_wrap`
-- **Clean Config:** All config in TOML-serializable dataclasses
-- **Explicit Defaults:** Clear precedence: explicit > config > environment > hardcoded
+- **Simpler Logic:** `if sep is None` is clearer than `if sep == "&"`
+- **Explicit Defaults:** Clear precedence: explicit > environment > config > hardcoded
+- **Maintainable:** Environment config is single source of truth for separators
 
 ### 3. Addresses User Feedback
-- User note: "float_format should be in the config" → directly implemented
-- User preference: "everything" should be configurable → achieves full coverage
-- User preference: "clean codebase" → removes type-dict complexity
+- ✅ User note: "float_format should be in the config"
+- ✅ User approval: "separator should be defined by the environment template applied"
+- ✅ User preference: "clean codebase" - simpler sep logic
+- ⏸️ col_wrap deferred per user request
 
 ---
 
-## Breaking Changes (v1.0.0 → v2.0.0)
-
-### col_wrap Structure
-
-**Old (v1.0.0):**
-```python
-from keecas import config
-config.col_wrap = [None, {Basic: ("=", ""), str: (r"\qquad", "")}]
-```
-
-**New (v2.0.0):**
-```toml
-# .keecas/config.toml
-[display]
-default_col_wrap_left = ""
-default_col_wrap_right = "="
-```
-
-```python
-# Or programmatically
-config.display.default_col_wrap_left = None
-config.display.default_col_wrap_right = "="
-```
+## Breaking Changes (v0.1.x → v1.0.0)
 
 ### sep Default Value
 
-**Old (v1.0.0):**
+**Old (v0.1.x):**
 ```python
 show_eqn(eqns, sep="&")  # Explicit default
 ```
 
-**New (v2.0.0):**
+**New (v1.0.0):**
 ```python
 show_eqn(eqns, sep=None)  # Defers to environment config
 show_eqn(eqns)            # Same - environment separator used
 ```
 
-**Impact:** Only affects code that explicitly checks `if sep == "&"` - rare.
+**Migration:**
+- Code relying on `sep="&"` default: No change needed (align environment uses "&")
+- Code checking `if sep == "&"`: Update to `if sep is None` or `if sep == env_config.separator`
+
+**Impact:** Minimal - very rare edge case
 
 ---
 
@@ -393,21 +321,19 @@ show_eqn(eqns)            # Same - environment separator used
 
 ## Example Usage
 
-### Before (v1.0.0)
+### Before (v0.1.x)
 ```python
-# User must specify repeatedly or accept hardcoded defaults
-show_eqn(equations, float_format=".3f", col_wrap=[None, ("=", "")])
-show_eqn(more_equations, float_format=".3f", col_wrap=[None, ("=", "")])
-show_eqn(final_equations, float_format=".3f", col_wrap=[None, ("=", "")])
+# User must specify repeatedly
+show_eqn(equations, float_format=".3f")
+show_eqn(more_equations, float_format=".3f")
+show_eqn(final_equations, float_format=".3f")
 ```
 
-### After (v2.0.0)
+### After (v1.0.0)
 ```toml
 # .keecas/config.toml (set once per project)
 [display]
 default_float_format = ".3f"
-default_col_wrap_left = ""
-default_col_wrap_right = "="
 ```
 
 ```python
@@ -424,35 +350,25 @@ show_eqn(special_equations, float_format=".5f")
 
 ## Timeline Estimate
 
-- **Phase 1**: 1 day (config structure)
-- **Phase 2**: 1 day (parameter resolution)
-- **Phase 3**: 1 day (simplify col_wrap)
-- **Phase 4**: 1 day (testing and docs)
+- **Phase 1**: 0.5 day (config structure)
+- **Phase 2**: 0.5 day (parameter resolution)
+- **Phase 3**: 1 day (testing and docs)
 
-**Total**: ~4 days of development work
-
----
-
-## Questions for User Review
-
-1. **col_wrap simplification**: Is removing the type-based dict acceptable? (Assumes yes based on "clean codebase" preference)
-
-<!-- let put aside col_wrap for now. It should also accept as default a list of tuples like so `[None, ("=", "")]` (old implementation). This will be passed to `create_dataframe()` method and return a dataframe, where the first column has no wrapper, the second column wraps with `=` and '', following columns wraps to None again.
-
-Here I want a behavior change: last element of the list becomes the default for following cells (check the create_dataframe() method).
-
- -->
-
-2. **float_format default**: Should default be `None` or something like `".2f"`?
-
-3. **sep breaking change**: Is changing default from `"&"` to `None` acceptable for cleaner logic?
-
-<!-- Yes, separator should be defined by the environment template applied -->
-
-4. **Version number**: Should this be v2.0.0 (given breaking changes) or v1.1.0?
-
-<!-- check the pyproject file for current version. Until publishing to main, we're on track for 1.0.0 -->
+**Total**: ~2 days of development work
 
 ---
 
-**Status**: Awaiting user approval to proceed with implementation.
+## Scope Summary
+
+### In Scope for v1.0.0
+- ✅ Add `config.display.default_float_format`
+- ✅ Change `sep` default from `"&"` to `None`
+- ✅ Update documentation and tests
+
+### Out of Scope (Deferred)
+- ⏸️ col_wrap simplification (user request: "put aside for now")
+- ⏸️ Type-based dict removal (can be addressed in future iteration)
+
+---
+
+**Status**: Revised based on user feedback. Ready for approval to proceed with implementation.
