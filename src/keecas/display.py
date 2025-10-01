@@ -275,7 +275,7 @@ def check(lhs: Basic, rhs: Basic, test=Le,
 def show_eqn(
     eqns: dict[Basic, Any] | list[dict[Basic, Any]] | Dataframe,
     environment: str | dict[str, Any] | None = None,
-    sep: str | list[str] = "&",
+    sep: str | list[str] | None = None,
     label: str | dict[str, str] | None = None,
     label_command: str | None = None,
     col_wrap: list[None | tuple[str, str]] | None = None,
@@ -332,6 +332,14 @@ def show_eqn(
     if not "mul_symbol" in kwargs:
         kwargs["mul_symbol"] = config.latex.default_mul_symbol
 
+    # Use config default_float_format if not explicitly provided
+    if float_format is None:
+        float_format = config.display.default_float_format
+
+    # Wrap format spec with curly braces if needed
+    if float_format and not float_format.startswith("{"):
+        float_format = "{:" + float_format + "}"
+
     # Filter out localization parameters that shouldn't go to myprint_latex
     latex_kwargs = {k: v for k, v in kwargs.items() if k not in ['language', 'substitutions']}
 
@@ -366,8 +374,8 @@ def show_eqn(
             f"ATTENTION! label is a dict, while the {environment} does not support multiple labels"
         )
 
-    # Use config separator if not explicitly overridden (default value check)
-    if sep == "&":
+    # Use environment separator if not explicitly provided
+    if sep is None:
         sep = env_config.separator
 
     # convert sep to a list: str-> list[str]

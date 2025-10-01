@@ -234,9 +234,10 @@ _e = {
 from keecas import symbols, u, pc, show_eqn, config, check
 
 # Configuration for Quarto/KaTeX
-config.katex = True              # Disable \label{} for KaTeX compatibility
-config.print_label = True        # Print labels in dev mode
-config.eq_prefix = r"eq-PREFIX-" # Label prefixing
+config.katex = True                        # Disable \label{} for KaTeX compatibility
+config.print_label = True                  # Print labels in dev mode
+config.eq_prefix = r"eq-PREFIX-"           # Label prefixing
+config.display.default_float_format = ".3f"  # Default float formatting
 
 # Language and localization (automatic Pint sync)
 config.language = 'it'           # Sets both keecas and Pint locales
@@ -247,6 +248,11 @@ config.language = 'it'           # Sets both keecas and Pint locales
 params = {}
 eqn = {}
 ```
+
+**Note on v1.0.0 Changes:**
+- `sep` parameter now defaults to `None` (uses environment separator)
+- `config.display.default_float_format` added for global float formatting
+- Format specs can be with or without curly braces: `".3f"` or `"{:.3f}"`
 
 ### Configuration Files
 
@@ -282,6 +288,9 @@ katex = true                       # KaTeX compatibility mode
 eq_prefix = "eq-"                  # Equation label prefix
 pint_default_format = ".3f~P"      # Pint number formatting
 disable_pint_locale = false       # Allow automatic locale setting
+
+[display]
+default_float_format = ".3f"       # Default format for floats in equations
 
 [custom_translations]
 "VERIFIED" = "VERIFICATO"          # Custom term translations

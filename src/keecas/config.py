@@ -37,6 +37,7 @@ class DisplayConfig:
     print_label: bool = False
     debug: bool = False
     katex: bool = False
+    default_float_format: str | None = None
 
 
 @dataclass
@@ -313,6 +314,7 @@ class ConfigOptions:
                 'print_label': self.display.print_label,
                 'debug': self.display.debug,
                 'katex': self.display.katex,
+                'default_float_format': self.display.default_float_format,
             },
             'language': {
                 'disable_pint_locale': self.language_config.disable_pint_locale,
@@ -705,6 +707,10 @@ class ConfigManager:
 {format_value("display", "print_label", defaults.display.print_label, display_inherited.get("print_label"))}
 {format_value("display", "debug", defaults.display.debug, display_inherited.get("debug"))}
 {format_value("display", "katex", defaults.display.katex, display_inherited.get("katex"))}
+
+## Float formatting (Python format spec: .2f, .3f, .2e, etc.)
+## Set default format for numeric values in equations
+{format_value("display", "default_float_format", defaults.display.default_float_format, display_inherited.get("default_float_format"))}
 
 [language]
 ## Language settings (de, es, fr, it, pt, da, nl, no, sv, en)

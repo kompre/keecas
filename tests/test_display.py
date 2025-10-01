@@ -508,5 +508,83 @@ def test_inline_environment_with_prefixes():
     assert r"\end{equation}}" in result.data
 
 
+def test_float_format_config_fallback():
+    """Test that float_format falls back to config.display.default_float_format."""
+    from keecas.display import config
+
+    # Save original value
+    original_format = config.display.default_float_format
+
+    try:
+        # Set config default
+        config.display.default_float_format = ".3f"
+
+        # Use show_eqn without explicit float_format
+        eqns = {x: 3.14159265}
+        result = show_eqn(eqns, debug=True)
+
+        # Should use config format (.3f)
+        assert "3.142" in result.data
+
+        # Explicit float_format should override config
+        result = show_eqn(eqns, float_format=".1f", debug=True)
+        assert "3.1" in result.data
+
+    finally:
+        # Restore original value
+        config.display.default_float_format = original_format
+
+
+def test_float_format_none_uses_config():
+    """Test that float_format=None explicitly uses config default."""
+    from keecas.display import config
+
+    original_format = config.display.default_float_format
+
+    try:
+        config.display.default_float_format = ".2f"
+
+        eqns = {x: 2.71828}
+        result = show_eqn(eqns, float_format=None, debug=True)
+
+        assert "2.72" in result.data
+
+    finally:
+        config.display.default_float_format = original_format
+
+
+def test_sep_none_uses_environment_separator():
+    """Test that sep=None uses environment-specific separator."""
+    # Test with align (separator = "&")
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="align", sep=None, debug=True)
+    assert "x & =1" in result.data
+
+    # Test with equation (separator = "")
+    eqns = {x: 1}
+    result = show_eqn(eqns, environment="equation", sep=None, debug=True)
+    assert "x  =1" in result.data  # Two spaces, no separator
+
+    # Test explicit override still works
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="align", sep="&&", debug=True)
+    assert "x && =1" in result.data
+
+
+def test_sep_default_is_environment_based():
+    """Test that omitting sep parameter uses environment separator."""
+    # Don't specify sep - should use environment default
+    eqns = {x: 1, y: 2}
+
+    # align environment - should use "&"
+    result = show_eqn(eqns, environment="align", debug=True)
+    assert "x & =1" in result.data
+
+    # equation environment - should use ""
+    eqns_single = {x: 1}
+    result = show_eqn(eqns_single, environment="equation", debug=True)
+    assert "x  =1" in result.data
+
+
 if __name__ == "__main__":
     pytest.main()
