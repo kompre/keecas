@@ -91,47 +91,53 @@ def _attach_label(label: str | dict[str, str] | None, key: str | None = None, la
     return ""
 
 
-def _generate_environment_template(environment: str, env_config: dict[str, Any], label: str | dict[str, str] | None, first_key: str | None = None, label_command: str | None = None) -> str:
+def _generate_environment_template(environment: str, env_config, label: str | dict[str, str] | None, first_key: str | None = None, label_command: str | None = None, env_arg: str | None = None) -> str:
     """Generate complete LaTeX template with ___body___ placeholder.
 
     Args:
         environment: Environment name (may include '*' for starred variant)
-        env_config: Environment configuration dictionary
+        env_config: EnvironmentDefinition object
         label: Label string or label dictionary
         first_key: First key for single-label environments
         label_command: LaTeX label command
+        env_arg: Optional argument string for environment (e.g., "{2}" for alignat{2}).
+                 User provides complete argument including braces.
 
     Returns:
         LaTeX template string with ___body___ placeholder
     """
-    outer_env = env_config["outer_environment"]
-    inner_env = env_config.get("inner_environment")
+    outer_env = env_config.outer_environment
+    inner_env = env_config.inner_environment
 
     # Handle starred environments
     if "*" in environment:
         outer_env += "*"
 
+    # Use env_arg directly (already includes braces) or empty string
+    arg_str = env_arg if env_arg else ""
+
     if inner_env is None:
-        # Standard environment: \begin{env}___body___\end{env}
-        outer_prefix = env_config.get("outer_prefix", "")
-        outer_suffix = env_config.get("outer_suffix", "")
+        # Standard environment: \begin{env}{arg}___body___\end{env}
+        outer_prefix = env_config.outer_prefix
+        outer_suffix = env_config.outer_suffix
 
         # Single label environments attach label to begin statement
-        label_str = _attach_label(label, first_key, label_command) if not env_config.get('supports_multiple_labels', False) else ''
+        label_str = _attach_label(label, first_key, label_command) if not env_config.supports_multiple_labels else ''
 
-        template = rf"{outer_prefix}\begin{{{outer_env}}}{label_str}" + "\n___body___\n" + rf"\end{{{outer_env}}}{outer_suffix}"
+        template = rf"{outer_prefix}\begin{{{outer_env}}}{arg_str}{label_str}" + "\n___body___\n" + rf"\end{{{outer_env}}}{outer_suffix}"
     else:
-        # Nested environment: \begin{outer}\n\t\prefix\begin{inner}___body___\end{inner}\suffix\n\end{outer}
-        inner_prefix = env_config.get("inner_prefix", "")
-        inner_suffix = env_config.get("inner_suffix", "")
-        outer_prefix = env_config.get("outer_prefix", "")
-        outer_suffix = env_config.get("outer_suffix", "")
+        # Nested environment: \begin{outer}\n\t\prefix\begin{inner}{arg}___body___\end{inner}\suffix\n\end{outer}
+        # Argument goes on inner environment by default
+        inner_prefix = env_config.inner_prefix
+        inner_suffix = env_config.inner_suffix
+        outer_prefix = env_config.outer_prefix
+        outer_suffix = env_config.outer_suffix
 
         # Label goes on outer environment for nested structures
         label_str = _attach_label(label, None, label_command)
 
         template = rf"""{outer_prefix}\begin{{{outer_env}}}{label_str}
-	{inner_prefix}\begin{{{inner_env}}}
+	{inner_prefix}\begin{{{inner_env}}}{arg_str}
 ___body___
 	\end{{{inner_env}}}{inner_suffix}
 \end{{{outer_env}}}{outer_suffix}"""
@@ -275,6 +281,7 @@ def show_eqn(
     col_wrap: list[None | tuple[str, str]] | None = None,
     float_format: str | None = None,
     debug: bool | None = None,
+    env_arg: str | None = None,
     **kwargs: Any,
 ) -> Markdown:
     """
@@ -289,6 +296,8 @@ def show_eqn(
         col_wrap (list[None | tuple], optional): The column wrapping specification for the Dataframe. Defaults to [None, ('=', '')].
         float_format (str, optional): The float format specification for the Dataframe. Defaults to None.
         debug (bool, optional): Whether to enable debug mode. Defaults to config.DEBUG.
+        env_arg (str, optional): Optional argument string for environment (e.g., "{2}" for alignat{2}).
+            User provides complete argument including braces. Defaults to None.
         **kwargs: Additional keyword arguments including:
             language (str): Document-level language override for translations. If not provided, uses global language settings.
             substitutions (dict): Direct substitution dictionary for custom translations (highest priority).
@@ -331,21 +340,21 @@ def show_eqn(
         col_wrap = config.col_wrap
 
     # Get environment configuration
-    env_config = config.environments.environments.get(environment.replace("*", ""))
+    env_config = config.environments.get(environment.replace("*", ""))
     if not env_config:
         warn(f"Unknown environment '{environment}', using 'align'")
-        env_config = config.environments.environments["align"]
+        env_config = config.environments.align
         environment = "align"
 
     # warning message in case of too many labels provided
-    if not env_config.get('supports_multiple_labels', False) and isinstance(label, dict):
+    if not env_config.supports_multiple_labels and isinstance(label, dict):
         warn(
             f"ATTENTION! label is a dict, while the {environment} does not support multiple labels"
         )
 
     # Use config separator if not explicitly overridden (default value check)
     if sep == "&":
-        sep = env_config["separator"]
+        sep = env_config.separator
 
     # convert sep to a list: str-> list[str]
     if not isinstance(sep, list):
@@ -396,7 +405,7 @@ def show_eqn(
 
     # Generate template using environment configuration
     first_key = list(keys)[0] if keys else None
-    template = _generate_environment_template(environment, env_config, label, first_key, label_command)
+    template = _generate_environment_template(environment, env_config, label, first_key, label_command, env_arg)
 
     # generate the rows
     body_lines = {}
@@ -418,7 +427,7 @@ def show_eqn(
         ) + _attach_label(label, key, label_command)
 
     # Use line separator from environment config
-    join_token = env_config["line_separator"]
+    join_token = env_config.line_separator
 
     # generate the body
     body = join_token.join(body_lines.values())

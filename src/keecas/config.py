@@ -7,7 +7,7 @@ and dynamic propagation to affected subsystems.
 
 import os
 import toml
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, asdict, fields
 from pathlib import Path
 from typing import Any
 from sympy import Basic
@@ -89,59 +89,112 @@ class CheckTemplateConfig:
 
 
 @dataclass
+class EnvironmentDefinition:
+    """Single LaTeX environment definition."""
+    separator: str
+    line_separator: str
+    supports_multiple_labels: bool
+    outer_environment: str
+    inner_environment: str | None = None
+    inner_prefix: str = ""
+    inner_suffix: str = ""
+    outer_prefix: str = ""
+    outer_suffix: str = ""
+    label_position: str = "outer"
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> 'EnvironmentDefinition':
+        """Create from dictionary, filtering unknown keys."""
+        valid_fields = {f.name for f in fields(cls)}
+        filtered_data = {k: v for k, v in data.items() if k in valid_fields}
+        return cls(**filtered_data)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary."""
+        return asdict(self)
+
+
 class EnvironmentConfig:
-    """LaTeX environment behavior configuration."""
-    environments: dict[str, dict[str, Any]] = field(default_factory=lambda: {
+    """LaTeX environment configurations accessible via dot notation.
+
+    Access environments as attributes: config.environments.align.separator
+    """
+    def __init__(self):
         # Standard align environment
-        "align": {
-            "separator": "&",
-            "line_separator": r" \\" + "\n ",
-            "supports_multiple_labels": True,
-            "outer_environment": "align",
-            "inner_environment": None
-        },
+        self.align = EnvironmentDefinition(
+            separator="&",
+            line_separator=r" \\" + "\n ",
+            supports_multiple_labels=True,
+            outer_environment="align",
+            inner_environment=None
+        )
 
         # Standard equation environment
-        "equation": {
-            "separator": "",
-            "line_separator": "",
-            "supports_multiple_labels": False,
-            "outer_environment": "equation",
-            "inner_environment": None
-        },
+        self.equation = EnvironmentDefinition(
+            separator="",
+            line_separator="",
+            supports_multiple_labels=False,
+            outer_environment="equation",
+            inner_environment=None
+        )
 
         # Standard gather environment
-        "gather": {
-            "separator": "",
-            "line_separator": r" \\" + "\n ",
-            "supports_multiple_labels": True,
-            "outer_environment": "gather",
-            "inner_environment": None
-        },
+        self.gather = EnvironmentDefinition(
+            separator="",
+            line_separator=r" \\" + "\n ",
+            supports_multiple_labels=True,
+            outer_environment="gather",
+            inner_environment=None
+        )
 
         # Special cases environment - nested structure
-        # Produces: \begin{align}\left\{\begin{aligned}...\end{aligned}\right.\end{align}
-        "cases": {
-            "separator": "&",
-            "line_separator": r" \\" + "\n ",
-            "supports_multiple_labels": False,
-            "outer_environment": "align",
-            "inner_environment": "aligned",
-            "inner_prefix": r"\left\{",
-            "inner_suffix": r"\right.",
-            "label_position": "outer"
-        },
+        self.cases = EnvironmentDefinition(
+            separator="&",
+            line_separator=r" \\" + "\n ",
+            supports_multiple_labels=False,
+            outer_environment="align",
+            inner_environment="aligned",
+            inner_prefix=r"\left\{",
+            inner_suffix=r"\right.",
+            label_position="outer"
+        )
 
         # Special split environment - nested structure
-        "split": {
-            "separator": "&",
-            "line_separator": r" \\" + "\n ",
-            "supports_multiple_labels": False,
-            "outer_environment": "align",
-            "inner_environment": "aligned",
-            "label_position": "outer"
-        }
-    })
+        self.split = EnvironmentDefinition(
+            separator="&",
+            line_separator=r" \\" + "\n ",
+            supports_multiple_labels=False,
+            outer_environment="align",
+            inner_environment="aligned",
+            label_position="outer"
+        )
+
+        # alignat environment - requires argument for number of column pairs
+        self.alignat = EnvironmentDefinition(
+            separator="&",
+            line_separator=r" \\" + "\n ",
+            supports_multiple_labels=True,
+            outer_environment="alignat",
+            inner_environment=None
+        )
+
+    def get(self, name: str) -> EnvironmentDefinition | None:
+        """Get environment by name, returns None if not found."""
+        return getattr(self, name, None)
+
+    def set(self, name: str, definition: EnvironmentDefinition | dict[str, Any]) -> None:
+        """Set environment by name. Accepts EnvironmentDefinition or dict."""
+        if isinstance(definition, dict):
+            definition = EnvironmentDefinition.from_dict(definition)
+        setattr(self, name, definition)
+
+    def keys(self):
+        """Return environment names (attributes that are EnvironmentDefinition)."""
+        return [k for k, v in self.__dict__.items() if isinstance(v, EnvironmentDefinition)]
+
+    def items(self):
+        """Return (name, definition) pairs."""
+        return [(k, v) for k, v in self.__dict__.items() if isinstance(v, EnvironmentDefinition)]
 
 
 @dataclass
@@ -324,7 +377,7 @@ class ConfigOptions:
                 'failure_template': self.check_templates.failure_template,
                 'template_sets': self.check_templates.template_sets,
             },
-            'environments': self.environments.environments,
+            'environments': {name: env.to_dict() for name, env in self.environments.items()},
         }
 
         # Add language if set
@@ -377,17 +430,13 @@ class ConfigOptions:
                             continue
 
                         # Warn about unknown fields (typo detection)
-                        known_fields = {
-                            'separator', 'line_separator', 'supports_multiple_labels',
-                            'outer_environment', 'inner_environment', 'inner_prefix',
-                            'inner_suffix', 'outer_prefix', 'outer_suffix', 'label_position'
-                        }
+                        known_fields = {f.name for f in fields(EnvironmentDefinition)}
                         unknown_fields = set(env_config.keys()) - known_fields
                         if unknown_fields:
                             print(f"Warning: Environment '{env_name}' has unknown fields: {unknown_fields}")
 
-                        # Update environment
-                        self.environments.environments[env_name] = env_config
+                        # Update environment using .set() method
+                        self.environments.set(env_name, env_config)
             elif hasattr(self, section_key):
                 setattr(self, section_key, section_data)
 

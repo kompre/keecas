@@ -378,19 +378,77 @@ def test_environment_custom_from_config():
     config_manager = get_config_manager()
 
     # Add custom environment
-    config_manager.options.environments.environments["custom_test"] = {
+    config_manager.options.environments.set("custom_test", {
         "separator": "&",
         "line_separator": r" \\" + "\n ",
         "supports_multiple_labels": True,
         "outer_environment": "align",
         "inner_environment": None
-    }
+    })
 
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, environment="custom_test", debug=True)
 
     assert r"\begin{align}" in result.data
     assert "&" in result.data
+
+
+def test_environment_with_argument():
+    """Test environment with argument (alignat)."""
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="alignat", env_arg="{2}", debug=True)
+
+    assert r"\begin{alignat}{2}" in result.data
+    assert r"\end{alignat}" in result.data
+
+
+def test_environment_with_multiple_arguments():
+    """Test custom environment with multiple arguments."""
+    from keecas.config import get_config_manager
+
+    config_manager = get_config_manager()
+
+    # Add custom environment for testing
+    config_manager.options.environments.set("test_multi_arg", {
+        "separator": "&",
+        "line_separator": r" \\" + "\n ",
+        "supports_multiple_labels": False,
+        "outer_environment": "customenv",
+        "inner_environment": None
+    })
+
+    eqns = {x: 1}
+    result = show_eqn(eqns, environment="test_multi_arg", env_arg="{2}{l}", debug=True)
+
+    assert r"\begin{customenv}{2}{l}" in result.data
+    assert r"\end{customenv}" in result.data
+
+
+def test_nested_environment_with_argument():
+    """Test nested environment with argument (argument on inner environment)."""
+    from keecas.config import get_config_manager
+
+    config_manager = get_config_manager()
+
+    # Add custom nested environment for testing
+    config_manager.options.environments.set("test_nested_arg", {
+        "separator": "&",
+        "line_separator": r" \\" + "\n ",
+        "supports_multiple_labels": False,
+        "outer_environment": "equation",
+        "inner_environment": "aligned",
+        "inner_prefix": "",
+        "inner_suffix": ""
+    })
+
+    eqns = {x: 1, y: 2}
+    result = show_eqn(eqns, environment="test_nested_arg", env_arg="{2}", debug=True)
+
+    # Argument should be on inner environment
+    assert r"\begin{equation}" in result.data
+    assert r"\begin{aligned}{2}" in result.data
+    assert r"\end{aligned}" in result.data
+    assert r"\end{equation}" in result.data
 
 
 if __name__ == "__main__":

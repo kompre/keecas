@@ -61,7 +61,11 @@ uv sync
    - `show_eqn()`: Main function that converts Python dicts to LaTeX amsmath environments
    - `config` object: Global configuration for equation formatting (unified TOML-based system)
    - `check()`: Verification function with configurable templates for engineering calculations
-   - Supports multiple equation environments (align, equation, cases, etc.)
+   - **Environment System**: Template-based configuration for LaTeX environments
+     - Dot notation access: `config.environments.align.separator`
+     - Built-in: align, equation, gather, cases, split, alignat
+     - User-extensible via `.keecas/config.toml` or `config.environments.set()`
+     - Environment arguments support: `show_eqn(..., env_arg="{2}")` for alignat, etc.
    - Handles float formatting, column wrapping, and cross-referencing
 
 2. **Dataframe Module** (`src/keecas/dataframe.py`)
@@ -279,6 +283,38 @@ disable_pint_locale = false       # Allow automatic locale setting
 
 [custom_translations]
 "VERIFIED" = "VERIFICATO"          # Custom term translations
+
+# Custom environment definitions
+[environments.spaced_align]
+separator = "&"
+line_separator = " \\\\[0.5em]\n "
+supports_multiple_labels = true
+outer_environment = "align"
+
+[environments.boxed_equation]
+separator = ""
+line_separator = ""
+supports_multiple_labels = false
+outer_environment = "equation"
+outer_prefix = "\\boxed{"
+outer_suffix = "}"
+```
+
+**Accessing Environments in Code:**
+```python
+# Access built-in environment
+sep = config.environments.align.separator
+
+# Set custom environment
+config.environments.set("custom", {
+    "separator": "&",
+    "line_separator": r" \\\n ",
+    "supports_multiple_labels": True,
+    "outer_environment": "align"
+})
+
+# Use with env_arg
+show_eqn(equations, environment="alignat", env_arg="{2}")
 ```
 
 ### Symbol Naming Conventions
