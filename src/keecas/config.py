@@ -38,6 +38,7 @@ class DisplayConfig:
     debug: bool = False
     katex: bool = False
     default_float_format: str | None = None
+    pint_default_format: str = ".2f~P"
 
 
 @dataclass
@@ -64,7 +65,7 @@ class LanguageConfig:
 @dataclass
 class UnitsConfig:
     """Units formatting configuration."""
-    pint_default_format: str = ".2f~P"
+    pass
 
 
 @dataclass
@@ -263,11 +264,11 @@ class ConfigOptions:
 
     @property
     def pint_default_format(self) -> str:
-        return self.units.pint_default_format
+        return self.display.pint_default_format
 
     @pint_default_format.setter
     def pint_default_format(self, value: str):
-        self.units.pint_default_format = value
+        self.display.pint_default_format = value
 
     @property
     def disable_pint_locale(self) -> bool:
@@ -315,13 +316,11 @@ class ConfigOptions:
                 'debug': self.display.debug,
                 'katex': self.display.katex,
                 'default_float_format': self.display.default_float_format,
+                'pint_default_format': self.display.pint_default_format,
             },
             'language': {
                 'disable_pint_locale': self.language_config.disable_pint_locale,
                 'pint_language_mode': self.language_config.pint_language_mode,
-            },
-            'units': {
-                'pint_default_format': self.units.pint_default_format,
             },
             'check_templates': {
                 'success_template': self.check_templates.success_template,
@@ -721,14 +720,13 @@ class ConfigManager:
 ## Set default format for numeric values in equations
 {format_value("display", "default_float_format", defaults.display.default_float_format, display_inherited.get("default_float_format"))}
 
+## Pint quantity formatting (e.g., .2f~P, .3f~P)
+{format_value("display", "pint_default_format", defaults.display.pint_default_format, display_inherited.get("pint_default_format"))}
+
 [language]
 ## Language settings (de, es, fr, it, pt, da, nl, no, sv, en)
 {format_value("language", "language", "en", language_inherited.get("language")) if is_global or language_inherited.get("language") else '# language = "en"'}
 {format_value("language", "disable_pint_locale", defaults.language_config.disable_pint_locale, language_inherited.get("disable_pint_locale"))}
-
-[units]
-## Pint quantity formatting
-{format_value("units", "pint_default_format", defaults.units.pint_default_format, units_inherited.get("pint_default_format"))}
 
 [translations]
 ## Custom mathematical terms (e.g., "VERIFIED" = "VERIFICATO")
