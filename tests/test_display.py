@@ -378,7 +378,7 @@ def test_environment_custom_from_config():
     config_manager = get_config_manager()
 
     # Add custom environment
-    config_manager.options.environments.set("custom_test", {
+    config_manager.options.latex.environments.set("custom_test", {
         "separator": "&",
         "line_separator": r" \\" + "\n ",
         "supports_multiple_labels": True,
@@ -409,7 +409,7 @@ def test_environment_with_multiple_arguments():
     config_manager = get_config_manager()
 
     # Add custom environment for testing
-    config_manager.options.environments.set("test_multi_arg", {
+    config_manager.options.latex.environments.set("test_multi_arg", {
         "separator": "&",
         "line_separator": r" \\" + "\n ",
         "supports_multiple_labels": False,
@@ -431,7 +431,7 @@ def test_nested_environment_with_argument():
     config_manager = get_config_manager()
 
     # Add custom nested environment for testing
-    config_manager.options.environments.set("test_nested_arg", {
+    config_manager.options.latex.environments.set("test_nested_arg", {
         "separator": "&",
         "line_separator": r" \\" + "\n ",
         "supports_multiple_labels": False,

@@ -219,85 +219,6 @@ class ConfigOptions:
         """Set up cross-references for language propagation."""
         self.language_config._config_manager_ref = getattr(self, '_config_manager_ref', None)
 
-    # Backward compatibility property
-    @property
-    def environments(self) -> EnvironmentConfig:
-        """Backward compatibility: access environments via config.environments."""
-        return self.latex.environments
-
-    # Backward compatibility properties
-    @property
-    def EQ_PREFIX(self) -> str:
-        return self.latex.eq_prefix
-
-    @EQ_PREFIX.setter
-    def EQ_PREFIX(self, value: str):
-        self.latex.eq_prefix = value
-
-    @property
-    def EQ_SUFFIX(self) -> str:
-        return self.latex.eq_suffix
-
-    @EQ_SUFFIX.setter
-    def EQ_SUFFIX(self, value: str):
-        self.latex.eq_suffix = value
-
-    @property
-    def VERTICAL_SKIP(self) -> str:
-        return self.latex.vertical_skip
-
-    @VERTICAL_SKIP.setter
-    def VERTICAL_SKIP(self, value: str):
-        self.latex.vertical_skip = value
-
-    @property
-    def PRINT_LABEL(self) -> bool:
-        return self.display.print_label
-
-    @PRINT_LABEL.setter
-    def PRINT_LABEL(self, value: bool):
-        self.display.print_label = value
-
-    @property
-    def DEBUG(self) -> bool:
-        return self.display.debug
-
-    @DEBUG.setter
-    def DEBUG(self, value: bool):
-        self.display.debug = value
-
-    @property
-    def katex(self) -> bool:
-        return self.display.katex
-
-    @katex.setter
-    def katex(self, value: bool):
-        self.display.katex = value
-
-    @property
-    def default_mul_symbol(self) -> str:
-        return self.latex.default_mul_symbol
-
-    @default_mul_symbol.setter
-    def default_mul_symbol(self, value: str):
-        self.latex.default_mul_symbol = value
-
-    @property
-    def default_environment(self) -> str:
-        return self.latex.default_environment
-
-    @default_environment.setter
-    def default_environment(self, value: str):
-        self.latex.default_environment = value
-
-    @property
-    def default_label_command(self) -> str:
-        return self.latex.default_label_command
-
-    @default_label_command.setter
-    def default_label_command(self, value: str):
-        self.latex.default_label_command = value
-
     @property
     def language_setting(self) -> str | None:
         return self.language_config.language
@@ -415,10 +336,7 @@ class ConfigOptions:
                         setattr(self.latex, key, value)
             elif section_key == 'display' and isinstance(section_data, dict):
                 for key, value in section_data.items():
-                    # Backward compatibility: migrate default_mul_symbol to latex
-                    if key == 'default_mul_symbol':
-                        self.latex.default_mul_symbol = value
-                    elif hasattr(self.display, key):
+                    if hasattr(self.display, key):
                         setattr(self.display, key, value)
             elif section_key == 'language' and isinstance(section_data, dict):
                 for key, value in section_data.items():
@@ -437,25 +355,6 @@ class ConfigOptions:
                 for key, value in section_data.items():
                     if hasattr(self.check_templates, key):
                         setattr(self.check_templates, key, value)
-            elif section_key == 'environments' and isinstance(section_data, dict):
-                # Backward compatibility: migrate top-level environments to latex.environments
-                for env_name, env_config in section_data.items():
-                    if isinstance(env_config, dict):
-                        # Validate required fields
-                        required_fields = ['separator', 'line_separator', 'outer_environment']
-                        missing_fields = [f for f in required_fields if f not in env_config]
-                        if missing_fields:
-                            print(f"Warning: Environment '{env_name}' missing required fields: {missing_fields}")
-                            continue
-
-                        # Warn about unknown fields (typo detection)
-                        known_fields = {f.name for f in fields(EnvironmentDefinition)}
-                        unknown_fields = set(env_config.keys()) - known_fields
-                        if unknown_fields:
-                            print(f"Warning: Environment '{env_name}' has unknown fields: {unknown_fields}")
-
-                        # Migrate to latex.environments
-                        self.latex.environments.set(env_name, env_config)
             elif hasattr(self, section_key):
                 setattr(self, section_key, section_data)
 
