@@ -639,15 +639,24 @@ class ConfigManager:
 
         # Helper function to format values
         def format_value(section_name, key, default_val, inherited_val=None):
+            # Special handling for None values
+            if default_val is None and (inherited_val is None or not is_global):
+                # Generate commented example for None default
+                example_values = {
+                    'default_float_format': '".3f"',  # Example format spec
+                }
+                example = example_values.get(key, '""')
+                return f'# {key} = {example}'
+
             if is_global:
                 # Global config: all values active
                 toml_line = toml.dumps({key: default_val}).strip()
-                return toml_line
+                return toml_line if toml_line else f'# {key} = ""'
             else:
                 # Local config: show inherited values but commented with # for easy toggle
                 display_val = inherited_val if inherited_val is not None else default_val
                 toml_line = toml.dumps({key: display_val}).strip()
-                return f'# {toml_line}'
+                return f'# {toml_line}' if toml_line else f'# {key} = ""'
 
         # Helper function to format template strings as TOML literal strings
         def format_template(template_str, comment=False):

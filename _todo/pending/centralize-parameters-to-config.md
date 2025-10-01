@@ -371,4 +371,78 @@ show_eqn(special_equations, float_format=".5f")
 
 ---
 
-**Status**: Revised based on user feedback. Ready for approval to proceed with implementation.
+## Implementation Progress
+
+### Session 2025-10-01: Complete Implementation
+
+**Completed Tasks:**
+
+1. ✅ **Added `default_float_format` to DisplayConfig**
+   - New optional field with `str | None = None` default
+   - Config serialization/deserialization updated
+   - Template generation updated with format_value() helper
+
+2. ✅ **Changed `sep` default to `None`**
+   - Function signature: `sep: str | list[str] | None = None`
+   - Resolution logic: uses environment separator when None
+   - Breaking change documented for v1.0.0
+
+3. ✅ **Implemented float_format validation (Option 3)**
+   - Smart wrapping: `.3f` → `{:.3f}`, `:0.3f` → `{:0.3f}`
+   - Validation by testing format with 1.0
+   - Clear error messages for invalid formats
+   - Supports all Python format specs
+
+4. ✅ **Refactored `format_decimal_numbers`**
+   - Removed hardcoded default `"{:.2f}"`
+   - Changed to `format_string: str | None = None`
+   - Returns unformatted when None
+
+5. ✅ **Fixed config template None handling**
+   - format_value() now handles None values specially
+   - Generates commented examples: `# default_float_format = ".3f"`
+   - Works for both global and local configs
+
+6. ✅ **Test Coverage**
+   - Added 5 new tests for float_format and sep behavior
+   - All 103 tests passing
+   - Tests cover validation, fallback, and environment resolution
+
+**Files Modified:**
+- `src/keecas/config.py` - DisplayConfig, serialization, template generation
+- `src/keecas/display.py` - show_eqn(), format_decimal_numbers()
+- `tests/test_display.py` - 5 new tests
+- `CLAUDE.md` - Updated examples and breaking changes documentation
+
+**Technical Details:**
+
+**Float Format Validation:**
+```python
+# Handles multiple input formats
+".3f" → "{:.3f}"      # Common shorthand
+":0.3f" → "{:0.3f}"   # With colon prefix
+"{:.3f}" → "{:.3f}"   # Already wrapped
+
+# Validates by testing
+float_format.format(1.0)  # Raises ValueError if invalid
+```
+
+**Sep Resolution Logic:**
+```python
+if sep is None:
+    sep = env_config.separator  # Defer to environment config
+```
+
+**Config Template Fix:**
+```python
+# Before: toml.dumps({'default_float_format': None}) → ''
+# After: Special case returns: '# default_float_format = ".3f"'
+```
+
+**Breaking Changes:**
+- `sep` parameter default: `"&"` → `None` (minimal impact)
+- Backward compatible for align environment (still uses "&")
+
+---
+
+**Status**: ✅ Implementation complete. All tests passing (103/103). Ready for commit and PR.
