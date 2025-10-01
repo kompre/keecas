@@ -279,7 +279,7 @@ def show_eqn(
     label: str | dict[str, str] | None = None,
     label_command: str | None = None,
     col_wrap: list[None | tuple[str, str]] | None = None,
-    float_format: str | None = None,
+    float_format: str | dict | list[dict] | Dataframe | tuple | None = None,
     debug: bool | None = None,
     env_arg: str | None = None,
     **kwargs: Any,
@@ -335,23 +335,6 @@ def show_eqn(
     # Use config default_float_format if not explicitly provided
     if float_format is None:
         float_format = config.display.default_float_format
-
-    # Normalize and validate float format spec
-    if float_format:
-        if not float_format.startswith("{"):
-            # Handle common cases
-            if float_format.startswith(":"):
-                # User provided ":0.3f" -> "{:0.3f}"
-                float_format = "{" + float_format + "}"
-            else:
-                # User provided ".3f" -> "{:.3f}"
-                float_format = "{:" + float_format + "}"
-
-        # Validate by attempting to format a test value
-        try:
-            _ = float_format.format(1.0)
-        except (ValueError, KeyError) as e:
-            raise ValueError(f"Invalid float_format '{float_format}': {e}")
 
     # Filter out localization parameters that shouldn't go to myprint_latex
     latex_kwargs = {k: v for k, v in kwargs.items() if k not in ['language', 'substitutions']}
@@ -415,6 +398,10 @@ def show_eqn(
     # print(f'{matrix=}')
 
     # create float_format (dict)
+    # Convert list of dicts to Dataframe first (same as eqns)
+    if isinstance(float_format, list) and float_format and isinstance(float_format[0], dict):
+        float_format = Dataframe(float_format)
+
     if isinstance(float_format, tuple):
         float_format = create_dataframe(
             seed=float_format[0],
@@ -523,18 +510,39 @@ def format_decimal_numbers(text: str | None, format_string: str | None = None) -
 
     Args:
         text: The string to search for decimal numbers.
-        format_string: The format string to apply to the decimal numbers (e.g., "{:.3f}").
+        format_string: The format string to apply (e.g., ".3f", "{:.3f}", ":0.3f").
+                      Supports shorthand notation - will be normalized to full format.
                       If None, no formatting is applied.
 
     Returns:
         The formatted string.
+
+    Raises:
+        ValueError: If format_string is invalid or cannot format numbers.
     """
     if text is None or format_string is None:
         return text
 
+    # Normalize format string: handle shorthand notation
+    normalized_format = format_string
+    if not normalized_format.startswith("{"):
+        # Handle common cases
+        if normalized_format.startswith(":"):
+            # User provided ":0.3f" -> "{:0.3f}"
+            normalized_format = "{" + normalized_format + "}"
+        else:
+            # User provided ".3f" -> "{:.3f}"
+            normalized_format = "{:" + normalized_format + "}"
+
+    # Validate by attempting to format a test value
+    try:
+        _ = normalized_format.format(1.0)
+    except (ValueError, KeyError) as e:
+        raise ValueError(f"Invalid float_format '{format_string}': {e}")
+
     def format_match(match):
         value = float(match.group())
-        return format_string.format(value)
+        return normalized_format.format(value)
 
     return re.sub(r"-?\d+\.\d+", format_match, text)
 

@@ -603,5 +603,30 @@ def test_float_format_validation():
             show_eqn(eqns, float_format=fmt, debug=True)
 
 
+def test_float_format_structure():
+    """Test that float_format supports same structures as eqns (dict, list, Dataframe)."""
+    # Test with dict structure - different format per key
+    eqns = {x: 3.14159, y: 2.71828}
+    float_format = {x: ".3f", y: ".2f"}
+    result = show_eqn(eqns, float_format=float_format, debug=True)
+    assert "3.142" in result.data  # x formatted with .3f
+    assert "2.72" in result.data   # y formatted with .2f
+
+    # Test with dict containing list - cell-by-cell formatting for multiple columns
+    eqns_list = [{x: 3.14159}, {x: 2.71828}]  # Creates: x & =3.14159 & =2.71828
+    # Format list must include key column (None for key, then formats for values)
+    float_format_with_list = {x: [None, ".3f", ".1f"]}  # None for key, then value formats
+    result = show_eqn(eqns_list, float_format=float_format_with_list, debug=True)
+    assert "3.142" in result.data  # First value column with .3f
+    assert "2.7" in result.data    # Second value column with .1f
+
+    # Test with tuple (seed, default) pattern - key uses one format, other keys use default
+    eqns = {x: 1.5, y: 2.5}
+    float_format = ({x: ".1f"}, ".2f")  # x uses .1f, y uses default .2f
+    result = show_eqn(eqns, float_format=float_format, debug=True)
+    assert "1.5" in result.data    # x with .1f
+    assert "2.50" in result.data   # y with .2f
+
+
 if __name__ == "__main__":
     pytest.main()
