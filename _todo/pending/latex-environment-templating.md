@@ -610,3 +610,149 @@ config.environments.custom = EnvironmentDefinition(...)
 6. **Dataclasses over magic methods**: Direct attribute access via dataclasses is simpler and more Pythonic than dict-like interfaces
 7. **User-controlled formatting**: Letting users provide complete argument strings (with braces) eliminates edge cases
 8. **Dot notation superiority**: `config.environments.align.separator` is more intuitive than dict access and provides IDE autocomplete
+
+
+## Additional Refinements (Pending)
+
+### 1. Inline Environment Definitions
+**Goal**: Allow passing environment definitions directly to `show_eqn()`
+
+**Current**:
+```python
+show_eqn(equations, environment="align")
+```
+
+**Proposed (in addition to current)**:
+```python
+# Pass dict
+show_eqn(equations, environment={
+    "separator": "&",
+    "line_separator": r" \\\n ",
+    "supports_multiple_labels": True,
+    "outer_environment": "align"
+})
+
+# Pass EnvironmentDefinition object
+custom_env = EnvironmentDefinition(separator="&", ...)
+show_eqn(equations, environment=custom_env)
+```
+
+**Implementation**:
+- Update `show_eqn()` to detect dict/EnvironmentDefinition in `environment` parameter
+- Skip config lookup if inline definition provided
+- Validate inline definitions using same logic as config loading
+
+**Benefits**:
+- One-off custom environments without config changes
+- Quick experimentation
+- Cleaner for programmatic environment generation
+
+---
+
+### 2. Relocate Environments to LaTeX Config
+**Goal**: Move `environments` under `latex` config section for better organization
+
+**Current**: `config.environments.align`
+**Proposed**: `config.latex.environments.align`
+
+**Rationale**: Environments are LaTeX-specific, should be grouped with other LaTeX settings
+
+**Changes Required**:
+1. Move `EnvironmentConfig` from `ConfigOptions` to `LatexConfig`
+2. Update TOML structure: `[latex.environments.align]`
+3. Update all code references: `config.environments` → `config.latex.environments`
+4. Update tests and documentation
+
+**TOML Structure**:
+```toml
+[latex]
+eq_prefix = "eq-"
+default_environment = "align"
+default_mul_symbol = "\\,"
+
+[latex.environments.align]
+separator = "&"
+line_separator = " \\\\\n "
+supports_multiple_labels = true
+outer_environment = "align"
+```
+
+---
+
+### 3. Move `default_mul_symbol` to LatexConfig
+**Goal**: Relocate `default_mul_symbol` from `DisplayConfig` to `LatexConfig`
+
+**Current**: `config.default_mul_symbol` (from DisplayConfig)
+**Proposed**: `config.latex.default_mul_symbol`
+
+**Rationale**: Multiplication symbol is LaTeX-specific formatting, not display behavior
+
+**Changes**:
+- Move field definition to `LatexConfig` class
+- Update references in `show_eqn()` and other code
+- Update backward compatibility properties if needed
+
+---
+
+### 4. Document Built-in Environments in Config
+**Goal**: Provide template/documentation in default config file
+
+**Proposed TOML Section**:
+```toml
+# Built-in environments: align, equation, gather, cases, split, alignat
+# Uncomment and modify to customize:
+
+# [latex.environments.custom_align]
+# separator = "&"
+# line_separator = " \\\\[0.5em]\n "
+# supports_multiple_labels = true
+# outer_environment = "align"
+
+# [latex.environments.boxed_equation]
+# separator = ""
+# line_separator = ""
+# supports_multiple_labels = false
+# outer_environment = "equation"
+# outer_prefix = "\\boxed{"
+# outer_suffix = "}"
+```
+
+**Implementation**:
+- Add commented example section to default config template
+- Document all field meanings
+- List built-in environment names
+
+---
+
+## Implementation Plan for Additional Refinements
+
+### Task 1: Inline Environment Definitions
+1. Update `show_eqn()` signature type hint: `environment: str | dict | EnvironmentDefinition | None`
+2. Add type detection logic at start of function
+3. Convert dict to `EnvironmentDefinition` if needed
+4. Add validation for inline definitions
+5. Add tests for inline dict and object usage
+
+### Task 2: Relocate to LaTeX Config
+1. Move `EnvironmentConfig` instantiation from `ConfigOptions` to `LatexConfig`
+2. Update TOML serialization/deserialization
+3. Update all `config.environments` → `config.latex.environments`
+4. Update tests
+5. Update documentation (CLAUDE.md, task docs)
+
+### Task 3: Move default_mul_symbol
+1. Add field to `LatexConfig`: `default_mul_symbol: str = r"\,"`
+2. Remove from `DisplayConfig`
+3. Update references: `config.default_mul_symbol` → `config.latex.default_mul_symbol`
+4. Add backward compatibility property if needed
+5. Update tests
+
+### Task 4: Config Documentation
+1. Create example config section with commented examples
+2. Add field descriptions
+3. List built-in environments
+4. Update `keecas config init` to include examples
+
+**Total Effort**: ~1 day
+
+**Status**: Pending user approval

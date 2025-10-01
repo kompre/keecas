@@ -451,5 +451,62 @@ def test_nested_environment_with_argument():
     assert r"\end{equation}" in result.data
 
 
+def test_inline_environment_dict():
+    """Test passing environment definition as dict."""
+    eqns = {x: 1, y: 2}
+
+    inline_env = {
+        "separator": "&",
+        "line_separator": r" \\" + "\n ",
+        "supports_multiple_labels": True,
+        "outer_environment": "align"
+    }
+
+    result = show_eqn(eqns, environment=inline_env, debug=True)
+
+    assert r"\begin{align}" in result.data
+    assert "&" in result.data
+    assert r"\end{align}" in result.data
+
+
+def test_inline_environment_object():
+    """Test passing EnvironmentDefinition object."""
+    from keecas.config import EnvironmentDefinition
+
+    eqns = {x: 1}
+
+    inline_env = EnvironmentDefinition(
+        separator="",
+        line_separator="",
+        supports_multiple_labels=False,
+        outer_environment="equation"
+    )
+
+    result = show_eqn(eqns, environment=inline_env, debug=True)
+
+    assert r"\begin{equation}" in result.data
+    assert r"\end{equation}" in result.data
+
+
+def test_inline_environment_with_prefixes():
+    """Test inline environment with outer prefix/suffix."""
+    eqns = {x: 1}
+
+    inline_env = {
+        "separator": "",
+        "line_separator": "",
+        "supports_multiple_labels": False,
+        "outer_environment": "equation",
+        "outer_prefix": r"\boxed{",
+        "outer_suffix": "}"
+    }
+
+    result = show_eqn(eqns, environment=inline_env, debug=True)
+
+    assert r"\boxed{" in result.data
+    assert r"\begin{equation}" in result.data
+    assert r"\end{equation}}" in result.data
+
+
 if __name__ == "__main__":
     pytest.main()

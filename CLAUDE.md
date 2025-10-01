@@ -62,9 +62,10 @@ uv sync
    - `config` object: Global configuration for equation formatting (unified TOML-based system)
    - `check()`: Verification function with configurable templates for engineering calculations
    - **Environment System**: Template-based configuration for LaTeX environments
-     - Dot notation access: `config.environments.align.separator`
+     - Dot notation access: `config.latex.environments.align.separator`
      - Built-in: align, equation, gather, cases, split, alignat
-     - User-extensible via `.keecas/config.toml` or `config.environments.set()`
+     - User-extensible via `.keecas/config.toml` or `config.latex.environments.set()`
+     - Inline definitions: Pass dict or `EnvironmentDefinition` to `show_eqn()`
      - Environment arguments support: `show_eqn(..., env_arg="{2}")` for alignat, etc.
    - Handles float formatting, column wrapping, and cross-referencing
 
@@ -303,10 +304,18 @@ outer_suffix = "}"
 **Accessing Environments in Code:**
 ```python
 # Access built-in environment
-sep = config.environments.align.separator
+sep = config.latex.environments.align.separator
 
 # Set custom environment
-config.environments.set("custom", {
+config.latex.environments.set("custom", {
+    "separator": "&",
+    "line_separator": r" \\\n ",
+    "supports_multiple_labels": True,
+    "outer_environment": "align"
+})
+
+# Inline environment definition
+show_eqn(equations, environment={
     "separator": "&",
     "line_separator": r" \\\n ",
     "supports_multiple_labels": True,

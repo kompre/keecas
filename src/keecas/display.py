@@ -274,7 +274,7 @@ def check(lhs: Basic, rhs: Basic, test=Le,
 
 def show_eqn(
     eqns: dict[Basic, Any] | list[dict[Basic, Any]] | Dataframe,
-    environment: str | None = None,
+    environment: str | dict[str, Any] | None = None,
     sep: str | list[str] = "&",
     label: str | dict[str, str] | None = None,
     label_command: str | None = None,
@@ -289,7 +289,9 @@ def show_eqn(
 
     Args:
         eqns (dict | list[dict] | Dataframe): The equations to be displayed. It can be a dictionary, a list of dictionaries, or a Dataframe object.
-        environment (str, optional): The LaTeX environment to use for displaying the equations. Defaults to config.default_environment.
+        environment (str | dict | EnvironmentDefinition, optional): The LaTeX environment to use for displaying the equations.
+            Can be a string name (e.g., "align"), a dict defining the environment, or an EnvironmentDefinition object.
+            Defaults to config.default_environment.
         sep (str | list[str], optional): The separator to use between the key and value in each equation. It can be a string or a list of strings. Defaults to "&" or "" for specific environments (e.g. equation, gather).
         label (str | dict, optional): The label to attach to the equation. It can be a string or a dictionary. Defaults to None.
         label_command (str, optional): The LaTeX command to use for attaching the label. Defaults to config.default_label_command.
@@ -333,18 +335,30 @@ def show_eqn(
     # Filter out localization parameters that shouldn't go to myprint_latex
     latex_kwargs = {k: v for k, v in kwargs.items() if k not in ['language', 'substitutions']}
 
-    if not environment:
-        environment = config.default_environment
+    # Handle inline environment definitions
+    from keecas.config import EnvironmentDefinition
+
+    if isinstance(environment, dict):
+        # Convert dict to EnvironmentDefinition
+        env_config = EnvironmentDefinition.from_dict(environment)
+        environment = "custom_inline"  # Use generic name for template generation
+    elif isinstance(environment, EnvironmentDefinition):
+        # Use EnvironmentDefinition directly
+        env_config = environment
+        environment = "custom_inline"
+    else:
+        # String environment name - look up in config
+        if not environment:
+            environment = config.default_environment
+
+        env_config = config.environments.get(environment.replace("*", ""))
+        if not env_config:
+            warn(f"Unknown environment '{environment}', using 'align'")
+            env_config = config.environments.align
+            environment = "align"
 
     if not col_wrap:
         col_wrap = config.col_wrap
-
-    # Get environment configuration
-    env_config = config.environments.get(environment.replace("*", ""))
-    if not env_config:
-        warn(f"Unknown environment '{environment}', using 'align'")
-        env_config = config.environments.align
-        environment = "align"
 
     # warning message in case of too many labels provided
     if not env_config.supports_multiple_labels and isinstance(label, dict):

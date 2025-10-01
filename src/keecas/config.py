@@ -22,6 +22,13 @@ class LatexConfig:
     vertical_skip: str = "8pt"
     default_environment: str = "align"
     default_label_command: str = r"\label"
+    default_mul_symbol: str = r"\,"
+    environments: 'EnvironmentConfig' = field(default_factory=lambda: None)
+
+    def __post_init__(self):
+        """Initialize environments if not provided."""
+        if self.environments is None:
+            self.environments = EnvironmentConfig()
 
 
 @dataclass
@@ -30,7 +37,6 @@ class DisplayConfig:
     print_label: bool = False
     debug: bool = False
     katex: bool = False
-    default_mul_symbol: str = r"\,"
 
 
 @dataclass
@@ -208,11 +214,16 @@ class ConfigOptions:
     units: UnitsConfig = field(default_factory=UnitsConfig)
     translations: TranslationsConfig = field(default_factory=TranslationsConfig)
     check_templates: CheckTemplateConfig = field(default_factory=CheckTemplateConfig)
-    environments: EnvironmentConfig = field(default_factory=EnvironmentConfig)
 
     def __post_init__(self):
         """Set up cross-references for language propagation."""
         self.language_config._config_manager_ref = getattr(self, '_config_manager_ref', None)
+
+    # Backward compatibility property
+    @property
+    def environments(self) -> EnvironmentConfig:
+        """Backward compatibility: access environments via config.environments."""
+        return self.latex.environments
 
     # Backward compatibility properties
     @property
@@ -265,11 +276,11 @@ class ConfigOptions:
 
     @property
     def default_mul_symbol(self) -> str:
-        return self.display.default_mul_symbol
+        return self.latex.default_mul_symbol
 
     @default_mul_symbol.setter
     def default_mul_symbol(self, value: str):
-        self.display.default_mul_symbol = value
+        self.latex.default_mul_symbol = value
 
     @property
     def default_environment(self) -> str:
@@ -358,12 +369,13 @@ class ConfigOptions:
                 'vertical_skip': self.latex.vertical_skip,
                 'default_environment': self.latex.default_environment,
                 'default_label_command': self.latex.default_label_command,
+                'default_mul_symbol': self.latex.default_mul_symbol,
+                'environments': {name: env.to_dict() for name, env in self.latex.environments.items()},
             },
             'display': {
                 'print_label': self.display.print_label,
                 'debug': self.display.debug,
                 'katex': self.display.katex,
-                'default_mul_symbol': self.display.default_mul_symbol,
             },
             'language': {
                 'disable_pint_locale': self.language_config.disable_pint_locale,
@@ -377,7 +389,6 @@ class ConfigOptions:
                 'failure_template': self.check_templates.failure_template,
                 'template_sets': self.check_templates.template_sets,
             },
-            'environments': {name: env.to_dict() for name, env in self.environments.items()},
         }
 
         # Add language if set
@@ -395,11 +406,19 @@ class ConfigOptions:
         for section_key, section_data in data.items():
             if section_key == 'latex' and isinstance(section_data, dict):
                 for key, value in section_data.items():
-                    if hasattr(self.latex, key):
+                    if key == 'environments' and isinstance(value, dict):
+                        # Handle nested environments under latex
+                        for env_name, env_config in value.items():
+                            if isinstance(env_config, dict):
+                                self.latex.environments.set(env_name, env_config)
+                    elif hasattr(self.latex, key):
                         setattr(self.latex, key, value)
             elif section_key == 'display' and isinstance(section_data, dict):
                 for key, value in section_data.items():
-                    if hasattr(self.display, key):
+                    # Backward compatibility: migrate default_mul_symbol to latex
+                    if key == 'default_mul_symbol':
+                        self.latex.default_mul_symbol = value
+                    elif hasattr(self.display, key):
                         setattr(self.display, key, value)
             elif section_key == 'language' and isinstance(section_data, dict):
                 for key, value in section_data.items():
@@ -419,7 +438,7 @@ class ConfigOptions:
                     if hasattr(self.check_templates, key):
                         setattr(self.check_templates, key, value)
             elif section_key == 'environments' and isinstance(section_data, dict):
-                # Validate and update environment definitions
+                # Backward compatibility: migrate top-level environments to latex.environments
                 for env_name, env_config in section_data.items():
                     if isinstance(env_config, dict):
                         # Validate required fields
@@ -435,8 +454,8 @@ class ConfigOptions:
                         if unknown_fields:
                             print(f"Warning: Environment '{env_name}' has unknown fields: {unknown_fields}")
 
-                        # Update environment using .set() method
-                        self.environments.set(env_name, env_config)
+                        # Migrate to latex.environments
+                        self.latex.environments.set(env_name, env_config)
             elif hasattr(self, section_key):
                 setattr(self, section_key, section_data)
 
