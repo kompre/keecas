@@ -10,8 +10,6 @@ import toml
 from dataclasses import dataclass, field, asdict, fields
 from pathlib import Path
 from typing import Any, Callable
-from sympy import Basic
-from IPython.display import Markdown
 
 
 @dataclass
@@ -289,18 +287,8 @@ class ConfigOptions:
     def custom_translations_dict(self, value: dict[str, str]):
         self.translations.translations = value
 
-    # Complex options (not easily serializable to TOML)
-    col_wrap: list = field(default_factory=lambda: [
-        None,
-        {
-            Basic: ("=", ""),
-            Markdown: (r"\qquad", ""),
-            str: (r"\qquad", ""),
-            int: ("=", ""),
-            float: ("=", ""),
-            object: ("", ""),
-        },
-    ])
+    # Column wrapping - None means no wrapping (formatters handle prefixes now)
+    col_wrap: list | None = None
 
     def to_toml_dict(self) -> dict[str, Any]:
         """Convert to dictionary suitable for TOML serialization."""
