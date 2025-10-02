@@ -234,7 +234,6 @@ class ConfigOptions:
     units: UnitsConfig = field(default_factory=UnitsConfig)
     translations: TranslationsConfig = field(default_factory=TranslationsConfig)
     check_templates: CheckTemplateConfig = field(default_factory=CheckTemplateConfig)
-    custom_formatters_file: str | None = None  # Path to custom formatters file
 
     def __post_init__(self):
         """Set up cross-references for language propagation."""
