@@ -4,7 +4,6 @@ from IPython.display import Markdown
 from keecas.display import (
     check,
     show_eqn,
-    myprint_latex,
     wrap_floats,
     format_decimal_numbers,
     dict_to_eq,
@@ -12,6 +11,7 @@ from keecas.display import (
     replace_all,
     latex_inline_dict,
 )
+from keecas.formatters import default_cell_formatter
 from keecas import pipe_command as pc
 
 # Test data
@@ -37,11 +37,18 @@ def test_check():
     assert r"\textcolor{green}" in result.data
 
 
-def test_myprint_latex():
+def test_default_cell_formatter():
+    """Test default_cell_formatter function."""
     expr = Eq(x, y)
-    result = myprint_latex(expr)
-    assert isinstance(result, str)
-    assert r"x = y" in result
+    # Test column 0 (LHS)
+    result_col0 = default_cell_formatter(expr, 0)
+    assert isinstance(result_col0, str)
+    assert r"x = y" in result_col0
+
+    # Test column 1 (RHS)
+    result_col1 = default_cell_formatter(expr, 1)
+    assert isinstance(result_col1, str)
+    assert "=" in result_col1  # Should have = prefix
 
 
 def test_wrap_floats():
@@ -84,8 +91,9 @@ def test_show_eqn():
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, debug=True)
     assert isinstance(result, Markdown)
-    assert r"x & =1" in result.data
-    assert r"y & =2" in result.data
+    # New formatter adds "= " prefix for RHS values
+    assert r"x & == 1" in result.data or r"x & = 1" in result.data
+    assert r"y & == 2" in result.data or r"y & = 2" in result.data
 
 def test_replace_all():
     from keecas.localization import set_language
@@ -558,17 +566,17 @@ def test_sep_none_uses_environment_separator():
     # Test with align (separator = "&")
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, environment="align", sep=None, debug=True)
-    assert "x & =1" in result.data
+    assert "x & == 1" in result.data or "x & = 1" in result.data
 
     # Test with equation (separator = "")
     eqns = {x: 1}
     result = show_eqn(eqns, environment="equation", sep=None, debug=True)
-    assert "x  =1" in result.data  # Two spaces, no separator
+    assert "x  == 1" in result.data or "x  = 1" in result.data  # Two spaces, no separator
 
     # Test explicit override still works
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, environment="align", sep="&&", debug=True)
-    assert "x && =1" in result.data
+    assert "x && == 1" in result.data or "x && = 1" in result.data
 
 
 def test_sep_default_is_environment_based():
@@ -578,12 +586,12 @@ def test_sep_default_is_environment_based():
 
     # align environment - should use "&"
     result = show_eqn(eqns, environment="align", debug=True)
-    assert "x & =1" in result.data
+    assert "x & == 1" in result.data or "x & = 1" in result.data
 
     # equation environment - should use ""
     eqns_single = {x: 1}
     result = show_eqn(eqns_single, environment="equation", debug=True)
-    assert "x  =1" in result.data
+    assert "x  == 1" in result.data or "x  = 1" in result.data
 
 
 def test_float_format_validation():

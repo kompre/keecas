@@ -9,7 +9,7 @@ import os
 import toml
 from dataclasses import dataclass, field, asdict, fields
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from sympy import Basic
 from IPython.display import Markdown
 
@@ -39,6 +39,8 @@ class DisplayConfig:
     katex: bool = False
     default_float_format: str | None = None
     pint_default_format: str = ".2f~P"
+    cell_formatter: 'Callable[[Any, int], str] | None' = None  # Custom cell formatter
+    row_formatter: 'Callable[[str], str] | None' = None  # Custom row formatter
 
 
 @dataclass
@@ -232,6 +234,7 @@ class ConfigOptions:
     units: UnitsConfig = field(default_factory=UnitsConfig)
     translations: TranslationsConfig = field(default_factory=TranslationsConfig)
     check_templates: CheckTemplateConfig = field(default_factory=CheckTemplateConfig)
+    custom_formatters_file: str | None = None  # Path to custom formatters file
 
     def __post_init__(self):
         """Set up cross-references for language propagation."""

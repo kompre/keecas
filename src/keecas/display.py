@@ -306,8 +306,10 @@ def show_eqn(
     sep: str | list[str] | None = None,
     label: str | dict[str, str] | None = None,
     label_command: str | None = None,
-    col_wrap: list[None | tuple[str, str]] | None = None,
+    col_wrap: str | dict | list[dict] | Dataframe | tuple | None = None,
     float_format: str | dict | list[dict] | Dataframe | tuple | None = None,
+    cell_formatter: 'Callable | dict | list[dict] | Dataframe | tuple | None' = None,
+    row_formatter: 'Callable | dict | None' = None,
     debug: bool | None = None,
     env_arg: str | None = None,
     **kwargs: Any,
@@ -325,13 +327,19 @@ def show_eqn(
         label_command (str, optional): The LaTeX command to use for attaching the label. Defaults to config.latex.default_label_command.
         col_wrap (list[None | tuple], optional): The column wrapping specification for the Dataframe. Defaults to [None, ('=', '')].
         float_format (str, optional): The float format specification for the Dataframe. Defaults to None.
+        cell_formatter (Callable | dict | list[dict] | Dataframe | tuple | None, optional): Cell value formatter function(s).
+            Can be a single Callable[(value, col_index) -> str], dict mapping columns to formatters,
+            list of formatters per column, Dataframe of formatters, or tuple (formatters, default).
+            Defaults to config.display.cell_formatter or default_cell_formatter.
+        row_formatter (Callable | dict | None, optional): Row-level formatter function(s).
+            Can be a single Callable[(row_latex_str) -> str] or dict mapping symbol keys to formatters.
+            Defaults to config.display.row_formatter.
         debug (bool, optional): Whether to enable debug mode. Defaults to config.display.debug.
         env_arg (str, optional): Optional argument string for environment (e.g., "{2}" for alignat{2}).
             User provides complete argument including braces. Defaults to None.
         **kwargs: Additional keyword arguments including:
             language (str): Document-level language override for translations. If not provided, uses global language settings.
             substitutions (dict): Direct substitution dictionary for custom translations (highest priority).
-            Other kwargs are passed to the `myprint_latex` function.
 
     Returns:
         Markdown: The LaTeX equation or equation array displayed as a Markdown object.
@@ -350,24 +358,15 @@ def show_eqn(
         - The `col_wrap` argument can be a list of None or tuples.
         - The `float_format` argument can be a string.
         - The `debug` argument can be a boolean.
-        - The `**kwargs` argument can be any additional keyword arguments to be passed to the `myprint_latex` function.
     """
 
     # set default values
     if not debug:
         debug = config.display.debug
 
-    if not "mul_symbol" in kwargs:
-        kwargs["mul_symbol"] = config.latex.default_mul_symbol
-
     # Use config default_float_format if not explicitly provided
     if float_format is None:
         float_format = config.display.default_float_format
-
-    # Filter out localization parameters that shouldn't go to myprint_latex
-    latex_kwargs = {
-        k: v for k, v in kwargs.items() if k not in ["language", "substitutions"]
-    }
 
     # Handle inline environment definitions
     from keecas.config import EnvironmentDefinition
@@ -433,13 +432,32 @@ def show_eqn(
         seed=float_format[0] if isinstance(float_format, tuple) else float_format,
         default_value=float_format[1] if isinstance(float_format, tuple) else None,
         keys=keys,
-        width=num_cols
+        width=num_cols,
     )
 
     ### col_wrap
-    # adjust size of the col_wrap;
+    # if col_wrap is a tuple, then the second value of the tuple is assumed to be the default_value
     col_wrap = create_dataframe(
-        seed=col_wrap, keys=keys, width=num_cols, default_value=col_wrap[-1]
+        seed=col_wrap[0] if isinstance(col_wrap, tuple) else col_wrap,
+        default_value=col_wrap[1] if isinstance(col_wrap, tuple) else None,
+        keys=keys,
+        width=num_cols,
+    )
+
+    ### cell_formatter
+    # Import default formatter
+    from keecas.formatters import default_cell_formatter
+
+    # Step 1: Determine default if not provided
+    if cell_formatter is None:
+        cell_formatter = config.display.cell_formatter or default_cell_formatter
+
+    # Step 2: Create Dataframe (single line, matching float_format pattern)
+    cell_formatters = create_dataframe(
+        seed=cell_formatter if not isinstance(cell_formatter, tuple) else cell_formatter[0],
+        default_value=default_cell_formatter if not isinstance(cell_formatter, tuple) else cell_formatter[1],
+        keys=keys,
+        width=num_cols,
     )
 
     # generate label dict if none is passed
@@ -459,21 +477,45 @@ def show_eqn(
     # generate the rows
     body_lines = {}
     for key, list_values in eqns.items():
-        body_lines[key] = " ".join(
-            [
-                format_decimal_numbers(
-                    f'{ f"{_col_wrap(cw,v)[0]}{myprint_latex(v, **latex_kwargs)}{_col_wrap(cw, v)[-1]}" if v is not None else " " } {s}',
-                    ff,
-                )
-                for v, s, cw, ff in zip_longest(
-                    ([key] + list_values),
-                    sep,
-                    col_wrap[key],
-                    float_format[key],
-                    fillvalue="",
-                )
-            ]
-        ) + _attach_label(label, key, label_command)
+        # Generate cells with custom formatters
+        cells = []
+        for col_idx, (v, s, cw, ff, cf) in enumerate(zip_longest(
+            ([key] + list_values),
+            sep,
+            col_wrap[key],
+            float_format[key],
+            cell_formatters[key],  # Add to zip_longest
+            fillvalue="",
+        )):
+            # Apply formatter with column index
+            if v is not None:
+                formatted_value = cf(v, col_idx)  # cf = cell formatter from zip_longest
+                cell_content = f"{_col_wrap(cw,v)[0]}{formatted_value}{_col_wrap(cw, v)[-1]}"
+            else:
+                cell_content = " "
+
+            # Apply float formatting
+            cell_content = format_decimal_numbers(f"{cell_content} {s}", ff)
+            cells.append(cell_content)
+
+        # Join cells to form row
+        body_lines[key] = " ".join(cells) + _attach_label(label, key, label_command)
+
+    # Apply row-level formatters
+    if row_formatter is not None:
+        if callable(row_formatter):
+            # Single function for all rows
+            body_lines = {k: row_formatter(v) for k, v in body_lines.items()}
+        elif isinstance(row_formatter, dict):
+            # Key-specific row formatters (dict keys = symbol keys)
+            body_lines = {
+                k: row_formatter.get(k, lambda x: x)(v)
+                for k, v in body_lines.items()
+            }
+    elif config.display.row_formatter is not None:
+        # Use config default if available
+        row_func = config.display.row_formatter
+        body_lines = {k: row_func(v) for k, v in body_lines.items()}
 
     # Use line separator from environment config
     join_token = env_config.line_separator
@@ -492,27 +534,6 @@ def show_eqn(
         print(template)
 
     return Markdown(template)
-
-
-def myprint_latex(expr: Basic | str | Markdown, **kwargs) -> str:
-    """Converts a mathematical expression to a LaTeX string.
-
-    This function handles different input types and allows for customization of the output format.
-
-    Args:
-        expr (Basic | str | Markdown): The mathematical expression to convert.
-            * Basic (SymPy): A SymPy expression object.
-            * str: A string representation of a mathematical expression.
-            * Markdown: A Markdown object that likely contains LaTeX code (data attribute is extracted).
-        **kwargs: Additional keyword arguments passed to the SymPy `latex` function for formatting the output.
-
-    Returns:
-        str: The LaTeX string representation of the mathematical expression.
-    """
-    if isinstance(expr, Markdown):
-        return rf"\text{{{expr.data}}}"
-
-    return latex(expr, **kwargs)
 
 
 import re
