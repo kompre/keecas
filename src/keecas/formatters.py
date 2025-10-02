@@ -105,6 +105,23 @@ class CellFormatterRegistry:
             sorted(self._formatters.items(), key=lambda x: x[1][1])
         )
 
+    def unregister(self, type_class: type[T], formatter: FormatterFunc) -> None:
+        """Unregister a specific formatter for a type.
+
+        Args:
+            type_class: Type the formatter was registered for
+            formatter: The formatter function to unregister
+
+        Example:
+            >>> registry = CellFormatterRegistry()
+            >>> def format_my_type(value, col_index):
+            ...     return f"custom: {value}"
+            >>> registry.register(MyType, format_my_type, priority=25)
+            >>> registry.unregister(MyType, format_my_type)
+        """
+        key = (type_class, id(formatter))
+        self._formatters.pop(key, None)
+
     def format(self, value: Any, col_index: int, **kwargs) -> str:
         """Format value using first matching type formatter.
 
@@ -164,18 +181,22 @@ class CellFormatterRegistry:
             return rf"\quad\text{{{value.data}}}"
 
     def _format_pint(self, value: pint.Quantity, col_index: int, **kwargs) -> str:
-        """Format Pint quantities.
+        """Format Pint quantities by converting to SymPy and delegating.
+
+        This formatter converts Pint quantities to SymPy objects and
+        recursively calls the registry, allowing custom SymPy formatters
+        to automatically work with Pint values.
 
         Args:
             value: Pint Quantity
             col_index: Column index
-            **kwargs: Passed to latex() function for SymPy conversion
+            **kwargs: Passed through to SymPy formatter
+
+        Returns:
+            Result from SymPy formatter (via recursive call)
         """
-        latex_str = latex(S(value), **kwargs)
-        if col_index == 0:
-            return latex_str
-        else:
-            return f"= {latex_str}"
+        # Convert Pint → SymPy and delegate to SymPy formatter
+        return self.format(S(value), col_index, **kwargs)
 
     def _format_sympy(self, value: Basic, col_index: int, **kwargs) -> str:
         """Format SymPy expressions.

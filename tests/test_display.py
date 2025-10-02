@@ -115,6 +115,35 @@ def test_formatter_empty_string():
     assert "None" not in result.data
 
 
+def test_formatter_recursive_call():
+    """Test that formatters can recursively call the registry (Pint → SymPy)."""
+    from keecas.formatters import default_cell_formatter_registry
+    from keecas import u
+    from sympy import Basic, latex
+
+    # Register a custom SymPy formatter that underlines everything
+    def underline_sympy(value: Basic, col_index, **kwargs):
+        latex_str = latex(value, **kwargs)
+        return rf"\underline{{{latex_str}}}" if col_index == 0 else rf"= \underline{{{latex_str}}}"
+
+    # Register with priority between Pint (15) and built-in SymPy (30)
+    default_cell_formatter_registry.register(Basic, underline_sympy, priority=25)
+
+    try:
+        # Test with Pint quantity - should go through:
+        # 1. Pint formatter (priority 15) → converts to SymPy
+        # 2. Our custom SymPy formatter (priority 25) → underlines
+        result = show_eqn({x: 5 * u.meter})
+
+        # Should be underlined (our custom formatter)
+        assert r"\underline{" in result.data
+        # Should have the value
+        assert "5" in result.data
+    finally:
+        # Clean up: unregister the custom formatter to avoid polluting other tests
+        default_cell_formatter_registry.unregister(Basic, underline_sympy)
+
+
 def test_wrap_floats():
     text = "The value is 3.14159 and -2.71828"
     result = wrap_floats(text, wrapper=("(", ")"))

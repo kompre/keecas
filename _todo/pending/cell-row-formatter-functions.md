@@ -822,3 +822,30 @@ show_eqn(..., cell_formatter=my_formatter)
 - Create example notebook demonstrating new formatter features
 - Update CLAUDE.md documentation
 - Test with actual notebook examples
+
+### Session 2: 2025-10-02 (Continued)
+
+**Formatter kwargs support**:
+- ✅ Added `validate_latex_kwargs()` helper function to validate parameters against `sympy.latex()` signature
+- ✅ Updated all formatter signatures to `(value, col_index, **kwargs)`
+- ✅ Modified `show_eqn()` to prepare and pass `latex_kwargs` to formatters
+- ✅ Added test `test_validate_latex_kwargs()` and updated `test_default_cell_formatter()` to test kwargs passing
+- ✅ All 105 tests passing
+
+**None return semantics (chain of responsibility)**:
+- ✅ Changed formatter return value semantics: None = skip to next formatter (not empty cell)
+- ✅ Refactored `CellFormatterRegistry.format()` to continue loop when formatter returns None
+- ✅ Added tests: `test_formatter_returns_none()` (conditional formatting) and `test_formatter_empty_string()` (explicit empty)
+- ✅ All 107 tests passing
+
+**Recursive formatter calls**:
+- ✅ Refactored `_format_pint()` to delegate to SymPy formatter: `self.format(S(value), col_index, **kwargs)`
+- ✅ Created test `test_formatter_recursive_call()` demonstrating Pint → SymPy delegation pattern
+- ⚠️ Found test isolation issue: Custom formatter persisted across tests causing 3 test failures
+
+**Test isolation fix**:
+- ✅ Added `unregister()` method to `CellFormatterRegistry` for cleanup
+- ✅ Updated `test_formatter_recursive_call()` with try/finally block to clean up custom formatter
+- ✅ All 108 tests passing
+
+**Status**: Ready for commit

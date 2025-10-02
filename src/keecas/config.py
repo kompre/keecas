@@ -246,6 +246,7 @@ class ConfigOptions:
 
     @language_setting.setter
     def language_setting(self, value: str | None):
+        
         self.language_config.language = value
 
     # Backward compatibility - delegate to language_setting
