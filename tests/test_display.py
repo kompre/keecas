@@ -11,7 +11,7 @@ from keecas.display import (
     replace_all,
     latex_inline_dict,
 )
-from keecas.formatters import default_cell_formatter, validate_latex_kwargs
+from keecas.formatters import validate_latex_kwargs
 from keecas import pipe_command as pc
 
 # Test data
@@ -34,15 +34,15 @@ def test_import_star():
     assert "EarlyExit" in namespace
     assert "FormatterChain" in namespace
     assert "default_formatter_chain" in namespace
-    assert "default_cell_formatter" in namespace
     assert "format_markdown" in namespace
     assert "format_pint" in namespace
     assert "format_mul" in namespace
     assert "format_sympy" in namespace
 
-    # Verify old registry exports are NOT present
+    # Verify old exports are NOT present
     assert "default_cell_formatter_registry" not in namespace
     assert "cell_formatter" not in namespace
+    assert "default_cell_formatter" not in namespace  # Removed - just use default_formatter_chain
 
     # Verify the imports are actually usable
     EarlyExit = namespace["EarlyExit"]
@@ -76,22 +76,24 @@ def test_check():
 
 
 def test_default_cell_formatter():
-    """Test default_cell_formatter function."""
+    """Test default_formatter_chain function."""
+    from keecas import default_formatter_chain
+
     expr = Eq(x, y)
     # Test column 0 (LHS)
-    result_col0 = default_cell_formatter(expr, 0)
+    result_col0 = default_formatter_chain(expr, 0)
     assert isinstance(result_col0, str)
     assert r"x = y" in result_col0
 
     # Test column 1 (RHS)
-    result_col1 = default_cell_formatter(expr, 1)
+    result_col1 = default_formatter_chain(expr, 1)
     assert isinstance(result_col1, str)
     assert "=" in result_col1  # Should have = prefix
 
     # Test with kwargs (mul_symbol)
     expr_mul = x * y
-    result_default = default_cell_formatter(expr_mul, 0)
-    result_dot = default_cell_formatter(expr_mul, 0, mul_symbol="dot")
+    result_default = default_formatter_chain(expr_mul, 0)
+    result_dot = default_formatter_chain(expr_mul, 0, mul_symbol="dot")
     assert result_default != result_dot  # Should be different with different mul_symbol
 
 

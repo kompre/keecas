@@ -406,28 +406,3 @@ default_formatter_chain = FormatterChain([
     format_int,       # Terminal fallback: int
     format_str,       # Terminal fallback: str
 ])
-
-
-def default_cell_formatter(value: Any, col_index: int, **kwargs) -> str:
-    """Default cell formatter using the global formatter chain.
-
-    Args:
-        value: Cell value to format
-        col_index: Column index (0 = first column/LHS, 1+ = RHS columns)
-        **kwargs: Additional keyword arguments passed to latex() function
-            (e.g., mul_symbol, mode, etc.)
-
-    Returns:
-        LaTeX string representation
-
-    Example:
-        >>> from sympy import Symbol
-        >>> x = Symbol('x')
-        >>> default_cell_formatter(x, 0)
-        'x'
-        >>> default_cell_formatter(x, 1)
-        '= x'
-        >>> default_cell_formatter(x, 0, mul_symbol='dot')
-        'x'
-    """
-    return default_formatter_chain(value, col_index, **kwargs)
