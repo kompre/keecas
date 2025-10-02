@@ -11,7 +11,7 @@ from keecas.display import (
     replace_all,
     latex_inline_dict,
 )
-from keecas.formatters import default_cell_formatter
+from keecas.formatters import default_cell_formatter, validate_latex_kwargs
 from keecas import pipe_command as pc
 
 # Test data
@@ -49,6 +49,25 @@ def test_default_cell_formatter():
     result_col1 = default_cell_formatter(expr, 1)
     assert isinstance(result_col1, str)
     assert "=" in result_col1  # Should have = prefix
+
+    # Test with kwargs (mul_symbol)
+    expr_mul = x * y
+    result_default = default_cell_formatter(expr_mul, 0)
+    result_dot = default_cell_formatter(expr_mul, 0, mul_symbol="dot")
+    assert result_default != result_dot  # Should be different with different mul_symbol
+
+
+def test_validate_latex_kwargs():
+    """Test validate_latex_kwargs function."""
+    # Valid kwargs
+    valid_kwargs = {"mul_symbol": "dot", "mode": "inline"}
+    result = validate_latex_kwargs(valid_kwargs)
+    assert result == valid_kwargs
+
+    # Invalid kwargs should raise ValueError
+    invalid_kwargs = {"invalid_param": "value", "mul_symbol": "dot"}
+    with pytest.raises(ValueError, match="Invalid latex\\(\\) parameters"):
+        validate_latex_kwargs(invalid_kwargs)
 
 
 def test_wrap_floats():

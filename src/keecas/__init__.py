@@ -22,6 +22,7 @@ from .formatters import (
     default_cell_formatter_registry,
     default_cell_formatter,
     cell_formatter,
+    validate_latex_kwargs,
 )
 
 # pipe_command
@@ -52,6 +53,7 @@ __all__ = [
     "default_cell_formatter_registry",
     "default_cell_formatter",
     "cell_formatter",
+    "validate_latex_kwargs",
     "pc",
     "u",
     "update_pint_locale",  # Pint localization control

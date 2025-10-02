@@ -18,13 +18,41 @@ Example:
 """
 
 from typing import Any, Callable, TypeVar
+import inspect
 
 from sympy import latex, Basic, S
 from IPython.display import Markdown
 import pint
 
 T = TypeVar('T')
-FormatterFunc = Callable[[Any, int], str]  # (value, col_index) -> str
+FormatterFunc = Callable[[Any, int, dict], str]  # (value, col_index, **kwargs) -> str
+
+
+def validate_latex_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Validate and filter kwargs for sympy.latex() function.
+
+    Args:
+        kwargs: Dictionary of keyword arguments to validate
+
+    Returns:
+        Filtered dict containing only valid latex() parameters
+
+    Raises:
+        ValueError: If any invalid parameter names are provided
+    """
+    # Get valid latex() parameters
+    latex_sig = inspect.signature(latex)
+    valid_params = set(latex_sig.parameters.keys()) - {'expr'}  # Exclude positional 'expr'
+
+    # Check for invalid parameters
+    invalid_params = set(kwargs.keys()) - valid_params
+    if invalid_params:
+        raise ValueError(
+            f"Invalid latex() parameters: {', '.join(invalid_params)}. "
+            f"Valid parameters are: {', '.join(sorted(valid_params))}"
+        )
+
+    return kwargs
 
 
 class CellFormatterRegistry:
@@ -65,22 +93,24 @@ class CellFormatterRegistry:
             sorted(self._formatters.items(), key=lambda x: x[1][1])
         )
 
-    def format(self, value: Any, col_index: int) -> str:
+    def format(self, value: Any, col_index: int, **kwargs) -> str:
         """Format value using first matching type formatter.
 
         Args:
             value: Value to format
             col_index: Column index (0 = first column/LHS, 1+ = RHS)
+            **kwargs: Additional keyword arguments to pass to latex() function
+                (e.g., mul_symbol, mode, etc.)
 
         Returns:
             LaTeX string representation
         """
         for (type_class, _), (formatter, _) in self._formatters.items():
             if isinstance(value, type_class):
-                return formatter(value, col_index)
+                return formatter(value, col_index, **kwargs)
 
         # Ultimate fallback - always return LaTeX-compatible output
-        return latex(value)
+        return latex(value, **kwargs)
 
     def _load_defaults(self):
         """Load built-in formatters."""
@@ -96,45 +126,81 @@ class CellFormatterRegistry:
         self.register(int, self._format_int, priority=70)
         self.register(str, self._format_str, priority=70)
 
-    def _format_markdown(self, value: Markdown, col_index: int) -> str:
-        """Format Markdown objects."""
+    def _format_markdown(self, value: Markdown, col_index: int, **kwargs) -> str:
+        """Format Markdown objects.
+
+        Args:
+            value: Markdown object
+            col_index: Column index
+            **kwargs: Ignored for Markdown (passed for consistency)
+        """
         if col_index == 0:
             return rf"\text{{{value.data}}}"
         else:
             return rf"\quad\text{{{value.data}}}"
 
-    def _format_pint(self, value: pint.Quantity, col_index: int) -> str:
-        """Format Pint quantities."""
-        latex_str = latex(S(value))
+    def _format_pint(self, value: pint.Quantity, col_index: int, **kwargs) -> str:
+        """Format Pint quantities.
+
+        Args:
+            value: Pint Quantity
+            col_index: Column index
+            **kwargs: Passed to latex() function for SymPy conversion
+        """
+        latex_str = latex(S(value), **kwargs)
         if col_index == 0:
             return latex_str
         else:
             return f"= {latex_str}"
 
-    def _format_sympy(self, value: Basic, col_index: int) -> str:
-        """Format SymPy expressions."""
-        latex_str = latex(value)
+    def _format_sympy(self, value: Basic, col_index: int, **kwargs) -> str:
+        """Format SymPy expressions.
+
+        Args:
+            value: SymPy Basic object
+            col_index: Column index
+            **kwargs: Passed to latex() function (e.g., mul_symbol, mode)
+        """
+        latex_str = latex(value, **kwargs)
         if col_index == 0:
             return latex_str
         else:
             return f"= {latex_str}"
 
-    def _format_float(self, value: float, col_index: int) -> str:
-        """Format Python floats."""
+    def _format_float(self, value: float, col_index: int, **kwargs) -> str:
+        """Format Python floats.
+
+        Args:
+            value: Float value
+            col_index: Column index
+            **kwargs: Ignored for floats (passed for consistency)
+        """
         if col_index == 0:
             return str(value)
         else:
             return f"= {value}"
 
-    def _format_int(self, value: int, col_index: int) -> str:
-        """Format Python integers."""
+    def _format_int(self, value: int, col_index: int, **kwargs) -> str:
+        """Format Python integers.
+
+        Args:
+            value: Integer value
+            col_index: Column index
+            **kwargs: Ignored for integers (passed for consistency)
+        """
         if col_index == 0:
             return str(value)
         else:
             return f"= {value}"
 
-    def _format_str(self, value: str, col_index: int) -> str:
-        """Format Python strings."""
+    def _format_str(self, value: str, col_index: int, **kwargs) -> str:
+        """Format Python strings.
+
+        Args:
+            value: String value
+            col_index: Column index
+            **kwargs: Ignored for strings (passed for consistency)
+        """
         if col_index == 0:
             return rf"\text{{{value}}}"
         else:
@@ -145,12 +211,14 @@ class CellFormatterRegistry:
 default_cell_formatter_registry = CellFormatterRegistry()
 
 
-def default_cell_formatter(value: Any, col_index: int) -> str:
+def default_cell_formatter(value: Any, col_index: int, **kwargs) -> str:
     """Default cell formatter using the global registry.
 
     Args:
         value: Cell value to format
         col_index: Column index (0 = first column/LHS, 1+ = RHS columns)
+        **kwargs: Additional keyword arguments passed to latex() function
+            (e.g., mul_symbol, mode, etc.)
 
     Returns:
         LaTeX string representation
@@ -162,8 +230,10 @@ def default_cell_formatter(value: Any, col_index: int) -> str:
         'x'
         >>> default_cell_formatter(x, 1)
         '= x'
+        >>> default_cell_formatter(x, 0, mul_symbol='dot')
+        'x'
     """
-    return default_cell_formatter_registry.format(value, col_index)
+    return default_cell_formatter_registry.format(value, col_index, **kwargs)
 
 
 def cell_formatter(type_class: type[T], priority: int = 50):

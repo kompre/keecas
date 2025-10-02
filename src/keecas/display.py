@@ -368,6 +368,21 @@ def show_eqn(
     if float_format is None:
         float_format = config.display.default_float_format
 
+    # Prepare latex kwargs for formatters (validate and set defaults)
+    from keecas.formatters import validate_latex_kwargs
+
+    # Filter out localization parameters that shouldn't go to latex()
+    latex_kwargs = {
+        k: v for k, v in kwargs.items() if k not in ["language", "substitutions"]
+    }
+
+    # Set default mul_symbol if not provided
+    if "mul_symbol" not in latex_kwargs:
+        latex_kwargs["mul_symbol"] = config.latex.default_mul_symbol
+
+    # Validate latex kwargs
+    latex_kwargs = validate_latex_kwargs(latex_kwargs)
+
     # Handle inline environment definitions
     from keecas.config import EnvironmentDefinition
 
@@ -487,9 +502,9 @@ def show_eqn(
             cell_formatters[key],  # Add to zip_longest
             fillvalue="",
         )):
-            # Apply formatter with column index
+            # Apply formatter with column index and latex kwargs
             if v is not None:
-                formatted_value = cf(v, col_idx)  # cf = cell formatter from zip_longest
+                formatted_value = cf(v, col_idx, **latex_kwargs)  # Pass latex kwargs to formatter
                 cell_content = f"{_col_wrap(cw,v)[0]}{formatted_value}{_col_wrap(cw, v)[-1]}"
             else:
                 cell_content = " "
