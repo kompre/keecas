@@ -70,6 +70,29 @@ def test_validate_latex_kwargs():
         validate_latex_kwargs(invalid_kwargs)
 
 
+def test_formatter_returns_none():
+    """Test that formatters returning None are handled gracefully."""
+    from keecas.formatters import default_cell_formatter_registry
+
+    # Create a custom formatter that returns None
+    def none_formatter(value, col_index, **kwargs):
+        return None
+
+    # Register it temporarily for a custom type
+    class CustomType:
+        pass
+
+    default_cell_formatter_registry.register(CustomType, none_formatter, priority=1)
+
+    # Create equation with custom type
+    result = show_eqn({x: CustomType()})
+
+    # Should produce empty cell, not "None"
+    assert "None" not in result.data
+    # Should have empty space between separator and line end/break
+    assert "&  " in result.data or "& \\" in result.data
+
+
 def test_wrap_floats():
     text = "The value is 3.14159 and -2.71828"
     result = wrap_floats(text, wrapper=("(", ")"))
