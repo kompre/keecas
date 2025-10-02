@@ -18,6 +18,44 @@ from keecas import pipe_command as pc
 x, y = symbols("x y")
 
 
+def test_import_star():
+    """Test that 'from keecas import *' works without AttributeError."""
+    # This test ensures __all__ is properly updated with chain-based exports
+    import sys
+    import importlib
+
+    # Create a fresh namespace
+    namespace = {}
+
+    # Execute import *
+    exec("from keecas import *", namespace)
+
+    # Verify chain-based exports are available
+    assert "EarlyExit" in namespace
+    assert "FormatterChain" in namespace
+    assert "default_formatter_chain" in namespace
+    assert "default_cell_formatter" in namespace
+    assert "format_markdown" in namespace
+    assert "format_pint" in namespace
+    assert "format_mul" in namespace
+    assert "format_sympy" in namespace
+
+    # Verify old registry exports are NOT present
+    assert "default_cell_formatter_registry" not in namespace
+    assert "cell_formatter" not in namespace
+
+    # Verify the imports are actually usable
+    EarlyExit = namespace["EarlyExit"]
+    FormatterChain = namespace["FormatterChain"]
+
+    # Test basic functionality
+    exit_obj = EarlyExit("test")
+    assert exit_obj.result == "test"
+
+    chain = FormatterChain([])
+    assert isinstance(chain.formatters, list)
+
+
 def test_check():
     # Test for Le (Less Than or Equal To)
     x = 1
