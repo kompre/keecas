@@ -19,10 +19,18 @@ from .display import (
 
 # formatters
 from .formatters import (
-    default_cell_formatter_registry,
+    EarlyExit,
+    FormatterChain,
+    default_formatter_chain,
     default_cell_formatter,
-    cell_formatter,
     validate_latex_kwargs,
+    format_markdown,
+    format_pint,
+    format_mul,
+    format_sympy,
+    format_float,
+    format_int,
+    format_str,
 )
 
 # pipe_command

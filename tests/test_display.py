@@ -72,42 +72,46 @@ def test_validate_latex_kwargs():
 
 def test_formatter_returns_none():
     """Test that formatters returning None skip to next formatter."""
-    from keecas.formatters import default_cell_formatter_registry
+    from keecas import FormatterChain, EarlyExit, default_formatter_chain
 
     # Create a custom formatter that conditionally returns None
-    def conditional_formatter(value, col_index, **kwargs):
+    def conditional_formatter(value, col_index=0, **kwargs):
         # Only handle values > 100, otherwise return None to skip to next
-        if hasattr(value, '__gt__') and value > 100:
-            return f"LARGE: {value}" if col_index == 0 else f"= LARGE: {value}"
+        if isinstance(value, int) and value > 100:
+            return EarlyExit(f"LARGE: {value}" if col_index == 0 else f"= LARGE: {value}")
         return None  # Skip to next formatter
 
-    # Register with high priority (will be tried first)
-    default_cell_formatter_registry.register(int, conditional_formatter, priority=5)
+    # Create custom chain with our formatter first
+    custom_chain = FormatterChain(default_formatter_chain.formatters.copy())
+    custom_chain.insert(0, conditional_formatter)  # Insert at beginning
 
     # Test with value > 100 - should use our formatter
-    result_large = show_eqn({x: 150})
+    result_large = show_eqn({x: 150}, cell_formatter=custom_chain)
     assert "LARGE: 150" in result_large.data
 
     # Test with value <= 100 - should skip to built-in int formatter
-    result_small = show_eqn({y: 50})
+    result_small = show_eqn({y: 50}, cell_formatter=custom_chain)
     assert "LARGE" not in result_small.data
     assert "50" in result_small.data  # Falls back to default int formatter
 
 
 def test_formatter_empty_string():
-    """Test that formatters can explicitly return empty string."""
-    from keecas.formatters import default_cell_formatter_registry
+    """Test that formatters can explicitly return empty string via EarlyExit."""
+    from keecas import FormatterChain, EarlyExit
 
     # Formatter that explicitly returns empty string
-    def empty_formatter(value, col_index, **kwargs):
-        return ""  # Explicit empty (not None)
+    def empty_formatter(value, col_index=0, **kwargs):
+        if isinstance(value, EmptyType):
+            return EarlyExit("")  # Explicit empty (not None)
+        return None
 
     class EmptyType:
         pass
 
-    default_cell_formatter_registry.register(EmptyType, empty_formatter, priority=1)
+    # Create chain with just our formatter
+    custom_chain = FormatterChain([empty_formatter])
 
-    result = show_eqn({x: EmptyType()})
+    result = show_eqn({x: EmptyType()}, cell_formatter=custom_chain)
 
     # Should have empty content between separator and line end
     assert "& " in result.data or "& \\" in result.data
@@ -116,32 +120,33 @@ def test_formatter_empty_string():
 
 
 def test_formatter_recursive_call():
-    """Test that formatters can recursively call the registry (Pint → SymPy)."""
-    from keecas.formatters import default_cell_formatter_registry
-    from keecas import u
+    """Test Pint → SymPy transform chain (demonstrates chaining)."""
+    from keecas import u, EarlyExit, FormatterChain, format_pint
     from sympy import Basic, latex
 
-    # Register a custom SymPy formatter that underlines everything
-    def underline_sympy(value: Basic, col_index, **kwargs):
-        latex_str = latex(value, **kwargs)
-        return rf"\underline{{{latex_str}}}" if col_index == 0 else rf"= \underline{{{latex_str}}}"
+    # Custom SymPy formatter that underlines everything
+    def underline_sympy(value, col_index=0, **kwargs):
+        if isinstance(value, Basic):
+            latex_str = latex(value, **kwargs)
+            return EarlyExit(rf"\underline{{{latex_str}}}" if col_index == 0 else rf"= \underline{{{latex_str}}}")
+        return None
 
-    # Register with priority between Pint (15) and built-in SymPy (30)
-    default_cell_formatter_registry.register(Basic, underline_sympy, priority=25)
+    # Create chain: Pint transforms to SymPy, then our custom formatter renders
+    custom_chain = FormatterChain([
+        format_pint,      # Transform Pint → SymPy
+        underline_sympy,  # Render SymPy with underline
+    ])
 
-    try:
-        # Test with Pint quantity - should go through:
-        # 1. Pint formatter (priority 15) → converts to SymPy
-        # 2. Our custom SymPy formatter (priority 25) → underlines
-        result = show_eqn({x: 5 * u.meter})
+    # Test with Pint quantity - should go through:
+    # 1. format_pint → converts to SymPy
+    # 2. underline_sympy → underlines the SymPy expression
+    result = show_eqn({x: 5 * u.meter}, cell_formatter=custom_chain)
 
-        # Should be underlined (our custom formatter)
-        assert r"\underline{" in result.data
-        # Should have the value
-        assert "5" in result.data
-    finally:
-        # Clean up: unregister the custom formatter to avoid polluting other tests
-        default_cell_formatter_registry.unregister(Basic, underline_sympy)
+    # Should be underlined (our custom formatter)
+    assert r"\underline{" in result.data
+    # Should have the value
+    assert "5" in result.data
+    # No cleanup needed - chain is local to this test!
 
 
 def test_wrap_floats():

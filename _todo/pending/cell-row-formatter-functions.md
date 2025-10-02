@@ -847,5 +847,490 @@ show_eqn(..., cell_formatter=my_formatter)
 - ✅ Added `unregister()` method to `CellFormatterRegistry` for cleanup
 - ✅ Updated `test_formatter_recursive_call()` with try/finally block to clean up custom formatter
 - ✅ All 108 tests passing
+- ✅ Committed and pushed
 
-**Status**: Ready for commit
+### Session 3: 2025-10-02 - Refactor to Chain-Based Formatters
+
+**Problem Identified**: Registry + decorator system is poor for notebook prototyping:
+1. Decorator registration requires kernel restart to modify formatters
+2. Priority system (numeric) is opaque - can't visualize formatter order at a glance
+3. First-match-wins with recursion risk if formatter returns same type
+4. Global state makes experimentation difficult
+
+**User Feedback**:
+> "I don't like this implementation. It does not work well with the type of work, writing a jupyter notebook, an user may do: when I define a function using a decorator, I have to restart the kernel for any modification to take effect. This is not convenient for easy prototyping. Also the priority system is difficult to visualize at a glance, it would be better to have a list-like object to immediately view the order of operation."
+>
+> "I think we need to discard the concept of first to match wins, but instead embrace a chain paradigm. The format function are chained together and pass the argument to the following after they have done work."
+
+**New Design: Chain-Based Formatters**
+
+#### Core Concepts
+
+1. **`FormatterChain` class**: Explicit list of formatters executed in order
+2. **`EarlyExit` sentinel**: Signals "formatting done, stop chain"
+3. **Chain execution semantics**:
+   - Return `EarlyExit(result)` → stop chain, return result string
+   - Return transformed value → pass to next formatter in chain
+   - Return `None` → skip to next formatter (no transformation)
+4. **Linear execution**: No recursion loops - chain executes once top to bottom
+5. **Notebook-friendly**: Regular functions (no decorators), list manipulation, no kernel restart
+
+#### Example API Design
+
+```python
+from keecas import FormatterChain, EarlyExit
+from sympy import latex, Basic, S
+import pint
+
+# Formatters are regular functions
+def format_pint(value, col_index, **kwargs):
+    """Convert Pint to SymPy, pass to next formatter."""
+    if isinstance(value, pint.Quantity):
+        return S(value)  # Transform and continue
+    return None  # Not my type, skip
+
+def format_sympy(value, col_index, **kwargs):
+    """Format SymPy expressions - terminal formatter."""
+    if isinstance(value, Basic):
+        latex_str = latex(value, **kwargs)
+        result = latex_str if col_index == 0 else f"= {latex_str}"
+        return EarlyExit(result)  # Done!
+    return None
+
+# Create chain - order is explicit and visible
+chain = FormatterChain([
+    format_markdown,  # First
+    format_pint,      # Second (transforms to SymPy)
+    format_sympy,     # Third (receives pint-converted values)
+])
+
+# Inspect order
+print(chain)  # FormatterChain([format_markdown, format_pint, format_sympy])
+
+# Modify chain in notebook (no kernel restart!)
+chain.insert(0, my_custom_formatter)
+chain.remove(format_pint)
+chain.formatters.append(another_formatter)
+
+# Use in show_eqn
+show_eqn([_p | _e, _v], cell_formatter=chain)
+```
+
+#### Chain Manipulation - How Users Change Order
+
+Since `FormatterChain.formatters` is a regular Python list, users can manipulate it using standard list methods:
+
+**1. Direct List Manipulation:**
+```python
+# Access the chain's formatter list
+chain = default_formatter_chain  # or create custom chain
+
+# View current order
+print(chain)  # Shows formatter names
+
+# Insert at specific position
+chain.formatters.insert(0, my_custom_formatter)  # Add at beginning
+chain.formatters.insert(2, another_formatter)    # Add at index 2
+
+# Remove formatter
+chain.formatters.remove(format_pint)  # Remove by reference
+del chain.formatters[1]               # Remove by index
+
+# Append to end
+chain.formatters.append(fallback_formatter)
+
+# Replace entire list
+chain.formatters = [format_markdown, format_sympy]
+
+# Reorder - swap two positions
+chain.formatters[0], chain.formatters[1] = chain.formatters[1], chain.formatters[0]
+
+# Move formatter up (decrease index) - remove and re-insert
+formatter = chain.formatters.pop(3)  # Remove from position 3
+chain.formatters.insert(1, formatter)  # Insert at position 1
+
+# Move formatter down (increase index)
+formatter = chain.formatters.pop(1)  # Remove from position 1
+chain.formatters.insert(3, formatter)  # Insert at position 3
+
+# Move by reference (when you have the function but not the index)
+current_index = chain.formatters.index(format_pint)  # Find current position
+formatter = chain.formatters.pop(current_index)      # Remove
+chain.formatters.insert(current_index - 1, formatter)  # Move up by 1
+```
+
+**2. Helper Methods on FormatterChain:**
+```python
+class FormatterChain:
+    # ... existing __init__, __call__, __repr__ ...
+
+    def insert(self, index: int, formatter: Callable) -> None:
+        """Insert formatter at specific position."""
+        self.formatters.insert(index, formatter)
+
+    def remove(self, formatter: Callable) -> None:
+        """Remove formatter from chain."""
+        self.formatters.remove(formatter)
+
+    def append(self, formatter: Callable) -> None:
+        """Append formatter to end of chain."""
+        self.formatters.append(formatter)
+
+    def clear(self) -> None:
+        """Remove all formatters."""
+        self.formatters.clear()
+
+    def move(self, formatter: Callable, new_index: int) -> None:
+        """Move formatter to new position in chain.
+
+        Args:
+            formatter: The formatter function to move
+            new_index: Target index position
+
+        Example:
+            >>> chain.move(format_pint, 0)  # Move to beginning
+            >>> chain.move(format_sympy, -1)  # Move to end
+        """
+        current_index = self.formatters.index(formatter)
+        self.formatters.pop(current_index)
+        self.formatters.insert(new_index, formatter)
+
+    def move_up(self, formatter: Callable, steps: int = 1) -> None:
+        """Move formatter toward beginning of chain (lower index).
+
+        Args:
+            formatter: The formatter function to move
+            steps: Number of positions to move up (default 1)
+
+        Example:
+            >>> chain.move_up(format_pint)     # Move up by 1
+            >>> chain.move_up(format_sympy, 2)  # Move up by 2
+        """
+        current_index = self.formatters.index(formatter)
+        new_index = max(0, current_index - steps)
+        self.formatters.pop(current_index)
+        self.formatters.insert(new_index, formatter)
+
+    def move_down(self, formatter: Callable, steps: int = 1) -> None:
+        """Move formatter toward end of chain (higher index).
+
+        Args:
+            formatter: The formatter function to move
+            steps: Number of positions to move down (default 1)
+
+        Example:
+            >>> chain.move_down(format_pint)     # Move down by 1
+            >>> chain.move_down(format_sympy, 2)  # Move down by 2
+        """
+        current_index = self.formatters.index(formatter)
+        new_index = min(len(self.formatters) - 1, current_index + steps)
+        self.formatters.pop(current_index)
+        self.formatters.insert(new_index, formatter)
+```
+
+**Usage Examples:**
+```python
+# Move to specific position
+chain.move(format_pint, 0)  # Move to beginning
+chain.move(format_sympy, 2)  # Move to index 2
+
+# Move up/down by steps
+chain.move_up(format_pint)      # Move up by 1 position
+chain.move_down(format_sympy, 2)  # Move down by 2 positions
+
+# Combine with inspection
+print(chain)  # See current order
+chain.move_up(format_pint)  # Adjust order
+print(chain)  # Verify new order
+```
+
+**3. Creating New Chains:**
+```python
+# Copy and modify
+custom_chain = FormatterChain(default_formatter_chain.formatters.copy())
+custom_chain.insert(0, my_formatter)
+
+# Build from scratch
+minimal_chain = FormatterChain([format_sympy])
+
+# Per-cell custom chains
+show_eqn([_p | _e, _v], cell_formatter=custom_chain)
+```
+
+**Notebook Workflow Example:**
+```python
+# Cell 1: Setup
+from keecas import FormatterChain, default_formatter_chain, show_eqn
+
+# Cell 2: Create custom chain
+my_chain = FormatterChain(default_formatter_chain.formatters.copy())
+
+# Cell 3: Test
+show_eqn([_p | _e, _v], cell_formatter=my_chain)
+
+# Cell 4: Not working? Modify chain and re-run Cell 3 (no kernel restart!)
+def debug_formatter(value, col_index, **kwargs):
+    print(f"Debug: {type(value)=}, {col_index=}")
+    return None  # Skip to next
+
+my_chain.insert(0, debug_formatter)  # Re-run Cell 3 to see debug output
+
+# Cell 5: Remove debug formatter and continue
+my_chain.remove(debug_formatter)  # Re-run Cell 3
+```
+
+#### col_index Optional Parameter
+
+Make `col_index` optional with default value to simplify formatters that don't need column awareness:
+
+**Formatter Signature Options:**
+```python
+# Full signature (column-aware)
+def format_sympy(value, col_index, **kwargs):
+    latex_str = latex(value, **kwargs)
+    return EarlyExit(latex_str if col_index == 0 else f"= {latex_str}")
+
+# Simplified signature (column-agnostic) - col_index defaults to 0
+def format_simple(value, col_index=0, **kwargs):
+    if isinstance(value, MyType):
+        return EarlyExit(str(value))
+    return None
+
+# Or ignore col_index entirely if not needed
+def format_transform_only(value, col_index=None, **kwargs):
+    """This formatter only transforms, doesn't care about column."""
+    if isinstance(value, pint.Quantity):
+        return S(value)  # Transform to SymPy
+    return None
+```
+
+**Implementation Note:**
+- `FormatterChain.__call__()` always passes `col_index` parameter
+- Formatters can accept it with default value or ignore it via `**kwargs` pattern
+- This maintains backward compatibility and flexibility
+
+#### Implementation Plan
+
+**Phase 1: Core Classes**
+- [ ] Create `EarlyExit` sentinel class in `formatters.py`
+- [ ] Create `FormatterChain` class with:
+  - `__init__(formatters: list[Callable])` - store list
+  - `__call__(value, col_index, **kwargs)` - execute chain
+  - `__repr__()` - show formatter names for easy inspection
+  - `.formatters` attribute - exposed list for direct manipulation
+  - Helper methods: `insert()`, `remove()`, `append()`, `clear()`
+  - Movement methods: `move()`, `move_up()`, `move_down()`
+
+**Phase 2: Chain Execution Logic**
+- [ ] Implement chain execution in `FormatterChain.__call__()`:
+  ```python
+  current_value = value
+  for formatter in self.formatters:
+      result = formatter(current_value, col_index, **kwargs)
+      if isinstance(result, EarlyExit):
+          return result.result  # Stop
+      elif result is not None:
+          current_value = result  # Transform
+      # None = skip
+  return latex(current_value, **kwargs)  # Fallback
+  ```
+
+**Phase 3: Convert Built-in Formatters**
+- [ ] Convert built-in formatters to chain function style:
+  - `format_markdown` - returns `EarlyExit` (terminal)
+  - `format_pint` - returns `S(value)` (transform to SymPy)
+  - `format_mul` - transforms `Mul` without symbols to separated numeric+unit form (returns transformed `Mul` to continue)
+  - `format_sympy` - returns `EarlyExit` (terminal)
+  - `format_float` - returns `EarlyExit` (terminal)
+  - `format_int` - returns `EarlyExit` (terminal)
+  - `format_str` - returns `EarlyExit` (terminal)
+
+**Phase 4: Replace Registry System**
+- [ ] Remove `CellFormatterRegistry` class entirely
+- [ ] Remove `@cell_formatter` decorator
+- [ ] Remove `unregister()` method (no longer needed)
+- [ ] Remove priority system logic
+- [ ] Create `default_formatter_chain` with built-in formatters
+- [ ] Update `default_cell_formatter` to use chain: `default_formatter_chain(value, col_index, **kwargs)`
+
+**Phase 5: Update show_eqn()**
+- [ ] Update `cell_formatter` parameter to accept `FormatterChain | Callable`
+- [ ] Default to `default_formatter_chain` if None
+- [ ] Remove registry-related logic
+
+**Phase 6: Testing**
+- [ ] Update `test_default_cell_formatter()` - no changes to API
+- [ ] Update `test_formatter_returns_none()` - test skip semantics
+- [ ] Update `test_formatter_empty_string()` - empty string now via `EarlyExit("")`
+- [ ] Update `test_formatter_recursive_call()` - now demonstrates Pint → SymPy transform
+- [ ] Remove `test_validate_latex_kwargs()` test cleanup (no registry to pollute)
+- [ ] Add `test_early_exit()` - test chain stopping
+- [ ] Add `test_chain_order()` - test explicit ordering
+- [ ] Add `test_chain_modification()` - test insert/remove in "notebook"
+
+**Phase 7: Documentation**
+- [ ] Update module docstring with chain examples
+- [ ] Update `FormatterChain` docstring with usage patterns
+- [ ] Document `EarlyExit` sentinel
+- [ ] Add notebook prototyping examples
+- [ ] Update CLAUDE.md with new formatter design
+
+#### Key Benefits
+
+1. **Visual clarity**: `print(chain)` shows exact order
+2. **Easy modification**: Standard list operations, no special API
+3. **No kernel restart**: Functions are just functions, modify chain list
+4. **No recursion loops**: Linear execution, can't call itself
+5. **Simpler mental model**: "Do work, pass along" vs "priority matching"
+6. **Better for prototyping**: See order, modify order, test immediately
+
+#### Migration from Registry
+
+**Before (Registry)**:
+```python
+@cell_formatter(MyType, priority=25)
+def format_my_type(value, col_index, **kwargs):
+    if isinstance(value, MyType):
+        return f"custom: {value}"
+    return None  # Won't work - decorator already registered!
+```
+
+**After (Chain)**:
+```python
+def format_my_type(value, col_index, **kwargs):
+    if isinstance(value, MyType):
+        return EarlyExit(f"custom: {value}")
+    return None  # Skip to next
+
+# Add to chain
+chain = FormatterChain([format_my_type, format_sympy, ...])
+
+# Modify anytime (no kernel restart!)
+chain.insert(1, another_formatter)
+```
+
+#### Built-in Formatter Details
+
+**`format_mul` - SymPy Mul Formatter:**
+
+This formatter handles `sympy.Mul` objects that represent numeric values multiplied by units (e.g., `5*meter`). When the `Mul` has no free symbols, it separates the numeric part from the unit part for cleaner LaTeX rendering.
+
+```python
+def format_mul(value, col_index=None, **kwargs):
+    """Transform Mul without symbols to separated numeric+unit form.
+
+    If the object is a Mul without any symbols, it represents a numeric value
+    multiplied by a unit. Transform it using as_two_terms for better formatting
+    where numeric and unit parts are visually separated.
+
+    Args:
+        value: Value to check and potentially transform
+        col_index: Column index (not used by this formatter)
+        **kwargs: Additional arguments (passed through)
+
+    Returns:
+        Transformed Mul as UnevaluatedExpr if applicable, None otherwise
+
+    Example:
+        Input:  5*meter (Mul with no free symbols)
+        Output: UnevaluatedExpr(5) * UnevaluatedExpr(meter)
+        LaTeX: "5 \cdot \mathrm{meter}" instead of "5meter"
+    """
+    from sympy import Mul
+    from keecas import pipe_command as pc
+
+    if isinstance(value, Mul) and not value.free_symbols:
+        # Transform to separated form: numeric * unit
+        transformed = value | pc.as_two_terms(as_mul=True)
+        return transformed  # Continue to next formatter (likely format_sympy)
+
+    return None  # Not a Mul or has symbols, skip to next formatter
+```
+
+**Chain Order:**
+```python
+default_formatter_chain = FormatterChain([
+    format_markdown,  # Check Markdown first
+    format_pint,      # Convert Pint → SymPy
+    format_mul,       # Transform numeric Mul to separated form
+    format_sympy,     # Render SymPy (receives Pint-converted and Mul-transformed values)
+    format_float,     # Fallback for float
+    format_int,       # Fallback for int
+    format_str,       # Fallback for str
+])
+```
+
+**Key Point:** `format_mul` goes **before** `format_sympy` so it can transform the `Mul` object, and then `format_sympy` receives the transformed version for final LaTeX rendering.
+
+**Status**: Design approved, ready to implement
+
+### Session 3 Continued: Implementation Complete
+
+**Chain-Based Formatter Refactor - ALL PHASES COMPLETE:**
+
+✅ **Phase 1: Core Classes**
+- Created `EarlyExit` sentinel class with `result` attribute and `__repr__`
+- Created `FormatterChain` class with all features:
+  - `__init__(formatters)` - stores list
+  - `__call__(value, col_index, **kwargs)` - executes chain
+  - `__repr__()` - shows formatter names
+  - `.formatters` - public list attribute
+  - Helper methods: `insert()`, `remove()`, `append()`, `clear()`
+  - Movement methods: `move()`, `move_up()`, `move_down()`
+
+✅ **Phase 2: Chain Execution Logic**
+- Implemented full chain semantics:
+  - `EarlyExit(result)` → stop chain, return result
+  - transformed value → pass to next
+  - `None` → skip to next
+  - Fallback to `latex(value, **kwargs)`
+
+✅ **Phase 3: Built-in Formatters**
+- Converted all to chain function style:
+  - `format_markdown` - terminal (returns `EarlyExit`)
+  - `format_pint` - transformer (returns `S(value)`)
+  - `format_mul` - transformer (returns transformed `Mul`)
+  - `format_sympy` - terminal (returns `EarlyExit`)
+  - `format_float` - terminal (returns `EarlyExit`)
+  - `format_int` - terminal (returns `EarlyExit`)
+  - `format_str` - terminal (returns `EarlyExit`)
+- All formatters have optional `col_index` parameter
+
+✅ **Phase 4: Removed Registry System**
+- Deleted `CellFormatterRegistry` class completely
+- Deleted `@cell_formatter` decorator
+- Deleted `unregister()` method
+- Deleted priority system logic
+- Created `default_formatter_chain` with 7 built-in formatters
+- `default_cell_formatter` now calls `default_formatter_chain()`
+
+✅ **Phase 5: Updated Exports**
+- Updated `__init__.py` to export:
+  - `EarlyExit`, `FormatterChain`
+  - `default_formatter_chain`, `default_cell_formatter`
+  - All individual formatter functions
+- Removed registry exports
+
+✅ **Phase 6: Tests**
+- Updated `test_formatter_returns_none()` - uses `FormatterChain` + `EarlyExit`
+- Updated `test_formatter_empty_string()` - uses `EarlyExit("")`
+- Updated `test_formatter_recursive_call()` - demonstrates Pint → SymPy chaining
+- No cleanup needed in tests - chains are local!
+- All 108 tests passing
+
+**Key Implementation Notes:**
+
+1. **`format_mul` Import**: Uses lazy import (`from keecas import pipe_command as pc`) to avoid circular dependency
+
+2. **Backward Compatibility**: `default_cell_formatter()` signature unchanged - `show_eqn()` works without modification!
+
+3. **Test Improvements**: Tests are simpler - no try/finally cleanup, no global state pollution
+
+4. **Notebook-Friendly**: Users can now:
+   ```python
+   chain = FormatterChain(default_formatter_chain.formatters.copy())
+   chain.insert(0, my_formatter)  # Modify
+   # Re-run cell - works immediately, no kernel restart!
+   ```
+
+**Status**: ✅ Implementation complete, all tests passing (108/108)
