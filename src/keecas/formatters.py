@@ -4,17 +4,29 @@ This module provides an extensible registry system for formatting cell values
 in mathematical equations. Users can register custom formatters for specific
 types using decorators or runtime registration.
 
+Formatter Return Values:
+    - Return string: Use this formatted output
+    - Return None: Skip to next formatter in priority order (conditional formatting)
+    - Return "": Use empty string (explicit empty cell)
+
 Example:
-    Register a custom formatter for NumPy arrays:
+    Basic formatter:
 
     >>> from keecas import cell_formatter
-    >>> import numpy as np
     >>>
-    >>> @cell_formatter(np.ndarray, priority=20)
-    >>> def format_numpy(arr, col_index):
+    >>> @cell_formatter(int, priority=20)
+    >>> def format_int(value, col_index, **kwargs):
     ...     if col_index == 0:
-    ...         return r"\\mathbf{A}"
-    ...     return matrix_to_latex(arr)
+    ...         return str(value)
+    ...     return f"= {value}"
+
+    Conditional formatter (returns None to skip):
+
+    >>> @cell_formatter(int, priority=5)  # Higher priority - tried first
+    >>> def format_large_int(value, col_index, **kwargs):
+    ...     if value > 1000:
+    ...         return rf"\\mathbf{{{value}}}"  # Bold large numbers
+    ...     return None  # Skip to next formatter for small numbers
 """
 
 from typing import Any, Callable, TypeVar
@@ -96,6 +108,10 @@ class CellFormatterRegistry:
     def format(self, value: Any, col_index: int, **kwargs) -> str:
         """Format value using first matching type formatter.
 
+        Formatters are tried in priority order. If a formatter returns None,
+        it means "I can't handle this value, try the next formatter".
+        This allows for conditional formatting based on value properties.
+
         Args:
             value: Value to format
             col_index: Column index (0 = first column/LHS, 1+ = RHS)
@@ -103,11 +119,19 @@ class CellFormatterRegistry:
                 (e.g., mul_symbol, mode, etc.)
 
         Returns:
-            LaTeX string representation
+            LaTeX string representation (never None - fallback ensures this)
+
+        Note:
+            - If formatter returns None: Skip to next formatter in priority order
+            - If formatter returns "" (empty string): Use empty string (explicit)
+            - Ultimate fallback: latex(value, **kwargs)
         """
         for (type_class, _), (formatter, _) in self._formatters.items():
             if isinstance(value, type_class):
-                return formatter(value, col_index, **kwargs)
+                result = formatter(value, col_index, **kwargs)
+                # If formatter returns None, continue to next formatter
+                if result is not None:
+                    return result
 
         # Ultimate fallback - always return LaTeX-compatible output
         return latex(value, **kwargs)

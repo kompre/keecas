@@ -71,26 +71,48 @@ def test_validate_latex_kwargs():
 
 
 def test_formatter_returns_none():
-    """Test that formatters returning None are handled gracefully."""
+    """Test that formatters returning None skip to next formatter."""
     from keecas.formatters import default_cell_formatter_registry
 
-    # Create a custom formatter that returns None
-    def none_formatter(value, col_index, **kwargs):
-        return None
+    # Create a custom formatter that conditionally returns None
+    def conditional_formatter(value, col_index, **kwargs):
+        # Only handle values > 100, otherwise return None to skip to next
+        if hasattr(value, '__gt__') and value > 100:
+            return f"LARGE: {value}" if col_index == 0 else f"= LARGE: {value}"
+        return None  # Skip to next formatter
 
-    # Register it temporarily for a custom type
-    class CustomType:
+    # Register with high priority (will be tried first)
+    default_cell_formatter_registry.register(int, conditional_formatter, priority=5)
+
+    # Test with value > 100 - should use our formatter
+    result_large = show_eqn({x: 150})
+    assert "LARGE: 150" in result_large.data
+
+    # Test with value <= 100 - should skip to built-in int formatter
+    result_small = show_eqn({y: 50})
+    assert "LARGE" not in result_small.data
+    assert "50" in result_small.data  # Falls back to default int formatter
+
+
+def test_formatter_empty_string():
+    """Test that formatters can explicitly return empty string."""
+    from keecas.formatters import default_cell_formatter_registry
+
+    # Formatter that explicitly returns empty string
+    def empty_formatter(value, col_index, **kwargs):
+        return ""  # Explicit empty (not None)
+
+    class EmptyType:
         pass
 
-    default_cell_formatter_registry.register(CustomType, none_formatter, priority=1)
+    default_cell_formatter_registry.register(EmptyType, empty_formatter, priority=1)
 
-    # Create equation with custom type
-    result = show_eqn({x: CustomType()})
+    result = show_eqn({x: EmptyType()})
 
-    # Should produce empty cell, not "None"
+    # Should have empty content between separator and line end
+    assert "& " in result.data or "& \\" in result.data
+    # Should NOT have "None"
     assert "None" not in result.data
-    # Should have empty space between separator and line end/break
-    assert "&  " in result.data or "& \\" in result.data
 
 
 def test_wrap_floats():

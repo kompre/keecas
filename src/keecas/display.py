@@ -505,12 +505,8 @@ def show_eqn(
             # Apply formatter with column index and latex kwargs
             if v is not None:
                 formatted_value = cf(v, col_idx, **latex_kwargs)  # Pass latex kwargs to formatter
-
-                # Handle formatters that return None (treat as empty cell)
-                if formatted_value is None:
-                    cell_content = " "
-                else:
-                    cell_content = f"{_col_wrap(cw,v)[0]}{formatted_value}{_col_wrap(cw, v)[-1]}"
+                # Note: formatted_value is never None - registry ensures fallback
+                cell_content = f"{_col_wrap(cw,v)[0]}{formatted_value}{_col_wrap(cw, v)[-1]}"
             else:
                 cell_content = " "
 
