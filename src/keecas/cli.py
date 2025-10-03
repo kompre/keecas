@@ -22,7 +22,7 @@ try:
 except ImportError:
     from importlib_metadata import version
 
-from .config import get_config_manager
+from .config.manager import get_config_manager
 
 
 def get_version() -> str:
@@ -555,8 +555,8 @@ def cmd_reset(args: argparse.Namespace) -> None:
 
 def cmd_config_version(args: argparse.Namespace) -> None:
     """Show configuration version information."""
-    from .config_schema import get_current_schema_version
-    from .config_migration import ConfigMigration
+    from .config.schema import get_current_schema_version
+    from .config.migration import ConfigMigration
 
     config_manager = get_config_manager()
     global_config = getattr(args, 'global_config', False)
@@ -593,8 +593,8 @@ def cmd_config_version(args: argparse.Namespace) -> None:
 
 def cmd_migrate(args: argparse.Namespace) -> None:
     """Manually trigger configuration migration."""
-    from .config_schema import get_current_schema_version
-    from .config_migration import ConfigMigration
+    from .config.schema import get_current_schema_version
+    from .config.migration import ConfigMigration
     import shutil
 
     config_manager = get_config_manager()
@@ -652,7 +652,7 @@ def cmd_migrate(args: argparse.Namespace) -> None:
             migrated_data = ConfigMigration.migrate(config_data, config_version, current_version)
 
             # Create a temporary config manager to save the migrated config
-            from .config import ConfigManager
+            from .config.manager import ConfigManager
             temp_config = ConfigManager.__new__(ConfigManager)
             temp_config._options = config_manager._options
             temp_config._save_config_file(config_path, created_at=metadata.get("generated_at"))

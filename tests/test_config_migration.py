@@ -5,8 +5,8 @@ import toml
 from pathlib import Path
 from packaging import version as pkg_version
 
-from keecas.config_schema import SCHEMAS, get_current_schema_version, migrate_0_1_to_1_0
-from keecas.config_migration import ConfigMigration
+from keecas.config.schema import SCHEMAS, get_current_schema_version, migrate_0_1_to_1_0
+from keecas.config.migration import ConfigMigration
 
 
 class TestConfigSchema:

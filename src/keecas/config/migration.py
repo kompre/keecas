@@ -9,7 +9,7 @@ from typing import Dict, List
 from warnings import warn
 from packaging import version
 
-from .config_schema import SCHEMAS
+from .schema import SCHEMAS
 
 
 class ConfigMigration:

@@ -433,8 +433,8 @@ class ConfigManager:
         Args:
             config_path: Path to configuration file
         """
-        from .config_migration import ConfigMigration
-        from .config_schema import get_current_schema_version
+        from .migration import ConfigMigration
+        from .schema import get_current_schema_version
 
         # Extract metadata from header comments
         metadata = self._extract_metadata_from_comments(config_path)
@@ -544,8 +544,8 @@ class ConfigManager:
             config_path: Path to save configuration file
             created_at: Optional creation timestamp (preserves during migration)
         """
-        from .version import __version__
-        from .config_schema import get_current_schema_version
+        from ..version import __version__
+        from .schema import get_current_schema_version
 
         config_dict = self._options.to_toml_dict()
         schema_version = get_current_schema_version()
@@ -579,8 +579,8 @@ class ConfigManager:
             migrated_data: Migrated configuration data
             created_at: Optional creation timestamp
         """
-        from .version import __version__
-        from .config_schema import get_current_schema_version
+        from ..version import __version__
+        from .schema import get_current_schema_version
 
         schema_version = get_current_schema_version()
         now = datetime.now().isoformat()
@@ -786,8 +786,8 @@ class ConfigManager:
 
     def _generate_config_template(self, is_global: bool = True, comment_style: str = "##") -> str:
         """Generate a clean, parametrizable configuration template with version header."""
-        from .version import __version__
-        from .config_schema import get_current_schema_version
+        from ..version import __version__
+        from .schema import get_current_schema_version
         from datetime import datetime
 
         defaults = ConfigOptions()

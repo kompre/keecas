@@ -26,7 +26,7 @@ def _initialize_unitregistry() -> pint.UnitRegistry:
 
     # Get default format from config
     try:
-        from .config import get_config_manager
+        from .config.manager import get_config_manager
         config = get_config_manager()
         registry.formatter.default_format = config.options.display.pint_default_format
     except Exception:

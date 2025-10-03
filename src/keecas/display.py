@@ -24,7 +24,7 @@ from .dataframe import *
 # default values for labels
 from dataclasses import dataclass
 
-from .config import get_config_manager
+from .config.manager import get_config_manager
 from .localization import translate
 
 # Use the unified configuration system
@@ -384,7 +384,7 @@ def show_eqn(
     latex_kwargs = validate_latex_kwargs(latex_kwargs)
 
     # Handle inline environment definitions
-    from keecas.config import EnvironmentDefinition
+    from keecas.config.manager import EnvironmentDefinition
 
     if isinstance(environment, dict):
         # Convert dict to EnvironmentDefinition
