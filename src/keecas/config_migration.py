@@ -75,20 +75,6 @@ class ConfigMigration:
                         stacklevel=2
                     )
 
-            # Handle removed keys
-            # NOTE: Custom migration_fn should handle value conversion BEFORE removal
-            # This section only removes keys that truly have no migration path
-            for key in schema.removed_keys:
-                if key in current_config:
-                    # Only warn if the custom migration didn't already handle it
-                    warn(
-                        f"Config key '{key}' was removed in keecas {target_version}. "
-                        f"Check migration guide for replacement options.",
-                        UserWarning,
-                        stacklevel=2
-                    )
-                    current_config.pop(key)
-
             # Apply renaming (preserves user values)
             for old_key, new_key in schema.renamed_keys.items():
                 if old_key in current_config:
@@ -109,9 +95,23 @@ class ConfigMigration:
 
                     print(f"Migrated '{old_key}' -> '{new_key}' (value: {user_value})")
 
-            # Run custom migration function (handles complex transformations)
+            # Run custom migration function FIRST (handles complex transformations and conversions)
+            # This must run before removed_keys cleanup so it can convert values
             if schema.migration_fn:
                 current_config = schema.migration_fn(current_config)
+
+            # Handle removed keys AFTER custom migration
+            # Only remove keys that migration function didn't already convert
+            for key in schema.removed_keys:
+                if key in current_config:
+                    # Warn that this key still exists after custom migration
+                    warn(
+                        f"Config key '{key}' was removed in keecas {target_version}. "
+                        f"Check migration guide for replacement options.",
+                        UserWarning,
+                        stacklevel=2
+                    )
+                    current_config.pop(key)
 
             # Metadata will be updated in header comments during save
             # No need to modify config_data structure
