@@ -563,7 +563,8 @@ def test_word_boundary_protection():
 
 def test_pint_locale_initialization():
     """Test that Pint locale respects disable_pint_locale config."""
-    from keecas.pint_sympy import unitregistry, _get_locale_from_keecas
+    from keecas.pint_sympy import unitregistry
+    from keecas.localization.pint_locale import _get_locale_from_keecas
     from keecas.localization import get_language
     from keecas import config
 
