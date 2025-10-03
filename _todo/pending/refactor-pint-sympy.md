@@ -379,6 +379,35 @@ Refactored `pint_to_sympy` with improved architecture:
 4. **Easier maintenance** - Modular design with clear responsibilities
 5. **No breaking changes** - All existing code continues to work
 
-**Next Steps:**
-- Commit changes to branch `refactor/pint-sympy`
-- Create PR for review
+## Additional Enhancement: Scale Factors for Unit Conversion
+
+**Issue Discovered:** Non-prefixed compound units (kgf, lbf) couldn't convert in SymPy
+
+**Solution Implemented:**
+- Added scale factor calculation in `SymPyUnitCache.get_or_create()`
+- Key insight: Must multiply Pint magnitude by SymPy's reference scale factors
+- Only affects non-prefixed units (prefixed units handled by SymPy automatically)
+
+**Results:**
+- Created `tests/test_pint_sympy.py` with 8 new tests
+- All 117 tests passing
+- kgf, lbf, and other compound units now convert correctly
+
+See [_todo/pending/fix-sympy-unit-scale-factors.md](fix-sympy-unit-scale-factors.md) for details.
+
+## Branch Summary
+
+**Commits on `refactor/pint-sympy`:**
+1. `9c2da4f` - Extract locale management and improve pint_to_sympy
+2. `c63b658` - Move unitregistry init to function and use config
+3. `0d21bff` - Improve Pint locale detection and reduce deprecation warnings
+4. `328a3f6` - Add scale factors for non-prefixed SymPy units
+
+**Total Impact:**
+- Cleaner architecture (locale logic separated)
+- Better performance (unit caching + scale factors)
+- Full unit conversion support (all Pint units work in SymPy)
+- All 117 tests passing
+- No breaking changes
+
+**Ready for:** Merge to main or PR creation
