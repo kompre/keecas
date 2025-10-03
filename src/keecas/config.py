@@ -9,9 +9,7 @@ import os
 import toml
 from dataclasses import dataclass, field, asdict, fields
 from pathlib import Path
-from typing import Any
-from sympy import Basic
-from IPython.display import Markdown
+from typing import Any, Callable
 
 
 @dataclass
@@ -39,6 +37,8 @@ class DisplayConfig:
     katex: bool = False
     default_float_format: str | None = None
     pint_default_format: str = ".2f~P"
+    cell_formatter: 'Callable[[Any, int], str] | None' = None  # Custom cell formatter
+    row_formatter: 'Callable[[str], str] | None' = None  # Custom row formatter
 
 
 @dataclass
@@ -243,6 +243,7 @@ class ConfigOptions:
 
     @language_setting.setter
     def language_setting(self, value: str | None):
+        
         self.language_config.language = value
 
     # Backward compatibility - delegate to language_setting
@@ -286,18 +287,8 @@ class ConfigOptions:
     def custom_translations_dict(self, value: dict[str, str]):
         self.translations.translations = value
 
-    # Complex options (not easily serializable to TOML)
-    col_wrap: list = field(default_factory=lambda: [
-        None,
-        {
-            Basic: ("=", ""),
-            Markdown: (r"\qquad", ""),
-            str: (r"\qquad", ""),
-            int: ("=", ""),
-            float: ("=", ""),
-            object: ("", ""),
-        },
-    ])
+    # Column wrapping - None means no wrapping (formatters handle prefixes now)
+    col_wrap: list | None = None
 
     def to_toml_dict(self) -> dict[str, Any]:
         """Convert to dictionary suitable for TOML serialization."""

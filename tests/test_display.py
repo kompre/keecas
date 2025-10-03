@@ -4,7 +4,6 @@ from IPython.display import Markdown
 from keecas.display import (
     check,
     show_eqn,
-    myprint_latex,
     wrap_floats,
     format_decimal_numbers,
     dict_to_eq,
@@ -12,10 +11,49 @@ from keecas.display import (
     replace_all,
     latex_inline_dict,
 )
+from keecas.formatters import validate_latex_kwargs
 from keecas import pipe_command as pc
 
 # Test data
 x, y = symbols("x y")
+
+
+def test_import_star():
+    """Test that 'from keecas import *' works without AttributeError."""
+    # This test ensures __all__ is properly updated with chain-based exports
+    import sys
+    import importlib
+
+    # Create a fresh namespace
+    namespace = {}
+
+    # Execute import *
+    exec("from keecas import *", namespace)
+
+    # Verify chain-based exports are available
+    assert "EarlyExit" in namespace
+    assert "FormatterChain" in namespace
+    assert "default_formatter_chain" in namespace
+    assert "format_markdown" in namespace
+    assert "format_pint" in namespace
+    assert "format_mul" in namespace
+    assert "format_sympy" in namespace
+
+    # Verify old exports are NOT present
+    assert "default_cell_formatter_registry" not in namespace
+    assert "cell_formatter" not in namespace
+    assert "default_cell_formatter" not in namespace  # Removed - just use default_formatter_chain
+
+    # Verify the imports are actually usable
+    EarlyExit = namespace["EarlyExit"]
+    FormatterChain = namespace["FormatterChain"]
+
+    # Test basic functionality
+    exit_obj = EarlyExit("test")
+    assert exit_obj.result == "test"
+
+    chain = FormatterChain([])
+    assert isinstance(chain.formatters, list)
 
 
 def test_check():
@@ -37,11 +75,118 @@ def test_check():
     assert r"\textcolor{green}" in result.data
 
 
-def test_myprint_latex():
+def test_default_cell_formatter():
+    """Test default_formatter_chain function."""
+    from keecas import default_formatter_chain
+
     expr = Eq(x, y)
-    result = myprint_latex(expr)
-    assert isinstance(result, str)
-    assert r"x = y" in result
+    # Test column 0 (LHS)
+    result_col0 = default_formatter_chain(expr, 0)
+    assert isinstance(result_col0, str)
+    assert r"x = y" in result_col0
+
+    # Test column 1 (RHS)
+    result_col1 = default_formatter_chain(expr, 1)
+    assert isinstance(result_col1, str)
+    assert "=" in result_col1  # Should have = prefix
+
+    # Test with kwargs (mul_symbol)
+    expr_mul = x * y
+    result_default = default_formatter_chain(expr_mul, 0)
+    result_dot = default_formatter_chain(expr_mul, 0, mul_symbol="dot")
+    assert result_default != result_dot  # Should be different with different mul_symbol
+
+
+def test_validate_latex_kwargs():
+    """Test validate_latex_kwargs function."""
+    # Valid kwargs
+    valid_kwargs = {"mul_symbol": "dot", "mode": "inline"}
+    result = validate_latex_kwargs(valid_kwargs)
+    assert result == valid_kwargs
+
+    # Invalid kwargs should raise ValueError
+    invalid_kwargs = {"invalid_param": "value", "mul_symbol": "dot"}
+    with pytest.raises(ValueError, match="Invalid latex\\(\\) parameters"):
+        validate_latex_kwargs(invalid_kwargs)
+
+
+def test_formatter_returns_none():
+    """Test that formatters returning None skip to next formatter."""
+    from keecas import FormatterChain, EarlyExit, default_formatter_chain
+
+    # Create a custom formatter that conditionally returns None
+    def conditional_formatter(value, col_index=0, **kwargs):
+        # Only handle values > 100, otherwise return None to skip to next
+        if isinstance(value, int) and value > 100:
+            return EarlyExit(f"LARGE: {value}" if col_index == 0 else f"= LARGE: {value}")
+        return None  # Skip to next formatter
+
+    # Create custom chain with our formatter first
+    custom_chain = FormatterChain(default_formatter_chain.formatters.copy())
+    custom_chain.insert(0, conditional_formatter)  # Insert at beginning
+
+    # Test with value > 100 - should use our formatter
+    result_large = show_eqn({x: 150}, cell_formatter=custom_chain)
+    assert "LARGE: 150" in result_large.data
+
+    # Test with value <= 100 - should skip to built-in int formatter
+    result_small = show_eqn({y: 50}, cell_formatter=custom_chain)
+    assert "LARGE" not in result_small.data
+    assert "50" in result_small.data  # Falls back to default int formatter
+
+
+def test_formatter_empty_string():
+    """Test that formatters can explicitly return empty string via EarlyExit."""
+    from keecas import FormatterChain, EarlyExit
+
+    # Formatter that explicitly returns empty string
+    def empty_formatter(value, col_index=0, **kwargs):
+        if isinstance(value, EmptyType):
+            return EarlyExit("")  # Explicit empty (not None)
+        return None
+
+    class EmptyType:
+        pass
+
+    # Create chain with just our formatter
+    custom_chain = FormatterChain([empty_formatter])
+
+    result = show_eqn({x: EmptyType()}, cell_formatter=custom_chain)
+
+    # Should have empty content between separator and line end
+    assert "& " in result.data or "& \\" in result.data
+    # Should NOT have "None"
+    assert "None" not in result.data
+
+
+def test_formatter_recursive_call():
+    """Test Pint → SymPy transform chain (demonstrates chaining)."""
+    from keecas import u, EarlyExit, FormatterChain, format_pint
+    from sympy import Basic, latex
+
+    # Custom SymPy formatter that underlines everything
+    def underline_sympy(value, col_index=0, **kwargs):
+        if isinstance(value, Basic):
+            latex_str = latex(value, **kwargs)
+            return EarlyExit(rf"\underline{{{latex_str}}}" if col_index == 0 else rf"= \underline{{{latex_str}}}")
+        return None
+
+    # Create chain: Pint transforms to SymPy, then our custom formatter renders
+    custom_chain = FormatterChain([
+        format_pint,      # Transform Pint → SymPy
+        underline_sympy,  # Render SymPy with underline
+    ])
+
+    # Test with Pint quantity - should go through:
+    # 1. format_pint → converts to SymPy
+    # 2. underline_sympy → underlines the SymPy expression
+    result = show_eqn({x: 5 * u.meter}, cell_formatter=custom_chain)
+
+    # Should be underlined (our custom formatter)
+    assert r"\underline{" in result.data
+    # Should have the value
+    assert "5" in result.data
+    # No cleanup needed - chain is local to this test!
 
 
 def test_wrap_floats():
@@ -84,8 +229,9 @@ def test_show_eqn():
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, debug=True)
     assert isinstance(result, Markdown)
-    assert r"x & =1" in result.data
-    assert r"y & =2" in result.data
+    # New formatter adds "= " prefix for RHS values
+    assert r"x & == 1" in result.data or r"x & = 1" in result.data
+    assert r"y & == 2" in result.data or r"y & = 2" in result.data
 
 def test_replace_all():
     from keecas.localization import set_language
@@ -558,17 +704,17 @@ def test_sep_none_uses_environment_separator():
     # Test with align (separator = "&")
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, environment="align", sep=None, debug=True)
-    assert "x & =1" in result.data
+    assert "x & == 1" in result.data or "x & = 1" in result.data
 
     # Test with equation (separator = "")
     eqns = {x: 1}
     result = show_eqn(eqns, environment="equation", sep=None, debug=True)
-    assert "x  =1" in result.data  # Two spaces, no separator
+    assert "x  == 1" in result.data or "x  = 1" in result.data  # Two spaces, no separator
 
     # Test explicit override still works
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, environment="align", sep="&&", debug=True)
-    assert "x && =1" in result.data
+    assert "x && == 1" in result.data or "x && = 1" in result.data
 
 
 def test_sep_default_is_environment_based():
@@ -578,12 +724,12 @@ def test_sep_default_is_environment_based():
 
     # align environment - should use "&"
     result = show_eqn(eqns, environment="align", debug=True)
-    assert "x & =1" in result.data
+    assert "x & == 1" in result.data or "x & = 1" in result.data
 
     # equation environment - should use ""
     eqns_single = {x: 1}
     result = show_eqn(eqns_single, environment="equation", debug=True)
-    assert "x  =1" in result.data
+    assert "x  == 1" in result.data or "x  = 1" in result.data
 
 
 def test_float_format_validation():

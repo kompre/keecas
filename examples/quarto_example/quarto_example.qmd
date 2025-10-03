@@ -14,6 +14,7 @@ jupyter: python3
 This example demonstrates all the key features of `keecas` for symbolic and units-aware calculations in a Quarto document.
 
 ```{python}
+#| execution: {iopub.execute_input: '2025-10-03T07:51:39.537540Z', iopub.status.busy: '2025-10-03T07:51:39.537351Z', iopub.status.idle: '2025-10-03T07:51:39.901951Z', shell.execute_reply: '2025-10-03T07:51:39.901620Z'}
 # for quick start import *
 # from keecas import *
 
@@ -22,6 +23,7 @@ from keecas import symbols, u, pc, show_eqn, config, check
 ```
 
 ```{python}
+#| execution: {iopub.execute_input: '2025-10-03T07:51:39.903397Z', iopub.status.busy: '2025-10-03T07:51:39.903130Z', iopub.status.idle: '2025-10-03T07:51:39.905439Z', shell.execute_reply: '2025-10-03T07:51:39.905129Z'}
 config.language = "en"
 ```
 
@@ -38,6 +40,7 @@ When rendering with `quarto` you can have two config:
 
 ```{python}
 #| eval: false
+#| execution: {iopub.execute_input: '2025-10-03T07:51:39.907025Z', iopub.status.busy: '2025-10-03T07:51:39.906864Z', iopub.status.idle: '2025-10-03T07:51:39.908518Z', shell.execute_reply: '2025-10-03T07:51:39.908275Z'}
 
 # this option will not be set at rendering time (dev-mode)
 config.display.katex = True  # disable `\label command`
@@ -45,6 +48,7 @@ config.display.print_label = True  # print interpolated labels for easy referenc
 ```
 
 ```{python}
+#| execution: {iopub.execute_input: '2025-10-03T07:51:39.909441Z', iopub.status.busy: '2025-10-03T07:51:39.909338Z', iopub.status.idle: '2025-10-03T07:51:39.911046Z', shell.execute_reply: '2025-10-03T07:51:39.910718Z'}
 # set a prefix for the latex equation
 config.latex.eq_prefix = r"eq-QUARTO_EXAMPLE-"
 
@@ -59,6 +63,7 @@ eqn = {}  # Global expressions that persist throughout the notebook
 Define symbols and calculate basic engineering quantities:
 
 ```{python}
+#| execution: {iopub.execute_input: '2025-10-03T07:51:39.912122Z', iopub.status.busy: '2025-10-03T07:51:39.911947Z', iopub.status.idle: '2025-10-03T07:51:39.996778Z', shell.execute_reply: '2025-10-03T07:51:39.996443Z'}
 # Define symbols
 F, A, sigma = symbols("F, A, sigma")
 
@@ -84,9 +89,10 @@ _l = {k: str(k) for k in _d.keys()}
 
 show_eqn(
     [_p | _e, _v, _d],
-    col_wrap=[None, "=", "=", (r"\quad(", ")")],
+    col_wrap=[''],
     float_format="{:.2f}",
     label=_l,
+    # debug=True,
 )
 
 # the labels will be printed for easy reference, only in dev-mode (not rendered by quarto)
@@ -97,6 +103,7 @@ show_eqn(
 Using pipe operators for functional composition:
 
 ```{python}
+#| execution: {iopub.execute_input: '2025-10-03T07:51:40.014161Z', iopub.status.busy: '2025-10-03T07:51:40.014021Z', iopub.status.idle: '2025-10-03T07:51:40.021129Z', shell.execute_reply: '2025-10-03T07:51:40.020684Z'}
 # Chain operations using pipe commands
 x, y, d = symbols("x, y, d")
 
@@ -120,25 +127,22 @@ show_eqn([_p | _e, _v])
 ### Cases Environment
 
 ```{python}
-config.language = 'it'
-```
-
-```{python}
+#| execution: {iopub.execute_input: '2025-10-03T07:51:40.022370Z', iopub.status.busy: '2025-10-03T07:51:40.022195Z', iopub.status.idle: '2025-10-03T07:51:40.025950Z', shell.execute_reply: '2025-10-03T07:51:40.025685Z'}
 from sympy import S
 
 # Material properties
 E_steel, E_concrete = symbols("E_{steel}, E_{concrete}")
 
 _p = {
-    E_steel: S(200 * u.GPa),
-    E_concrete: S(30 * u.GPa),
+    E_steel: 200 * u.GPa,
+    E_concrete: 30 * u.GPa,
 }
 
 from IPython.display import Markdown
 
 _d = {E_steel: "steel elastic modulus", E_concrete: "concrete elastic modulus"}
 
-show_eqn([_p, _d], environment="align", col_wrap=[None, "=", "&"])
+show_eqn([_p, _d], environment="align", col_wrap=[None, None, "&"])
 ```
 
 ### Equation Environment with Labels {#sec-beam-calc}
@@ -146,6 +150,7 @@ show_eqn([_p, _d], environment="align", col_wrap=[None, "=", "&"])
 Calculate beam deflection with cross-references:
 
 ```{python}
+#| execution: {iopub.execute_input: '2025-10-03T07:51:40.027154Z', iopub.status.busy: '2025-10-03T07:51:40.027043Z', iopub.status.idle: '2025-10-03T07:51:40.037536Z', shell.execute_reply: '2025-10-03T07:51:40.037204Z'}
 # Beam calculation
 q, L, E, I, delta = symbols("q, L, E, I, delta")
 
@@ -165,7 +170,7 @@ _v = {k: v | pc.subs(_e | _p) | pc.convert_to([u.mm]) | pc.N for k, v in _e.item
 
 _l = {k: str(k) for k in _e.keys()}
 
-show_eqn([_e, _v], label=_l, float_format="{:.3f}")
+show_eqn([_e, _v], label=_l, float_format="{:.2f}")
 ```
 
 ::: {.callout-note}
@@ -183,6 +188,7 @@ The deflection calculated in \ref{eq-QUARTO_EXAMPLE-delta} shows acceptable valu
 Using the `check` function for design checks:
 
 ```{python}
+#| execution: {iopub.execute_input: '2025-10-03T07:51:40.038659Z', iopub.status.busy: '2025-10-03T07:51:40.038548Z', iopub.status.idle: '2025-10-03T07:51:40.046279Z', shell.execute_reply: '2025-10-03T07:51:40.046017Z'}
 # Design checks
 sigma_Sd, tau_Sd, sigma_Rd, tau_Rd = symbols(
     r"\sigma_{Sd}, \tau_{Sd}, \sigma_{Rd}, \tau_{Rd}"
@@ -216,6 +222,7 @@ show_eqn([_p | _v, _c], float_format=_ff)
 The type of comparison in the `check` function can be specified, as well the value to be specified against.
 
 ```{python}
+#| execution: {iopub.execute_input: '2025-10-03T07:51:40.047280Z', iopub.status.busy: '2025-10-03T07:51:40.047133Z', iopub.status.idle: '2025-10-03T07:51:40.050781Z', shell.execute_reply: '2025-10-03T07:51:40.050531Z'}
 a, b, c, d, f = symbols("a, b, c, d, f")
 
 from sympy import Le, Lt, Ge, Gt, Eq
@@ -235,19 +242,74 @@ show_eqn(
         {k: v[0] for k, v in _expr.items()},
         _c,
     ],
-    col_wrap=[None, "=", "&"],
 )
 ```
 
 ## Subs get ordered
 
-Substitution will get ordered and sorted automatically, so you can use a symbol before mapping to a value.
+Using `pc.subs` will automatically order the substitutions pairs topologically, so you don't have to order them yourself (default `sympy` behavior). For example let's define some mappings in any order:
+
+```{python}
+#| execution: {iopub.execute_input: '2025-10-03T07:51:40.051768Z', iopub.status.busy: '2025-10-03T07:51:40.051595Z', iopub.status.idle: '2025-10-03T07:51:40.054560Z', shell.execute_reply: '2025-10-03T07:51:40.054247Z'}
+any_order_params = {
+    x: y**2,
+    y: a+1,
+    a: 3
+}
+
+
+display(show_eqn(_e, environment="cases"))
+```
+
+If we use the default behavior of sympy's `subs` method (unsorted substitutions) we get:
+
+```{python}
+#| execution: {iopub.execute_input: '2025-10-03T07:51:40.055654Z', iopub.status.busy: '2025-10-03T07:51:40.055542Z', iopub.status.idle: '2025-10-03T07:51:40.058669Z', shell.execute_reply: '2025-10-03T07:51:40.058419Z'}
+# `pc.subs(any_order_params, sorted=False)` it's equivalent to use the sympy subs method
+_v = {
+    lhs: rhs | pc.subs(any_order_params, sorted=False) for lhs, rhs in any_order_params.items()
+}
+
+_d = {
+    x: "partially evaluated",
+}
+
+show_eqn(
+    [_v, _d], 
+    environment="cases",
+)
+```
+
+While the default behavior of `pc.subs` is to sort the substitutions:
+
+```{python}
+#| execution: {iopub.execute_input: '2025-10-03T07:51:40.059651Z', iopub.status.busy: '2025-10-03T07:51:40.059500Z', iopub.status.idle: '2025-10-03T07:51:40.062235Z', shell.execute_reply: '2025-10-03T07:51:40.061990Z'}
+_v = {
+    lhs: rhs | pc.subs(any_order_params) for lhs, rhs in any_order_params.items()
+}
+
+_d = {
+    x: "fully evaluated",
+}
+
+show_eqn(
+    [_v, _d], 
+    environment="cases",
+)
+```
+
+::: {.callout-note}
+
+`pc.subs` also take care of sympyfing the object before subsituting. In the above example $a$ is mapped to `3`, an `int`, therefore during dict comprehension the `int` is piped to `pc.subs`. If you would have used the `sympy` subs method directly, you would have get an error because the type `int` does not have `subs` method (the corrected dict comprehension you should look like  `S(rhs).subs(...)`).
+
+:::
 
 ## Check Function Templates
 
 The `check` function supports customizable templates for different visual styles:
 
 ```{python}
+#| execution: {iopub.execute_input: '2025-10-03T07:51:40.063186Z', iopub.status.busy: '2025-10-03T07:51:40.063083Z', iopub.status.idle: '2025-10-03T07:51:40.066505Z', shell.execute_reply: '2025-10-03T07:51:40.066241Z'}
 # Default template behavior
 result_default = check(0.8, 1.0)
 
@@ -266,6 +328,7 @@ show_eqn(template_demo, col_wrap=[None, ":", "&"], environment="align")
 ```
 
 ```{python}
+#| execution: {iopub.execute_input: '2025-10-03T07:51:40.067460Z', iopub.status.busy: '2025-10-03T07:51:40.067357Z', iopub.status.idle: '2025-10-03T07:51:40.077980Z', shell.execute_reply: '2025-10-03T07:51:40.077685Z'}
 # Complex expression with multiple substitutions
 a, b, c, d = symbols("a, b, c, d")
 
@@ -294,6 +357,7 @@ show_eqn([_p|_e, _v], float_format="{:.3f}")
 You can also use completely custom templates:
 
 ```{python}
+#| execution: {iopub.execute_input: '2025-10-03T07:51:40.078975Z', iopub.status.busy: '2025-10-03T07:51:40.078864Z', iopub.status.idle: '2025-10-03T07:51:40.081940Z', shell.execute_reply: '2025-10-03T07:51:40.081691Z'}
 # Custom template examples (emoji may not render in latex)
 custom_success = r"✅ ${symbol}{rhs}$ \textbf{{PASS}}"
 custom_failure = r"❌ ${symbol}{rhs}$ \textbf{{FAIL}}"

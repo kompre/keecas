@@ -17,6 +17,21 @@ from .display import (
     eq_to_dict,
 )
 
+# formatters
+from .formatters import (
+    EarlyExit,
+    FormatterChain,
+    default_formatter_chain,
+    validate_latex_kwargs,
+    format_markdown,
+    format_pint,
+    format_mul,
+    format_sympy,
+    format_float,
+    format_int,
+    format_str,
+)
+
 # pipe_command
 from . import pipe_command as pc
 
@@ -42,6 +57,18 @@ __all__ = [
     "check",
     "dict_to_eq",
     "eq_to_dict",
+    # Formatter exports (chain-based)
+    "EarlyExit",
+    "FormatterChain",
+    "default_formatter_chain",
+    "validate_latex_kwargs",
+    "format_markdown",
+    "format_pint",
+    "format_mul",
+    "format_sympy",
+    "format_float",
+    "format_int",
+    "format_str",
     "pc",
     "u",
     "update_pint_locale",  # Pint localization control

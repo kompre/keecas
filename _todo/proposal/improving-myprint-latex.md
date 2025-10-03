@@ -52,6 +52,8 @@ Replace hardcoded type checking with a flexible, ordered dictionary of type form
 
 #### 1. Formatter Registry System
 
+<!-- why use OrderedDict? -->
+
 ```python
 from typing import TypeVar, Callable, Any, OrderedDict, Type
 from collections import OrderedDict
