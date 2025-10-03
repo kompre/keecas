@@ -624,20 +624,29 @@ Documentation is automatically rebuilt on every push to `main` via GitHub Action
 
 ## Current Status (2025-10-03)
 
-**Completed**:
-1. Quartodoc and griffe dependencies added with correct versions
-2. Comprehensive Google-style docstrings with Quarto examples for `show_eqn()` and `check()`
-3. Config module documentation via module-level docstring
-4. Quartodoc configuration in `docs/_quarto.yml`
-5. Automation script `scripts/update_docs.py`
+**Phase 1 - COMPLETED**:
+1. ✅ Quartodoc and griffe dependencies (`quartodoc>=0.7.0,<0.8.0`, `griffe<1.0.0`)
+2. ✅ Comprehensive Google-style docstrings with Quarto executable examples
+   - `show_eqn()`: Multi-column layouts, formatting, environments (102 lines generated)
+   - `check()`: Engineering verification with localization (88 lines generated)
+3. ✅ Config module documentation via comprehensive module-level docstring
+4. ✅ Quartodoc configuration in `docs/_quarto.yml`
+5. ✅ Automation script `scripts/update_docs.py` working
+6. ✅ Documentation successfully generated:
+   - `docs/api-reference/_generated/show_eqn.qmd`
+   - `docs/api-reference/_generated/check.qmd`
+   - `docs/api-reference/_sidebar.yml`
 
-**Blocker**:
-Quartodoc 0.7.6 crashes with `UnboundLocalError` when rendering signatures. The tool is incompatible with the codebase's type annotations.
+**Blockers Resolved**:
+1. Missing type annotation on `check()` test parameter → Fixed: `test: type = Le`
+2. Unicode symbols in docstrings (Windows cp1252 encoding) → Fixed: Replaced ≤,≥ with <=,>=
 
-**Recommendation**:
-- **Option 1 (Preferred)**: Keep manual documentation; improved docstrings still valuable for IDE tooltips
-- **Option 2**: Wait for quartodoc 0.8+ or use alternative tool (sphinx-autoapi)
-- **Option 3**: Simplify all type annotations to work around quartodoc bugs (not recommended)
+**Remaining Work**:
+- Integrate generated docs into existing manual pages (use `{{< include >}}` directives)
+- Create `scripts/validate_docstrings.py` for pre-commit validation
+- Update GitHub Actions workflow to regenerate docs in CI
+- Add docstring conventions to CLAUDE.md
+- Expand to other modules (dataframe, pipe_command, config classes)
 
 ## Dependencies
 - None (standalone task)

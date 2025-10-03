@@ -33,17 +33,18 @@ Returns:
     IPython.display.Markdown object that depends on conditions (true or false).
 
 Examples:
-    ```{python}
-    from keecas import symbols, u, pc, check
-    from sympy import Le, Ge
 
-    # Basic utilization check (calculated <= allowable)
-    sigma_Sd, sigma_Rd = symbols(r"\sigma_{Sd}, \sigma_{Rd}")
-    _v = {sigma_Sd: 150*u.MPa, sigma_Rd: 200*u.MPa}
+```{python}
+from keecas import symbols, u, pc, check
+from sympy import Le, Ge
 
-    utilization = sigma_Sd / sigma_Rd | pc.subs(_v) | pc.N
-    check(utilization, 1.0, test=Le)  # Check if <= 1.0 (passes)
-    ```
+# Basic utilization check (calculated <= allowable)
+sigma_Sd, sigma_Rd = symbols(r"\sigma_{Sd}, \sigma_{Rd}")
+_v = {sigma_Sd: 150*u.MPa, sigma_Rd: 200*u.MPa}
+
+utilization = sigma_Sd / sigma_Rd | pc.subs(_v) | pc.N
+check(utilization, 1.0, test=Le)  # Check if <= 1.0 (passes)
+```
 
     ```{python}
     # Capacity check (demand <= capacity)
