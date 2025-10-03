@@ -87,7 +87,7 @@ show_eqn(
     col_wrap=[''],
     float_format="{:.2f}",
     label=_l,
-    debug=True,
+    # debug=True,
 )
 
 # the labels will be printed for easy reference, only in dev-mode (not rendered by quarto)
@@ -121,25 +121,21 @@ show_eqn([_p | _e, _v])
 ### Cases Environment
 
 ```{python}
-config.language = 'it'
-```
-
-```{python}
 from sympy import S
 
 # Material properties
 E_steel, E_concrete = symbols("E_{steel}, E_{concrete}")
 
 _p = {
-    E_steel: S(200 * u.GPa),
-    E_concrete: S(30 * u.GPa),
+    E_steel: 200 * u.GPa,
+    E_concrete: 30 * u.GPa,
 }
 
 from IPython.display import Markdown
 
 _d = {E_steel: "steel elastic modulus", E_concrete: "concrete elastic modulus"}
 
-show_eqn([_p, _d], environment="align", col_wrap=[None, "=", "&"])
+show_eqn([_p, _d], environment="align", col_wrap=[None, None, "&"])
 ```
 
 ### Equation Environment with Labels {#sec-beam-calc}
@@ -166,7 +162,7 @@ _v = {k: v | pc.subs(_e | _p) | pc.convert_to([u.mm]) | pc.N for k, v in _e.item
 
 _l = {k: str(k) for k in _e.keys()}
 
-show_eqn([_e, _v], label=_l, float_format="{:.3f}")
+show_eqn([_e, _v], label=_l, float_format="{:.2f}")
 ```
 
 ::: {.callout-note}
@@ -236,13 +232,64 @@ show_eqn(
         {k: v[0] for k, v in _expr.items()},
         _c,
     ],
-    col_wrap=[None, "=", "&"],
 )
 ```
 
 ## Subs get ordered
 
-Substitution will get ordered and sorted automatically, so you can use a symbol before mapping to a value.
+Using `pc.subs` will automatically order the substitutions pairs topologically, so you don't have to order them yourself (default `sympy` behavior). For example let's define some mappings in any order:
+
+```{python}
+any_order_params = {
+    x: y**2,
+    y: a+1,
+    a: 3
+}
+
+
+display(show_eqn(_e, environment="cases"))
+```
+
+If we use the default behavior of sympy's `subs` method (unsorted substitutions) we get:
+
+```{python}
+# `pc.subs(any_order_params, sorted=False)` it's equivalent to use the sympy subs method
+_v = {
+    lhs: rhs | pc.subs(any_order_params, sorted=False) for lhs, rhs in any_order_params.items()
+}
+
+_d = {
+    x: "partially evaluated",
+}
+
+show_eqn(
+    [_v, _d], 
+    environment="cases",
+)
+```
+
+While the default behavior of `pc.subs` is to sort the substitutions:
+
+```{python}
+_v = {
+    lhs: rhs | pc.subs(any_order_params) for lhs, rhs in any_order_params.items()
+}
+
+_d = {
+    x: "fully evaluated",
+}
+
+show_eqn(
+    [_v, _d], 
+    environment="cases",
+)
+```
+
+::: {.callout-note}
+
+`pc.subs` also take care of sympyfing the object before subsituting. In the above example $a$ is mapped to `3`, an `int`, therefore during dict comprehension the `int` is piped to `pc.subs`. If you would have used the `sympy` subs method directly, you would have get an error because the type `int` does not have `subs` method (the corrected dict comprehension you should look like  `S(rhs).subs(...)`).
+
+:::
 
 ## Check Function Templates
 
