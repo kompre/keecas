@@ -1333,4 +1333,31 @@ default_formatter_chain = FormatterChain([
    # Re-run cell - works immediately, no kernel restart!
    ```
 
-**Status**: ✅ Implementation complete, all tests passing (108/108)
+**Status**: ✅ Implementation complete, all tests passing (109/109)
+
+### Session 3: Git Hook Fix - 2025-10-03
+
+**Issue**: Pre-commit hook was failing because Quarto returns exit code 1 when there are warnings (e.g., unresolved crossref), even though PDF/HTML are successfully created.
+
+**Root Cause**:
+- Example notebook intentionally has `@eq-QUARTO_EXAMPLE-delta` to demonstrate that Quarto crossrefs don't work with keecas labels
+- Quarto issues warning about unresolved crossref and returns exit code 1
+- Hook was checking exit code instead of verifying output files exist
+
+**Fix Applied**:
+```bash
+# Before (strict exit code check):
+if ! quarto render "$notebook" --execute --to pdf --quiet 2>/dev/null; then
+    echo "Failed to render"
+    exit 1
+fi
+
+# After (check if output actually created):
+quarto render "$notebook" --execute --to pdf --quiet 2>/dev/null
+if [ ! -f "$pdf_file" ]; then
+    echo "Failed to render"
+    exit 1
+fi
+```
+
+**Status**: ✅ Git hook now handles warnings gracefully, only fails if output files don't exist
