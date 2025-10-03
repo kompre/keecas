@@ -43,7 +43,7 @@ for notebook in $staged_notebooks; do
 
     # Convert to QMD
     echo -e "  📝 Converting to QMD..."
-    if ! quarto convert "$notebook" 2>/dev/null; then
+    if ! uv run quarto convert "$notebook" 2>/dev/null; then
         echo -e "${RED}❌ Failed to convert $notebook to QMD${NC}"
         success=false
         continue
@@ -51,7 +51,7 @@ for notebook in $staged_notebooks; do
 
     # Render to PDF
     echo -e "  📄 Rendering to PDF..."
-    quarto render "$notebook" --execute --to pdf --quiet 2>/dev/null
+    uv run quarto render "$notebook" --execute --to pdf --quiet 2>/dev/null
     # Check if PDF was actually created (quarto may return exit code 1 due to warnings)
     pdf_file="${notebook_dir}/${notebook_base}.pdf"
     if [ ! -f "$pdf_file" ]; then
@@ -62,7 +62,7 @@ for notebook in $staged_notebooks; do
 
     # Render to HTML
     echo -e "  🌐 Rendering to HTML..."
-    quarto render "$notebook" --execute --to html --quiet 2>/dev/null
+    uv run quarto render "$notebook" --execute --to html --quiet 2>/dev/null
     # Check if HTML was actually created (quarto may return exit code 1 due to warnings)
     html_file="${notebook_dir}/${notebook_base}.html"
     if [ ! -f "$html_file" ]; then
