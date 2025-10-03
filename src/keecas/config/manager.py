@@ -746,7 +746,7 @@ class ConfigManager:
             return
 
         try:
-            from .pint_sympy import update_pint_locale
+            from ..pint_sympy import update_pint_locale
             update_pint_locale(language)
         except ImportError:
             pass  # Module not available
