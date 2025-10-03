@@ -22,6 +22,7 @@ quartodoc:
     - title: Display Module
       desc: LaTeX equation rendering and formatting
       contents:
+        - name: show_eqn
         - name: check
 
 website:

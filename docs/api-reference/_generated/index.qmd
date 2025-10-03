@@ -6,4 +6,5 @@ LaTeX equation rendering and formatting
 
 | | |
 | --- | --- |
+| [show_eqn](show_eqn.qmd#keecas.show_eqn) | Display mathematical equations as formatted LaTeX amsmath block. |
 | [check](check.qmd#keecas.check) | Engineering verification function with localized pass/fail indicators. |

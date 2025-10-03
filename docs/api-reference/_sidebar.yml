@@ -1,0 +1,10 @@
+website:
+  sidebar:
+  - contents:
+    - api-reference/_generated/index.qmd
+    - contents:
+      - api-reference/_generated/show_eqn.qmd
+      - api-reference/_generated/check.qmd
+      section: Display Module
+    id: api-reference/_generated
+  - id: dummy-sidebar

@@ -205,7 +205,7 @@ def _format_check_template(template: str, **variables: Any) -> str:
 def check(
     lhs: Basic,
     rhs: Basic,
-    test=Le,
+    test: type = Le,
     template: TemplateChoice | None = None,
     success_template: str | None = None,
     failure_template: str | None = None,
@@ -213,21 +213,21 @@ def check(
 ) -> Markdown:
     """Engineering verification function with localized pass/fail indicators.
 
-    Compares two expressions using a test function (≤, ≥, <, >, =, ≠) and displays
-    a formatted verification result with color-coded pass/fail indicators. Commonly
-    used for structural engineering checks where calculated values must not exceed
-    allowable limits. It will return a Markdown object depending on conditions (true or false).
+    Compares two expressions using a test function and displays a formatted
+    verification result with color-coded pass/fail indicators. Commonly used for
+    structural engineering checks where calculated values must not exceed allowable
+    limits. Returns a Markdown object depending on conditions (true or false).
 
     Args:
         lhs: Left-hand side expression (e.g., calculated stress or utilization ratio).
         rhs: Right-hand side expression (e.g., allowable limit or capacity).
         test: Comparison function from SymPy's relational module. Options:
-            - Le (≤): LessThan (default)
-            - Ge (≥): GreaterThan
-            - Lt (<): StrictLessThan
-            - Gt (>): StrictGreaterThan
-            - Eq (=): Equality
-            - Ne (≠): Unequality
+            - Le: LessThan (default, less than or equal)
+            - Ge: GreaterThan (greater than or equal)
+            - Lt: StrictLessThan (strictly less than)
+            - Gt: StrictGreaterThan (strictly greater than)
+            - Eq: Equality
+            - Ne: Unequality
             Defaults to Le (less than or equal to).
         template: Named template set for formatting. Options: "default", "boxed", "minimal".
             Controls visual presentation of verification result.
@@ -246,16 +246,16 @@ def check(
         from keecas import symbols, u, pc, check
         from sympy import Le, Ge
 
-        # Basic utilization check (calculated ≤ allowable)
+        # Basic utilization check (calculated <= allowable)
         sigma_Sd, sigma_Rd = symbols(r"\sigma_{Sd}, \sigma_{Rd}")
         _v = {sigma_Sd: 150*u.MPa, sigma_Rd: 200*u.MPa}
 
         utilization = sigma_Sd / sigma_Rd | pc.subs(_v) | pc.N
-        check(utilization, 1.0, test=Le)  # Check if ≤ 1.0 (passes)
+        check(utilization, 1.0, test=Le)  # Check if <= 1.0 (passes)
         ```
 
         ```{python}
-        # Capacity check (demand ≤ capacity)
+        # Capacity check (demand <= capacity)
         N_Ed, N_Rd = symbols(r"N_{Ed}, N_{Rd}")
         _v = {N_Ed: 850*u.kN, N_Rd: 1200*u.kN}
 
