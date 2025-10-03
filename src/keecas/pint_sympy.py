@@ -10,17 +10,34 @@ from sympy.physics.units.util import convert_to
 from sympy import nsimplify, sympify
 from typing import Any
 
-from .localization.pint_locale import _get_safe_init_locale
+def _initialize_unitregistry() -> pint.UnitRegistry:
+    """Initialize Pint UnitRegistry with locale and format settings from config.
 
-# Initialize UnitRegistry respecting disable_pint_locale config
-init_locale = _get_safe_init_locale()
-if init_locale:
-    unitregistry = pint.UnitRegistry(fmt_locale=init_locale)
-else:
-    # Explicitly pass None to prevent Pint from auto-detecting system locale
-    unitregistry = pint.UnitRegistry(fmt_locale=None)
+    Returns:
+        Configured Pint UnitRegistry instance
+    """
+    from .localization.pint_locale import _get_safe_init_locale
 
-unitregistry.formatter.default_format = ".2f~P"
+    # Get locale based on config
+    init_locale = _get_safe_init_locale()
+
+    # Create registry with or without locale
+    registry = pint.UnitRegistry(fmt_locale=init_locale)
+
+    # Get default format from config
+    try:
+        from .config import get_config_manager
+        config = get_config_manager()
+        registry.formatter.default_format = config.options.display.pint_default_format
+    except Exception:
+        # Fallback if config not available during initialization
+        registry.formatter.default_format = ".2f~P"
+
+    return registry
+
+
+# Initialize the global unit registry
+unitregistry = _initialize_unitregistry()
 
 
 def update_pint_locale(language: str | None = None, verbose: bool = False) -> None:
