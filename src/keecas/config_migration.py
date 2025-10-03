@@ -40,7 +40,14 @@ class ConfigMigration:
             List of intermediate versions to migrate through
         """
         all_versions = sorted(SCHEMAS.keys(), key=version.parse)
-        start_idx = all_versions.index(from_version)
+
+        # Handle unknown from_version (treat as oldest known version)
+        if from_version not in all_versions:
+            print(f"WARNING: Unknown schema version '{from_version}', treating as oldest known version")
+            start_idx = -1  # Start before first version
+        else:
+            start_idx = all_versions.index(from_version)
+
         end_idx = all_versions.index(to_version)
         return all_versions[start_idx + 1 : end_idx + 1]
 
