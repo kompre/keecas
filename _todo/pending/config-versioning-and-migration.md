@@ -655,9 +655,9 @@ $ uv run pytest tests/test_config_migration.py -v
 
 All tests passing. Migration system working as designed.
 
-### Critical Fix Applied (2025-10-03)
+### Critical Fixes Applied (2025-10-03)
 
-**Issue**: Migration was stripping all comments and dumping default values
+**Issue 1**: Migration was stripping all comments and dumping default values
 - Old behavior: 71 lines → 119 lines (added all environment defaults)
 - Comments lost, structure destroyed
 
@@ -666,8 +666,37 @@ All tests passing. Migration system working as designed.
 - New `_save_migrated_config()` method preserves structure
 - Only migrates user settings, not defaults
 - Result: 71 lines → 76 lines (only version header added)
+- **Testing**: Verified on global config - all comments preserved ✅
 
-**Testing**: Verified on global config - all comments preserved ✅
+**Issue 2**: `config init` not adding version header
+- Generated configs had old format without schema version
+
+**Solution**: Update `_generate_config_template()` to include version header
+- All new configs now include v1.0.0 schema metadata
+- **Testing**: `keecas config init --force` creates proper versioned config ✅
+
+**Issue 3**: Unknown schema versions caused ValueError
+- Config with unregistered version (e.g., 0.0.1) crashed migration
+
+**Solution**: Graceful fallback for unknown versions
+- Treats unknown versions as oldest known version
+- Allows migration to proceed from beginning
+- **Testing**: `keecas config init --force` works with any version ✅
+
+**Issue 4**: `config reset` stripped comments
+- Reset command used `toml.dump()` instead of template generation
+
+**Solution**: Use template generation (same as init)
+- Preserves comments and structure
+- Includes version header
+- **Testing**: `keecas config reset --force` preserves all comments ✅
+
+### Final Status
+
+**Branch**: `feature/config-versioning-migration` - **9 commits**
+- All config commands preserve comments consistently
+- All edge cases handled gracefully
+- Production-ready for merge
 
 ### Next Steps
 
