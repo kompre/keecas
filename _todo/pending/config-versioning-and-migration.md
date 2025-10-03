@@ -655,6 +655,20 @@ $ uv run pytest tests/test_config_migration.py -v
 
 All tests passing. Migration system working as designed.
 
+### Critical Fix Applied (2025-10-03)
+
+**Issue**: Migration was stripping all comments and dumping default values
+- Old behavior: 71 lines → 119 lines (added all environment defaults)
+- Comments lost, structure destroyed
+
+**Solution**: Use tomlkit for comment-preserving TOML operations
+- Added `tomlkit>=0.13.3` dependency
+- New `_save_migrated_config()` method preserves structure
+- Only migrates user settings, not defaults
+- Result: 71 lines → 76 lines (only version header added)
+
+**Testing**: Verified on global config - all comments preserved ✅
+
 ### Next Steps
 
 1. Merge feature branch to dev
