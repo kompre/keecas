@@ -4,6 +4,11 @@
 
 <!-- Tasks moved to proposal phase -->
 
+**Tasks awaiting approval in `proposal/`**:
+1. [github-actions-pypi-publishing.md](proposal/github-actions-pypi-publishing.md) - GitHub Actions for PyPI publishing
+2. [config-versioning-and-migration.md](proposal/config-versioning-and-migration.md) - Config file versioning and migration system
+3. [programmatic-api-documentation.md](proposal/programmatic-api-documentation.md) - Automated API docs with Quarto autodoc
+
 
 
 
