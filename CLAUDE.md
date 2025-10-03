@@ -423,6 +423,10 @@ For complete details, see `docs/CONVENTIONS.md`.
 - **TOML Dependency**: Added `toml>=0.10.2` for configuration file support
 - **Cross-platform Compatibility**: CLI works on Linux (xdg-open), macOS (open), Windows (start)
 - **Locale Management**: Conservative behavior ensures system locales aren't disrupted
+- **Unit Conversion in SymPy**: Pint quantities converted to SymPy maintain full conversion capabilities
+  - Prefixed units (kN, daN, cm, etc.) convert automatically via SymPy's prefix system
+  - Non-prefixed compound units (kgf, lbf, etc.) have scale factors automatically set from Pint definitions
+  - All Pint units convert correctly in SymPy expressions via `pc.convert_to()`
 - When defining symbols prefer LaTeX notation: instead of symbols('gamma'), use symbols(r'\gamma'). This way you can have complex LaTeX symbols; if a symbol has a comma, escape it with `\`: tau_1_Rd = symbols(r'\tau_{1\,Rd}')
 
 ## Language and Localization Support

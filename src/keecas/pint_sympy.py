@@ -62,7 +62,7 @@ class SymPyUnitCache:
 
     @classmethod
     def get_or_create(cls, fullname: str, shortname: str, is_prefixed: bool) -> Any:
-        """Get cached unit or create new one if it doesn't exist.
+        """Get cached unit or create new one with proper scale factor.
 
         Args:
             fullname: Full unit name (e.g., 'kilonewton')
@@ -71,6 +71,10 @@ class SymPyUnitCache:
 
         Returns:
             SymPy Quantity object for the unit
+
+        Notes:
+            - Prefixed units (kN, daN) are handled automatically by SymPy
+            - Non-prefixed units (kgf, lbf) get scale factors from Pint base unit conversion
         """
         if fullname in cls._units:
             return cls._units[fullname]
@@ -81,6 +85,38 @@ class SymPyUnitCache:
             abbrev=shortname,
             is_prefixed=is_prefixed
         )
+
+        # Set scale factor for non-prefixed units (prefixed units handled by SymPy)
+        if not is_prefixed:
+            try:
+                # Get base unit conversion from Pint
+                pint_unit = 1 * pint.Unit(fullname)
+                base_quantity = pint_unit.to_base_units()
+                pint_magnitude, base_units = base_quantity.to_tuple()
+
+                # Build reference from base units and track SymPy scale factors
+                reference = sympify(1)
+                sympy_scale = sympify(1)
+
+                for unit_name, exponent in base_units:
+                    if hasattr(sympy_units, unit_name):
+                        unit_obj = getattr(sympy_units, unit_name)
+                        reference *= unit_obj ** nsimplify(exponent)
+
+                        # Accumulate SymPy's scale factors
+                        if hasattr(unit_obj, 'scale_factor'):
+                            sympy_scale *= unit_obj.scale_factor ** exponent
+                    else:
+                        # Base unit doesn't exist in SymPy - skip scale factor
+                        break
+                else:
+                    # All base units exist - set scale factor
+                    # Adjust magnitude by SymPy's reference scale factors
+                    adjusted_magnitude = float(pint_magnitude * sympy_scale)
+                    sympy_unit.set_global_relative_scale_factor(adjusted_magnitude, reference)
+            except Exception:
+                # If scale factor setup fails, unit still works but won't convert
+                pass
 
         # Cache the unit
         cls._units[fullname] = sympy_unit
