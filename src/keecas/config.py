@@ -681,7 +681,7 @@ class ConfigManager:
             return self._options.to_toml_dict()
 
     def reset_config(self, global_config: bool = False) -> bool:
-        """Reset configuration file to defaults."""
+        """Reset configuration file to defaults with proper template and version header."""
         config_path = self._global_config_path if global_config else self._local_config_path
 
         if not config_path.exists():
@@ -689,11 +689,13 @@ class ConfigManager:
             return False
 
         try:
-            # Create default options and save
-            default_options = ConfigOptions()
-            config_dict = default_options.to_toml_dict()
+            # Generate fresh template with version header (same as init_config)
+            template_content = self._generate_config_template(
+                is_global=global_config,
+                comment_style="##"
+            )
             with open(config_path, "w", encoding="utf-8") as f:
-                toml.dump(config_dict, f)
+                f.write(template_content)
             print(f"Configuration reset to defaults: {config_path}")
             # Reload configs
             self.load_configs()
