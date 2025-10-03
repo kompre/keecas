@@ -1,6 +1,29 @@
 project:
   type: website
 
+quartodoc:
+  # Package to document
+  package: keecas
+
+  # Output directory for generated API docs
+  dir: api-reference/_generated
+
+  # Sidebar configuration
+  sidebar: api-reference/_sidebar.yml
+
+  # Rendering options
+  renderer:
+    style: markdown
+    show_signature: true
+    show_signature_annotations: true
+
+  # Documentation structure - start with display.py only
+  sections:
+    - title: Display Module
+      desc: LaTeX equation rendering and formatting
+      contents:
+        - name: check
+
 website:
   title: "Keecas Documentation"
   description: "Symbolic and units-aware calculations for Jupyter notebooks"
@@ -27,3 +50,4 @@ format:
 
 execute:
   freeze: auto
+  echo: true  # Show code in all code blocks by default

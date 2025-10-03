@@ -1,0 +1,102 @@
+# show_eqn { #keecas.show_eqn }
+
+`show_eqn(eqns: dict\[Basic, Any\] \| list\[dict\[Basic, Any\]\] \| Dataframe, environment: str \| dict\[str, Any\] \| None = None, sep: str \| list\[str\] \| None = None, label: str \| dict\[str, str\] \| None = None, label_command: str \| None = None, col_wrap: str \| dict \| list\[dict\] \| Dataframe \| tuple \| None = None, float_format: str \| dict \| list\[dict\] \| Dataframe \| tuple \| None = None, cell_formatter: Union\[Callable, dict, list, Dataframe, tuple, None\] = None, row_formatter: Union\[Callable, dict, None\] = None, debug: bool \| None = None, env_arg: str \| None = None, **kwargs: Any)`
+
+Display mathematical equations as formatted LaTeX amsmath block.
+
+   Converts Python dictionaries containing symbolic expressions into rendered LaTeX
+   equations suitable for Jupyter notebooks and Quarto documents. Supports multi-column
+   layouts, custom formatting, labeling, and various LaTeX environments.
+
+   Args:
+       eqns: Equation data as dict or list of dicts or Dataframe object (the passed argument will be converted to a Dataframe object). When a list of dicts is passed, the keys of the first dict will be used as the keys of the resulting Dataframe, while subsequent dicts will be added as new columns, if the keys match, otherwise None (see Dataframe.__init__ for more details).
+       environment: LaTeX environment name or custom definition. Built-in environments include
+           "align", "equation", "cases", "gather", "split", "alignat", "rcases". Can also be
+           a dict or EnvironmentDefinition object for custom environments.
+           Defaults to config.latex.default_environment.
+       sep: Separator(s) between cells in the amsmath block (e.g. `LHS & RHS & ...`). Can be string or list of strings
+           for per-column customization. Defaults to environment's default separator
+           (None uses environment default: "&" for align, "" for equation/gather).
+       label: Label(s) for cross-referencing equations. Can be string (single label) or
+           dict mapping symbols to label strings. Labels formatted as {eq_prefix}{label}{eq_suffix}.
+           Omitted in KaTeX mode for notebook compatibility.
+       label_command: LaTeX label command (e.g., r"\label"). Defaults to config.latex.default_label_command.
+       col_wrap: Column wrapping specifications for LaTeX formatting. Can be str, dict, list, Dataframe, or 2 element tuple. 
+           When a 2 element tuple is given `(seed, filler)`, `seed` will be used to create a Dataframe with `filler` as default value.
+           List elements can be None (no wrapping), str (prefix only), or tuple (prefix, suffix).
+           Defaults to config.col_wrap.
+       float_format: Format specification for float values (it will not affect int). Can be str (applied to all floats), list of str (per column formatting), dict (per row formatting), dict of list or Dataframe (per cell formatting). 
+           When a 2 element tuple is given `(seed, filler)`, `seed` will be used to create a Dataframe with `filler` as default value.
+           Supports format specs with or without braces (e.g., ".3f" or "{:.3f}").
+           Defaults to config.display.default_float_format.
+       cell_formatter: Custom cell value formatter function(s). Can be single Callable[(value, col_index) -> str],
+           dict mapping columns to formatters, list of formatters per column, Dataframe of formatters,
+           or tuple (formatters, default). Defaults to config.display.cell_formatter.
+       row_formatter: Custom row-level formatter function(s). Can be single Callable[(row_latex_str) -> str]
+           or dict mapping symbol keys to formatters. Defaults to config.display.row_formatter.
+       debug: Enable debug mode to print generated LaTeX source code. Defaults to config.display.debug.
+       env_arg: Optional environment argument (e.g., "{2}" for alignat{2}). User provides complete
+           argument string including braces.
+       **kwargs: Additional keyword arguments:
+           - language (str): Document-level language override for translations
+           - substitutions (dict): Custom translation dictionary (highest priority)
+           - Other sympy.latex() parameters (e.g., mul_symbol, fold_frac_powers)
+
+   Returns:
+       IPython.display.Markdown object containing rendered LaTeX equations
+
+   Examples:
+       ```{python}
+       from keecas import symbols, u, pc, show_eqn
+
+       # Basic parameter display
+       F, A = symbols(r"F, A")
+       _p = {F: 100*u.kN, A: 20*u.cm**2}
+       show_eqn(_p)
+       ```
+
+       ```{python}
+       # Multi-column with expressions and values
+       sigma = symbols(r"\sigma")
+       _e = {sigma: "F/A" | pc.parse_expr}
+       _v = {k: v | pc.subs(_p | _e) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
+       show_eqn([_p, _e, _v])
+       ```
+
+       ```{python}
+       # Custom formatting and labels
+       _l = {sigma: 'stress-calc'}
+       _f = {sigma: '.2f'}  # Per-symbol float format
+       show_eqn([_e, _v], float_format=_f, label=_l)
+       ```
+
+       ```{python}
+       # Different environments
+       show_eqn(_p, environment="equation")  # Single equation
+       show_eqn(_p, environment="gather")    # Centered, no alignment
+       ```
+
+       ```{python}
+       # Custom environment with spacing
+       custom_env = {
+           "separator": "&",
+           "line_separator": r" \[0.5em]" + "
+",
+           "supports_multiple_labels": True,
+           "outer_environment": "align"
+       }
+       show_eqn([_e, _v], environment=custom_env)
+       ```
+
+   See Also:
+       - check(): Engineering verification with localization
+       - dict_to_eq(): Convert dict to SymPy Eq objects
+       - eq_to_dict(): Convert SymPy Eq objects to dict
+       - config: Global configuration object
+
+   Notes:
+       - LaTeX output respects config.katex setting (disables labels for KaTeX compatibility)
+       - Float formatting supports format specs with or without braces: ".3f" or "{:.3f}"
+       - Environment separator defaults to None (uses environment-specific default)
+       - Multi-column layouts support per-column formatting via structured float_format
+       - Labels use config.latex.eq_prefix and eq_suffix for consistent referencing

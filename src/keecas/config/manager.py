@@ -1,8 +1,57 @@
-"""
-Unified Configuration Management for Keecas.
+"""Unified Configuration Management for Keecas.
 
-Manages all configuration options with TOML file support, priority handling,
-and dynamic propagation to affected subsystems.
+Manages all configuration options with TOML file support, hierarchical priority,
+and dynamic propagation to affected subsystems (Pint locale, localization).
+
+The main configuration object is exposed as `config` from the keecas package:
+
+```{python}
+from keecas import config
+
+# Access nested configuration
+config.language = 'it'                          # Italian localization
+config.latex.eq_prefix = 'eq-'                  # LaTeX label prefix
+config.display.default_float_format = '.3f'    # Default float formatting
+config.display.katex = True                     # KaTeX compatibility mode
+
+# Environment configuration
+config.latex.environments.align.separator       # Built-in environment separator
+config.latex.environments.set('custom', {...})  # Custom environment
+
+# Save configuration
+from keecas.config import get_config_manager
+manager = get_config_manager()
+manager.save_config(scope='local')  # Save to .keecas/config.toml
+```
+
+## Configuration Hierarchy
+
+Priority order: Local config > Global config > Defaults
+
+- **Local**: `<project>/.keecas/config.toml` (project-specific)
+- **Global**: `~/.keecas/config.toml` (user-wide)
+- **Defaults**: Built-in defaults in dataclass definitions
+
+## Configuration Sections
+
+- `config.latex`: LaTeX equation formatting (eq_prefix, environments, etc.)
+- `config.display`: Display behavior (katex, debug, float_format, etc.)
+- `config.language`: Language and localization (language, disable_pint_locale)
+- `config.translations`: Custom term translations
+- `config.check_templates`: Verification function templates
+
+## Dynamic Propagation
+
+Changes to certain settings automatically propagate:
+
+- `config.language`: Updates Pint locale and localization manager
+- Configuration changes trigger affected subsystem updates
+
+See Also:
+    - LatexConfig: LaTeX equation formatting configuration
+    - DisplayConfig: Display and debugging configuration
+    - LanguageConfig: Language and localization configuration
+    - ConfigManager: Main configuration manager class
 """
 
 import os

@@ -63,6 +63,10 @@ quartodoc:
     show_signature: true
     show_signature_annotations: true
 
+  # Default options for code cells in examples
+  options:
+    echo: true
+
   # Documentation structure
   sections:
     - title: Display Module
@@ -196,20 +200,28 @@ def show_eqn(
         KeyError: If referenced symbols not found in expressions
 
     Examples:
-        Basic parameter display:
-        >>> F, A = symbols(r"F, A")
-        >>> _p = {F: 100*u.kN, A: 20*u.cm**2}
-        >>> show_eqn(_p)
+        ```{python}
+        from keecas import symbols, u, pc, show_eqn
 
-        Multi-column with expressions and values:
-        >>> sigma = symbols(r"\\sigma")
-        >>> _e = {sigma: "F/A" | pc.parse_expr}
-        >>> _v = {sigma: 5*u.MPa}
-        >>> show_eqn([_p, _e, _v])
+        # Basic parameter display
+        F, A = symbols(r"F, A")
+        _p = {F: 100*u.kN, A: 20*u.cm**2}
+        show_eqn(_p)
+        ```
 
-        Custom formatting and labels:
-        >>> _l = {sigma: 'stress-calc'}
-        >>> show_eqn([_e, _v], float_format='.2f', label=_l)
+        ```{python}
+        # Multi-column with expressions and values
+        sigma = symbols(r"\sigma")
+        _e = {sigma: "F/A" | pc.parse_expr}
+        _v = {sigma: 5*u.MPa}
+        show_eqn([_p, _e, _v])
+        ```
+
+        ```{python}
+        # Custom formatting and labels
+        _l = {sigma: 'stress-calc'}
+        show_eqn([_e, _v], float_format='.2f', label=_l)
+        ```
 
     See Also:
         - check(): Engineering verification with localization
@@ -341,17 +353,17 @@ jobs:
     # ... rest of workflow
 ```
 
-### 6. Add Pre-commit Hook for Documentation
+### 6. Add Pre-commit Docstring Validation
 
 **File**: `scripts/install-hooks.sh` (update existing)
 
-**Add documentation check**:
+**Add lightweight docstring check**:
 ```bash
 #!/bin/bash
 
 # ... existing hook setup ...
 
-# Add documentation generation to pre-commit
+# Add docstring validation to pre-commit
 cat > .git/hooks/pre-commit << 'EOF'
 #!/bin/bash
 
@@ -361,35 +373,36 @@ cat > .git/hooks/pre-commit << 'EOF'
 python_changed=$(git diff --cached --name-only --diff-filter=ACM | grep -E "^src/.*\.py$")
 
 if [ -n "$python_changed" ]; then
-    echo "Python source files changed, updating API documentation..."
+    echo "Validating docstrings for changed Python files..."
 
-    # Generate API docs
-    python scripts/update_docs.py
+    # Quick validation: check changed functions have docstrings
+    python scripts/validate_docstrings.py --changed-only
 
     if [ $? -ne 0 ]; then
-        echo "❌ API documentation generation failed"
-        echo "Fix docstrings and try again"
+        echo "❌ Docstring validation failed"
+        echo "Add docstrings to modified functions"
+        echo "Tip: API docs are regenerated automatically in CI"
         exit 1
     fi
-
-    # Stage generated API docs
-    git add docs/api-reference/*.qmd docs/api-reference/_sidebar.yml
 fi
 
 # ... rest of hook ...
 EOF
 ```
 
-### 7. Create Documentation Style Guide
+**Note**: API documentation regeneration happens only in CI, not on commit (too slow).
 
-**File**: `docs/contributing/docstring-style-guide.md`
+### 7. Update CLAUDE.md with Docstring Conventions
 
-**Content**:
+**File**: `CLAUDE.md` (update existing)
+
+**Add section on docstring conventions**:
 - Google-style docstring format (standard for quartodoc)
-- Examples for functions, classes, methods
-- Type annotation requirements
+- Use Quarto executable code blocks `\`\`\`{python}` for examples (echo: true set globally in _quarto.yml)
+- Show rendered output for user-facing functions (`show_eqn`, `check`, `pc.*`)
+- Use `#| eval: false` only when examples shouldn't execute (imports fail, etc.)
+- Type annotation requirements (use modern union syntax: `dict | list`)
 - Cross-reference conventions
-- Code example formatting
 - Common sections: Args, Returns, Raises, Examples, See Also, Notes
 
 **Example template**:
@@ -412,13 +425,16 @@ def function_name(arg1: Type1, arg2: Type2 = default) -> ReturnType:
         TypeError: When invalid type provided
 
     Examples:
-        Basic usage:
-        >>> result = function_name(value1, value2)
-        >>> print(result)
-        expected output
+        ```{python}
+        # Basic usage
+        result = function_name(value1, value2)
+        print(result)
+        ```
 
-        Advanced usage with options:
-        >>> result = function_name(value1, arg2=custom_value)
+        ```{python}
+        # Advanced usage with options
+        result = function_name(value1, arg2=custom_value)
+        ```
 
     See Also:
         - related_function(): Brief description
@@ -430,7 +446,9 @@ def function_name(arg1: Type1, arg2: Type2 = default) -> ReturnType:
     """
 ```
 
-### 8. Restructure API Reference Pages
+**Note**: No separate style guide file created; keeps conventions centralized in CLAUDE.md.
+
+### 8. Integration Strategy for API Reference
 
 **Current structure** (manual):
 ```
@@ -439,86 +457,93 @@ docs/api-reference/
 └── display.qmd        # Manual API docs
 ```
 
-**New structure** (automated):
+**Hybrid approach** (start small):
 ```
 docs/api-reference/
 ├── index.qmd          # Manual overview (keep)
-├── _sidebar.yml       # Generated by quartodoc
-├── show_eqn.qmd       # Generated from docstrings
-├── config.qmd         # Generated from docstrings
-├── check.qmd          # Generated from docstrings
-├── Dataframe.qmd      # Generated from docstrings
-├── pipe_command.qmd   # Generated from docstrings
-└── ...                # Other generated pages
+├── display.qmd        # Manual page embedding quartodoc-generated content
+├── _generated/        # Quartodoc output directory
+│   ├── show_eqn.qmd   # Generated from docstrings
+│   ├── check.qmd      # Generated from docstrings
+│   └── ...            # Other generated pages
 ```
 
-**Migration plan**:
-1. Keep `index.qmd` as manual overview/landing page
-2. Delete old manual API pages after verification
-3. Let quartodoc generate individual function/class pages
-4. Update navigation links to point to generated pages
+**Integration plan**:
+1. **Test with display.py first**: Generate docs for `show_eqn`, `check`, `config`
+2. **Embed in existing pages**: Include generated content in manual pages with `{{< include _generated/show_eqn.qmd >}}`
+3. **Validate quality**: Compare manual vs generated docs
+4. **Expand gradually**: Add dataframe, pipe_command, config modules after validation
+5. **Eventually migrate**: Once stable, replace manual pages with pure quartodoc
 
-### 9. Add Documentation Validation
+**Rationale**: Incremental approach reduces risk, allows quality comparison, and avoids breaking existing documentation.
 
-**File**: `scripts/validate_docs.py`
+### 9. Add Lightweight Docstring Validation
 
-**Validation checks**:
+**File**: `scripts/validate_docstrings.py`
+
+**Simple validation** (for pre-commit):
 ```python
-"""Validate documentation completeness and quality."""
+"""Validate changed files have docstrings."""
 
 import ast
+import subprocess
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
-def check_docstrings() -> List[Tuple[str, str]]:
-    """Check all public functions have docstrings."""
+def get_changed_files():
+    """Get staged Python files."""
+    result = subprocess.run(
+        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
+        capture_output=True,
+        text=True
+    )
+    files = result.stdout.strip().split('\n')
+    return [f for f in files if f.startswith('src/') and f.endswith('.py')]
+
+def check_file_docstrings(filepath: Path) -> list[str]:
+    """Check public functions/classes in file have docstrings."""
     missing = []
 
-    src_dir = Path("src/keecas")
-    for py_file in src_dir.rglob("*.py"):
-        if py_file.name.startswith("_") and py_file.name != "__init__.py":
-            continue
+    with open(filepath) as f:
+        tree = ast.parse(f.read())
 
-        with open(py_file) as f:
-            tree = ast.parse(f.read())
-
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
-                if not node.name.startswith("_"):  # Public API
-                    if not ast.get_docstring(node):
-                        missing.append((str(py_file), node.name))
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
+            if not node.name.startswith("_"):  # Public API
+                if not ast.get_docstring(node):
+                    missing.append(node.name)
 
     return missing
 
-def validate():
-    """Run all documentation validation checks."""
-    print("🔍 Validating documentation...")
+def main():
+    """Validate docstrings in changed files."""
+    changed_files = get_changed_files()
 
-    # Check for missing docstrings
-    missing = check_docstrings()
-    if missing:
-        print(f"⚠️  Found {len(missing)} functions/classes without docstrings:")
-        for filepath, name in missing[:10]:  # Show first 10
-            print(f"   - {filepath}::{name}")
-        if len(missing) > 10:
-            print(f"   ... and {len(missing) - 10} more")
-    else:
-        print("✓ All public functions have docstrings")
+    if not changed_files:
+        sys.exit(0)
 
-    # Check API docs were generated
-    api_dir = Path("docs/api-reference")
-    generated_files = list(api_dir.glob("*.qmd"))
-    if len(generated_files) < 5:  # Expect at least 5 major API pages
-        print(f"⚠️  Only {len(generated_files)} API pages generated (expected >5)")
-        return 1
+    has_errors = False
+    for filepath in changed_files:
+        path = Path(filepath)
+        if not path.exists():
+            continue
 
-    print(f"✓ Generated {len(generated_files)} API reference pages")
-    return 0
+        missing = check_file_docstrings(path)
+        if missing:
+            print(f"⚠️  {filepath}: Missing docstrings for {', '.join(missing)}")
+            has_errors = True
+
+    if has_errors:
+        print("\nTip: Add Google-style docstrings to public functions/classes")
+        sys.exit(1)
+
+    sys.exit(0)
 
 if __name__ == "__main__":
-    sys.exit(validate())
+    main()
 ```
+
+**Note**: Lightweight validation only - checks presence, not quality. Runs fast in pre-commit hook.
 
 ### 10. Update README with Documentation Links
 
@@ -553,59 +578,117 @@ Documentation is automatically rebuilt on every push to `main` via GitHub Action
 
 ## Implementation Steps
 
-1. **Add quartodoc dependency** to `pyproject.toml`
-2. **Configure quartodoc** in `docs/_quarto.yml`
-3. **Improve docstrings** for high-priority functions (show_eqn, check, config, Dataframe)
+1. **Add quartodoc dependency** to `pyproject.toml` using `uv add --dev quartodoc griffe`
+2. **Configure quartodoc** in `docs/_quarto.yml` (start with display.py only)
+3. **Improve docstrings** for display.py functions: `show_eqn()`, `check()`, `config` (use Quarto code blocks)
 4. **Create update script** (`scripts/update_docs.py`)
-5. **Update GitHub Actions** to run documentation generation
-6. **Add pre-commit hook** for documentation validation
-7. **Write style guide** for contributors
-8. **Validate and test** generated documentation
-9. **Update README** with documentation links
-10. **Delete old manual API pages** after verification
+5. **Test quartodoc output**: Generate docs for display.py, validate quality
+6. **Create validation script** (`scripts/validate_docstrings.py`) - lightweight, pre-commit safe
+7. **Update pre-commit hook** for docstring validation (not generation)
+8. **Update GitHub Actions** to run documentation generation in CI
+9. **Add docstring conventions** to CLAUDE.md (no separate style guide file)
+10. **Integrate into existing docs**: Embed generated content in manual pages
+11. **Update README** with documentation build instructions
+12. **Expand to other modules** after display.py validation succeeds
 
 ## Acceptance Criteria
 
-- ✅ Quartodoc configured and working
-- ✅ API reference auto-generated from docstrings
-- ✅ All high-priority functions have complete docstrings
-- ✅ Documentation builds successfully in CI
-- ✅ Generated docs match manual docs in quality
-- ✅ Pre-commit hook validates documentation
-- ✅ Style guide available for contributors
-- ✅ Validation script checks docstring coverage
-- ✅ README links to published documentation
-- ✅ No manual API documentation remains
+**Phase 1 (display.py)** - BLOCKED:
+- ✅ Quartodoc dependency installed (`quartodoc>=0.7.0,<0.8.0`, `griffe<1.0.0`)
+- ✅ `show_eqn()`, `check()` have complete Google-style docstrings with Quarto code blocks
+- ✅ Config module documented with comprehensive module-level docstring
+- ✅ `scripts/update_docs.py` automation script created
+- ❌ **BLOCKER**: Quartodoc 0.7.6 has renderer bug (`UnboundLocalError` in md_renderer.py:446)
+  - Error occurs when rendering function signatures with certain parameter types
+  - Affects both `show_eqn()` and `check()` functions
+  - Root cause: Bug in quartodoc 0.7.6's md_renderer when handling parameters
+  - **Resolution options**:
+    1. Wait for quartodoc 0.8+ release with fixes
+    2. Use alternative tool (sphinx-autoapi, mkdocstrings)
+    3. Keep manual documentation with improved docstrings
+- ⏸️ Generated display.py docs embedded in manual pages (blocked)
+- ⏸️ Quality comparable to existing manual documentation (blocked)
+
+**Phase 2 (automation)** - ON HOLD:
+- ⏸️ `scripts/validate_docstrings.py` validates changed files only
+- ⏸️ Pre-commit hook runs lightweight validation (fast)
+- ⏸️ CI regenerates API docs on every push
+- ⏸️ Documentation builds successfully in CI
+
+**Phase 3 (expansion)** - ON HOLD:
+- ⏸️ Docstring conventions documented in CLAUDE.md
+- ⏸️ README includes documentation build instructions
+- ⏸️ Dataframe, pipe_command modules documented
+- ⏸️ Configuration system documented
+- ⏸️ All public API has docstrings
+
+## Current Status (2025-10-03)
+
+**Completed**:
+1. Quartodoc and griffe dependencies added with correct versions
+2. Comprehensive Google-style docstrings with Quarto examples for `show_eqn()` and `check()`
+3. Config module documentation via module-level docstring
+4. Quartodoc configuration in `docs/_quarto.yml`
+5. Automation script `scripts/update_docs.py`
+
+**Blocker**:
+Quartodoc 0.7.6 crashes with `UnboundLocalError` when rendering signatures. The tool is incompatible with the codebase's type annotations.
+
+**Recommendation**:
+- **Option 1 (Preferred)**: Keep manual documentation; improved docstrings still valuable for IDE tooltips
+- **Option 2**: Wait for quartodoc 0.8+ or use alternative tool (sphinx-autoapi)
+- **Option 3**: Simplify all type annotations to work around quartodoc bugs (not recommended)
 
 ## Dependencies
 - None (standalone task)
 - Complements v1.0.0 release preparation
 
 ## Estimated Effort
-- Quartodoc setup: 2 hours
-- Docstring improvements: 6 hours (largest effort)
-- Automation scripts: 2 hours
-- GitHub Actions update: 1 hour
-- Style guide: 1 hour
-- Testing and validation: 2 hours
-- **Total**: 14 hours
+
+**Phase 1 (display.py)**:
+- Quartodoc setup and configuration: 2 hours
+- Docstring improvements for display.py: 3 hours
+- Initial generation and testing: 1 hour
+- **Subtotal**: 6 hours
+
+**Phase 2 (automation)**:
+- Update script (`update_docs.py`): 1 hour
+- Validation script (`validate_docstrings.py`): 1 hour
+- Pre-commit hook update: 0.5 hour
+- GitHub Actions integration: 1 hour
+- **Subtotal**: 3.5 hours
+
+**Phase 3 (expansion)**:
+- CLAUDE.md conventions: 0.5 hour
+- README updates: 0.5 hour
+- Remaining modules docstrings: 4 hours
+- Testing and refinement: 2 hours
+- **Subtotal**: 7 hours
+
+**Total**: 16.5 hours (phased approach allows early validation)
 
 ## Risks and Mitigations
 
-**Risk**: Quartodoc doesn't support complex type annotations
-**Mitigation**: Simplify type hints or use string annotations
+**Risk**: Quartodoc doesn't handle dynamic attributes (like `config` object)
+**Mitigation**: May need manual documentation for dynamic APIs; test early with display.py
 
-**Risk**: Generated docs are low quality
-**Mitigation**: Invest in high-quality docstrings upfront, use examples extensively
+**Risk**: Pipe decorators confuse quartodoc parsing
+**Mitigation**: Test pipe_command.py early; consider separate manual docs if needed
 
-**Risk**: Build failures due to import errors
-**Mitigation**: Quartodoc uses static analysis (griffe), doesn't import code
+**Risk**: Generated docs lower quality than manual
+**Mitigation**: Phased approach allows quality comparison before full migration
+
+**Risk**: Pre-commit hook slows down commits
+**Mitigation**: Lightweight validation only (presence check), no generation in pre-commit
+
+**Risk**: Quartodoc config structure incorrect
+**Mitigation**: Start with minimal config for display.py, validate before expanding
 
 **Risk**: Breaking changes to quartodoc API
-**Mitigation**: Pin version, test before upgrades
+**Mitigation**: Pin version `quartodoc>=0.7.0,<0.8.0`
 
-**Risk**: Docstring format incompatibility
-**Mitigation**: Use standard Google-style, well-supported by quartodoc
+**Risk**: Quarto code block examples don't render correctly
+**Mitigation**: Test with actual Quarto rendering, not just generation
 
 ## Future Enhancements
 
@@ -618,9 +701,13 @@ Documentation is automatically rebuilt on every push to `main` via GitHub Action
 
 ## Notes
 
-- Quartodoc uses griffe for static analysis (no code execution)
-- Supports Google, NumPy, and Sphinx docstring styles (use Google)
-- Can include inherited members from parent classes
-- Supports cross-references with `:func:`, `:class:` syntax
-- Generated sidebar integrates with Quarto navigation
-- Existing manual overview pages can coexist with generated API pages
+- Quartodoc uses griffe for static analysis (no code execution required)
+- Supports Google, NumPy, and Sphinx docstring styles (keecas uses Google)
+- `echo: true` set globally in `_quarto.yml` - all code blocks show code by default
+- Use `#| eval: false` only for examples that can't execute (import issues, etc.)
+- User-facing functions should show actual rendered output (equations, checks, conversions)
+- Phased implementation reduces risk: display.py first, expand after validation
+- Pre-commit validation is lightweight (fast), API generation happens in CI only
+- Hybrid approach: embed generated content in manual pages initially
+- Dynamic attributes (config object) may require manual documentation
+- No separate style guide file - conventions in CLAUDE.md only

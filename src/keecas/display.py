@@ -17,7 +17,7 @@ import re
 
 from pint import Quantity
 
-from typing import Any, Literal
+from typing import Any, Literal, Callable, Union
 
 from .dataframe import *
 
@@ -211,23 +211,99 @@ def check(
     failure_template: str | None = None,
     **kwargs: Any,
 ) -> Markdown:
-    """Determines if the left-hand side (lhs) is less than or equal to
-    the right-hand side (rhs) based on the provided test function.
+    """Engineering verification function with localized pass/fail indicators.
+
+    Compares two expressions using a test function (≤, ≥, <, >, =, ≠) and displays
+    a formatted verification result with color-coded pass/fail indicators. Commonly
+    used for structural engineering checks where calculated values must not exceed
+    allowable limits. It will return a Markdown object depending on conditions (true or false).
 
     Args:
-        lhs (sympy.Expr): The left-hand side expression.
-        rhs (sympy.Expr): The right-hand side expression.
-        test (sympy.GreaterThan, sympy.LessThan, sympy.GreaterThanEqual, sympy.LessThanEqual, optional):
-            The test function to apply. Defaults to Le (less than or equal to).
-        template (TemplateChoice, optional): Named template set to use ("default", "boxed", "minimal").
-        success_template (str, optional): Custom success template override with variables like {symbol}, {rhs}, {verified_text}, etc.
-        failure_template (str, optional): Custom failure template override with variables like {symbol}, {rhs}, {not_verified_text}, etc.
-        **kwargs: Optional keyword arguments including:
-            language (str): Document-level language override for verification text.
-            substitutions (dict): Direct substitution dictionary for custom verification text.
+        lhs: Left-hand side expression (e.g., calculated stress or utilization ratio).
+        rhs: Right-hand side expression (e.g., allowable limit or capacity).
+        test: Comparison function from SymPy's relational module. Options:
+            - Le (≤): LessThan (default)
+            - Ge (≥): GreaterThan
+            - Lt (<): StrictLessThan
+            - Gt (>): StrictGreaterThan
+            - Eq (=): Equality
+            - Ne (≠): Unequality
+            Defaults to Le (less than or equal to).
+        template: Named template set for formatting. Options: "default", "boxed", "minimal".
+            Controls visual presentation of verification result.
+        success_template: Custom template string for passing checks. Available variables:
+            {symbol}, {rhs}, {verified_text}, {color}, {test_result}, {result_text}.
+        failure_template: Custom template string for failing checks. Same variables as success_template.
+        **kwargs: Additional keyword arguments:
+            - language (str): Document-level language override (e.g., 'it', 'de', 'fr')
+            - substitutions (dict): Custom translation dictionary for "VERIFIED"/"NOT_VERIFIED"
 
     Returns:
-        Markdown: A Markdown object containing the formatted string indicating the verification result.
+        IPython.display.Markdown object that depends on conditions (true or false).
+
+    Examples:
+        ```{python}
+        from keecas import symbols, u, pc, check
+        from sympy import Le, Ge
+
+        # Basic utilization check (calculated ≤ allowable)
+        sigma_Sd, sigma_Rd = symbols(r"\sigma_{Sd}, \sigma_{Rd}")
+        _v = {sigma_Sd: 150*u.MPa, sigma_Rd: 200*u.MPa}
+
+        utilization = sigma_Sd / sigma_Rd | pc.subs(_v) | pc.N
+        check(utilization, 1.0, test=Le)  # Check if ≤ 1.0 (passes)
+        ```
+
+        ```{python}
+        # Capacity check (demand ≤ capacity)
+        N_Ed, N_Rd = symbols(r"N_{Ed}, N_{Rd}")
+        _v = {N_Ed: 850*u.kN, N_Rd: 1200*u.kN}
+
+        demand = N_Ed | pc.subs(_v) | pc.N
+        capacity = N_Rd | pc.subs(_v) | pc.N
+        check(demand, capacity, test=Le)
+        ```
+
+        ```{python}
+        # Multiple checks with different tests
+        tau_Sd, tau_Rd = symbols(r"\tau_{Sd}, \tau_{Rd}")
+        _v = {tau_Sd: 45*u.MPa, tau_Rd: 50*u.MPa}
+
+        # Check shear stress is less than limit
+        check(tau_Sd | pc.subs(_v) | pc.N, tau_Rd | pc.subs(_v) | pc.N, test=Le)
+
+        # Check capacity is greater than demand (reverse comparison)
+        check(tau_Rd | pc.subs(_v) | pc.N, tau_Sd | pc.subs(_v) | pc.N, test=Ge)
+        ```
+
+        ```{python}
+        # Localized verification (Italian)
+        from keecas import config
+        config.language = 'it'
+
+        utilization = 0.75
+        check(utilization, 1.0, test=Le)  # Shows "VERIFICATO" in Italian
+        ```
+
+        ```{python}
+        # Custom templates for different visual styles
+        check(0.85, 1.0, template="boxed")    # Boxed result
+        check(0.85, 1.0, template="minimal")  # Minimal formatting
+        check(0.85, 1.0, template="default")  # Standard formatting
+        ```
+
+    See Also:
+        - show_eqn(): Display mathematical equations
+        - config: Global configuration for language and formatting
+        - translate(): Low-level translation function
+
+    Notes:
+        - Returns green indicator for passing checks, red for failing
+        - Verification text ("VERIFIED"/"NOT_VERIFIED") automatically localized per config.language
+        - Supports 10 languages: de, es, fr, it, pt, da, nl, no, sv, en
+        - Template variables allow full customization of output format
+        - Commonly used with utilization ratios: check(calculated/allowable, 1.0)
+        - Test functions from SymPy: Le, Ge, Lt, Gt, Eq, Ne
     """
     # Determine comparison symbols based on test type
     match test.__name__:
@@ -308,56 +384,109 @@ def show_eqn(
     label_command: str | None = None,
     col_wrap: str | dict | list[dict] | Dataframe | tuple | None = None,
     float_format: str | dict | list[dict] | Dataframe | tuple | None = None,
-    cell_formatter: 'Callable | dict | list[dict] | Dataframe | tuple | None' = None,
-    row_formatter: 'Callable | dict | None' = None,
+    cell_formatter: Union[Callable, dict, list, Dataframe, tuple, None] = None,
+    row_formatter: Union[Callable, dict, None] = None,
     debug: bool | None = None,
     env_arg: str | None = None,
     **kwargs: Any,
 ) -> Markdown:
-    """
-    Generates a LaTeX equation or equation array based on the provided equations.
+    """Display mathematical equations as formatted LaTeX amsmath block.
+
+    Converts Python dictionaries containing symbolic expressions into rendered LaTeX
+    equations suitable for Jupyter notebooks and Quarto documents. Supports multi-column
+    layouts, custom formatting, labeling, and various LaTeX environments.
 
     Args:
-        eqns (dict | list[dict] | Dataframe): The equations to be displayed. It can be a dictionary, a list of dictionaries, or a Dataframe object.
-        environment (str | dict | EnvironmentDefinition, optional): The LaTeX environment to use for displaying the equations.
-            Can be a string name (e.g., "align"), a dict defining the environment, or an EnvironmentDefinition object.
+        eqns: Equation data as dict or list of dicts or Dataframe object (the passed argument will be converted to a Dataframe object). When a list of dicts is passed, the keys of the first dict will be used as the keys of the resulting Dataframe, while subsequent dicts will be added as new columns, if the keys match, otherwise None (see Dataframe.__init__ for more details).
+        environment: LaTeX environment name or custom definition. Built-in environments include
+            "align", "equation", "cases", "gather", "split", "alignat", "rcases". Can also be
+            a dict or EnvironmentDefinition object for custom environments.
             Defaults to config.latex.default_environment.
-        sep (str | list[str], optional): The separator to use between the key and value in each equation. It can be a string or a list of strings. Defaults to "&" or "" for specific environments (e.g. equation, gather).
-        label (str | dict, optional): The label to attach to the equation. It can be a string or a dictionary. Defaults to None.
-        label_command (str, optional): The LaTeX command to use for attaching the label. Defaults to config.latex.default_label_command.
-        col_wrap (list[None | tuple], optional): The column wrapping specification for the Dataframe. Defaults to [None, ('=', '')].
-        float_format (str, optional): The float format specification for the Dataframe. Defaults to None.
-        cell_formatter (Callable | dict | list[dict] | Dataframe | tuple | None, optional): Cell value formatter function(s).
-            Can be a single Callable[(value, col_index) -> str], dict mapping columns to formatters,
-            list of formatters per column, Dataframe of formatters, or tuple (formatters, default).
-            Defaults to config.display.cell_formatter or default_cell_formatter.
-        row_formatter (Callable | dict | None, optional): Row-level formatter function(s).
-            Can be a single Callable[(row_latex_str) -> str] or dict mapping symbol keys to formatters.
-            Defaults to config.display.row_formatter.
-        debug (bool, optional): Whether to enable debug mode. Defaults to config.display.debug.
-        env_arg (str, optional): Optional argument string for environment (e.g., "{2}" for alignat{2}).
-            User provides complete argument including braces. Defaults to None.
-        **kwargs: Additional keyword arguments including:
-            language (str): Document-level language override for translations. If not provided, uses global language settings.
-            substitutions (dict): Direct substitution dictionary for custom translations (highest priority).
+        sep: Separator(s) between cells in the amsmath block (e.g. `LHS & RHS & ...`). Can be string or list of strings
+            for per-column customization. Defaults to environment's default separator
+            (None uses environment default: "&" for align, "" for equation/gather).
+        label: Label(s) for cross-referencing equations. Can be string (single label) or
+            dict mapping symbols to label strings. Labels formatted as {eq_prefix}{label}{eq_suffix}.
+            Omitted in KaTeX mode for notebook compatibility.
+        label_command: LaTeX label command (e.g., r"\label"). Defaults to config.latex.default_label_command.
+        col_wrap: Column wrapping specifications for LaTeX formatting. Can be str, dict, list, Dataframe, or 2 element tuple. 
+            When a 2 element tuple is given `(seed, filler)`, `seed` will be used to create a Dataframe with `filler` as default value.
+            List elements can be None (no wrapping), str (prefix only), or tuple (prefix, suffix).
+            Defaults to config.col_wrap.
+        float_format: Format specification for float values (it will not affect int). Can be str (applied to all floats), list of str (per column formatting), dict (per row formatting), dict of list or Dataframe (per cell formatting). 
+            When a 2 element tuple is given `(seed, filler)`, `seed` will be used to create a Dataframe with `filler` as default value.
+            Supports format specs with or without braces (e.g., ".3f" or "{:.3f}").
+            Defaults to config.display.default_float_format.
+        cell_formatter: Custom cell value formatter function(s). Can be single Callable[(value, col_index) -> str],
+            dict mapping columns to formatters, list of formatters per column, Dataframe of formatters,
+            or tuple (formatters, default). Defaults to config.display.cell_formatter.
+        row_formatter: Custom row-level formatter function(s). Can be single Callable[(row_latex_str) -> str]
+            or dict mapping symbol keys to formatters. Defaults to config.display.row_formatter.
+        debug: Enable debug mode to print generated LaTeX source code. Defaults to config.display.debug.
+        env_arg: Optional environment argument (e.g., "{2}" for alignat{2}). User provides complete
+            argument string including braces.
+        **kwargs: Additional keyword arguments:
+            - language (str): Document-level language override for translations
+            - substitutions (dict): Custom translation dictionary (highest priority)
+            - Other sympy.latex() parameters (e.g., mul_symbol, fold_frac_powers)
 
     Returns:
-        Markdown: The LaTeX equation or equation array displayed as a Markdown object.
+        IPython.display.Markdown object containing rendered LaTeX equations
+
+    Examples:
+        ```{python}
+        from keecas import symbols, u, pc, show_eqn
+
+        # Basic parameter display
+        F, A = symbols(r"F, A")
+        _p = {F: 100*u.kN, A: 20*u.cm**2}
+        show_eqn(_p)
+        ```
+
+        ```{python}
+        # Multi-column with expressions and values
+        sigma = symbols(r"\sigma")
+        _e = {sigma: "F/A" | pc.parse_expr}
+        _v = {k: v | pc.subs(_p | _e) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
+        show_eqn([_p, _e, _v])
+        ```
+
+        ```{python}
+        # Custom formatting and labels
+        _l = {sigma: 'stress-calc'}
+        _f = {sigma: '.2f'}  # Per-symbol float format
+        show_eqn([_e, _v], float_format=_f, label=_l)
+        ```
+
+        ```{python}
+        # Different environments
+        show_eqn(_p, environment="equation")  # Single equation
+        show_eqn(_p, environment="gather")    # Centered, no alignment
+        ```
+
+        ```{python}
+        # Custom environment with spacing
+        custom_env = {
+            "separator": "&",
+            "line_separator": r" \\[0.5em]" + "\n ",
+            "supports_multiple_labels": True,
+            "outer_environment": "align"
+        }
+        show_eqn([_e, _v], environment=custom_env)
+        ```
+
+    See Also:
+        - check(): Engineering verification with localization
+        - dict_to_eq(): Convert dict to SymPy Eq objects
+        - eq_to_dict(): Convert SymPy Eq objects to dict
+        - config: Global configuration object
 
     Notes:
-        - If `debug` is True, the generated LaTeX code will be printed.
-        - If `environment` is not provided, the default environment specified in `config.latex.default_environment` will be used.
-        - If `col_wrap` is not provided, the default column wrapping specification will be used.
-        - If `float_format` is not provided, the default float format specification will be used.
-        - If `label` is not provided, a label will not be attached to the equation.
-        - If `label_command` is not provided, the default label command specified in `config.latex.default_label_command` will be used.
-        - The `eqns` argument can be a dictionary, a list of dictionaries, or a Dataframe object.
-        - The `sep` argument can be a string or a list of strings.
-        - The `label` argument can be a string or a dictionary.
-        - The `label_command` argument can be a string.
-        - The `col_wrap` argument can be a list of None or tuples.
-        - The `float_format` argument can be a string.
-        - The `debug` argument can be a boolean.
+        - LaTeX output respects config.katex setting (disables labels for KaTeX compatibility)
+        - Float formatting supports format specs with or without braces: ".3f" or "{:.3f}"
+        - Environment separator defaults to None (uses environment-specific default)
+        - Multi-column layouts support per-column formatting via structured float_format
+        - Labels use config.latex.eq_prefix and eq_suffix for consistent referencing
     """
 
     # set default values
