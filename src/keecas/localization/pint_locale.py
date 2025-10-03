@@ -294,22 +294,27 @@ def update_pint_locale(unitregistry: Any, language: str | None = None, verbose: 
 
     # Handle English locale setting
     if language == 'en':
-        from . import get_language_from_config
-        config_lang = get_language_from_config()
+        # Check if we currently have a non-English locale set by inspecting the actual locale
+        current_locale = getattr(unitregistry.formatter, 'locale', None) or getattr(unitregistry.formatter, '_locale', None)
 
-        if not config_lang:
-            # Check if we currently have a non-English locale set
-            # If so, we should reset to English rather than skip
-            current_quantity = 1 * unitregistry('cm**2')
-            current_result = f'{current_quantity:.3f}'.lower()
-            has_non_english_locale = not ('centimeter' in current_result or current_result.count('**') == 0)
+        # Determine if we have a non-English locale
+        has_non_english_locale = (
+            current_locale is not None and
+            not current_locale.startswith(('en_', 'C', 'POSIX'))
+        )
 
-            if has_non_english_locale:
-                # We have a non-English locale, should reset to English
-                if verbose:
-                    print("Resetting to English locale from non-English locale")
-            else:
-                # Already English or no locale set, skip to avoid unnecessary changes
+        if has_non_english_locale:
+            # We have a non-English locale, should reset to English
+            if verbose:
+                print("Resetting to English locale from non-English locale")
+        else:
+            # Already English or no locale set
+            # Only skip if language was not explicitly requested (i.e., no config set)
+            from . import get_language_from_config
+            config_lang = get_language_from_config()
+
+            if not config_lang:
+                # No explicit config, skip to avoid unnecessary changes
                 if verbose:
                     print("Skipping locale setting for unconfigured English (already English)")
                 return
