@@ -479,8 +479,10 @@ class ConfigManager:
     def _load_and_migrate_config(self, config_path: Path) -> None:
         """Load config with automatic migration if needed.
 
-        Args:
-            config_path: Path to configuration file
+        Parameters
+        ----------
+        config_path : Path
+            Path to configuration file
         """
         from .migration import ConfigMigration
         from .schema import get_current_schema_version
@@ -525,10 +527,14 @@ class ConfigManager:
     def _extract_metadata_from_comments(config_path: Path) -> dict:
         """Extract version metadata from config file header comments.
 
-        Args:
-            config_path: Path to config file
+        Parameters
+        ----------
+        config_path : Path
+            Path to config file
 
-        Returns:
+        Returns
+        -------
+        dict
             Dictionary with metadata (config_version, keecas_version, etc.)
         """
         metadata = {
@@ -558,14 +564,18 @@ class ConfigManager:
         return metadata
 
     def save_config(self, global_config: bool = False, force: bool = False) -> bool:
-        """
-        Save current configuration to file with version metadata.
+        """Save current configuration to file with version metadata.
 
-        Args:
-            global_config: If True, save to global config file
-            force: If True, overwrite existing file
+        Parameters
+        ----------
+        global_config : bool, optional
+            If True, save to global config file
+        force : bool, optional
+            If True, overwrite existing file
 
-        Returns:
+        Returns
+        -------
+        bool
             True if saved successfully, False otherwise
         """
         config_path = self._global_config_path if global_config else self._local_config_path
@@ -589,9 +599,12 @@ class ConfigManager:
     def _save_config_file(self, config_path: Path, created_at: str | None = None) -> None:
         """Save config with version metadata in header comments.
 
-        Args:
-            config_path: Path to save configuration file
-            created_at: Optional creation timestamp (preserves during migration)
+        Parameters
+        ----------
+        config_path : Path
+            Path to save configuration file
+        created_at : str | None, optional
+            Optional creation timestamp (preserves during migration)
         """
         from ..version import __version__
         from .schema import get_current_schema_version
@@ -622,11 +635,16 @@ class ConfigManager:
                              migrated_data: dict, created_at: str | None = None) -> None:
         """Save migrated config preserving comments and structure.
 
-        Args:
-            config_path: Path to save configuration file
-            toml_doc: Original tomlkit document (preserves comments)
-            migrated_data: Migrated configuration data
-            created_at: Optional creation timestamp
+        Parameters
+        ----------
+        config_path : Path
+            Path to save configuration file
+        toml_doc : tomlkit.TOMLDocument
+            Original tomlkit document (preserves comments)
+        migrated_data : dict
+            Migrated configuration data
+        created_at : str | None, optional
+            Optional creation timestamp
         """
         from ..version import __version__
         from .schema import get_current_schema_version
@@ -706,12 +724,18 @@ class ConfigManager:
         return self._global_config_path if global_config else self._local_config_path
 
     def show_config(self, global_config: bool | None = None) -> dict[str, Any]:
-        """
-        Show current configuration.
+        """Show current configuration.
 
-        Args:
-            global_config: If True, show only global config. If False, only local.
-                          If None, show merged configuration.
+        Parameters
+        ----------
+        global_config : bool | None, optional
+            If True, show only global config. If False, only local.
+            If None, show merged configuration.
+
+        Returns
+        -------
+        dict[str, Any]
+            Configuration dictionary
         """
         if global_config is True:
             # Show only global config
@@ -758,13 +782,16 @@ class ConfigManager:
         return getattr(self._options, key, default)
 
     def set_option(self, key: str, value: Any, propagate: bool = True) -> None:
-        """
-        Set configuration option and optionally propagate changes.
+        """Set configuration option and optionally propagate changes.
 
-        Args:
-            key: Option name
-            value: Option value
-            propagate: Whether to propagate changes to affected subsystems
+        Parameters
+        ----------
+        key : str
+            Option name
+        value : Any
+            Option value
+        propagate : bool, optional
+            Whether to propagate changes to affected subsystems
         """
         if hasattr(self._options, key):
             setattr(self._options, key, value)

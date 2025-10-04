@@ -5,8 +5,11 @@ quartodoc:
   # Package to document
   package: keecas
 
+  # Docstring parser
+  parser: google
+
   # Output directory for generated API docs
-  dir: api-reference/_generated
+  dir: api-reference/
 
   # Sidebar configuration
   sidebar: api-reference/_sidebar.yml
@@ -15,15 +18,21 @@ quartodoc:
   renderer:
     style: markdown
     show_signature: true
-    show_signature_annotations: true
+    show_signature_annotations: false
 
-  # Documentation structure - start with display.py only
+  # Documentation structure
+  # Note: Some functions excluded due to quartodoc 0.7.6 renderer bug
+  # See: _todo/pending/programmatic-api-documentation.md
   sections:
-    - title: Display Module
+    - title: Display Module quartodoc
       desc: LaTeX equation rendering and formatting
       contents:
         - name: show_eqn
         - name: check
+
+metadata-files: 
+  - "api-reference/_sidebar.yml"
+
 
 website:
   title: "Keecas Documentation"
@@ -38,7 +47,7 @@ website:
         text: Getting Started
       - href: user-guide/index.qmd
         text: User Guide
-      - href: api-reference/index.qmd
+      - href: api-reference/_generated/
         text: API Reference
       - href: cli-reference/index.qmd
         text: CLI Reference
@@ -52,3 +61,4 @@ format:
 execute:
   freeze: auto
   echo: true  # Show code in all code blocks by default
+  warning: false  # Suppress warnings in rendered output

@@ -1,100 +1,10 @@
----
-title: "API Reference"
----
+# Function reference {.doc .doc-index}
 
-# API Reference
+## Display Module quartodoc
 
-Complete documentation of Keecas modules, functions, and classes.
+LaTeX equation rendering and formatting
 
-## Core Modules
-
-::: {.grid}
-
-::: {.g-col-6}
-### [Display Module](display.qmd)
-Functions for rendering mathematical equations as LaTeX
-:::
-
-::: {.g-col-6}
-### [Dataframe Module](dataframe.qmd)
-Dictionary-like container for equation data
-:::
-
-::: {.g-col-6}
-### [Pipe Commands](pipe-commands.qmd)
-Functional composition tools for mathematical operations
-:::
-
-::: {.g-col-6}
-### [Configuration](config.qmd)
-Global settings and localization management
-:::
-
-::: {.g-col-6}
-### [Pint-SymPy Bridge](pint-sympy.qmd)
-Unit registry and SymPy integration
-:::
-
-::: {.g-col-6}
-### [Localization](localization.qmd)
-Multi-language support for terms and units
-:::
-
-:::
-
-## Quick Navigation
-
-| Module | Key Functions | Purpose |
-|--------|---------------|---------|
-| `display` | `show_eqn()`, `config`, `check()` | Equation rendering and verification |
-| `dataframe` | `Dataframe` class | Data organization for equations |
-| `pipe_command` | `subs`, `N`, `convert_to`, `parse_expr` | Mathematical transformations |
-| `config` | Configuration management | Global settings |
-| `pint_sympy` | `unitregistry`, `update_pint_locale()` | Units and localization |
-
-## Import Structure
-
-Keecas follows a star import pattern for convenience:
-
-```python
-from keecas import *
-# Provides: symbols, u, pc, show_eqn, config, check, Dataframe
-# Plus: latex, Eq, Le, Ge, Lt, Gt, Ne, platex
-```
-
-## Common Usage Patterns
-
-### Basic Calculation
-```python
-from keecas import symbols, u, pc, show_eqn
-
-F, A, sigma = symbols(r"F, A, \sigma")
-_p = {F: 100*u.kN, A: 20*u.cm**2}
-_e = {sigma: "F/A" | pc.parse_expr}
-_v = {k: v | pc.subs(_p|_e) | pc.convert_to([u.MPa]) | pc.N for k,v in _e.items()}
-
-show_eqn([_p|_e, _v])
-```
-
-### Configuration
-```python
-from keecas import config
-
-config.language = 'it'    # Set language
-config.katex = True       # Enable KaTeX mode
-config.eq_prefix = 'eq-'  # Equation label prefix
-```
-
-### Verification
-```python
-from keecas import check
-
-result = check(0.85, 1.0)  # Pass: 0.85 < 1.0
-show_eqn({'safety': result})
-```
-
-## Next Steps
-
-- Browse individual module documentation for detailed function references
-- See [Examples](../user-guide/examples.qmd) for practical usage patterns
-- Check [Conventions](../user-guide/conventions.qmd) for best practices
+| | |
+| --- | --- |
+| [show_eqn](show_eqn.qmd#keecas.show_eqn) | Display mathematical equations as formatted LaTeX amsmath block. |
+| [check](check.qmd#keecas.check) | Engineering verification function with localized pass/fail indicators. |

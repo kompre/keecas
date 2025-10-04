@@ -390,7 +390,7 @@ def show_eqn(
     env_arg: str | None = None,
     **kwargs: Any,
 ) -> Markdown:
-    """Display mathematical equations as formatted LaTeX amsmath block.
+    r"""Display mathematical equations as formatted LaTeX amsmath block.
 
     Converts Python dictionaries containing symbolic expressions into rendered LaTeX
     equations suitable for Jupyter notebooks and Quarto documents. Supports multi-column
@@ -448,7 +448,7 @@ def show_eqn(
         sigma = symbols(r"\sigma")
         _e = {sigma: "F/A" | pc.parse_expr}
         _v = {k: v | pc.subs(_p | _e) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
-        show_eqn([_p, _e, _v])
+        show_eqn([_p|_e, _v])
         ```
 
         ```{python}

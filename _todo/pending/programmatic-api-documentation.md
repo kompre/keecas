@@ -622,7 +622,7 @@ Documentation is automatically rebuilt on every push to `main` via GitHub Action
 - ⏸️ Configuration system documented
 - ⏸️ All public API has docstrings
 
-## Current Status (2025-10-03)
+## Current Status (2025-10-04)
 
 **Phase 1 - COMPLETED**:
 1. ✅ Quartodoc and griffe dependencies (`quartodoc>=0.7.0,<0.8.0`, `griffe<1.0.0`)
@@ -630,23 +630,36 @@ Documentation is automatically rebuilt on every push to `main` via GitHub Action
    - `show_eqn()`: Multi-column layouts, formatting, environments (102 lines generated)
    - `check()`: Engineering verification with localization (88 lines generated)
 3. ✅ Config module documentation via comprehensive module-level docstring
-4. ✅ Quartodoc configuration in `docs/_quarto.yml`
+4. ✅ Quartodoc configuration in `docs/_quarto.yml` with Google parser and warning suppression
 5. ✅ Automation script `scripts/update_docs.py` working
 6. ✅ Documentation successfully generated:
    - `docs/api-reference/_generated/show_eqn.qmd`
    - `docs/api-reference/_generated/check.qmd`
+   - `docs/api-reference/_generated/dict_to_eq.qmd`
+   - `docs/api-reference/_generated/eq_to_dict.qmd`
    - `docs/api-reference/_sidebar.yml`
+7. ✅ GitHub Actions workflow updated to run API generation before rendering
 
 **Blockers Resolved**:
 1. Missing type annotation on `check()` test parameter → Fixed: `test: type = Le`
 2. Unicode symbols in docstrings (Windows cp1252 encoding) → Fixed: Replaced ≤,≥ with <=,>=
+3. Docstring parser mismatch → Fixed: Added `parser: google` to quartodoc config
+4. Rendered warnings → Fixed: Added `warning: false` to execute section
+
+**Known Limitations**:
+1. ⚠️ Quartodoc 0.7.6 renderer bug prevents documenting:
+   - Dataframe class and methods (UnboundLocalError in md_renderer.py:446)
+   - Pipe command functions (parameter rendering issues)
+   - Complex type signatures with certain parameter types
+2. ℹ️ Currently documenting only `display` module functions that work
+3. ℹ️ Full module expansion blocked until quartodoc 0.8+ or alternative tool
 
 **Remaining Work**:
-- Integrate generated docs into existing manual pages (use `{{< include >}}` directives)
-- Create `scripts/validate_docstrings.py` for pre-commit validation
-- Update GitHub Actions workflow to regenerate docs in CI
-- Add docstring conventions to CLAUDE.md
-- Expand to other modules (dataframe, pipe_command, config classes)
+- ⏸️ Expand to other modules (blocked by quartodoc renderer bug)
+- ⏸️ Integrate generated docs into existing manual pages (use `{{< include >}}` directives)
+- ⏸️ Create `scripts/validate_docstrings.py` for pre-commit validation
+- ⏸️ Add docstring conventions to CLAUDE.md
+- 🔄 Monitor quartodoc releases for bug fixes
 
 ## Dependencies
 - None (standalone task)
