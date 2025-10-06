@@ -203,24 +203,24 @@ def _format_check_template(template: str, **variables: Any) -> str:
 
 # check verification result
 def check(
-    lhs: Basic,
-    rhs: Basic,
+    lhs: int | float,
+    rhs: int | float,
     test: type = Le,
     template: TemplateChoice | None = None,
     success_template: str | None = None,
     failure_template: str | None = None,
     **kwargs: Any,
 ) -> Markdown:
-    """Engineering verification function with localized pass/fail indicators.
+    r"""Engineering verification function with localized pass/fail indicators.
 
-    Compares two expressions using a test function and displays a formatted
-    verification result with color-coded pass/fail indicators. Commonly used for
-    structural engineering checks where calculated values must not exceed allowable
-    limits. Returns a Markdown object depending on conditions (true or false).
+    Compares two expressions (already evaluated to numeric values) using a test function and displays a formatted
+    message based on the pass/fail status. Return message can be templated as Markdown object. The most common case is to be passed to a show_eqn function as secondary dict (the object will be formatted according to `cell_formatter` specification).
+    
+    NOTE: if the test cannot evaluate to either True or False, an error will be raised. Common cause for this is that one of the arguments passed are not in the numeric form, but still in symbolic form.
 
     Args:
-        lhs: Left-hand side expression (e.g., calculated stress or utilization ratio).
-        rhs: Right-hand side expression (e.g., allowable limit or capacity).
+        lhs: evaluated left-hand side expression (e.g., calculated stress or utilization ratio).
+        rhs: evaluated right-hand side expression (e.g., allowable limit or capacity).
         test: Comparison function from SymPy's relational module. Options:
             - Le: LessThan (default, less than or equal)
             - Ge: GreaterThan (greater than or equal)
@@ -248,20 +248,29 @@ def check(
 
         # Basic utilization check (calculated <= allowable)
         sigma_Sd, sigma_Rd = symbols(r"\sigma_{Sd}, \sigma_{Rd}")
-        _v = {sigma_Sd: 150*u.MPa, sigma_Rd: 200*u.MPa}
+        _p = {sigma_Sd: 150*u.MPa, sigma_Rd: 200*u.MPa}
 
-        utilization = sigma_Sd / sigma_Rd | pc.subs(_v) | pc.N
+        utilization = sigma_Sd / sigma_Rd | pc.subs(_p) | pc.N
         check(utilization, 1.0, test=Le)  # Check if <= 1.0 (passes)
         ```
 
         ```{python}
+        from keecas import show_eqn
+        
         # Capacity check (demand <= capacity)
         N_Ed, N_Rd = symbols(r"N_{Ed}, N_{Rd}")
-        _v = {N_Ed: 850*u.kN, N_Rd: 1200*u.kN}
+        _p = {N_Ed: 850*u.kN, N_Rd: 1200*u.kN}
+        
+        _e = {
+            k: k | pc.subs(_p) | pc.N for k in [N_Ed/N_Rd]
+        }
+        
+        _c = {
+            k: check(v, 1.0) for k, v in _e.items()
+        }
 
-        demand = N_Ed | pc.subs(_v) | pc.N
-        capacity = N_Rd | pc.subs(_v) | pc.N
-        check(demand, capacity, test=Le)
+        # use along show_eqn
+        show_eqn([_p | _e, _c])
         ```
 
         ```{python}
@@ -270,10 +279,20 @@ def check(
         _v = {tau_Sd: 45*u.MPa, tau_Rd: 50*u.MPa}
 
         # Check shear stress is less than limit
-        check(tau_Sd | pc.subs(_v) | pc.N, tau_Rd | pc.subs(_v) | pc.N, test=Le)
-
+        check(
+            tau_Sd | pc.subs(_v) | pc.N,
+            tau_Rd | pc.subs(_v) | pc.N,
+            test=Le
+        )
+        ```
+        
+        ```{python}
         # Check capacity is greater than demand (reverse comparison)
-        check(tau_Rd | pc.subs(_v) | pc.N, tau_Sd | pc.subs(_v) | pc.N, test=Ge)
+        check(
+            tau_Rd | pc.subs(_v) | pc.N,
+            tau_Sd | pc.subs(_v) | pc.N,
+            test=Ge
+        )
         ```
 
         ```{python}
@@ -287,8 +306,11 @@ def check(
 
         ```{python}
         # Custom templates for different visual styles
-        check(0.85, 1.0, template="boxed")    # Boxed result
-        check(0.85, 1.0, template="minimal")  # Minimal formatting
+        from IPython.display import display
+        
+        # tip: use display() to show output for mid-cell statements
+        display(check(0.85, 1.0, template="boxed") )   # Boxed result
+        display(check(0.85, 1.0, template="minimal") ) # Minimal formatting
         check(0.85, 1.0, template="default")  # Standard formatting
         ```
 
@@ -298,7 +320,7 @@ def check(
         - translate(): Low-level translation function
 
     Notes:
-        - Returns green indicator for passing checks, red for failing
+        - Returns green indicator for passing checks, red for failing (default template)
         - Verification text ("VERIFIED"/"NOT_VERIFIED") automatically localized per config.language
         - Supports 10 languages: de, es, fr, it, pt, da, nl, no, sv, en
         - Template variables allow full customization of output format
@@ -403,7 +425,7 @@ def show_eqn(
             a dict or EnvironmentDefinition object for custom environments.
             Defaults to config.latex.default_environment.
         sep: Separator(s) between cells in the amsmath block (e.g. `LHS & RHS & ...`). Can be string or list of strings
-            for per-column customization. Defaults to environment's default separator
+            for finer customization (separator goes in between each column, so first separator is between first and second column, etc). Defaults to environment's default separator
             (None uses environment default: "&" for align, "" for equation/gather).
         label: Label(s) for cross-referencing equations. Can be string (single label) or
             dict mapping symbols to label strings. Labels formatted as {eq_prefix}{label}{eq_suffix}.
@@ -411,17 +433,16 @@ def show_eqn(
         label_command: LaTeX label command (e.g., r"\label"). Defaults to config.latex.default_label_command.
         col_wrap: Column wrapping specifications for LaTeX formatting. Can be str, dict, list, Dataframe, or 2 element tuple. 
             When a 2 element tuple is given `(seed, filler)`, `seed` will be used to create a Dataframe with `filler` as default value.
-            List elements can be None (no wrapping), str (prefix only), or tuple (prefix, suffix).
+            List elements can be None (no wrapping), str (prefix only), tuple (prefix, suffix), or Callable.
             Defaults to config.col_wrap.
         float_format: Format specification for float values (it will not affect int). Can be str (applied to all floats), list of str (per column formatting), dict (per row formatting), dict of list or Dataframe (per cell formatting). 
             When a 2 element tuple is given `(seed, filler)`, `seed` will be used to create a Dataframe with `filler` as default value.
             Supports format specs with or without braces (e.g., ".3f" or "{:.3f}").
             Defaults to config.display.default_float_format.
-        cell_formatter: Custom cell value formatter function(s). Can be single Callable[(value, col_index) -> str],
-            dict mapping columns to formatters, list of formatters per column, Dataframe of formatters,
-            or tuple (formatters, default). Defaults to config.display.cell_formatter.
+        cell_formatter: Custom cell value formatter function(s). Can be single Callable[(value, col_index) -> str] (applied to all cells),
+            list of Callable (applied to each cell in a column), dict of Callable (applied to each cell in a row if key matches), dict of list of Callable or Dataframe for cell specific formatting, or tuple (formatters, default). Defaults to config.display.cell_formatter.
         row_formatter: Custom row-level formatter function(s). Can be single Callable[(row_latex_str) -> str]
-            or dict mapping symbol keys to formatters. Defaults to config.display.row_formatter.
+            or dict mapping symbol keys to formatters. It applies to the composed entire row (str). Defaults to config.display.row_formatter.
         debug: Enable debug mode to print generated LaTeX source code. Defaults to config.display.debug.
         env_arg: Optional environment argument (e.g., "{2}" for alignat{2}). User provides complete
             argument string including braces.
@@ -438,41 +459,110 @@ def show_eqn(
         from keecas import symbols, u, pc, show_eqn
 
         # Basic parameter display
-        F, A = symbols(r"F, A")
-        _p = {F: 100*u.kN, A: 20*u.cm**2}
+        F, A_load = symbols(r"F, A_{load}")
+        
+        _p = {
+            F: 100*u.kN,
+            A_load: 20*u.cm**2
+        }
+        
         show_eqn(_p)
         ```
 
         ```{python}
         # Multi-column with expressions and values
         sigma = symbols(r"\sigma")
-        _e = {sigma: "F/A" | pc.parse_expr}
+        
+        _e = {
+            sigma: "F/A_load" | pc.parse_expr
+        }
+        
         _v = {k: v | pc.subs(_p | _e) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
+        
         show_eqn([_p|_e, _v])
         ```
 
         ```{python}
         # Custom formatting and labels
-        _l = {sigma: 'stress-calc'}
-        _f = {sigma: '.2f'}  # Per-symbol float format
-        show_eqn([_e, _v], float_format=_f, label=_l)
+        
+        from keecas import config
+        
+        config.display.print_label = True
+        
+        # label dictionary
+        _l = {
+            F: 'force',
+            A_load: 'area',
+            sigma: 'stress-calc',
+        }
+        
+        # specific float formatting
+        _f = {
+            F: '{:.1f}', # applied to all element in the row
+            A_load: '{:.2f}', # applied to all element in the row
+            sigma: [None, None, '.3f'], # per cell formatting
+        }
+        
+        show_eqn([_p|_e, _v], float_format=_f, label=_l)
         ```
-
+        
+        ```{python}
+        # Custom formatting and description
+        
+        from keecas import config
+        
+        config.display.print_label = True
+        
+        # short description
+        _d = {
+            F: 'applied force',
+            A_load: 'area of application',
+            sigma: 'stress',
+        }
+        
+        # use hash function to create unique labels
+        _l = {k: hash(v) for k,v in _d.items()}
+        
+        show_eqn(
+            [_p|_e, _v, _d], 
+            float_format=['', '.2f', '.4f'], 
+            # float_format='.2f', 
+            label=_l
+        )
+        ```
+        
         ```{python}
         # Different environments
-        show_eqn(_p, environment="equation")  # Single equation
+        from IPython.display import display
+        
+        # tip: if show_eqn used mid-cell, use display() to emit rendered output to notebook
+        display(show_eqn(_p, environment="align"))  # aligned at '=' sign
         show_eqn(_p, environment="gather")    # Centered, no alignment
         ```
 
         ```{python}
-        # Custom environment with spacing
+        # Custom environment with parentheses
         custom_env = {
             "separator": "&",
-            "line_separator": r" \\[0.5em]" + "\n ",
+            "line_separator": r" \\ ",
             "supports_multiple_labels": True,
-            "outer_environment": "align"
+            "outer_environment": "align",
+            "inner_environment": "aligned",
+            "inner_prefix": r"\left(",
+            "inner_suffix": r"\right)",
         }
         show_eqn([_e, _v], environment=custom_env)
+        ```
+        
+        ```{python}
+        # Custom environment for one-line display
+        one_line_env = {
+            "separator": " ",
+            "line_separator": r";\quad ",
+            "supports_multiple_labels": False,
+            "outer_environment": "equation",
+        }
+        show_eqn([_p|_e, _v], environment=one_line_env)
         ```
 
     See Also:
@@ -485,8 +575,8 @@ def show_eqn(
         - LaTeX output respects config.katex setting (disables labels for KaTeX compatibility)
         - Float formatting supports format specs with or without braces: ".3f" or "{:.3f}"
         - Environment separator defaults to None (uses environment-specific default)
-        - Multi-column layouts support per-column formatting via structured float_format
         - Labels use config.latex.eq_prefix and eq_suffix for consistent referencing
+        - use config.print_label=True to display resulting label to be used for referencing (it will display the label even in KaTeX mode)
     """
 
     # set default values
@@ -567,10 +657,6 @@ def show_eqn(
     num_cols = eqns.width + 1
 
     ### create float_format Dataframe
-    # Convert to Dataframe (same logic as eqns)
-    if isinstance(float_format, list):
-        float_format = Dataframe(float_format)
-
     # if float_format is a tuple, then the second value of the tuple is assumed to be the default_value
     float_format = create_dataframe(
         seed=float_format[0] if isinstance(float_format, tuple) else float_format,

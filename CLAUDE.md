@@ -8,6 +8,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
+### Documentation
+For guidelines on writing API documentation with Google-style docstrings for quartodoc:
+- See **[DOCSTRINGS.md](DOCSTRINGS.md)** for comprehensive guidelines and templates
+- All API reference functions must follow these standards
+- Examples should be tutorial-quality and demonstrate idiomatic usage
+
 ### Testing
 ```bash
 pytest

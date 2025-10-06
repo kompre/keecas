@@ -567,7 +567,11 @@ def test_pint_locale_initialization():
     from keecas.localization.pint_locale import _get_locale_from_keecas
     from keecas.localization import get_language
     from keecas import config
-
+    
+    # this test is failing because is reading the config from the global config file present on this machine.
+    # to properly test this we should create a new temporary config file for this test, or set the config at runtime.
+    
+    
     # Test that the function works
     locale_str = _get_locale_from_keecas()
     assert isinstance(locale_str, str)
