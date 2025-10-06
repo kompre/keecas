@@ -5,6 +5,11 @@ website:
     - contents:
       - api-reference//show_eqn.qmd
       - api-reference//check.qmd
-      section: Display Module quartodoc
+      - api-reference//format_decimal_numbers.qmd
+      section: Display Module
+    - contents:
+      - api-reference//Dataframe.qmd
+      - api-reference//create_dataframe.qmd
+      section: Dataframe Module
     id: api-reference/
   - id: dummy-sidebar

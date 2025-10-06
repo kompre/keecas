@@ -1,0 +1,93 @@
+# Dataframe { #keecas.dataframe.Dataframe }
+
+`Dataframe(self, *args, filler=None, **kwargs)`
+
+
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [length](#keecas.dataframe.Dataframe.length) | Number of rows in the Dataframe. |
+| [shape](#keecas.dataframe.Dataframe.shape) | Shape of the Dataframe as (columns, rows). |
+| [width](#keecas.dataframe.Dataframe.width) | Number of columns in the Dataframe. |
+
+## Methods
+
+| Name | Description |
+| --- | --- |
+| [append](#keecas.dataframe.Dataframe.append) | Append a single row to the Dataframe. |
+| [dict_repr](#keecas.dataframe.Dataframe.dict_repr) | Get string representation as a regular dictionary. |
+| [extend](#keecas.dataframe.Dataframe.extend) | Extend the Dataframe by adding multiple rows from another source. |
+| [print_dict](#keecas.dataframe.Dataframe.print_dict) | Print the Dataframe as a regular dictionary. |
+| [update](#keecas.dataframe.Dataframe.update) | Update the Dataframe with new data, extending width as needed. |
+
+### append { #keecas.dataframe.Dataframe.append }
+
+`append(other, strict=True)`
+
+Append a single row to the Dataframe.
+
+#### Parameters
+
+| Name     | Type                                        | Description                                                                                                                                                                      | Default    |
+|----------|---------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| `other`  | 'Dataframe' \| dict\[Hashable, Any\] \| Any | Data to append as a new row. Can be:   - Dataframe: Uses first row of the other Dataframe   - Dict: Uses values from the dictionary   - Any: Uses the same value for all columns | _required_ |
+| `strict` | bool                                        | If True, only considers keys that exist in self                                                                                                                                  | `True`     |
+
+#### Note
+
+This adds exactly one row, increasing width by 1 only if there are keys to append to.
+
+### dict_repr { #keecas.dataframe.Dataframe.dict_repr }
+
+`dict_repr()`
+
+Get string representation as a regular dictionary.
+
+### extend { #keecas.dataframe.Dataframe.extend }
+
+`extend(other, strict=True)`
+
+Extend the Dataframe by adding multiple rows from another source.
+
+#### Parameters
+
+| Name     | Type                                                | Description                                                                                                                                                                       | Default    |
+|----------|-----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| `other`  | 'Dataframe' \| dict\[Hashable, Any\] \| list\[Any\] | Data to extend with. Can be:   - Dataframe: Adds all rows from the other Dataframe   - Dict: Converts to Dataframe and extends   - List: Extends each column with the list values | _required_ |
+| `strict` | bool                                                | If True, only considers keys that exist in self                                                                                                                                   | `True`     |
+
+#### Raises
+
+| Type       | Description                                    |
+|------------|------------------------------------------------|
+| ValueError | If other is not a supported type for extension |
+
+### print_dict { #keecas.dataframe.Dataframe.print_dict }
+
+`print_dict()`
+
+Print the Dataframe as a regular dictionary.
+
+### update { #keecas.dataframe.Dataframe.update }
+
+`update(*args, **kwargs)`
+
+Update the Dataframe with new data, extending width as needed.
+
+Similar to dict.update() but maintains tabular structure by ensuring
+all columns have consistent length after the update.
+
+#### Parameters
+
+| Name       | Type   | Description                                           | Default   |
+|------------|--------|-------------------------------------------------------|-----------|
+| `*args`    | Any    | Positional arguments (expects at most one dictionary) | `()`      |
+| `**kwargs` | Any    | Keyword arguments representing new column data        | `{}`      |
+
+#### Raises
+
+| Type      | Description                                      |
+|-----------|--------------------------------------------------|
+| TypeError | If more than one positional argument is provided |

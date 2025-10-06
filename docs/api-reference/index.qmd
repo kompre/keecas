@@ -1,10 +1,18 @@
 # Function reference {.doc .doc-index}
 
-## Display Module quartodoc
+## Display Module
 
 LaTeX equation rendering and formatting
 
 | | |
 | --- | --- |
-| [show_eqn](show_eqn.qmd#keecas.show_eqn) | Display mathematical equations as formatted LaTeX amsmath block. |
-| [check](check.qmd#keecas.check) | Engineering verification function with localized pass/fail indicators. |
+| [show_eqn](show_eqn.qmd#keecas.display.show_eqn) | Display mathematical equations as formatted LaTeX amsmath block. |
+| [check](check.qmd#keecas.display.check) | Engineering verification function with localized pass/fail indicators. |
+| [format_decimal_numbers](format_decimal_numbers.qmd#keecas.display.format_decimal_numbers) | Format all decimal numbers in a LaTeX string with specified precision. |
+
+## Dataframe Module
+
+| | |
+| --- | --- |
+| [Dataframe](Dataframe.qmd#keecas.dataframe.Dataframe) |  |
+| [create_dataframe](create_dataframe.qmd#keecas.dataframe.create_dataframe) | Create a Dataframe with specified keys and width, initialized with seed values. |

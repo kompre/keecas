@@ -19,16 +19,26 @@ quartodoc:
     style: markdown
     show_signature: true
     show_signature_annotations: false
-
+  
+  options:
+    signature_name: short
+  
   # Documentation structure
   # Note: Some functions excluded due to quartodoc 0.7.6 renderer bug
   # See: _todo/pending/programmatic-api-documentation.md
   sections:
-    - title: Display Module quartodoc
+    - title: Display Module
       desc: LaTeX equation rendering and formatting
+      package: keecas.display
       contents:
         - name: show_eqn
         - name: check
+        - name: format_decimal_numbers
+    - title: Dataframe Module
+      package: keecas.dataframe
+      contents:
+        - name: Dataframe
+        - name: create_dataframe
 
 metadata-files: 
   - "api-reference/_sidebar.yml"

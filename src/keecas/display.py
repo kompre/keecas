@@ -787,21 +787,89 @@ def wrap_floats(text: str, wrapper: tuple[str, str] = ("", "")) -> str:
 def format_decimal_numbers(
     text: str | None, format_string: str | None = None
 ) -> str | None:
-    """
-    Finds all decimal numbers in a string, applies a specified format,
-    and substitutes them back into the string.
+    r"""Format all decimal numbers in a LaTeX string with specified precision.
+
+    Searches for decimal numbers in LaTeX strings and applies Python format
+    specifications to control precision and display. Used internally by
+    show_eqn() for cell-level formatting but available for custom LaTeX
+    string manipulation.
+
+    NOTE: Only matches standard decimal notation (e.g., "1.234", "-0.567").
+    Does not match scientific notation or integers without decimal points.
 
     Args:
-        text: The string to search for decimal numbers.
-        format_string: The format string to apply (e.g., ".3f", "{:.3f}", ":0.3f").
-                      Supports shorthand notation - will be normalized to full format.
-                      If None, no formatting is applied.
+        text: LaTeX string containing decimal numbers to format. If None,
+            returns None unchanged.
+        format_string: Python format specification for float formatting.
+            Supports flexible notation:
+            - ".3f" (shorthand, common usage)
+            - "{:.3f}" (full format string)
+            - ":0.3f" (with zero-padding)
+            If None, returns text unchanged. Defaults to None.
 
     Returns:
-        The formatted string.
+        LaTeX string with all decimal numbers formatted according to
+        format_string, or None if text is None.
 
     Raises:
-        ValueError: If format_string is invalid or cannot format numbers.
+        ValueError: If format_string is invalid or cannot format floats.
+
+    Examples:
+        ```{python}
+        from keecas.display import format_decimal_numbers
+
+        # Basic usage with shorthand notation
+        latex = r"\sigma = 1.23456 \text{ MPa}"
+        formatted = format_decimal_numbers(latex, ".2f")
+        print(formatted)
+        ```
+
+        ```{python}
+        # Multiple decimal numbers in one string
+        latex = r"F = 100.567 \text{ kN}, A = 20.123 \text{ cm}^2"
+        formatted = format_decimal_numbers(latex, ".1f")
+        print(formatted)
+        ```
+
+        ```{python}
+        # Different format specifications
+        latex = r"\alpha = 3.14159"
+
+        # Standard precision
+        print(format_decimal_numbers(latex, ".3f"))
+
+        # Scientific notation
+        print(format_decimal_numbers(latex, ".2e"))
+
+        # Zero-padding
+        print(format_decimal_numbers(latex, "06.2f"))
+        ```
+
+        ```{python}
+        # Integration with show_eqn workflow
+        from keecas import symbols, u, show_eqn
+        from sympy import latex
+
+        # tip: use for custom post-processing of LaTeX strings
+        sigma = symbols(r"\sigma")
+        value_latex = latex(5.123456 * u.MPa)
+
+        # Format specific parts before display
+        formatted_latex = format_decimal_numbers(value_latex, ".2f")
+        print(formatted_latex)
+        ```
+
+    See Also:
+        - show_eqn(): Main display function with built-in float formatting
+        - config.display.default_float_format: Global default format setting
+
+    Notes:
+        - Only matches decimal numbers (requires decimal point)
+        - Negative numbers supported (matches leading minus sign)
+        - Format string automatically normalized from shorthand to full format
+        - Returns None unchanged if either text or format_string is None
+        - Used internally by show_eqn() for per-cell formatting
+        - Regex pattern: r"-?\d+\.\d+" (matches standard decimal notation)
     """
     if text is None or format_string is None:
         return text

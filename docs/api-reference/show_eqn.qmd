@@ -1,4 +1,4 @@
-# show_eqn { #keecas.show_eqn }
+# show_eqn { #keecas.display.show_eqn }
 
 `show_eqn(eqns, environment=None, sep=None, label=None, label_command=None, col_wrap=None, float_format=None, cell_formatter=None, row_formatter=None, debug=None, env_arg=None, **kwargs)`
 

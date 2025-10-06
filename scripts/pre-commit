@@ -20,7 +20,7 @@ if [ -n "$python_changed" ]; then
     echo -e "${YELLOW}🐍 Validating docstrings for changed Python files...${NC}"
 
     # Run docstring validation
-    if ! python scripts/validate_docstrings.py; then
+    if ! uv run python scripts/validate_docstrings.py; then
         echo -e "${RED}❌ Docstring validation failed${NC}"
         echo -e "${RED}   Add docstrings to modified functions or use: git commit --no-verify${NC}"
         exit 1

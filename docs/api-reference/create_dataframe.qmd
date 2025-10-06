@@ -1,0 +1,28 @@
+# create_dataframe { #keecas.dataframe.create_dataframe }
+
+`create_dataframe(keys, width, seed=None, default_value=None)`
+
+Create a Dataframe with specified keys and width, initialized with seed values.
+
+## Parameters
+
+| Name            | Type                                                             | Description                                                                                                                                                                                                                                                                                                                  | Default    |
+|-----------------|------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| `keys`          | list\[Hashable\]                                                 | List of keys (row labels) for the dataframe                                                                                                                                                                                                                                                                                  | _required_ |
+| `width`         | int                                                              | Number of columns (width) for the dataframe                                                                                                                                                                                                                                                                                  | _required_ |
+| `seed`          | Any \| list\[Any\] \| dict\[Hashable, Any\] \| Dataframe \| None | Initial values to populate the dataframe. Can be: - Scalar: Same value repeated across all cells - List: Values applied to all rows, padded with default_value - Dict: Per-key initialization (supports mixed list/scalar values) - Dataframe: Copy values from existing dataframe - None: Fill all cells with default_value | `None`     |
+| `default_value` | Any                                                              | Value used to fill missing entries                                                                                                                                                                                                                                                                                           | `None`     |
+
+## Returns
+
+| Type      | Description                                           |
+|-----------|-------------------------------------------------------|
+| Dataframe | New Dataframe with specified shape and initial values |
+
+## Example
+
+>>> create_dataframe(['x', 'y'], 3, seed=0)
+Dataframe({'x': [0, 0, 0], 'y': [0, 0, 0]}, shape=(2, 3))
+
+>>> create_dataframe(['a', 'b'], 2, seed=[1, 2], default_value=-1)
+Dataframe({'a': [1, 2], 'b': [1, 2]}, shape=(2, 2))

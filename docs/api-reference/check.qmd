@@ -1,4 +1,4 @@
-# check { #keecas.check }
+# check { #keecas.display.check }
 
 `check(lhs, rhs, test=Le, template=None, success_template=None, failure_template=None, **kwargs)`
 
