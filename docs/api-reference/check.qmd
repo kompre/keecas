@@ -4,17 +4,17 @@
 
 Engineering verification function with localized pass/fail indicators.
 
-Compares two expressions using a test function and displays a formatted
-verification result with color-coded pass/fail indicators. Commonly used for
-structural engineering checks where calculated values must not exceed allowable
-limits. Returns a Markdown object depending on conditions (true or false).
+Compares two expressions (already evaluated to numeric values) using a test function and displays a formatted
+message based on the pass/fail status. Return message can be templated as Markdown object. The most common case is to be passed to a show_eqn function as secondary dict (the object will be formatted according to `cell_formatter` specification).
+
+NOTE: if the test cannot evaluate to either True or False, an error will be raised. Common cause for this is that one of the arguments passed are not in the numeric form, but still in symbolic form.
 
 ## Parameters
 
 | Name               | Type                   | Description                                                                                                                                                                                                                                                                                                           | Default    |
 |--------------------|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
-| `lhs`              | Basic                  | Left-hand side expression (e.g., calculated stress or utilization ratio).                                                                                                                                                                                                                                             | _required_ |
-| `rhs`              | Basic                  | Right-hand side expression (e.g., allowable limit or capacity).                                                                                                                                                                                                                                                       | _required_ |
+| `lhs`              | int \| float           | evaluated left-hand side expression (e.g., calculated stress or utilization ratio).                                                                                                                                                                                                                                   | _required_ |
+| `rhs`              | int \| float           | evaluated right-hand side expression (e.g., allowable limit or capacity).                                                                                                                                                                                                                                             | _required_ |
 | `test`             | type                   | Comparison function from SymPy's relational module. Options: - Le: LessThan (default, less than or equal) - Ge: GreaterThan (greater than or equal) - Lt: StrictLessThan (strictly less than) - Gt: StrictGreaterThan (strictly greater than) - Eq: Equality - Ne: Unequality Defaults to Le (less than or equal to). | `Le`       |
 | `template`         | TemplateChoice \| None | Named template set for formatting. Options: "default", "boxed", "minimal". Controls visual presentation of verification result.                                                                                                                                                                                       | `None`     |
 | `success_template` | str \| None            | Custom template string for passing checks. Available variables: {symbol}, {rhs}, {verified_text}, {color}, {test_result}, {result_text}.                                                                                                                                                                              | `None`     |
@@ -35,32 +35,51 @@ from sympy import Le, Ge
 
 # Basic utilization check (calculated <= allowable)
 sigma_Sd, sigma_Rd = symbols(r"\sigma_{Sd}, \sigma_{Rd}")
-_v = {sigma_Sd: 150*u.MPa, sigma_Rd: 200*u.MPa}
+_p = {sigma_Sd: 150*u.MPa, sigma_Rd: 200*u.MPa}
 
-utilization = sigma_Sd / sigma_Rd | pc.subs(_v) | pc.N
+utilization = sigma_Sd / sigma_Rd | pc.subs(_p) | pc.N
 check(utilization, 1.0, test=Le)  # Check if <= 1.0 (passes)
 ```
 
 ```{python}
+from keecas import show_eqn
+
 # Capacity check (demand <= capacity)
 N_Ed, N_Rd = symbols(r"N_{Ed}, N_{Rd}")
-_v = {N_Ed: 850*u.kN, N_Rd: 1200*u.kN}
+_p = {N_Ed: 850*u.kN, N_Rd: 1200*u.kN}
 
-demand = N_Ed | pc.subs(_v) | pc.N
-capacity = N_Rd | pc.subs(_v) | pc.N
-check(demand, capacity, test=Le)
+_e = {
+    k: k | pc.subs(_p) | pc.N for k in [N_Ed/N_Rd]
+}
+
+_c = {
+    k: check(v, 1.0) for k, v in _e.items()
+}
+
+# use along show_eqn
+show_eqn([_p | _e, _c])
 ```
 
 ```{python}
 # Multiple checks with different tests
-tau_Sd, tau_Rd = symbols(r"     au_{Sd},        au_{Rd}")
+tau_Sd, tau_Rd = symbols(r"\tau_{Sd}, \tau_{Rd}")
 _v = {tau_Sd: 45*u.MPa, tau_Rd: 50*u.MPa}
 
 # Check shear stress is less than limit
-check(tau_Sd | pc.subs(_v) | pc.N, tau_Rd | pc.subs(_v) | pc.N, test=Le)
+check(
+    tau_Sd | pc.subs(_v) | pc.N,
+    tau_Rd | pc.subs(_v) | pc.N,
+    test=Le
+)
+```
 
+```{python}
 # Check capacity is greater than demand (reverse comparison)
-check(tau_Rd | pc.subs(_v) | pc.N, tau_Sd | pc.subs(_v) | pc.N, test=Ge)
+check(
+    tau_Rd | pc.subs(_v) | pc.N,
+    tau_Sd | pc.subs(_v) | pc.N,
+    test=Ge
+)
 ```
 
 ```{python}
@@ -74,8 +93,11 @@ check(utilization, 1.0, test=Le)  # Shows "VERIFICATO" in Italian
 
 ```{python}
 # Custom templates for different visual styles
-check(0.85, 1.0, template="boxed")    # Boxed result
-check(0.85, 1.0, template="minimal")  # Minimal formatting
+from IPython.display import display
+
+# tip: use display() to show output for mid-cell statements
+display(check(0.85, 1.0, template="boxed") )   # Boxed result
+display(check(0.85, 1.0, template="minimal") ) # Minimal formatting
 check(0.85, 1.0, template="default")  # Standard formatting
 ```
 
@@ -87,7 +109,7 @@ check(0.85, 1.0, template="default")  # Standard formatting
 
 ## Notes
 
-- Returns green indicator for passing checks, red for failing
+- Returns green indicator for passing checks, red for failing (default template)
 - Verification text ("VERIFIED"/"NOT_VERIFIED") automatically localized per config.language
 - Supports 10 languages: de, es, fr, it, pt, da, nl, no, sv, en
 - Template variables allow full customization of output format

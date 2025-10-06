@@ -434,14 +434,42 @@ class ConfigManager:
     """
 
     def __init__(self):
-        self._options = ConfigOptions()
-        # Set back-reference for language propagation
-        self._options._config_manager_ref = self
-        self._options.language_config._config_manager_ref = self
+        """Initialize ConfigManager - always succeeds even with broken configs."""
+        # Path setup - always works
         self._global_config_path = self._get_global_config_path()
         self._local_config_path = self._get_local_config_path()
+
+        # State tracking
+        self._configs_loaded = False
+        self._load_error = None  # Store error for helpful messages
         self._loaded_files = []
-        self.load_configs()
+
+        # Try to load configs, but don't fail if broken
+        try:
+            self._options = ConfigOptions()
+            # Set back-reference for language propagation
+            self._options._config_manager_ref = self
+            self._options.language_config._config_manager_ref = self
+            self.load_configs()
+            self._configs_loaded = True
+        except Exception as e:
+            # Store error but continue - path-only operations still work
+            self._load_error = e
+            # Create minimal options for path-only operations
+            self._options = ConfigOptions()
+            self._options._config_manager_ref = self
+            self._options.language_config._config_manager_ref = self
+
+    def _ensure_loaded(self) -> None:
+        """Ensure configs are loaded, raise helpful error if broken."""
+        if self._load_error:
+            raise RuntimeError(
+                f"Configuration could not be loaded: {self._load_error}\n"
+                f"To fix: keecas config init --force [--global|--local]"
+            )
+        if not self._configs_loaded:
+            self.load_configs()
+            self._configs_loaded = True
 
     def _get_global_config_path(self) -> Path:
         """Get path to global configuration file."""
@@ -578,6 +606,7 @@ class ConfigManager:
         bool
             True if saved successfully, False otherwise
         """
+        self._ensure_loaded()
         config_path = self._global_config_path if global_config else self._local_config_path
 
         if config_path.exists() and not force:
@@ -750,7 +779,8 @@ class ConfigManager:
                     return toml.load(f)
             return {}
         else:
-            # Show merged configuration
+            # Show merged configuration - needs loaded config
+            self._ensure_loaded()
             return self._options.to_toml_dict()
 
     def reset_config(self, global_config: bool = False) -> bool:
@@ -779,6 +809,7 @@ class ConfigManager:
 
     def get_option(self, key: str, default: Any = None) -> Any:
         """Get configuration option value."""
+        self._ensure_loaded()
         return getattr(self._options, key, default)
 
     def set_option(self, key: str, value: Any, propagate: bool = True) -> None:
@@ -793,6 +824,7 @@ class ConfigManager:
         propagate : bool, optional
             Whether to propagate changes to affected subsystems
         """
+        self._ensure_loaded()
         if hasattr(self._options, key):
             setattr(self._options, key, value)
             if propagate:
@@ -802,6 +834,7 @@ class ConfigManager:
 
     def _propagate_changes(self, key: str, value: Any) -> None:
         """Propagate configuration changes to affected subsystems."""
+        self._ensure_loaded()
         # Language changes affect both Pint and LocalizationManager
         if key == "language" and value is not None:
             self._update_pint_language(value)
