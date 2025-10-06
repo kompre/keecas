@@ -57,7 +57,7 @@ jobs:
 
     - name: Generate API Documentation
       run: |
-        python scripts/update_docs.py
+        uv run python scripts/update_docs.py
 
     - name: Setup Pages
       id: pages
