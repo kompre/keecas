@@ -1,28 +1,73 @@
 # create_dataframe { #keecas.dataframe.create_dataframe }
 
-`create_dataframe(keys, width, seed=None, default_value=None)`
+```python
+create_dataframe(keys, width, seed=None, default_value=None)
+```
 
-Create a Dataframe with specified keys and width, initialized with seed values.
+Create a pre-sized Dataframe with specified shape and initial values.
 
-## Parameters
+Factory function for creating Dataframes with predetermined dimensions. Useful
+when you know the final structure upfront and want to initialize all cells with
+specific patterns or values.
 
-| Name            | Type                                                             | Description                                                                                                                                                                                                                                                                                                                  | Default    |
-|-----------------|------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
-| `keys`          | list\[Hashable\]                                                 | List of keys (row labels) for the dataframe                                                                                                                                                                                                                                                                                  | _required_ |
-| `width`         | int                                                              | Number of columns (width) for the dataframe                                                                                                                                                                                                                                                                                  | _required_ |
-| `seed`          | Any \| list\[Any\] \| dict\[Hashable, Any\] \| Dataframe \| None | Initial values to populate the dataframe. Can be: - Scalar: Same value repeated across all cells - List: Values applied to all rows, padded with default_value - Dict: Per-key initialization (supports mixed list/scalar values) - Dataframe: Copy values from existing dataframe - None: Fill all cells with default_value | `None`     |
-| `default_value` | Any                                                              | Value used to fill missing entries                                                                                                                                                                                                                                                                                           | `None`     |
+## Parameters {.doc-section .doc-section-parameters}
 
-## Returns
+| Name          | Type                                                             | Description                                                                                                                                                                                                                                                                                                                                           | Default    |
+|---------------|------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| keys          | list\[Hashable\]                                                 | List of keys (row labels) for the Dataframe. These become the symbol keys in LaTeX output when used with show_eqn().                                                                                                                                                                                                                                  | _required_ |
+| width         | int                                                              | Number of columns in the Dataframe (number of cells per row).                                                                                                                                                                                                                                                                                         | _required_ |
+| seed          | Any \| list\[Any\] \| dict\[Hashable, Any\] \| Dataframe \| None | Initial values to populate the Dataframe. Can be: - Scalar (Any): Same value repeated across all cells - list: Values applied to all rows, padded with default_value if shorter - dict: Per-row initialization (supports mixed list/scalar values per key) - Dataframe: Copy values from existing Dataframe - None: Fill all cells with default_value | `None`     |
+| default_value | Any                                                              | Value used to fill missing entries when seed doesn't cover all cells. Defaults to None.                                                                                                                                                                                                                                                               | `None`     |
 
-| Type      | Description                                           |
-|-----------|-------------------------------------------------------|
-| Dataframe | New Dataframe with specified shape and initial values |
+## Returns {.doc-section .doc-section-returns}
 
-## Example
+| Name   | Type      | Description                                                                   |
+|--------|-----------|-------------------------------------------------------------------------------|
+|        | Dataframe | New Dataframe with specified shape (len(keys), width) and initialized values. |
 
->>> create_dataframe(['x', 'y'], 3, seed=0)
-Dataframe({'x': [0, 0, 0], 'y': [0, 0, 0]}, shape=(2, 3))
+## Examples {.doc-section .doc-section-examples}
 
->>> create_dataframe(['a', 'b'], 2, seed=[1, 2], default_value=-1)
-Dataframe({'a': [1, 2], 'b': [1, 2]}, shape=(2, 2))
+```{python}
+from keecas import symbols
+from keecas.dataframe import create_dataframe
+
+# Create empty structure
+x, y = symbols(r"x, y")
+df = create_dataframe([x, y], width=3, seed=None)
+df
+```
+
+```{python}
+# Initialize with scalar seed
+df = create_dataframe([x, y], width=3, seed=0)
+df
+```
+
+```{python}
+# Initialize with list seed (same for all rows)
+df = create_dataframe([x, y], width=2, seed=[1, 2])
+df
+```
+
+```{python}
+# Per-row initialization with dict
+df = create_dataframe(
+    [x, y],
+    width=2,
+    seed={x: [10, 20], y: 99},  # x gets list, y gets scalar
+    default_value=-1
+)
+df
+```
+
+## See Also {.doc-section .doc-section-see-also}
+
+- Dataframe: Main class with initialization options
+- show_eqn(): Function that uses Dataframe for rendering
+
+## Notes {.doc-section .doc-section-notes}
+
+- All rows guaranteed to have exactly 'width' columns
+- List seed applies same list to all rows
+- Dict seed allows per-row customization
+- Useful for pre-allocating structure before filling with computed values

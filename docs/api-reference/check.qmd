@@ -1,6 +1,16 @@
 # check { #keecas.display.check }
 
-`check(lhs, rhs, test=Le, template=None, success_template=None, failure_template=None, **kwargs)`
+```python
+check(
+    lhs,
+    rhs,
+    test=Le,
+    template=None,
+    success_template=None,
+    failure_template=None,
+    **kwargs,
+)
+```
 
 Engineering verification function with localized pass/fail indicators.
 
@@ -9,25 +19,25 @@ message based on the pass/fail status. Return message can be templated as Markdo
 
 NOTE: if the test cannot evaluate to either True or False, an error will be raised. Common cause for this is that one of the arguments passed are not in the numeric form, but still in symbolic form.
 
-## Parameters
+## Parameters {.doc-section .doc-section-parameters}
 
-| Name               | Type                   | Description                                                                                                                                                                                                                                                                                                           | Default    |
-|--------------------|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
-| `lhs`              | int \| float           | evaluated left-hand side expression (e.g., calculated stress or utilization ratio).                                                                                                                                                                                                                                   | _required_ |
-| `rhs`              | int \| float           | evaluated right-hand side expression (e.g., allowable limit or capacity).                                                                                                                                                                                                                                             | _required_ |
-| `test`             | type                   | Comparison function from SymPy's relational module. Options: - Le: LessThan (default, less than or equal) - Ge: GreaterThan (greater than or equal) - Lt: StrictLessThan (strictly less than) - Gt: StrictGreaterThan (strictly greater than) - Eq: Equality - Ne: Unequality Defaults to Le (less than or equal to). | `Le`       |
-| `template`         | TemplateChoice \| None | Named template set for formatting. Options: "default", "boxed", "minimal". Controls visual presentation of verification result.                                                                                                                                                                                       | `None`     |
-| `success_template` | str \| None            | Custom template string for passing checks. Available variables: {symbol}, {rhs}, {verified_text}, {color}, {test_result}, {result_text}.                                                                                                                                                                              | `None`     |
-| `failure_template` | str \| None            | Custom template string for failing checks. Same variables as success_template.                                                                                                                                                                                                                                        | `None`     |
-| `**kwargs`         | Any                    | Additional keyword arguments: - language (str): Document-level language override (e.g., 'it', 'de', 'fr') - substitutions (dict): Custom translation dictionary for "VERIFIED"/"NOT_VERIFIED"                                                                                                                         | `{}`       |
+| Name             | Type                   | Description                                                                                                                                                                                                                                                                                                           | Default    |
+|------------------|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| lhs              | int \| float           | evaluated left-hand side expression (e.g., calculated stress or utilization ratio).                                                                                                                                                                                                                                   | _required_ |
+| rhs              | int \| float           | evaluated right-hand side expression (e.g., allowable limit or capacity).                                                                                                                                                                                                                                             | _required_ |
+| test             | type                   | Comparison function from SymPy's relational module. Options: - Le: LessThan (default, less than or equal) - Ge: GreaterThan (greater than or equal) - Lt: StrictLessThan (strictly less than) - Gt: StrictGreaterThan (strictly greater than) - Eq: Equality - Ne: Unequality Defaults to Le (less than or equal to). | `Le`       |
+| template         | TemplateChoice \| None | Named template set for formatting. Options: "default", "boxed", "minimal". Controls visual presentation of verification result.                                                                                                                                                                                       | `None`     |
+| success_template | str \| None            | Custom template string for passing checks. Available variables: {symbol}, {rhs}, {verified_text}, {color}, {test_result}, {result_text}.                                                                                                                                                                              | `None`     |
+| failure_template | str \| None            | Custom template string for failing checks. Same variables as success_template.                                                                                                                                                                                                                                        | `None`     |
+| **kwargs         | Any                    | Additional keyword arguments: - language (str): Document-level language override (e.g., 'it', 'de', 'fr') - substitutions (dict): Custom translation dictionary for "VERIFIED"/"NOT_VERIFIED"                                                                                                                         | `{}`       |
 
-## Returns
+## Returns {.doc-section .doc-section-returns}
 
-| Type     | Description                                                                 |
-|----------|-----------------------------------------------------------------------------|
-| Markdown | IPython.display.Markdown object that depends on conditions (true or false). |
+| Name   | Type     | Description                                                                 |
+|--------|----------|-----------------------------------------------------------------------------|
+|        | Markdown | IPython.display.Markdown object that depends on conditions (true or false). |
 
-## Examples
+## Examples {.doc-section .doc-section-examples}
 
 ```{python}
 from keecas import symbols, u, pc, check
@@ -101,13 +111,13 @@ display(check(0.85, 1.0, template="minimal") ) # Minimal formatting
 check(0.85, 1.0, template="default")  # Standard formatting
 ```
 
-## See Also
+## See Also {.doc-section .doc-section-see-also}
 
 - show_eqn(): Display mathematical equations
 - config: Global configuration for language and formatting
 - translate(): Low-level translation function
 
-## Notes
+## Notes {.doc-section .doc-section-notes}
 
 - Returns green indicator for passing checks, red for failing (default template)
 - Verification text ("VERIFIED"/"NOT_VERIFIED") automatically localized per config.language

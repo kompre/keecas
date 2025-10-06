@@ -254,3 +254,44 @@ def test_recovery_workflow(tmp_path, monkeypatch):
     merged_config = manager2.show_config()
     assert 'latex' in merged_config
     assert 'display' in merged_config
+
+
+def test_language_runtime_propagation(tmp_path, monkeypatch):
+    """Test that setting config.language at runtime propagates to localization system."""
+    monkeypatch.chdir(tmp_path)
+
+    # Create minimal valid config
+    config_file = tmp_path / ".keecas" / "config.toml"
+    config_file.parent.mkdir(parents=True)
+
+    valid_config = {
+        'language': {'disable_pint_locale': True}
+    }
+    with open(config_file, 'w') as f:
+        toml.dump(valid_config, f)
+
+    from keecas.config.manager import ConfigManager
+    from keecas.localization import get_language, translate
+
+    # Create fresh manager
+    manager = ConfigManager()
+    config = manager.options
+
+    # Initially no language set
+    assert config.language is None
+    assert get_language() == 'en'  # Default
+
+    # Set language at runtime
+    config.language = 'it'
+
+    # Verify propagation
+    assert config.language == 'it'
+    assert get_language() == 'it'
+    assert translate('VERIFIED') == 'VERIFICATO'
+    assert translate('NOT_VERIFIED') == 'NON VERIFICATO'
+
+    # Test changing to another language
+    config.language = 'de'
+    assert get_language() == 'de'
+    assert translate('VERIFIED') == 'BESTÄTIGT'
+    assert translate('NOT_VERIFIED') == 'NICHT BESTÄTIGT'

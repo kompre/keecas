@@ -863,7 +863,7 @@ class ConfigManager:
     def _update_localization_language(self, language: str) -> None:
         """Update LocalizationManager language."""
         try:
-            from .localization import set_language
+            from ..localization import set_language
             set_language(language)
         except ImportError:
             pass  # Module not available

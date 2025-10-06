@@ -4,6 +4,7 @@ project:
 quartodoc:
   # Package to document
   package: keecas
+  style: pkgdown
 
   # Docstring parser
   parser: google
@@ -17,9 +18,10 @@ quartodoc:
   # Rendering options
   renderer:
     style: markdown
-    show_signature: true
-    show_signature_annotations: false
-  
+    # show_signature: true
+    # show_signature_annotations: false
+    # table_style: description-list
+
   options:
     signature_name: short
   

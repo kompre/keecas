@@ -1,6 +1,8 @@
 # format_decimal_numbers { #keecas.display.format_decimal_numbers }
 
-`format_decimal_numbers(text, format_string=None)`
+```python
+format_decimal_numbers(text, format_string=None)
+```
 
 Format all decimal numbers in a LaTeX string with specified precision.
 
@@ -12,27 +14,27 @@ string manipulation.
 NOTE: Only matches standard decimal notation (e.g., "1.234", "-0.567").
 Does not match scientific notation or integers without decimal points.
 
-## Parameters
+## Parameters {.doc-section .doc-section-parameters}
 
-| Name            | Type        | Description                                                                                                                                                                                                                      | Default    |
-|-----------------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
-| `text`          | str \| None | LaTeX string containing decimal numbers to format. If None, returns None unchanged.                                                                                                                                              | _required_ |
-| `format_string` | str \| None | Python format specification for float formatting. Supports flexible notation: - ".3f" (shorthand, common usage) - "{:.3f}" (full format string) - ":0.3f" (with zero-padding) If None, returns text unchanged. Defaults to None. | `None`     |
+| Name          | Type        | Description                                                                                                                                                                                                                      | Default    |
+|---------------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| text          | str \| None | LaTeX string containing decimal numbers to format. If None, returns None unchanged.                                                                                                                                              | _required_ |
+| format_string | str \| None | Python format specification for float formatting. Supports flexible notation: - ".3f" (shorthand, common usage) - "{:.3f}" (full format string) - ":0.3f" (with zero-padding) If None, returns text unchanged. Defaults to None. | `None`     |
 
-## Returns
+## Returns {.doc-section .doc-section-returns}
 
-| Type        | Description                                                  |
-|-------------|--------------------------------------------------------------|
-| str \| None | LaTeX string with all decimal numbers formatted according to |
-| str \| None | format_string, or None if text is None.                      |
+| Name   | Type        | Description                                                  |
+|--------|-------------|--------------------------------------------------------------|
+|        | str \| None | LaTeX string with all decimal numbers formatted according to |
+|        | str \| None | format_string, or None if text is None.                      |
 
-## Raises
+## Raises {.doc-section .doc-section-raises}
 
-| Type       | Description                                          |
-|------------|------------------------------------------------------|
-| ValueError | If format_string is invalid or cannot format floats. |
+| Name   | Type       | Description                                          |
+|--------|------------|------------------------------------------------------|
+|        | ValueError | If format_string is invalid or cannot format floats. |
 
-## Examples
+## Examples {.doc-section .doc-section-examples}
 
 ```{python}
 from keecas.display import format_decimal_numbers
@@ -78,12 +80,12 @@ formatted_latex = format_decimal_numbers(value_latex, ".2f")
 print(formatted_latex)
 ```
 
-## See Also
+## See Also {.doc-section .doc-section-see-also}
 
 - show_eqn(): Main display function with built-in float formatting
 - config.display.default_float_format: Global default format setting
 
-## Notes
+## Notes {.doc-section .doc-section-notes}
 
 - Only matches decimal numbers (requires decimal point)
 - Negative numbers supported (matches leading minus sign)

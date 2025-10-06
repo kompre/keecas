@@ -30,12 +30,12 @@ Update documentation and API reference programmatically using Quarto autodoc to 
 ```toml
 # Add to pyproject.toml [dependency-groups.dev]
 "quartodoc>=0.7.0",
-"griffe>=0.36.0",  # Quartodoc's AST parser
 ```
 
 **Installation**:
 ```bash
-uv add --dev quartodoc griffe
+uv add --dev quartodoc
+# Note: griffe is automatically installed as quartodoc dependency - do NOT install manually
 ```
 
 ### 2. Create Quartodoc Configuration
@@ -573,7 +573,7 @@ Documentation is automatically rebuilt on every push to `main` via GitHub Action
 
 ## Implementation Steps
 
-1. **Add quartodoc dependency** to `pyproject.toml` using `uv add --dev quartodoc griffe`
+1. **Add quartodoc dependency** to `pyproject.toml` using `uv add --dev quartodoc` (griffe installed automatically)
 2. **Configure quartodoc** in `docs/_quarto.yml` (start with display.py only)
 3. **Improve docstrings** for display.py functions: `show_eqn()`, `check()`, `config` (use Quarto code blocks)
 4. **Create update script** (`scripts/update_docs.py`)
@@ -620,7 +620,7 @@ Documentation is automatically rebuilt on every push to `main` via GitHub Action
 ## Current Status (2025-10-06)
 
 **Phase 1 (display.py) - COMPLETED**:
-1. ✅ Quartodoc and griffe dependencies (`quartodoc>=0.7.0,<0.8.0`, `griffe<1.0.0`)
+1. ✅ Quartodoc dependency (`quartodoc>=0.7.0,<0.8.0`; griffe auto-installed as transitive dependency)
 2. ✅ Comprehensive Google-style docstrings with Quarto executable examples
    - `show_eqn()`: Multi-column layouts, formatting, environments (102 lines generated)
    - `check()`: Engineering verification with localization (88 lines generated)
