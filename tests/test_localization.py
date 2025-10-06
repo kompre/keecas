@@ -562,27 +562,54 @@ def test_word_boundary_protection():
 
 
 def test_pint_locale_initialization():
-    """Test that Pint locale respects disable_pint_locale config."""
+    """Test that Pint locale respects disable_pint_locale config.
+
+    This test validates:
+    1. The locale helper function works
+    2. unitregistry has locale capabilities
+    3. Runtime config changes affect locale behavior
+
+    Note: This test uses runtime config changes to test behavior without
+    requiring a clean isolated config environment.
+    """
     from keecas.pint_sympy import unitregistry
     from keecas.localization.pint_locale import _get_locale_from_keecas
-    from keecas.localization import get_language
-    from keecas import config
-    
-    # this test is failing because is reading the config from the global config file present on this machine.
-    # to properly test this we should create a new temporary config file for this test, or set the config at runtime.
-    
-    
-    # Test that the function works
-    locale_str = _get_locale_from_keecas()
-    assert isinstance(locale_str, str)
-    assert '_' in locale_str  # Should be format like 'en_US'
+    from keecas import config, update_pint_locale
 
-    # Test that unitregistry has locale attribute
-    assert hasattr(unitregistry.formatter, 'locale')
+    # Store original settings
+    original_disable = config.language_config.disable_pint_locale
+    original_mode = config.language_config.pint_language_mode
 
-    # By default, disable_pint_locale=True, so locale should be None
-    assert config.language_config.disable_pint_locale is True
-    assert unitregistry.formatter.locale is None
+    try:
+        # Test: locale helper function works
+        locale_str = _get_locale_from_keecas()
+        assert isinstance(locale_str, str)
+        assert '_' in locale_str  # Should be format like 'en_US'
+
+        # Test: unitregistry has locale attribute
+        assert hasattr(unitregistry.formatter, 'locale')
+
+        # Test: when disable_pint_locale=True, update_pint_locale does nothing
+        config.language_config.disable_pint_locale = True
+        unitregistry.formatter.set_locale(None)
+        update_pint_locale('en')
+        assert unitregistry.formatter.locale is None  # Should remain None
+
+        # Test: when disable_pint_locale=False and mode='auto', locale is set
+        config.language_config.disable_pint_locale = False
+        config.language_config.pint_language_mode = 'auto'
+        # Use 'it' instead of 'en' because 'en' has conservative behavior
+        # that skips setting locale if not explicitly configured
+        update_pint_locale('it')
+        assert unitregistry.formatter.locale is not None  # Should be set
+        assert unitregistry.formatter.locale.startswith('it_')  # Should be Italian
+
+    finally:
+        # Restore original settings
+        config.language_config.disable_pint_locale = original_disable
+        config.language_config.pint_language_mode = original_mode
+        # Reset locale to None to avoid test pollution
+        unitregistry.formatter.set_locale(None)
 
 
 def test_manual_pint_locale_update():
