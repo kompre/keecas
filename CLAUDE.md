@@ -239,10 +239,10 @@ _e = {
 # Preferred import style
 from keecas import symbols, u, pc, show_eqn, config, check
 
-# Configuration for Quarto/KaTeX
-config.katex = True                        # Disable \label{} for KaTeX compatibility
-config.print_label = True                  # Print labels in dev mode
-config.eq_prefix = r"eq-PREFIX-"           # Label prefixing
+# Configuration for Quarto
+config.display.katex = True                # Disable \label{} for KaTeX compatibility (Jupyter dev mode)
+config.display.print_label = True          # Print labels in dev mode
+config.latex.eq_prefix = r"eq-PREFIX-"     # Label prefixing
 config.display.default_float_format = ".3f"  # Default float formatting
 
 # Language and localization (automatic Pint sync)
@@ -400,7 +400,33 @@ For complete details, see `docs/CONVENTIONS.md`.
 ### Jupyter Notebook Integration
 - Primary use case is in Jupyter notebooks for engineering calculations
 - LaTeX output is rendered via IPython.display.Markdown
-- Supports both KaTeX (VS Code) and standard LaTeX rendering
+- **Rendering Engines**:
+  - **KaTeX** (VS Code Jupyter extension): Does not support `\label{}` commands
+  - **MathJax** (Quarto HTML output): Full support with AMS configuration
+- **Equation Numbering & Cross-references**:
+  - Set `config.display.katex = True` during Jupyter development to suppress `\label{}`
+  - Set `config.display.print_label = True` to display labels for easy copy-paste
+  - For Quarto HTML output with working labels, add MathJax AMS config to YAML frontmatter:
+    ```yaml
+    format:
+      html:
+        include-in-header:
+          - text: |
+              <script>
+              MathJax = { tex: { tags: 'ams' } };
+              </script>
+          - text: |
+              <style>
+              .math.display {
+                max-width: 100%;
+                padding-right: 3em;
+              }
+              </style>
+    ```
+  - The CSS prevents horizontal scrollbars by reserving space for equation numbers
+  - With this configuration, `\label{}`, `\ref{}`, and `\eqref{}` work correctly in HTML output
+  - PDF output always supports labels natively
+  - Use `\eqref{eq-label}` for parenthesized references: (1), or `\ref{eq-label}` for plain references: 1
 - Example notebooks: `examples/hello_world.ipynb`, `examples/quarto_example/quarto_example.ipynb`
 
 ### Quarto Examples and Automation
