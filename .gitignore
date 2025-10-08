@@ -25,6 +25,7 @@ _freeze/
 docs/_site/
 
 # Quartodoc generated files (only commit .qmd source)
-docs/api-reference/_generated/*.html
-docs/api-reference/_generated/*_files/
+docs/api-reference/*
 
+
+/.luarc.json

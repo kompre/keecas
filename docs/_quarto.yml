@@ -37,7 +37,6 @@ interlinks:
   autolink: true
   aliases:
     keecas: [null]
-    sympy: [null]
   sources:
     python:
       url: https://docs.python.org/3/
@@ -70,23 +69,25 @@ quartodoc:
   options:
     signature_name: short
     member_order: source
-    children: linked
   
   # Documentation structure
-  # See: _todo/pending/programmatic-api-documentation.md
   sections:
     - title: Display Module
       desc: LaTeX equation rendering and formatting
       contents:
         - name: display
-    - subtitle: Functions
-      contents:
-        - show_eqn
-        - check
+          children: linked
+        - display.show_eqn
+        - display.check
+        - display.format_decimal_numbers
+        - display.replace_all
     - title: Dataframe Module
       desc: Custom dictionary-like container for tabular equation data
       contents:
         - name: dataframe
+          children: linked
+        - dataframe.Dataframe
+        - dataframe.create_dataframe
     - title: Pipe Commands Module
       desc: Wraps common SymPy functions as decorators for functional composition
       contents:

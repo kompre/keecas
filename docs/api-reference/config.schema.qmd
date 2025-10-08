@@ -11,12 +11,84 @@ to handle breaking configuration changes across package versions.
 
 | Name | Description |
 | --- | --- |
-| [](`~keecas.config.schema.ConfigSchema`) | Schema definition for a specific config version. |
+| [ConfigSchema](#keecas.config.schema.ConfigSchema) | Schema definition for a specific config version. |
+
+### ConfigSchema { #keecas.config.schema.ConfigSchema }
+
+```python
+ConfigSchema(
+    version,
+    created_at,
+    deprecated_keys,
+    renamed_keys,
+    removed_keys,
+    migration_fn,
+)
+```
+
+Schema definition for a specific config version.
 
 ## Functions
 
 | Name | Description |
 | --- | --- |
-| [](`~keecas.config.schema.migrate_0_1_to_1_0`) | Migrate config from 0.1.x to 1.0.0 |
-| [](`~keecas.config.schema.get_current_schema_version`) | Get the current/latest schema version. |
-| [](`~keecas.config.schema.get_schema`) | Get schema definition for a specific version. |
+| [migrate_0_1_to_1_0](#keecas.config.schema.migrate_0_1_to_1_0) | Migrate config from 0.1.x to 1.0.0 |
+| [get_current_schema_version](#keecas.config.schema.get_current_schema_version) | Get the current/latest schema version. |
+| [get_schema](#keecas.config.schema.get_schema) | Get schema definition for a specific version. |
+
+### migrate_0_1_to_1_0 { #keecas.config.schema.migrate_0_1_to_1_0 }
+
+```python
+migrate_0_1_to_1_0(old_config)
+```
+
+Migrate config from 0.1.x to 1.0.0
+
+IMPORTANT: All user-customized values MUST be preserved during migration.
+Only transform structure/location, never lose user data.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type           | Description                    | Default    |
+|------------|----------------|--------------------------------|------------|
+| old_config | [dict](`dict`) | Configuration dict from v0.1.x | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type           | Description                            |
+|--------|----------------|----------------------------------------|
+|        | [dict](`dict`) | Migrated configuration dict for v1.0.0 |
+
+### get_current_schema_version { #keecas.config.schema.get_current_schema_version }
+
+```python
+get_current_schema_version()
+```
+
+Get the current/latest schema version.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type         | Description                  |
+|--------|--------------|------------------------------|
+|        | [str](`str`) | Latest schema version string |
+
+### get_schema { #keecas.config.schema.get_schema }
+
+```python
+get_schema(version_str)
+```
+
+Get schema definition for a specific version.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type         | Description           | Default    |
+|-------------|--------------|-----------------------|------------|
+| version_str | [str](`str`) | Schema version string | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                                                        | Description                           |
+|--------|-------------------------------------------------------------|---------------------------------------|
+|        | [ConfigSchema](`keecas.config.schema.ConfigSchema`) \| None | ConfigSchema if found, None otherwise |

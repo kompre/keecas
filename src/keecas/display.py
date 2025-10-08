@@ -21,7 +21,7 @@ from sympy import (
 )
 
 from .config.manager import get_config_manager
-from .dataframe import *
+from .dataframe import Dataframe, create_dataframe
 from .localization import translate
 
 # Use the unified configuration system

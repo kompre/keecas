@@ -4,13 +4,15 @@ website:
     - api-reference/index.qmd
     - contents:
       - api-reference/display.qmd
-      - contents:
-        - api-reference/show_eqn.qmd
-        - api-reference/check.qmd
-        section: Functions
+      - api-reference/display.show_eqn.qmd
+      - api-reference/display.check.qmd
+      - api-reference/display.format_decimal_numbers.qmd
+      - api-reference/display.replace_all.qmd
       section: Display Module
     - contents:
       - api-reference/dataframe.qmd
+      - api-reference/dataframe.Dataframe.qmd
+      - api-reference/dataframe.create_dataframe.qmd
       section: Dataframe Module
     - contents:
       - api-reference/pipe_command.qmd

@@ -11,4 +11,87 @@ preserving user values while transforming structure and deprecating/removing key
 
 | Name | Description |
 | --- | --- |
-| [](`~keecas.config.migration.ConfigMigration`) | Configuration migration engine. |
+| [ConfigMigration](#keecas.config.migration.ConfigMigration) | Configuration migration engine. |
+
+### ConfigMigration { #keecas.config.migration.ConfigMigration }
+
+```python
+ConfigMigration()
+```
+
+Configuration migration engine.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [needs_migration](#keecas.config.migration.ConfigMigration.needs_migration) | Check if config needs migration. |
+| [get_migration_path](#keecas.config.migration.ConfigMigration.get_migration_path) | Get ordered list of schema versions to migrate through. |
+| [migrate](#keecas.config.migration.ConfigMigration.migrate) | Migrate config through all intermediate versions. |
+
+##### needs_migration { #keecas.config.migration.ConfigMigration.needs_migration }
+
+```python
+needs_migration(config_version, current_version)
+```
+
+Check if config needs migration.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name            | Type         | Description                | Default    |
+|-----------------|--------------|----------------------------|------------|
+| config_version  | [str](`str`) | Version of the config file | _required_ |
+| current_version | [str](`str`) | Current schema version     | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type           | Description                                  |
+|--------|----------------|----------------------------------------------|
+|        | [bool](`bool`) | True if migration is needed, False otherwise |
+
+##### get_migration_path { #keecas.config.migration.ConfigMigration.get_migration_path }
+
+```python
+get_migration_path(from_version, to_version)
+```
+
+Get ordered list of schema versions to migrate through.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name         | Type         | Description             | Default    |
+|--------------|--------------|-------------------------|------------|
+| from_version | [str](`str`) | Starting schema version | _required_ |
+| to_version   | [str](`str`) | Target schema version   | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                           | Description                                      |
+|--------|--------------------------------|--------------------------------------------------|
+|        | [list](`list`)\[[str](`str`)\] | List of intermediate versions to migrate through |
+
+##### migrate { #keecas.config.migration.ConfigMigration.migrate }
+
+```python
+migrate(config_data, from_version, to_version)
+```
+
+Migrate config through all intermediate versions.
+
+Preserves all user-customized values while transforming structure
+and handling deprecated/removed keys according to migration functions.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name         | Type           | Description                         | Default    |
+|--------------|----------------|-------------------------------------|------------|
+| config_data  | [dict](`dict`) | Configuration dictionary to migrate | _required_ |
+| from_version | [str](`str`)   | Starting schema version             | _required_ |
+| to_version   | [str](`str`)   | Target schema version               | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type           | Description                       |
+|--------|----------------|-----------------------------------|
+|        | [dict](`dict`) | Migrated configuration dictionary |
