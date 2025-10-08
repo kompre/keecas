@@ -216,7 +216,7 @@ def N(expression: Basic, precision: int = 15) -> Basic:
 
         ```{python}
         # Typical workflow: subs -> convert_to -> N
-        sigma_Sd = symbols(r"\sigma_{Sd}")
+        F, A_load, sigma_Sd = symbols(r"F, A_{load}, \sigma_{Sd}")
 
         _p = {
             F: 850*u.kN,
@@ -625,13 +625,15 @@ def quantity_simplify(
 
         ```{python}
         # Different unit systems
-        expr = 100*u.kN + 50*u.lbf
+        from sympy import sympify
+        from sympy.physics.units import newton, kilonewton
 
-        # Simplify in SI system
-        result_si = expr | pc.quantity_simplify(unit_system="SI")
+        # Create expression with different unit prefixes
+        expr = 100*kilonewton + 5000*newton
 
-        # Simplify in imperial system
-        result_imp = expr | pc.quantity_simplify(unit_system="imperial")
+        # Simplify combines compatible units
+        result = expr | pc.quantity_simplify(unit_system="SI")
+        print(result)  # Combines to single unit
         ```
 
     Notes:

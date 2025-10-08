@@ -81,13 +81,15 @@ show_eqn([_p | _e, _v])
 
 ```{python}
 # Different unit systems
-expr = 100*u.kN + 50*u.lbf
+from sympy import sympify
+from sympy.physics.units import newton, kilonewton
 
-# Simplify in SI system
-result_si = expr | pc.quantity_simplify(unit_system="SI")
+# Create expression with different unit prefixes
+expr = 100*kilonewton + 5000*newton
 
-# Simplify in imperial system
-result_imp = expr | pc.quantity_simplify(unit_system="imperial")
+# Simplify combines compatible units
+result = expr | pc.quantity_simplify(unit_system="SI")
+print(result)  # Combines to single unit
 ```
 
 ## Notes {.doc-section .doc-section-notes}

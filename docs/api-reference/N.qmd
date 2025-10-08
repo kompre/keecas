@@ -65,7 +65,7 @@ result_high = expr | pc.N(precision=50)
 
 ```{python}
 # Typical workflow: subs -> convert_to -> N
-sigma_Sd = symbols(r"\sigma_{Sd}")
+F, A_load, sigma_Sd = symbols(r"F, A_{load}, \sigma_{Sd}")
 
 _p = {
     F: 850*u.kN,
