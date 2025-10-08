@@ -1,0 +1,69 @@
+# update_pint_locale { #keecas.pint_sympy.update_pint_locale }
+
+```python
+update_pint_locale(language=None, verbose=False)
+```
+
+Update Pint unit formatter locale for international unit names.
+
+Changes how units are displayed in Pint quantities, switching between compact
+symbols (kN) and localized full names (kilonewton, chiloNewton, etc.). Useful
+for engineering documentation in different languages. Automatically called when
+config.language changes, but can be invoked manually for custom locale control.
+
+NOTE: Respects config.display.disable_pint_locale setting. When True (default),
+preserves compact unit symbols. When False, enables locale-specific unit names.
+
+## Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type        | Description                                                                                                                                                                       | Default   |
+|----------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| language | str \| None | Two-letter language code (de, es, fr, it, pt for full support; da, nl, no, sv, en for keecas translations only). If None, uses language from keecas config. Defaults to None.     | `None`    |
+| verbose  | bool        | If True, prints debugging information about locale changes including before/after states and configuration status. Useful for troubleshooting locale behavior. Defaults to False. | `False`   |
+
+## Examples {.doc-section .doc-section-examples}
+
+```{python}
+from keecas import u, update_pint_locale, config
+
+# Enable Pint locale for Italian units
+config.display.disable_pint_locale = False
+config.language = 'it'  # Automatically calls update_pint_locale
+
+F = 100*u.kN
+print(f"{F}")  # Shows: 100 chiloNewton
+```
+
+```{python}
+# Manual locale control with verbose output
+update_pint_locale('de', verbose=True)
+
+A = 50*u.cm**2
+print(f"{A}")  # Shows: 50 Zentimeter ** 2
+```
+
+```{python}
+# Keep compact symbols (default behavior)
+config.display.disable_pint_locale = True  # Default
+
+F = 100*u.kN
+print(f"{F}")  # Shows: 100 kN (compact symbol preserved)
+```
+
+```{python}
+# Fallback language behavior
+update_pint_locale('sv')  # Swedish - no Pint locale available
+
+# Unit names stay in English, but keecas terms (VERIFIED, etc.) are Swedish
+F = 100*u.kN
+print(f"{F}")  # Shows: 100 kilonewton (English fallback)
+```
+
+## Notes {.doc-section .doc-section-notes}
+
+- Automatically called when config.language changes
+- Respects config.display.disable_pint_locale (default: True)
+- Full Pint locale support: de, es, fr, it, pt (5 languages)
+- Fallback to English units: da, nl, no, sv, en (5 languages)
+- Conservative behavior: doesn't change locale unnecessarily
+- Manual mode activated if user directly modifies unitregistry.formatter

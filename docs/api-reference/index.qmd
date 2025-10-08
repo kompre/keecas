@@ -12,7 +12,32 @@ LaTeX equation rendering and formatting
 
 ## Dataframe Module
 
+Custom dictionary-like container for tabular equation data
+
 | | |
 | --- | --- |
 | [Dataframe](Dataframe.qmd#keecas.dataframe.Dataframe) | Custom dictionary-like container for tabular equation data. |
 | [create_dataframe](create_dataframe.qmd#keecas.dataframe.create_dataframe) | Create a pre-sized Dataframe with specified shape and initial values. |
+
+## Pipe Commands
+
+Wraps common SymPy functions as decorators for functional composition
+
+| | |
+| --- | --- |
+| [parse_expr](parse_expr.qmd#keecas.pipe_command.parse_expr) | Parse mathematical expression strings into SymPy symbolic objects. |
+| [subs](subs.qmd#keecas.pipe_command.subs) | Substitute variables in symbolic expressions with values or other expressions. |
+| [convert_to](convert_to.qmd#keecas.pipe_command.convert_to) | Convert quantities to different units while preserving values. |
+| [N](N.qmd#keecas.pipe_command.N) | Numerically evaluate symbolic expressions to floating-point values. |
+| [doit](doit.qmd#keecas.pipe_command.doit) | Evaluate unevaluated operations in symbolic expressions. |
+| [quantity_simplify](quantity_simplify.qmd#keecas.pipe_command.quantity_simplify) | Simplify expressions with units by combining and reducing quantities. |
+
+## Pint-SymPy Bridge
+
+Integrates Pint unit registry with SymPy symbolic expressions by adding method `_sympy_` to `pint.Quantity` and `pint.Unit`
+
+| | |
+| --- | --- |
+| [pint_to_sympy](pint_to_sympy.qmd#keecas.pint_sympy.pint_to_sympy) | Convert Pint quantities to SymPy expressions with units. |
+| [SymPyUnitCache](SymPyUnitCache.qmd#keecas.pint_sympy.SymPyUnitCache) | Cache for dynamically created SymPy units to avoid redundant creation. |
+| [update_pint_locale](update_pint_locale.qmd#keecas.pint_sympy.update_pint_locale) | Update Pint unit formatter locale for international unit names. |

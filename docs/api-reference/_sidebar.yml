@@ -11,5 +11,18 @@ website:
       - api-reference//Dataframe.qmd
       - api-reference//create_dataframe.qmd
       section: Dataframe Module
+    - contents:
+      - api-reference//parse_expr.qmd
+      - api-reference//subs.qmd
+      - api-reference//convert_to.qmd
+      - api-reference//N.qmd
+      - api-reference//doit.qmd
+      - api-reference//quantity_simplify.qmd
+      section: Pipe Commands
+    - contents:
+      - api-reference//pint_to_sympy.qmd
+      - api-reference//SymPyUnitCache.qmd
+      - api-reference//update_pint_locale.qmd
+      section: Pint-SymPy Bridge
     id: api-reference/
   - id: dummy-sidebar

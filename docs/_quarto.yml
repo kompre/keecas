@@ -37,10 +37,28 @@ quartodoc:
         - name: check
         - name: format_decimal_numbers
     - title: Dataframe Module
+      desc: Custom dictionary-like container for tabular equation data
       package: keecas.dataframe
       contents:
         - name: Dataframe
         - name: create_dataframe
+    - title: Pipe Commands
+      desc: Wraps common SymPy functions as decorators for functional composition
+      package: keecas.pipe_command
+      contents:
+        - name: parse_expr
+        - name: subs
+        - name: convert_to
+        - name: N
+        - name: doit
+        - name: quantity_simplify
+    - title: Pint-SymPy Bridge
+      desc: Integrates Pint unit registry with SymPy symbolic expressions by adding method `_sympy_` to `pint.Quantity` and `pint.Unit`
+      package: keecas.pint_sympy
+      contents:
+        - name: pint_to_sympy
+        - name: SymPyUnitCache
+        - name: update_pint_locale
 
 metadata-files: 
   - "api-reference/_sidebar.yml"

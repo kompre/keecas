@@ -25,7 +25,7 @@ def test_cli_config_path_works_with_broken_config(tmp_path, monkeypatch):
     )
 
     assert result.returncode == 0
-    assert '.keecas/config.toml' in result.stdout
+    assert '.keecas' in result.stdout and 'config.toml' in result.stdout
 
 
 def test_cli_init_force_overwrites_broken_config(tmp_path, monkeypatch):

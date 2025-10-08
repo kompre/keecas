@@ -1,0 +1,69 @@
+# SymPyUnitCache { #keecas.pint_sympy.SymPyUnitCache }
+
+```python
+SymPyUnitCache()
+```
+
+Cache for dynamically created SymPy units to avoid redundant creation.
+
+Maintains a registry of SymPy unit objects created from Pint definitions,
+ensuring each unit is only created once and properly configured with scale
+factors for unit conversion. Used internally by pint_to_sympy() for efficient
+Pint-to-SymPy conversion.
+
+## Methods
+
+| Name | Description |
+| --- | --- |
+| [get_or_create](#keecas.pint_sympy.SymPyUnitCache.get_or_create) | Get cached SymPy unit or create new one with conversion scale factors. |
+
+### get_or_create { #keecas.pint_sympy.SymPyUnitCache.get_or_create }
+
+```python
+get_or_create(fullname, shortname, is_prefixed)
+```
+
+Get cached SymPy unit or create new one with conversion scale factors.
+
+Retrieves cached SymPy unit object or creates new one from Pint definition,
+setting up proper scale factors for unit conversion. Handles both prefixed
+units (kN, cm) using SymPy's prefix system and non-prefixed compound units
+(kgf, lbf) by extracting scale factors from Pint base unit conversion.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type   | Description                                                                                                                                                                          | Default    |
+|-------------|--------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| fullname    | str    | Full unit name from Pint definition (e.g., 'kilonewton', 'centimeter', 'kilogram_force'). Used as SymPy Quantity name.                                                               | _required_ |
+| shortname   | str    | Short unit abbreviation for display (e.g., 'kN', 'cm', 'kgf'). Used as SymPy Quantity abbreviation.                                                                                  | _required_ |
+| is_prefixed | bool   | Whether the unit uses SI prefixes (True for kN, cm; False for kgf, lbf). Prefixed units handled by SymPy automatically, non-prefixed units require explicit scale factors from Pint. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                             |
+|--------|--------|-------------------------------------------------------------------------|
+|        | Any    | SymPy Quantity object configured for unit conversion. Cached for reuse. |
+
+#### Examples {.doc-section .doc-section-examples}
+
+```{python}
+from keecas.pint_sympy import SymPyUnitCache
+
+# Get or create prefixed unit (kN)
+kN = SymPyUnitCache.get_or_create('kilonewton', 'kN', is_prefixed=True)
+
+# Get or create non-prefixed unit (kgf)
+kgf = SymPyUnitCache.get_or_create('kilogram_force', 'kgf', is_prefixed=False)
+
+# Subsequent calls return cached objects
+kN_cached = SymPyUnitCache.get_or_create('kilonewton', 'kN', is_prefixed=True)
+assert kN is kN_cached
+```
+
+#### Notes {.doc-section .doc-section-notes}
+
+- Prefixed units (kN, daN, cm) handled automatically by SymPy prefix system
+- Non-prefixed units (kgf, lbf) get scale factors from Pint base unit conversion
+- Scale factors enable full conversion capabilities via pc.convert_to()
+- Created units added to sympy.physics.units module for backward compatibility
+- Cache prevents redundant unit creation and ensures consistency

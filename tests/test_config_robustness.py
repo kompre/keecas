@@ -14,10 +14,11 @@ def test_import_with_broken_global_config(tmp_path, monkeypatch):
     fake_home.mkdir()
     config_file = fake_home / ".keecas" / "config.toml"
     config_file.parent.mkdir(parents=True)
-    config_file.write_text('language = True  # Invalid: should be "true"')
+    config_file.write_text('language = [broken syntax  # Invalid TOML syntax')
 
-    # Monkeypatch HOME to use fake directory
+    # Monkeypatch HOME/USERPROFILE to use fake directory (cross-platform)
     monkeypatch.setenv('HOME', str(fake_home))
+    monkeypatch.setenv('USERPROFILE', str(fake_home))
 
     # Import should succeed
     from keecas.config.manager import ConfigManager

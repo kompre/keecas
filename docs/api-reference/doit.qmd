@@ -1,0 +1,80 @@
+# doit { #keecas.pipe_command.doit }
+
+```python
+doit(expression)
+```
+
+Evaluate unevaluated operations in symbolic expressions.
+
+Forces evaluation of operations that SymPy keeps in symbolic form, such as
+derivatives, integrals, summations, or limits. Useful when symbolic operations
+need numeric results or simplified forms.
+
+## Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                                                                                                     | Default    |
+|------------|--------|---------------------------------------------------------------------------------------------------------------------------------|------------|
+| expression | Basic  | SymPy expression containing unevaluated operations (derivatives, integrals, summations, limits, etc.) that should be evaluated. | _required_ |
+
+## Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                            |
+|--------|--------|------------------------------------------------------------------------|
+|        | Basic  | Expression with all unevaluated operations evaluated to their results. |
+
+## Examples {.doc-section .doc-section-examples}
+
+```{python}
+from keecas import symbols, pc
+import sympy as sp
+
+# Evaluate derivative
+x = symbols(r"x")
+expr = sp.Derivative(x**2, x)
+
+# Without doit: shows Derivative(x**2, x)
+print(expr)
+
+# With doit: evaluates to 2*x
+result = expr | pc.doit
+print(result)
+```
+
+```{python}
+# Evaluate integral
+integral_expr = sp.Integral(sp.sin(x), x)
+
+# Evaluates to -cos(x)
+result = integral_expr | pc.doit
+```
+
+```{python}
+# Use in calculation workflow
+from keecas import u, show_eqn
+
+F, x_coord = symbols(r"F, x")
+
+_p = {
+    F: 100*u.kN,
+}
+
+# Expression with derivative
+_e = {
+    symbols(r"dF/dx"): sp.Derivative(F * x_coord**2, x_coord)
+}
+
+# Evaluate derivative then substitute
+_v = {
+    k: v | pc.doit | pc.subs(_p) | pc.N
+    for k, v in _e.items()
+}
+
+show_eqn([_p | _e, _v])
+```
+
+## Notes {.doc-section .doc-section-notes}
+
+- Works with derivatives, integrals, limits, summations, and products
+- May be needed before subs() to properly substitute into evaluated forms
+- Not all operations can be evaluated symbolically (may return unchanged)
+- Combines well with other pipe commands in calculation workflows

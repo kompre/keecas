@@ -22,7 +22,14 @@ try:
 except ImportError:
     from importlib_metadata import version
 
-from .config.manager import get_config_manager
+# Lazy import to avoid loading heavy dependencies (SymPy, Pint) at startup
+# from .config.manager import get_config_manager  # Moved to function level
+
+
+def _get_config_manager():
+    """Lazy import of config manager to avoid startup overhead."""
+    from .config.manager import get_config_manager
+    return get_config_manager()
 
 
 def get_version() -> str:
@@ -161,7 +168,7 @@ def check_jupyterlab_available() -> bool:
 
 def cmd_init(args: argparse.Namespace) -> None:
     """Initialize a new configuration file."""
-    config_manager = get_config_manager()
+    config_manager = _get_config_manager()
     # Handle mutually exclusive group default
     global_config = getattr(args, 'global_config', False)
 
@@ -183,7 +190,7 @@ def cmd_init(args: argparse.Namespace) -> None:
 
 def cmd_config_edit(args: argparse.Namespace) -> None:
     """Edit configuration file in the user's preferred editor."""
-    config_manager = get_config_manager()
+    config_manager = _get_config_manager()
     # Handle mutually exclusive group default
     global_config = getattr(args, 'global_config', False)
     config_path = config_manager.get_config_path(global_config)
@@ -445,7 +452,7 @@ def cmd_edit(args: argparse.Namespace) -> None:
 
 def cmd_open(args: argparse.Namespace) -> None:
     """Open configuration file with the system default editor."""
-    config_manager = get_config_manager()
+    config_manager = _get_config_manager()
     # Handle mutually exclusive group default
     global_config = getattr(args, 'global_config', False)
     config_path = config_manager.get_config_path(global_config)
@@ -476,7 +483,7 @@ def cmd_open(args: argparse.Namespace) -> None:
 
 def cmd_show(args: argparse.Namespace) -> None:
     """Show current configuration."""
-    config_manager = get_config_manager()
+    config_manager = _get_config_manager()
 
     if args.global_config:
         config_dict = config_manager.show_config(global_config=True)
@@ -511,16 +518,16 @@ def cmd_show(args: argparse.Namespace) -> None:
 
 def cmd_path(args: argparse.Namespace) -> None:
     """Show path to configuration files."""
-    config_manager = get_config_manager()
+    config_manager = _get_config_manager()
 
     if args.global_config:
         path = config_manager.get_config_path(global_config=True)
-        exists = "✓" if path.exists() else "✗"
+        exists = "[exists]" if path.exists() else "[missing]"
         print(f"Global config: {path} {exists}")
 
     elif args.local:
         path = config_manager.get_config_path(global_config=False)
-        exists = "✓" if path.exists() else "✗"
+        exists = "[exists]" if path.exists() else "[missing]"
         print(f"Local config:  {path} {exists}")
 
     else:
@@ -528,8 +535,8 @@ def cmd_path(args: argparse.Namespace) -> None:
         global_path = config_manager.get_config_path(global_config=True)
         local_path = config_manager.get_config_path(global_config=False)
 
-        global_exists = "✓" if global_path.exists() else "✗"
-        local_exists = "✓" if local_path.exists() else "✗"
+        global_exists = "[exists]" if global_path.exists() else "[missing]"
+        local_exists = "[exists]" if local_path.exists() else "[missing]"
 
         print(f"Global config: {global_path} {global_exists}")
         print(f"Local config:  {local_path} {local_exists}")
@@ -537,7 +544,7 @@ def cmd_path(args: argparse.Namespace) -> None:
 
 def cmd_reset(args: argparse.Namespace) -> None:
     """Reset configuration to defaults."""
-    config_manager = get_config_manager()
+    config_manager = _get_config_manager()
     # Handle mutually exclusive group default
     global_config = getattr(args, 'global_config', False)
     config_type = "global" if global_config else "local"
@@ -558,7 +565,7 @@ def cmd_config_version(args: argparse.Namespace) -> None:
     from .config.schema import get_current_schema_version
     from .config.migration import ConfigMigration
 
-    config_manager = get_config_manager()
+    config_manager = _get_config_manager()
     global_config = getattr(args, 'global_config', False)
 
     # Determine which config file to check
@@ -597,7 +604,7 @@ def cmd_migrate(args: argparse.Namespace) -> None:
     from .config.migration import ConfigMigration
     import shutil
 
-    config_manager = get_config_manager()
+    config_manager = _get_config_manager()
     global_config = getattr(args, 'global_config', False)
     dry_run = getattr(args, 'dry_run', False)
 
