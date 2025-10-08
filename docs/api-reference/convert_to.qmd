@@ -30,10 +30,10 @@ comparison. Integrates seamlessly with Pint unit definitions.
 from keecas import symbols, u, pc, show_eqn
 
 # Basic unit conversion
-F, A_load = symbols(r"F A_{load}")
+F, A_load = symbols(r"F, A_{load}")
 
 _p = {
-    F: 5000*u.N  # Newtons
+    F: 5000*u.N,  # Newtons
     A_load: 120*u.cm**2,
 }
 
@@ -52,11 +52,11 @@ sigma = symbols(r"\sigma")
 
 _p = {
     F: 850*u.kN,
-    A_load: 120*u.cm**2
+    A_load: 120*u.cm**2,
 }
 
 _e = {
-    sigma: "F / A_load" | pc.parse_expr
+    sigma: "F / A_load" | pc.parse_expr,
 }
 
 # Convert pressure to MPa
@@ -73,11 +73,11 @@ show_eqn([_p | _e, _v])
 L, delta = symbols(r"L, \delta")
 
 _p = {
-    L: 8*u.m
+    L: 8*u.m,
 }
 
 _e = {
-    delta: "L / 400" | pc.parse_expr
+    delta: "L / 400" | pc.parse_expr,
 }
 
 # Try converting to mm, fallback to other units if needed

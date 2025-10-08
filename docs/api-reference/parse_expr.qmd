@@ -39,12 +39,12 @@ F, A_load, sigma = symbols(r"F, A_{load}, \sigma")
 
 _p = {
     F: 100*u.kN,
-    A_load: 20*u.cm**2
+    A_load: 20*u.cm**2,
 }
 
 # Use parse_expr to convert string to SymPy expression
 _e = {
-    sigma: "F / A_load" | pc.parse_expr
+    sigma: "F / A_load" | pc.parse_expr,
 }
 
 _v = {
@@ -62,12 +62,12 @@ from sympy import pi
 r, A_circle, V_sphere = symbols(r"r, A_{circle}, V_{sphere}")
 
 _p = {
-    r: 5*u.cm
+    r: 5*u.cm,
 }
 
 _e = {
     A_circle: "pi * r**2" | pc.parse_expr,
-    V_sphere: "(4/3) * pi * r**3" | pc.parse_expr
+    V_sphere: "(4/3) * pi * r**3" | pc.parse_expr,
 }
 
 _v = {
@@ -83,7 +83,7 @@ show_eqn([_p | _e, _v])
 from sympy import sqrt
 
 custom_locals = {
-    'special_func': lambda x: sqrt(x**2 + 1)
+    'special_func': lambda x: sqrt(x**2 + 1),
 }
 
 expr = "special_func(5)" | pc.parse_expr(local_dict=custom_locals)
@@ -95,13 +95,13 @@ x, y, z, result = symbols(r"x, y, z, result")
 
 _p = {
     x: 3,
-    y: 4
+    y: 4,
 }
 
 # Expressions can reference each other
 _e = {
     z: "sqrt(x**2 + y**2)" | pc.parse_expr,
-    result: "z * 2" | pc.parse_expr
+    result: "z * 2" | pc.parse_expr,
 }
 
 # tip: automatic dependency resolution with pc.subs

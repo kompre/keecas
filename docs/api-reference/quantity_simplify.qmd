@@ -40,11 +40,11 @@ F_1, F_2, F_total = symbols(r"F_1, F_2, F_{total}")
 
 _p = {
     F_1: 100*u.kN,
-    F_2: 50000*u.N
+    F_2: 50000*u.N,
 }
 
 _e = {
-    F_total: "F_1 + F_2" | pc.parse_expr
+    F_total: "F_1 + F_2" | pc.parse_expr,
 }
 
 # Simplify combines terms with compatible units
@@ -62,12 +62,12 @@ F, d, E = symbols(r"F, d, E")
 
 _p = {
     F: 500*u.N,
-    d: 2*u.m
+    d: 2*u.m,
 }
 
 # Work (energy) from force and distance
 _e = {
-    E: "F * d" | pc.parse_expr
+    E: "F * d" | pc.parse_expr,
 }
 
 # Simplify to base energy units

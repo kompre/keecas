@@ -530,15 +530,29 @@ def function_name(
 ❌ **Wrong**: `show_eqn([_p, _e, _v])`
 ✅ **Right**: `show_eqn([_p|_e, _v])`
 
-### 5. Single-Line Dicts
+### 5. Single-Line Dicts and Missing Trailing Commas
 ❌ **Wrong**: `_p = {F: 100*u.kN, A: 20*u.cm**2}`
+❌ **Wrong**:
+```python
+_p = {
+    F: 100*u.kN,
+    A_load: 20*u.cm**2  # Missing trailing comma
+}
+```
 ✅ **Right**:
 ```python
 _p = {
     F: 100*u.kN,
-    A_load: 20*u.cm**2
+    A_load: 20*u.cm**2,  # Trailing comma required
 }
 ```
+
+**Note**: Always include trailing commas in multi-line collections (dicts, lists, tuples). This applies to:
+- All code examples in docstrings
+- Function arguments spanning multiple lines
+- Dict/list definitions
+
+Trailing commas ensure cleaner git diffs and prevent syntax errors when reordering items.
 
 ### 6. Incorrect Variable Naming
 ❌ **Wrong**: Using `_v` for both parameters and values

@@ -38,12 +38,12 @@ F, A_load = symbols(r"F, A_{load}")
 
 _p = {
     F: 100*u.kN,
-    A_load: 20*u.cm**2
+    A_load: 20*u.cm**2,
 }
 
 sigma = symbols(r"\sigma")
 _e = {
-    sigma: "F / A_load" | pc.parse_expr
+    sigma: "F / A_load" | pc.parse_expr,
 }
 
 # Substitute parameters into expression
@@ -68,7 +68,7 @@ x, y, z = symbols(r"x, y, z")
 _e = {
     z: "x + y" | pc.parse_expr,
     y: "2 * x" | pc.parse_expr,
-    x: 5
+    x: 5,
 }
 
 # Automatic ordering: x first, then y, then z

@@ -92,12 +92,12 @@ def subs(
 
         _p = {
             F: 100*u.kN,
-            A_load: 20*u.cm**2
+            A_load: 20*u.cm**2,
         }
 
         sigma = symbols(r"\sigma")
         _e = {
-            sigma: "F / A_load" | pc.parse_expr
+            sigma: "F / A_load" | pc.parse_expr,
         }
 
         # Substitute parameters into expression
@@ -122,7 +122,7 @@ def subs(
         _e = {
             z: "x + y" | pc.parse_expr,
             y: "2 * x" | pc.parse_expr,
-            x: 5
+            x: 5,
         }
 
         # Automatic ordering: x first, then y, then z
@@ -185,11 +185,11 @@ def N(expression: Basic, precision: int = 15) -> Basic:
         A_circle = symbols(r"A_{circle}")
 
         _p = {
-            r: 5*u.cm
+            r: 5*u.cm,
         }
 
         _e = {
-            A_circle: "pi * r**2" | pc.parse_expr
+            A_circle: "pi * r**2" | pc.parse_expr,
         }
 
         # Evaluate symbolic pi to numeric value
@@ -220,11 +220,11 @@ def N(expression: Basic, precision: int = 15) -> Basic:
 
         _p = {
             F: 850*u.kN,
-            A_load: 120*u.cm**2
+            A_load: 120*u.cm**2,
         }
 
         _e = {
-            sigma_Sd: "F / A_load" | pc.parse_expr
+            sigma_Sd: "F / A_load" | pc.parse_expr,
         }
 
         _v = {
@@ -270,10 +270,10 @@ def convert_to(expression: Basic, units: Any = 1) -> Basic:
         from keecas import symbols, u, pc, show_eqn
 
         # Basic unit conversion
-        F, A_load = symbols(r"F A_{load}")
+        F, A_load = symbols(r"F, A_{load}")
 
         _p = {
-            F: 5000*u.N  # Newtons
+            F: 5000*u.N,  # Newtons
             A_load: 120*u.cm**2,
         }
 
@@ -292,11 +292,11 @@ def convert_to(expression: Basic, units: Any = 1) -> Basic:
 
         _p = {
             F: 850*u.kN,
-            A_load: 120*u.cm**2
+            A_load: 120*u.cm**2,
         }
 
         _e = {
-            sigma: "F / A_load" | pc.parse_expr
+            sigma: "F / A_load" | pc.parse_expr,
         }
 
         # Convert pressure to MPa
@@ -313,11 +313,11 @@ def convert_to(expression: Basic, units: Any = 1) -> Basic:
         L, delta = symbols(r"L, \delta")
 
         _p = {
-            L: 8*u.m
+            L: 8*u.m,
         }
 
         _e = {
-            delta: "L / 400" | pc.parse_expr
+            delta: "L / 400" | pc.parse_expr,
         }
 
         # Try converting to mm, fallback to other units if needed
@@ -391,7 +391,7 @@ def doit(expression: Basic) -> Basic:
 
         # Expression with derivative
         _e = {
-            symbols(r"dF/dx"): sp.Derivative(F * x_coord**2, x_coord)
+            symbols(r"dF/dx"): sp.Derivative(F * x_coord**2, x_coord),
         }
 
         # Evaluate derivative then substitute
@@ -455,12 +455,12 @@ def parse_expr(
 
         _p = {
             F: 100*u.kN,
-            A_load: 20*u.cm**2
+            A_load: 20*u.cm**2,
         }
 
         # Use parse_expr to convert string to SymPy expression
         _e = {
-            sigma: "F / A_load" | pc.parse_expr
+            sigma: "F / A_load" | pc.parse_expr,
         }
 
         _v = {
@@ -478,12 +478,12 @@ def parse_expr(
         r, A_circle, V_sphere = symbols(r"r, A_{circle}, V_{sphere}")
 
         _p = {
-            r: 5*u.cm
+            r: 5*u.cm,
         }
 
         _e = {
             A_circle: "pi * r**2" | pc.parse_expr,
-            V_sphere: "(4/3) * pi * r**3" | pc.parse_expr
+            V_sphere: "(4/3) * pi * r**3" | pc.parse_expr,
         }
 
         _v = {
@@ -499,7 +499,7 @@ def parse_expr(
         from sympy import sqrt
 
         custom_locals = {
-            'special_func': lambda x: sqrt(x**2 + 1)
+            'special_func': lambda x: sqrt(x**2 + 1),
         }
 
         expr = "special_func(5)" | pc.parse_expr(local_dict=custom_locals)
@@ -511,13 +511,13 @@ def parse_expr(
 
         _p = {
             x: 3,
-            y: 4
+            y: 4,
         }
 
         # Expressions can reference each other
         _e = {
             z: "sqrt(x**2 + y**2)" | pc.parse_expr,
-            result: "z * 2" | pc.parse_expr
+            result: "z * 2" | pc.parse_expr,
         }
 
         # tip: automatic dependency resolution with pc.subs
@@ -584,11 +584,11 @@ def quantity_simplify(
 
         _p = {
             F_1: 100*u.kN,
-            F_2: 50000*u.N
+            F_2: 50000*u.N,
         }
 
         _e = {
-            F_total: "F_1 + F_2" | pc.parse_expr
+            F_total: "F_1 + F_2" | pc.parse_expr,
         }
 
         # Simplify combines terms with compatible units
@@ -606,12 +606,12 @@ def quantity_simplify(
 
         _p = {
             F: 500*u.N,
-            d: 2*u.m
+            d: 2*u.m,
         }
 
         # Work (energy) from force and distance
         _e = {
-            E: "F * d" | pc.parse_expr
+            E: "F * d" | pc.parse_expr,
         }
 
         # Simplify to base energy units

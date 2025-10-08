@@ -34,11 +34,11 @@ r = symbols(r"r")
 A_circle = symbols(r"A_{circle}")
 
 _p = {
-    r: 5*u.cm
+    r: 5*u.cm,
 }
 
 _e = {
-    A_circle: "pi * r**2" | pc.parse_expr
+    A_circle: "pi * r**2" | pc.parse_expr,
 }
 
 # Evaluate symbolic pi to numeric value
@@ -69,11 +69,11 @@ sigma_Sd = symbols(r"\sigma_{Sd}")
 
 _p = {
     F: 850*u.kN,
-    A_load: 120*u.cm**2
+    A_load: 120*u.cm**2,
 }
 
 _e = {
-    sigma_Sd: "F / A_load" | pc.parse_expr
+    sigma_Sd: "F / A_load" | pc.parse_expr,
 }
 
 _v = {

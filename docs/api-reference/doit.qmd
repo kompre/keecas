@@ -60,7 +60,7 @@ _p = {
 
 # Expression with derivative
 _e = {
-    symbols(r"dF/dx"): sp.Derivative(F * x_coord**2, x_coord)
+    symbols(r"dF/dx"): sp.Derivative(F * x_coord**2, x_coord),
 }
 
 # Evaluate derivative then substitute
