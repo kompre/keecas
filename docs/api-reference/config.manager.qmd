@@ -1,0 +1,83 @@
+# config.manager { #keecas.config.manager }
+
+`manager`
+
+Unified Configuration Management for Keecas.
+
+Manages all configuration options with TOML file support, hierarchical priority,
+and dynamic propagation to affected subsystems (Pint locale, localization).
+
+The main configuration object is exposed as `config` from the keecas package:
+
+```{python}
+from keecas import config
+
+# Access nested configuration
+config.language = 'it'                          # Italian localization
+config.latex.eq_prefix = 'eq-'                  # LaTeX label prefix
+config.display.default_float_format = '.3f'    # Default float formatting
+config.display.katex = True                     # KaTeX compatibility mode
+
+# Environment configuration
+config.latex.environments.align.separator       # Built-in environment separator
+config.latex.environments.set('custom', {...})  # Custom environment
+```
+
+```python
+# Save configuration
+from keecas.config import get_config_manager
+manager = get_config_manager()
+manager.save_config()  # Save to .keecas/config.toml
+```
+
+## Configuration Hierarchy
+
+Priority order: Local config > Global config > Defaults
+
+- **Local**: `<project>/.keecas/config.toml` (project-specific)
+- **Global**: `~/.keecas/config.toml` (user-wide)
+- **Defaults**: Built-in defaults in dataclass definitions
+
+## Configuration Sections
+
+- `config.latex`: LaTeX equation formatting (eq_prefix, environments, etc.)
+- `config.display`: Display behavior (katex, debug, float_format, etc.)
+- `config.language`: Language and localization (language, disable_pint_locale)
+- `config.translations`: Custom term translations
+- `config.check_templates`: Verification function templates
+
+## Dynamic Propagation
+
+Changes to certain settings automatically propagate:
+
+- `config.language`: Updates Pint locale and localization manager
+- Configuration changes trigger affected subsystem updates
+
+## See Also {.doc-section .doc-section-see-also}
+
+- LatexConfig: LaTeX equation formatting configuration
+- DisplayConfig: Display and debugging configuration
+- LanguageConfig: Language and localization configuration
+- ConfigManager: Main configuration manager class
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [](`~keecas.config.manager.LatexConfig`) | LaTeX equation output configuration. |
+| [](`~keecas.config.manager.DisplayConfig`) | Display and debugging behavior configuration. |
+| [](`~keecas.config.manager.LanguageConfig`) | Language and localization configuration. |
+| [](`~keecas.config.manager.UnitsConfig`) | Units formatting configuration. |
+| [](`~keecas.config.manager.TranslationsConfig`) | Custom term translations configuration. |
+| [](`~keecas.config.manager.CheckTemplateConfig`) | Check function template configuration. |
+| [](`~keecas.config.manager.EnvironmentDefinition`) | Single LaTeX environment definition. |
+| [](`~keecas.config.manager.EnvironmentConfig`) | LaTeX environment configurations accessible via dot notation. |
+| [](`~keecas.config.manager.ConfigOptions`) | Unified configuration for Keecas with proper TOML sections. |
+| [](`~keecas.config.manager.ConfigManager`) | Manages configuration files, priority loading, and option propagation. |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [](`~keecas.config.manager.get_config_manager`) | Get the global configuration manager instance. |
+| [](`~keecas.config.manager.get_options`) | Get current configuration options (backward compatibility). |

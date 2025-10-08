@@ -1,0 +1,17 @@
+# display { #keecas.display }
+
+`display`
+
+Display functions for LaTeX rendering
+
+This module provides functions for rendering LaTeX equations in Jupyter notebooks using IPython.display.Markdown.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [](`~keecas.display.check`) | Engineering verification function with localized pass/fail indicators. |
+| [](`~keecas.display.show_eqn`) | Display mathematical equations as formatted LaTeX amsmath block. |
+| [](`~keecas.display.format_decimal_numbers`) | Format all decimal numbers in a LaTeX string with specified precision. |
+| [](`~keecas.display.get_replacement_dict`) | Get complete replacement dictionary combining base and localized replacements. |
+| [](`~keecas.display.replace_all`) | Replace patterns in body text using localization-aware replacements. |

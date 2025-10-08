@@ -1,0 +1,22 @@
+# config.schema { #keecas.config.schema }
+
+`schema`
+
+Configuration schema definitions and version registry for keecas.
+
+Manages schema versions, deprecated keys, renamed keys, and migration functions
+to handle breaking configuration changes across package versions.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [](`~keecas.config.schema.ConfigSchema`) | Schema definition for a specific config version. |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [](`~keecas.config.schema.migrate_0_1_to_1_0`) | Migrate config from 0.1.x to 1.0.0 |
+| [](`~keecas.config.schema.get_current_schema_version`) | Get the current/latest schema version. |
+| [](`~keecas.config.schema.get_schema`) | Get schema definition for a specific version. |

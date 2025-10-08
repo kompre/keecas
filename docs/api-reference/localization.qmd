@@ -1,0 +1,22 @@
+# localization { #keecas.localization }
+
+`localization`
+
+Simplified localization module for keecas.
+
+Provides simple translation dictionary lookup with config hierarchy support.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [](`~keecas.localization.get_language_from_config`) | Get language setting from main config system. |
+| [](`~keecas.localization.get_custom_replacements_from_config`) | Get custom replacements from main config system. |
+| [](`~keecas.localization.get_translations`) | Get complete translation dictionary for a language. |
+| [](`~keecas.localization.translate`) | Translate a single key. |
+| [](`~keecas.localization.set_language`) | Set the global language. |
+| [](`~keecas.localization.get_language`) | Get current global language. |
+| [](`~keecas.localization.get_available_languages`) | Get list of available language codes. |
+| [](`~keecas.localization.set_runtime_override`) | Set a runtime translation override. |
+| [](`~keecas.localization.clear_runtime_overrides`) | Clear all runtime overrides. |
+| [](`~keecas.localization.reset_to_config`) | Reset to config defaults, clearing runtime overrides. |

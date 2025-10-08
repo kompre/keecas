@@ -2,6 +2,9 @@
 
 This module bridges Pint unit registry with SymPy symbolic expressions,
 providing seamless conversion between physical quantities and symbolic math.
+
+It patches the Pint `Quantity` and `Unit` class to add the `_sympy_` method, which
+automatically converts Pint quantities to SymPy expressions with units.
 """
 
 from typing import Any

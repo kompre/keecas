@@ -1,4 +1,8 @@
-# %%
+"""Display functions for LaTeX rendering
+
+This module provides functions for rendering LaTeX equations in Jupyter notebooks using IPython.display.Markdown.
+
+"""
 from __future__ import annotations
 
 import re
@@ -558,10 +562,10 @@ def show_eqn(
         ```
 
     See Also:
-        - check(): Engineering verification with localization
+        - `check()`: Engineering verification with localization
         - dict_to_eq(): Convert dict to SymPy Eq objects
         - eq_to_dict(): Convert SymPy Eq objects to dict
-        - config: Global configuration object
+        - `config`: Global configuration object
 
     Notes:
         - LaTeX output respects config.katex setting (disables labels for KaTeX compatibility)

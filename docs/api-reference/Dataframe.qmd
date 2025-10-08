@@ -1,216 +1,22 @@
-# Dataframe { #keecas.dataframe.Dataframe }
+# dataframe { #keecas.dataframe }
 
-```python
-Dataframe(*args, filler=None, **kwargs)
-```
+`dataframe`
 
-Custom dictionary-like container for tabular equation data.
+Custom dictionary-like Dataframe class for tabular mathematical data.
 
-Dataframe maintains tabular structure where all rows have consistent column count.
-Used by show_eqn() to create multi-column LaTeX output where keys represent row
-labels in the amsmath block and values are lists that populate columns across
-each row.
+This module provides the Dataframe class, which maintains tabular structure
+where all rows have consistent column count. It's designed specifically for
+LaTeX equation rendering where keys represent row labels and values are lists
+that populate columns across each row.
 
-The Dataframe can be initialized from a list of dicts (where each dict represents
-a column of data) or from a single dict (where values are lists representing rows).
-
-## Parameters {.doc-section .doc-section-parameters}
-
-| Name     | Type   | Description                                                                                                                               | Default   |
-|----------|--------|-------------------------------------------------------------------------------------------------------------------------------------------|-----------|
-| *args    | Any    | If first arg is list of dicts, initializes from column sequences. Otherwise, expects at most one dictionary for row-based initialization. | `()`      |
-| filler   | Any    | Value used to fill missing entries when sequences have different lengths. Defaults to None.                                               | `None`    |
-| **kwargs | Any    | Additional key-value pairs for initialization.                                                                                            | `{}`      |
-
-## Examples {.doc-section .doc-section-examples}
-
-```{python}
-from keecas import Dataframe, symbols, u
-
-# Initialize from list of dicts (column-based)
-F, A = symbols(r"F, A")
-
-_p = {F: 100*u.kN, A: 20*u.cm**2}
-_e = {F: "F_applied", A: "A_load"}
-
-df = Dataframe([_p, _e])
-df
-```
-
-```{python}
-# Initialize from single dict (row-based)
-df = Dataframe({
-    F: [100*u.kN, "F_applied"],
-    A: [20*u.cm**2, "A_load"]
-})
-df
-```
-
-```{python}
-# Using filler for missing values
-_p = {F: 100*u.kN, A: 20*u.cm**2}
-_e = {F: "F_applied"}  # Missing A
-
-df = Dataframe([_p, _e], filler="--")
-df
-```
-
-## See Also {.doc-section .doc-section-see-also}
-
-- show_eqn(): Main function that uses Dataframe for rendering
-- create_dataframe(): Factory function for creating pre-sized Dataframes
-
-## Notes {.doc-section .doc-section-notes}
-
-- Keys represent row labels in LaTeX output (LHS symbols)
-- Values are lists where each element becomes a column in the output
-- All rows automatically padded to same width using filler value
-- Supports dict-like operations: update, |, +
-- Order of keys preserved from first dict in list initialization
-
-## Attributes
+## Classes
 
 | Name | Description |
 | --- | --- |
-| [length](#keecas.dataframe.Dataframe.length) | Number of rows in the Dataframe. |
-| [shape](#keecas.dataframe.Dataframe.shape) | Shape of the Dataframe as (columns, rows). |
-| [width](#keecas.dataframe.Dataframe.width) | Number of columns in the Dataframe. |
+| [](`~keecas.dataframe.Dataframe`) | Custom dictionary-like container for tabular equation data. |
 
-## Methods
+## Functions
 
 | Name | Description |
 | --- | --- |
-| [append](#keecas.dataframe.Dataframe.append) | Append a single column to the Dataframe. |
-| [dict_repr](#keecas.dataframe.Dataframe.dict_repr) | Get string representation as a regular dictionary. |
-| [extend](#keecas.dataframe.Dataframe.extend) | Extend the Dataframe by adding multiple columns from another source. |
-| [print_dict](#keecas.dataframe.Dataframe.print_dict) | Print the Dataframe as a regular dictionary. |
-| [update](#keecas.dataframe.Dataframe.update) | Update the Dataframe with new data, extending width as needed. |
-
-### append { #keecas.dataframe.Dataframe.append }
-
-```python
-append(other, strict=True)
-```
-
-Append a single column to the Dataframe.
-
-Adds one new column to the right of existing columns. Each row receives either
-the corresponding value from 'other' or the filler value if not present.
-
-#### Parameters {.doc-section .doc-section-parameters}
-
-| Name   | Type                                      | Description                                                                                                                                                                                                                          | Default    |
-|--------|-------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
-| other  | Dataframe \| dict\[Hashable, Any\] \| Any | Data to append as a new column. Can be: - Dataframe: Uses first column of the other Dataframe (index 0) - dict: Uses values from the dictionary matching existing row keys - Any: Uses the same value for all rows in the new column | _required_ |
-| strict | bool                                      | If True, only considers keys that exist in self. When False, ignores extra keys in 'other'. Defaults to True.                                                                                                                        | `True`     |
-
-#### Examples {.doc-section .doc-section-examples}
-
-```{python}
-from keecas import Dataframe, symbols, u
-
-F, A = symbols(r"F, A")
-
-# Start with parameters
-df = Dataframe({F: [100*u.kN], A: [20*u.cm**2]})
-
-# Append descriptions as new column
-df.append({F: "applied force", A: "load area"})
-df
-```
-
-#### Notes {.doc-section .doc-section-notes}
-
-- Increases width by 1 (adds one column to the right)
-- Rows without matching keys receive filler value
-- Does nothing if Dataframe has no keys yet
-
-### dict_repr { #keecas.dataframe.Dataframe.dict_repr }
-
-```python
-dict_repr()
-```
-
-Get string representation as a regular dictionary.
-
-### extend { #keecas.dataframe.Dataframe.extend }
-
-```python
-extend(other, strict=True)
-```
-
-Extend the Dataframe by adding multiple columns from another source.
-
-Adds all columns from 'other' to the right of existing columns. This is the
-batch version of append(), useful for adding multiple columns at once.
-
-#### Parameters {.doc-section .doc-section-parameters}
-
-| Name   | Type                                              | Description                                                                                                                                                                                                                                 | Default    |
-|--------|---------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
-| other  | Dataframe \| dict\[Hashable, Any\] \| list\[Any\] | Data to extend with. Can be: - Dataframe: Adds all columns from the other Dataframe - dict: Converts to Dataframe and extends (values as lists for multiple columns) - list: Extends each row with the list values (all rows get same list) | _required_ |
-| strict | bool                                              | If True, only considers row keys that exist in self. When False, new keys from 'other' are added as new rows. Defaults to True.                                                                                                             | `True`     |
-
-#### Raises {.doc-section .doc-section-raises}
-
-| Name   | Type       | Description                                                  |
-|--------|------------|--------------------------------------------------------------|
-|        | ValueError | If other is not a supported type (Dataframe, dict, or list). |
-
-#### Examples {.doc-section .doc-section-examples}
-
-```{python}
-from keecas import Dataframe, symbols, u, pc
-
-F, A, sigma = symbols(r"F, A, \sigma")
-
-# Start with parameters
-_p = Dataframe({F: [100*u.kN], A: [20*u.cm**2]})
-
-# Extend with expressions and values
-_e = Dataframe({F: ["F"], A: ["A"], sigma: ["F/A"]})
-_v = Dataframe({sigma: [5*u.MPa]}, filler=None)
-
-_p.extend(_e)
-_p.extend(_v, strict=False)  # Add new row sigma
-_p
-```
-
-#### Notes {.doc-section .doc-section-notes}
-
-- Increases width by number of columns in 'other'
-- With strict=True, only existing rows are extended
-- With strict=False, new rows from 'other' are added
-- Use append() to add a single column, extend() for multiple columns
-
-### print_dict { #keecas.dataframe.Dataframe.print_dict }
-
-```python
-print_dict()
-```
-
-Print the Dataframe as a regular dictionary.
-
-### update { #keecas.dataframe.Dataframe.update }
-
-```python
-update(*args, **kwargs)
-```
-
-Update the Dataframe with new data, extending width as needed.
-
-Similar to dict.update() but maintains tabular structure by ensuring
-all columns have consistent length after the update.
-
-#### Parameters {.doc-section .doc-section-parameters}
-
-| Name     | Type   | Description                                           | Default   |
-|----------|--------|-------------------------------------------------------|-----------|
-| *args    | Any    | Positional arguments (expects at most one dictionary) | `()`      |
-| **kwargs | Any    | Keyword arguments representing new column data        | `{}`      |
-
-#### Raises {.doc-section .doc-section-raises}
-
-| Name   | Type      | Description                                      |
-|--------|-----------|--------------------------------------------------|
-|        | TypeError | If more than one positional argument is provided |
+| [](`~keecas.dataframe.create_dataframe`) | Create a pre-sized Dataframe with specified shape and initial values. |

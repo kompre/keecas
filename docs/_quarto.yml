@@ -1,69 +1,6 @@
 project:
   type: website
 
-quartodoc:
-  # Package to document
-  package: keecas
-  style: pkgdown
-
-  # Docstring parser
-  parser: google
-
-  # Output directory for generated API docs
-  dir: api-reference/
-
-  # Sidebar configuration
-  sidebar: api-reference/_sidebar.yml
-
-  # Rendering options
-  renderer:
-    style: markdown
-    # show_signature: true
-    # show_signature_annotations: false
-    # table_style: description-list
-
-  options:
-    signature_name: short
-  
-  # Documentation structure
-  # Note: Some functions excluded due to quartodoc 0.7.6 renderer bug
-  # See: _todo/pending/programmatic-api-documentation.md
-  sections:
-    - title: Display Module
-      desc: LaTeX equation rendering and formatting
-      package: keecas.display
-      contents:
-        - name: show_eqn
-        - name: check
-        - name: format_decimal_numbers
-    - title: Dataframe Module
-      desc: Custom dictionary-like container for tabular equation data
-      package: keecas.dataframe
-      contents:
-        - name: Dataframe
-        - name: create_dataframe
-    - title: Pipe Commands
-      desc: Wraps common SymPy functions as decorators for functional composition
-      package: keecas.pipe_command
-      contents:
-        - name: parse_expr
-        - name: subs
-        - name: convert_to
-        - name: N
-        - name: doit
-        - name: quantity_simplify
-    - title: Pint-SymPy Bridge
-      desc: Integrates Pint unit registry with SymPy symbolic expressions by adding method `_sympy_` to `pint.Quantity` and `pint.Unit`
-      package: keecas.pint_sympy
-      contents:
-        - name: pint_to_sympy
-        - name: SymPyUnitCache
-        - name: update_pint_locale
-
-metadata-files: 
-  - "api-reference/_sidebar.yml"
-
-
 website:
   title: "Keecas Documentation"
   description: "Symbolic and units-aware calculations for Jupyter notebooks"
@@ -92,3 +29,88 @@ execute:
   freeze: auto
   echo: true  # Show code in all code blocks by default
   warning: false  # Suppress warnings in rendered output
+
+filters: 
+  - interlinks
+
+interlinks:
+  autolink: true
+  aliases:
+    keecas: [null]
+    sympy: [null]
+  sources:
+    python:
+      url: https://docs.python.org/3/
+    sympy:
+      url: https://docs.sympy.org/latest/
+
+
+quartodoc:
+  # Package to document
+  package: keecas
+  style: pkgdown
+  render_interlinks: true
+
+  # Docstring parser
+  parser: google
+
+  # Output directory for generated API docs
+  dir: api-reference
+
+  # Sidebar configuration
+  sidebar: api-reference/_sidebar.yml
+
+  # Rendering options
+  renderer:
+    style: markdown
+    # show_signature: true
+    # show_signature_annotations: false
+    # table_style: description-list
+
+  options:
+    signature_name: short
+    member_order: source
+    children: linked
+  
+  # Documentation structure
+  # See: _todo/pending/programmatic-api-documentation.md
+  sections:
+    - title: Display Module
+      desc: LaTeX equation rendering and formatting
+      contents:
+        - name: display
+    - subtitle: Functions
+      contents:
+        - show_eqn
+        - check
+    - title: Dataframe Module
+      desc: Custom dictionary-like container for tabular equation data
+      contents:
+        - name: dataframe
+    - title: Pipe Commands Module
+      desc: Wraps common SymPy functions as decorators for functional composition
+      contents:
+        - name: pipe_command
+    - title: Pint-SymPy Bridge
+      desc: Integrates Pint unit registry with SymPy symbolic expressions by adding method `_sympy_` to `pint.Quantity` and `pint.Unit`
+      contents:
+        - name: pint_sympy
+    - title: Config Module
+      desc: Configuration management
+      contents:
+        - name: config
+        - name: config.manager
+        - name: config.migration
+        - name: config.schema
+    - title: Localization Module
+      desc: Localization settings
+      contents:
+        - name: localization
+        - name: localization.pint_locale
+    - title: CLI Module
+      desc: function of the cli interface
+      contents:
+        - name: cli
+
+metadata-files: 
+  - "api-reference/_sidebar.yml"

@@ -480,8 +480,8 @@ def format_str(value, col_index: int = 0, **kwargs) -> EarlyExit | None:
 # Default formatter chain with built-in formatters
 default_formatter_chain = FormatterChain([
     format_markdown,  # Terminal: Markdown objects
-    format_pint,      # Transformer: Pint → SymPy
-    format_mul,       # Transformer: numeric Mul → separated form
+    format_pint,      # Transformer: Pint -> SymPy
+    format_mul,       # Transformer: numeric Mul -> separated form
     format_sympy,     # Terminal: SymPy expressions
     format_float,     # Terminal fallback: float
     format_int,       # Terminal fallback: int

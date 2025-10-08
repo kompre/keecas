@@ -2,6 +2,27 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Important: Unicode in Code and Documentation
+
+**NEVER use Unicode special characters in Python code, comments, or docstrings.**
+
+This includes:
+- **Arrows**: Use `->` instead of `→`
+- **Checkmarks**: Use `[exists]`/`[missing]` instead of `✓`/`✗`
+- **Any non-ASCII symbols** in code documentation
+
+**Why**: Windows uses the `charmap` codec by default which cannot encode many Unicode characters. This causes:
+- `UnicodeEncodeError` when building documentation with quartodoc
+- Terminal encoding errors when running CLI tools
+- Inconsistent behavior across platforms
+
+**Where it's OK**: Unicode is fine in:
+- LaTeX strings (e.g., `r"\sigma"` for Greek letters)
+- Code examples in docstrings where LaTeX is expected
+- Output messages displayed through proper encoding
+
+**Rule**: If it goes in a docstring, comment, or print statement - use ASCII only.
+
 ## Project Overview
 
 `keecas` is a Python module for symbolic and units-aware calculations in Jupyter notebooks, specifically designed for Quarto rendered PDF documents. It combines `sympy` (symbolic math), `pint` (units), and `pipe` (functional programming) to provide a streamlined interface for mathematical computations with LaTeX output.

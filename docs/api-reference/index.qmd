@@ -6,9 +6,14 @@ LaTeX equation rendering and formatting
 
 | | |
 | --- | --- |
-| [show_eqn](show_eqn.qmd#keecas.display.show_eqn) | Display mathematical equations as formatted LaTeX amsmath block. |
-| [check](check.qmd#keecas.display.check) | Engineering verification function with localized pass/fail indicators. |
-| [format_decimal_numbers](format_decimal_numbers.qmd#keecas.display.format_decimal_numbers) | Format all decimal numbers in a LaTeX string with specified precision. |
+| [display](display.qmd#keecas.display) | Display functions for LaTeX rendering |
+
+### Functions
+
+| | |
+| --- | --- |
+| [show_eqn](show_eqn.qmd#keecas.show_eqn) | Display mathematical equations as formatted LaTeX amsmath block. |
+| [check](check.qmd#keecas.check) | Engineering verification function with localized pass/fail indicators. |
 
 ## Dataframe Module
 
@@ -16,21 +21,15 @@ Custom dictionary-like container for tabular equation data
 
 | | |
 | --- | --- |
-| [Dataframe](Dataframe.qmd#keecas.dataframe.Dataframe) | Custom dictionary-like container for tabular equation data. |
-| [create_dataframe](create_dataframe.qmd#keecas.dataframe.create_dataframe) | Create a pre-sized Dataframe with specified shape and initial values. |
+| [dataframe](dataframe.qmd#keecas.dataframe) | Custom dictionary-like Dataframe class for tabular mathematical data. |
 
-## Pipe Commands
+## Pipe Commands Module
 
 Wraps common SymPy functions as decorators for functional composition
 
 | | |
 | --- | --- |
-| [parse_expr](parse_expr.qmd#keecas.pipe_command.parse_expr) | Parse mathematical expression strings into SymPy symbolic objects. |
-| [subs](subs.qmd#keecas.pipe_command.subs) | Substitute variables in symbolic expressions with values or other expressions. |
-| [convert_to](convert_to.qmd#keecas.pipe_command.convert_to) | Convert quantities to different units while preserving values. |
-| [N](N.qmd#keecas.pipe_command.N) | Numerically evaluate symbolic expressions to floating-point values. |
-| [doit](doit.qmd#keecas.pipe_command.doit) | Evaluate unevaluated operations in symbolic expressions. |
-| [quantity_simplify](quantity_simplify.qmd#keecas.pipe_command.quantity_simplify) | Simplify expressions with units by combining and reducing quantities. |
+| [pipe_command](pipe_command.qmd#keecas.pipe_command) | Pipe commands for functional composition of mathematical operations. |
 
 ## Pint-SymPy Bridge
 
@@ -38,6 +37,32 @@ Integrates Pint unit registry with SymPy symbolic expressions by adding method `
 
 | | |
 | --- | --- |
-| [pint_to_sympy](pint_to_sympy.qmd#keecas.pint_sympy.pint_to_sympy) | Convert Pint quantities to SymPy expressions with units. |
-| [SymPyUnitCache](SymPyUnitCache.qmd#keecas.pint_sympy.SymPyUnitCache) | Cache for dynamically created SymPy units to avoid redundant creation. |
-| [update_pint_locale](update_pint_locale.qmd#keecas.pint_sympy.update_pint_locale) | Update Pint unit formatter locale for international unit names. |
+| [pint_sympy](pint_sympy.qmd#keecas.pint_sympy) | Pint-SymPy integration for unit-aware symbolic calculations. |
+
+## Config Module
+
+Configuration management
+
+| | |
+| --- | --- |
+| [config](config.qmd#keecas.config) | Configuration management for keecas. |
+| [config.manager](config.manager.qmd#keecas.config.manager) | Unified Configuration Management for Keecas. |
+| [config.migration](config.migration.qmd#keecas.config.migration) | Configuration migration engine for keecas. |
+| [config.schema](config.schema.qmd#keecas.config.schema) | Configuration schema definitions and version registry for keecas. |
+
+## Localization Module
+
+Localization settings
+
+| | |
+| --- | --- |
+| [localization](localization.qmd#keecas.localization) | Simplified localization module for keecas. |
+| [localization.pint_locale](localization.pint_locale.qmd#keecas.localization.pint_locale) | Pint locale management and synchronization with keecas language settings. |
+
+## CLI Module
+
+function of the cli interface
+
+| | |
+| --- | --- |
+| [cli](cli.qmd#keecas.cli) | Command-line interface for Keecas configuration management. |

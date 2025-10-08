@@ -86,7 +86,7 @@ def _load_language_module(language: str) -> dict[str, str]:
 def get_translations(language: str | None = None) -> dict[str, str]:
     """Get complete translation dictionary for a language.
 
-    Hierarchy: runtime_overrides → config_replacements → language_file
+    Hierarchy: runtime_overrides -> config_replacements -> language_file
     """
     target_lang = language or _current_language
 
@@ -105,7 +105,7 @@ def get_translations(language: str | None = None) -> dict[str, str]:
 def translate(key: str, language: str | None = None, substitutions: dict[str, str] | None = None) -> str:
     """Translate a single key.
 
-    Priority: direct substitutions → runtime → config → language file
+    Priority: direct substitutions -> runtime -> config -> language file
     """
     # Highest priority: direct substitutions
     if substitutions and key in substitutions:

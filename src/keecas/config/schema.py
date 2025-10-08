@@ -55,7 +55,7 @@ def migrate_0_1_to_1_0(old_config: dict) -> dict:
         )
         # Keep the value for now - don't auto-migrate (too complex)
 
-    # REMOVED WITH CONVERSION: float_precision → display.default_float_format
+    # REMOVED WITH CONVERSION: float_precision -> display.default_float_format
     if "float_precision" in new_config:
         precision = new_config.pop("float_precision")  # Extract user's precision value
         if "display" not in new_config:

@@ -1,4 +1,4 @@
-"""Pipe command decorators for functional composition of mathematical operations.
+"""Pipe commands for functional composition of mathematical operations.
 
 This module provides @Pipe decorated functions that enable chain operations
 like: expr | pc.subs(vals) | pc.convert_to(units) | pc.N

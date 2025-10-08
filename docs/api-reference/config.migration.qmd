@@ -1,0 +1,14 @@
+# config.migration { #keecas.config.migration }
+
+`migration`
+
+Configuration migration engine for keecas.
+
+Handles automatic migration of configuration files between schema versions,
+preserving user values while transforming structure and deprecating/removing keys.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [](`~keecas.config.migration.ConfigMigration`) | Configuration migration engine. |

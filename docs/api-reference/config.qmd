@@ -1,0 +1,7 @@
+# config { #keecas.config }
+
+`config`
+
+Configuration management for keecas.
+
+This package handles configuration versioning, migration, and management.

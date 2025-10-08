@@ -1,0 +1,14 @@
+# localization.pint_locale { #keecas.localization.pint_locale }
+
+`pint_locale`
+
+Pint locale management and synchronization with keecas language settings.
+
+This module handles locale detection, configuration, and automatic synchronization
+between keecas language settings and Pint unit formatting.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [](`~keecas.localization.pint_locale.update_pint_locale`) | Update pint locale based on keecas language setting with smart mode detection. |

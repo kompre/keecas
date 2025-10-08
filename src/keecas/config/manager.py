@@ -17,11 +17,13 @@ config.display.katex = True                     # KaTeX compatibility mode
 # Environment configuration
 config.latex.environments.align.separator       # Built-in environment separator
 config.latex.environments.set('custom', {...})  # Custom environment
+```
 
+```python
 # Save configuration
 from keecas.config import get_config_manager
 manager = get_config_manager()
-manager.save_config(scope='local')  # Save to .keecas/config.toml
+manager.save_config()  # Save to .keecas/config.toml
 ```
 
 ## Configuration Hierarchy

@@ -1,0 +1,33 @@
+# cli { #keecas.cli }
+
+`cli`
+
+Command-line interface for Keecas configuration management.
+
+Provides commands for managing global and local configuration files.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [](`~keecas.cli.get_version`) | Get the current version of keecas. |
+| [](`~keecas.cli.get_editor`) | Get the preferred text editor from environment variables. |
+| [](`~keecas.cli.get_system_editor`) | Get the system default editor command for opening files. |
+| [](`~keecas.cli.open_with_system_editor`) | Open a file with the system default editor. |
+| [](`~keecas.cli.find_free_port`) | Find a free port starting from start_port. |
+| [](`~keecas.cli.get_templates_dir`) | Get the templates directory path. |
+| [](`~keecas.cli.generate_untitled_name`) | Generate an available untitled-N.ipynb filename. |
+| [](`~keecas.cli.copy_template_to_workdir`) | Copy a template notebook to the working directory. |
+| [](`~keecas.cli.check_jupyter_available`) | Check if Jupyter is available. |
+| [](`~keecas.cli.check_jupyterlab_available`) | Check if JupyterLab is available. |
+| [](`~keecas.cli.cmd_init`) | Initialize a new configuration file. |
+| [](`~keecas.cli.cmd_config_edit`) | Edit configuration file in the user's preferred editor. |
+| [](`~keecas.cli.cmd_edit`) | Launch Jupyter server with keecas notebook templates. |
+| [](`~keecas.cli.cmd_open`) | Open configuration file with the system default editor. |
+| [](`~keecas.cli.cmd_show`) | Show current configuration. |
+| [](`~keecas.cli.cmd_path`) | Show path to configuration files. |
+| [](`~keecas.cli.cmd_reset`) | Reset configuration to defaults. |
+| [](`~keecas.cli.cmd_config_version`) | Show configuration version information. |
+| [](`~keecas.cli.cmd_migrate`) | Manually trigger configuration migration. |
+| [](`~keecas.cli.create_parser`) | Create and configure the argument parser. |
+| [](`~keecas.cli.main`) | Main CLI entry point. |

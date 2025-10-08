@@ -1,0 +1,25 @@
+# pipe_command { #keecas.pipe_command }
+
+`pipe_command`
+
+Pipe commands for functional composition of mathematical operations.
+
+This module provides @Pipe decorated functions that enable chain operations
+like: expr | pc.subs(vals) | pc.convert_to(units) | pc.N
+
+All functions are designed to work with SymPy expressions and support
+functional programming patterns for mathematical computation workflows.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [](`~keecas.pipe_command.order_subs`) | Reorder substitutions using topological order for dependency resolution. |
+| [](`~keecas.pipe_command.subs`) | Substitute variables in symbolic expressions with values or other expressions. |
+| [](`~keecas.pipe_command.N`) | Numerically evaluate symbolic expressions to floating-point values. |
+| [](`~keecas.pipe_command.convert_to`) | Convert quantities to different units while preserving values. |
+| [](`~keecas.pipe_command.doit`) | Evaluate unevaluated operations in symbolic expressions. |
+| [](`~keecas.pipe_command.parse_expr`) | Parse mathematical expression strings into SymPy symbolic objects. |
+| [](`~keecas.pipe_command.quantity_simplify`) | Simplify expressions with units by combining and reducing quantities. |
+| [](`~keecas.pipe_command.as_two_terms`) | Split expression into magnitude and units components. |
+| [](`~keecas.pipe_command.as_Mul`) | Create unevaluated multiplication from tuple of expressions. |

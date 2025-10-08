@@ -1,0 +1,24 @@
+# pint_sympy { #keecas.pint_sympy }
+
+`pint_sympy`
+
+Pint-SymPy integration for unit-aware symbolic calculations.
+
+This module bridges Pint unit registry with SymPy symbolic expressions,
+providing seamless conversion between physical quantities and symbolic math.
+
+It patches the Pint `Quantity` and `Unit` class to add the `_sympy_` method, which
+automatically converts Pint quantities to SymPy expressions with units.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [](`~keecas.pint_sympy.SymPyUnitCache`) | Cache for dynamically created SymPy units to avoid redundant creation. |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [](`~keecas.pint_sympy.update_pint_locale`) | Update Pint unit formatter locale for international unit names. |
+| [](`~keecas.pint_sympy.pint_to_sympy`) | Convert Pint quantities to SymPy expressions with units. |
