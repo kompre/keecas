@@ -45,12 +45,13 @@ Example:
     >>> chain.move_up(format_sympy)  # Reorder
 """
 
-from typing import Any, Callable
 import inspect
+from collections.abc import Callable
+from typing import Any
 
-from sympy import latex, Basic, S, Mul
-from IPython.display import Markdown
 import pint
+from IPython.display import Markdown
+from sympy import Basic, Mul, S, latex
 
 
 def validate_latex_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
@@ -80,7 +81,7 @@ def validate_latex_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     if invalid_params:
         raise ValueError(
             f"Invalid latex() parameters: {', '.join(invalid_params)}. "
-            f"Valid parameters are: {', '.join(sorted(valid_params))}"
+            f"Valid parameters are: {', '.join(sorted(valid_params))}",
         )
 
     return kwargs

@@ -1,8 +1,9 @@
 import pytest
-from sympy import symbols, Basic, sin, cos, pi
-from sympy.physics.units import meter, second
+from sympy import pi, sin, symbols
 from sympy.parsing.sympy_parser import parse_expr as sympy_parse_expr
-from keecas.pipe_command import order_subs, subs, N, convert_to, doit, parse_expr, quantity_simplify
+from sympy.physics.units import meter
+
+from keecas.pipe_command import N, convert_to, doit, order_subs, parse_expr, quantity_simplify, subs
 
 
 def test_order_subs():
@@ -59,7 +60,7 @@ def test_parse_expr():
 
 
 def test_quantity_simplify():
-    from sympy.physics.units import joule, newton, meter
+    from sympy.physics.units import joule, meter, newton
 
     expr = 2 * joule + 3 * newton * meter
     result = expr | quantity_simplify()

@@ -9,9 +9,9 @@ that populate columns across each row.
 from __future__ import annotations
 
 import copy
+from collections.abc import Hashable
 from itertools import chain
-from typing import Any, Hashable
-from sympy import Dict as sympy_dict
+from typing import Any
 
 
 class Dataframe(dict[Hashable, list[Any]]):
@@ -133,7 +133,7 @@ class Dataframe(dict[Hashable, list[Any]]):
         if args:
             if len(args) > 1:
                 raise TypeError(
-                    "update expected at most 1 arguments, got %d" % len(args)
+                    "update expected at most 1 arguments, got %d" % len(args),
                 )
             other = dict(args[0])
             other.update(kwargs)
@@ -177,7 +177,7 @@ class Dataframe(dict[Hashable, list[Any]]):
         if args:
             if len(args) > 1:
                 raise TypeError(
-                    "update expected at most 1 arguments, got %d" % len(args)
+                    "update expected at most 1 arguments, got %d" % len(args),
                 )
             other = dict(args[0])
             other.update(kwargs)
@@ -193,7 +193,7 @@ class Dataframe(dict[Hashable, list[Any]]):
         max_length = max(
             [len(value) for value in self.values()]
             + [len(value) for value in other.values()]
-            + [self._width]
+            + [self._width],
         )
 
         # Update existing keys and add new ones
@@ -213,7 +213,7 @@ class Dataframe(dict[Hashable, list[Any]]):
         # Update width
         self._width = max_length
 
-    def append(self, other: 'Dataframe' | dict[Hashable, Any] | Any, strict: bool = True) -> None:
+    def append(self, other: Dataframe | dict[Hashable, Any] | Any, strict: bool = True) -> None:
         r"""Append a single column to the Dataframe.
 
         Adds one new column to the right of existing columns. Each row receives either
@@ -258,7 +258,7 @@ class Dataframe(dict[Hashable, list[Any]]):
                 self[key].append(
                     other[key][0]
                     if key in other and len(other[key]) > 0
-                    else self._filler
+                    else self._filler,
                 )
         elif isinstance(other, dict):
             if strict:
@@ -272,7 +272,7 @@ class Dataframe(dict[Hashable, list[Any]]):
 
         self._width += 1
 
-    def extend(self, other: 'Dataframe' | dict[Hashable, Any] | list[Any], strict: bool = True) -> None:
+    def extend(self, other: Dataframe | dict[Hashable, Any] | list[Any], strict: bool = True) -> None:
         r"""Extend the Dataframe by adding multiple columns from another source.
 
         Adds all columns from 'other' to the right of existing columns. This is the
@@ -317,7 +317,7 @@ class Dataframe(dict[Hashable, list[Any]]):
             # filter keys
             if strict:
                 other = Dataframe(
-                    {key: other[key] for key in self.keys() if key in other}
+                    {key: other[key] for key in self.keys() if key in other},
                 )
                 if not other:
                     return
@@ -331,7 +331,7 @@ class Dataframe(dict[Hashable, list[Any]]):
                     case (True, True):
                         self[key].extend(
                             other[key]
-                            + [self._filler] * (other_width - len(other[key]))
+                            + [self._filler] * (other_width - len(other[key])),
                         )
                     case (True, False):
                         self[key].extend([self._filler] * other_width)
@@ -371,10 +371,10 @@ class Dataframe(dict[Hashable, list[Any]]):
             self._width += len(other)
         else:
             raise ValueError(
-                "Cannot extend Dataframe with this type. Use 'append' for single values."
+                "Cannot extend Dataframe with this type. Use 'append' for single values.",
             )
 
-    def __add__(self, other: 'Dataframe' | dict[Hashable, Any] | list[Any]) -> 'Dataframe':
+    def __add__(self, other: Dataframe | dict[Hashable, Any] | list[Any]) -> Dataframe:
         """
         Create a new Dataframe by extending this one with other data.
 
@@ -393,7 +393,7 @@ class Dataframe(dict[Hashable, list[Any]]):
         result.extend(other, strict=False)
         return result
 
-    def __or__(self, other: 'Dataframe' | dict[Hashable, Any]) -> 'Dataframe':
+    def __or__(self, other: Dataframe | dict[Hashable, Any]) -> Dataframe:
         """
         Create a new Dataframe by updating this one with other data (| operator).
 

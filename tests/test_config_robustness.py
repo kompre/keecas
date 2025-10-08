@@ -1,9 +1,7 @@
 """Tests for robust config handling with broken/invalid configuration files."""
 
+
 import pytest
-import subprocess
-import sys
-from pathlib import Path
 import toml
 
 
@@ -122,7 +120,7 @@ def test_show_config_specific_file_works_with_broken_config(tmp_path, monkeypatc
 
     valid_config = {
         'latex': {'eq_prefix': 'eq-test-'},
-        'display': {'katex': True}
+        'display': {'katex': True},
     }
     with open(config_file, 'w') as f:
         toml.dump(valid_config, f)
@@ -146,7 +144,7 @@ def test_normal_usage_unaffected_by_lazy_loading(tmp_path, monkeypatch):
 
     valid_config = {
         'latex': {'eq_prefix': 'eq-normal-'},
-        'display': {'katex': False, 'debug': True}
+        'display': {'katex': False, 'debug': True},
     }
     with open(config_file, 'w') as f:
         toml.dump(valid_config, f)
@@ -266,7 +264,7 @@ def test_language_runtime_propagation(tmp_path, monkeypatch):
     config_file.parent.mkdir(parents=True)
 
     valid_config = {
-        'language': {'disable_pint_locale': True}
+        'language': {'disable_pint_locale': True},
     }
     with open(config_file, 'w') as f:
         toml.dump(valid_config, f)

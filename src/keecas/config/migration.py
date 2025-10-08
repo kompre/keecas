@@ -5,8 +5,8 @@ Handles automatic migration of configuration files between schema versions,
 preserving user values while transforming structure and deprecating/removing keys.
 """
 
-from typing import Dict, List
 from warnings import warn
+
 from packaging import version
 
 from .schema import SCHEMAS
@@ -29,7 +29,7 @@ class ConfigMigration:
         return version.parse(config_version) < version.parse(current_version)
 
     @staticmethod
-    def get_migration_path(from_version: str, to_version: str) -> List[str]:
+    def get_migration_path(from_version: str, to_version: str) -> list[str]:
         """Get ordered list of schema versions to migrate through.
 
         Args:
@@ -52,7 +52,7 @@ class ConfigMigration:
         return all_versions[start_idx + 1 : end_idx + 1]
 
     @staticmethod
-    def migrate(config_data: Dict, from_version: str, to_version: str) -> Dict:
+    def migrate(config_data: dict, from_version: str, to_version: str) -> dict:
         """Migrate config through all intermediate versions.
 
         Preserves all user-customized values while transforming structure
@@ -79,7 +79,7 @@ class ConfigMigration:
                         f"Config key '{key}' is deprecated as of keecas {target_version}. "
                         f"See migration guide for alternatives.",
                         DeprecationWarning,
-                        stacklevel=2
+                        stacklevel=2,
                     )
 
             # Apply renaming (preserves user values)
@@ -116,7 +116,7 @@ class ConfigMigration:
                         f"Config key '{key}' was removed in keecas {target_version}. "
                         f"Check migration guide for replacement options.",
                         UserWarning,
-                        stacklevel=2
+                        stacklevel=2,
                     )
                     current_config.pop(key)
 

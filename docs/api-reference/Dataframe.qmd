@@ -99,10 +99,10 @@ the corresponding value from 'other' or the filler value if not present.
 
 #### Parameters {.doc-section .doc-section-parameters}
 
-| Name   | Type                                          | Description                                                                                                                                                                                                                          | Default    |
-|--------|-----------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
-| other  | \'Dataframe\' \| dict\[Hashable, Any\] \| Any | Data to append as a new column. Can be: - Dataframe: Uses first column of the other Dataframe (index 0) - dict: Uses values from the dictionary matching existing row keys - Any: Uses the same value for all rows in the new column | _required_ |
-| strict | bool                                          | If True, only considers keys that exist in self. When False, ignores extra keys in 'other'. Defaults to True.                                                                                                                        | `True`     |
+| Name   | Type                                      | Description                                                                                                                                                                                                                          | Default    |
+|--------|-------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| other  | Dataframe \| dict\[Hashable, Any\] \| Any | Data to append as a new column. Can be: - Dataframe: Uses first column of the other Dataframe (index 0) - dict: Uses values from the dictionary matching existing row keys - Any: Uses the same value for all rows in the new column | _required_ |
+| strict | bool                                      | If True, only considers keys that exist in self. When False, ignores extra keys in 'other'. Defaults to True.                                                                                                                        | `True`     |
 
 #### Examples {.doc-section .doc-section-examples}
 
@@ -146,10 +146,10 @@ batch version of append(), useful for adding multiple columns at once.
 
 #### Parameters {.doc-section .doc-section-parameters}
 
-| Name   | Type                                                  | Description                                                                                                                                                                                                                                 | Default    |
-|--------|-------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
-| other  | \'Dataframe\' \| dict\[Hashable, Any\] \| list\[Any\] | Data to extend with. Can be: - Dataframe: Adds all columns from the other Dataframe - dict: Converts to Dataframe and extends (values as lists for multiple columns) - list: Extends each row with the list values (all rows get same list) | _required_ |
-| strict | bool                                                  | If True, only considers row keys that exist in self. When False, new keys from 'other' are added as new rows. Defaults to True.                                                                                                             | `True`     |
+| Name   | Type                                              | Description                                                                                                                                                                                                                                 | Default    |
+|--------|---------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| other  | Dataframe \| dict\[Hashable, Any\] \| list\[Any\] | Data to extend with. Can be: - Dataframe: Adds all columns from the other Dataframe - dict: Converts to Dataframe and extends (values as lists for multiple columns) - list: Extends each row with the list values (all rows get same list) | _required_ |
+| strict | bool                                              | If True, only considers row keys that exist in self. When False, new keys from 'other' are added as new rows. Defaults to True.                                                                                                             | `True`     |
 
 #### Raises {.doc-section .doc-section-raises}
 

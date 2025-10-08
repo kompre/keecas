@@ -55,13 +55,15 @@ See Also:
 """
 
 import os
+import shutil
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field, fields
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
 import toml
 import tomlkit
-import shutil
-from datetime import datetime
-from dataclasses import dataclass, field, asdict, fields
-from pathlib import Path
-from typing import Any, Callable
 
 
 @dataclass
@@ -135,16 +137,16 @@ class CheckTemplateConfig:
     template_sets: dict[str, dict[str, str]] = field(default_factory=lambda: {
         "default": {
             "success": r"$\textcolor{{green}}{{\left[{symbol}{rhs}\quad \textbf{{{verified_text}}}\right]}}$",
-            "failure": r"$\textcolor{{red}}{{\left[{symbol}{rhs}\quad \textbf{{{not_verified_text}}}\right]}}$"
+            "failure": r"$\textcolor{{red}}{{\left[{symbol}{rhs}\quad \textbf{{{not_verified_text}}}\right]}}$",
         },
         "boxed": {
             "success": r"\colorbox{{green}}{{${symbol}{rhs} \; \checkmark \; \textbf{{{verified_text}}}$}}",
-            "failure": r"\colorbox{{red}}{{${symbol}{rhs} \; \times \; \textbf{{{not_verified_text}}}$}}"
+            "failure": r"\colorbox{{red}}{{${symbol}{rhs} \; \times \; \textbf{{{not_verified_text}}}$}}",
         },
         "minimal": {
             "success": r"${symbol}{rhs} \,\textcolor{{green}}{{\checkmark}}$",
-            "failure": r"${symbol}{rhs} \,\textcolor{{red}}{{\times}}$"
-        }
+            "failure": r"${symbol}{rhs} \,\textcolor{{red}}{{\times}}$",
+        },
     })
 
 
@@ -189,7 +191,7 @@ class EnvironmentConfig:
             line_separator=r" \\" + "\n ",
             supports_multiple_labels=True,
             outer_environment="align",
-            inner_environment=None
+            inner_environment=None,
         )
 
         # Standard equation environment
@@ -198,7 +200,7 @@ class EnvironmentConfig:
             line_separator="",
             supports_multiple_labels=False,
             outer_environment="equation",
-            inner_environment=None
+            inner_environment=None,
         )
 
         # Standard gather environment
@@ -207,7 +209,7 @@ class EnvironmentConfig:
             line_separator=r" \\" + "\n ",
             supports_multiple_labels=True,
             outer_environment="gather",
-            inner_environment=None
+            inner_environment=None,
         )
 
         # Special cases environment - nested structure
@@ -219,9 +221,9 @@ class EnvironmentConfig:
             inner_environment="aligned",
             inner_prefix=r"\left\{",
             inner_suffix=r"\right.",
-            label_position="outer"
+            label_position="outer",
         )
-        
+
         # Special right cases environment - nested structure
         self.rcases = EnvironmentDefinition(
             separator="&",
@@ -231,7 +233,7 @@ class EnvironmentConfig:
             inner_environment="aligned",
             inner_prefix=r"\left.",
             inner_suffix=r"\right\}",
-            label_position="outer"
+            label_position="outer",
         )
 
 
@@ -242,7 +244,7 @@ class EnvironmentConfig:
             supports_multiple_labels=False,
             outer_environment="align",
             inner_environment="aligned",
-            label_position="outer"
+            label_position="outer",
         )
 
         # alignat environment - requires argument for number of column pairs
@@ -251,7 +253,7 @@ class EnvironmentConfig:
             line_separator=r" \\" + "\n ",
             supports_multiple_labels=True,
             outer_environment="alignat",
-            inner_environment=None
+            inner_environment=None,
         )
 
     def get(self, name: str) -> EnvironmentDefinition | None:
@@ -295,7 +297,7 @@ class ConfigOptions:
 
     @language_setting.setter
     def language_setting(self, value: str | None):
-        
+
         self.language_config.language = value
 
     # Backward compatibility - delegate to language_setting
@@ -465,7 +467,7 @@ class ConfigManager:
         if self._load_error:
             raise RuntimeError(
                 f"Configuration could not be loaded: {self._load_error}\n"
-                f"To fix: keecas config init --force [--global|--local]"
+                f"To fix: keecas config init --force [--global|--local]",
             )
         if not self._configs_loaded:
             self.load_configs()
@@ -521,7 +523,7 @@ class ConfigManager:
         current_version = get_current_schema_version()
 
         # Load actual config data - use tomlkit to preserve structure
-        with open(config_path, "r", encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             toml_doc = tomlkit.load(f)
             config_data = dict(toml_doc)  # Convert to dict for migration
 
@@ -569,13 +571,13 @@ class ConfigManager:
             "config_version": "0.1.0",  # Default for old configs without header
             "keecas_version": "unknown",
             "generated_at": None,
-            "last_modified": None
+            "last_modified": None,
         }
 
         if not config_path.exists():
             return metadata
 
-        with open(config_path, "r", encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             for line in f:
                 if not line.startswith('#'):
                     break  # Stop at first non-comment line
@@ -737,7 +739,7 @@ class ConfigManager:
         try:
             template_content = self._generate_config_template(
                 is_global=global_config,
-                comment_style=comment_style
+                comment_style=comment_style,
             )
             with open(config_path, "w", encoding="utf-8") as f:
                 f.write(template_content)
@@ -769,13 +771,13 @@ class ConfigManager:
         if global_config is True:
             # Show only global config
             if self._global_config_path.exists():
-                with open(self._global_config_path, "r") as f:
+                with open(self._global_config_path) as f:
                     return toml.load(f)
             return {}
         elif global_config is False:
             # Show only local config
             if self._local_config_path.exists():
-                with open(self._local_config_path, "r") as f:
+                with open(self._local_config_path) as f:
                     return toml.load(f)
             return {}
         else:
@@ -795,7 +797,7 @@ class ConfigManager:
             # Generate fresh template with version header (same as init_config)
             template_content = self._generate_config_template(
                 is_global=global_config,
-                comment_style="##"
+                comment_style="##",
             )
             with open(config_path, "w", encoding="utf-8") as f:
                 f.write(template_content)
@@ -895,9 +897,10 @@ class ConfigManager:
 
     def _generate_config_template(self, is_global: bool = True, comment_style: str = "##") -> str:
         """Generate a clean, parametrizable configuration template with version header."""
+        from datetime import datetime
+
         from ..version import __version__
         from .schema import get_current_schema_version
-        from datetime import datetime
 
         defaults = ConfigOptions()
 
@@ -905,7 +908,7 @@ class ConfigManager:
         global_values = {}
         if not is_global and self._global_config_path.exists():
             try:
-                with open(self._global_config_path, "r", encoding="utf-8") as f:
+                with open(self._global_config_path, encoding="utf-8") as f:
                     global_data = toml.load(f)
                     temp_config = ConfigOptions()
                     temp_config.update_from_dict(global_data)
@@ -1029,15 +1032,15 @@ class ConfigManager:
 {format_template_line("failure_template", defaults.check_templates.failure_template, comment=(not is_global and not check_templates_inherited.get("failure_template")))}
 
 ## Named template sets
-{f"[check_templates.template_sets.default]" if is_global else "# [check_templates.template_sets.default]"}
+{"[check_templates.template_sets.default]" if is_global else "# [check_templates.template_sets.default]"}
 {format_template_line("success", defaults.check_templates.template_sets['default']['success'], comment=not is_global)}
 {format_template_line("failure", defaults.check_templates.template_sets['default']['failure'], comment=not is_global)}
 
-{f"[check_templates.template_sets.boxed]" if is_global else "# [check_templates.template_sets.boxed]"}
+{"[check_templates.template_sets.boxed]" if is_global else "# [check_templates.template_sets.boxed]"}
 {format_template_line("success", defaults.check_templates.template_sets['boxed']['success'], comment=not is_global)}
 {format_template_line("failure", defaults.check_templates.template_sets['boxed']['failure'], comment=not is_global)}
 
-{f"[check_templates.template_sets.minimal]" if is_global else "# [check_templates.template_sets.minimal]"}
+{"[check_templates.template_sets.minimal]" if is_global else "# [check_templates.template_sets.minimal]"}
 {format_template_line("success", defaults.check_templates.template_sets['minimal']['success'], comment=not is_global)}
 {format_template_line("failure", defaults.check_templates.template_sets['minimal']['failure'], comment=not is_global)}
 '''

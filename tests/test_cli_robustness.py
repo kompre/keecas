@@ -1,9 +1,7 @@
 """Tests for CLI robustness with broken configuration files."""
 
-import pytest
 import subprocess
-import sys
-from pathlib import Path
+
 import toml
 
 
@@ -21,7 +19,7 @@ def test_cli_config_path_works_with_broken_config(tmp_path, monkeypatch):
         ['keecas', 'config', 'path', '--local'],
         capture_output=True,
         text=True,
-        cwd=tmp_path
+        cwd=tmp_path,
     )
 
     assert result.returncode == 0
@@ -42,7 +40,7 @@ def test_cli_init_force_overwrites_broken_config(tmp_path, monkeypatch):
         ['keecas', 'config', 'init', '--local', '--force'],
         capture_output=True,
         text=True,
-        cwd=tmp_path
+        cwd=tmp_path,
     )
 
     assert result.returncode == 0
@@ -69,7 +67,7 @@ def test_cli_show_fails_gracefully_with_broken_config(tmp_path, monkeypatch):
         ['keecas', 'config', 'show'],
         capture_output=True,
         text=True,
-        cwd=tmp_path
+        cwd=tmp_path,
     )
 
     # Should fail (non-zero exit)
@@ -90,7 +88,7 @@ def test_cli_show_local_works_with_broken_config(tmp_path, monkeypatch):
 
     valid_config = {
         'latex': {'eq_prefix': 'test-'},
-        'display': {'katex': True}
+        'display': {'katex': True},
     }
     with open(config_file, 'w') as f:
         toml.dump(valid_config, f)
@@ -100,7 +98,7 @@ def test_cli_show_local_works_with_broken_config(tmp_path, monkeypatch):
         ['keecas', 'config', 'show', '--local'],
         capture_output=True,
         text=True,
-        cwd=tmp_path
+        cwd=tmp_path,
     )
 
     assert result.returncode == 0
@@ -122,7 +120,7 @@ def test_cli_full_recovery_workflow(tmp_path, monkeypatch):
         ['keecas', 'config', 'path', '--local'],
         capture_output=True,
         text=True,
-        cwd=tmp_path
+        cwd=tmp_path,
     )
     assert result.returncode == 0
 
@@ -131,7 +129,7 @@ def test_cli_full_recovery_workflow(tmp_path, monkeypatch):
         ['keecas', 'config', 'show'],
         capture_output=True,
         text=True,
-        cwd=tmp_path
+        cwd=tmp_path,
     )
     assert result.returncode != 0
 
@@ -140,7 +138,7 @@ def test_cli_full_recovery_workflow(tmp_path, monkeypatch):
         ['keecas', 'config', 'init', '--local', '--force'],
         capture_output=True,
         text=True,
-        cwd=tmp_path
+        cwd=tmp_path,
     )
     assert result.returncode == 0
 
@@ -149,7 +147,7 @@ def test_cli_full_recovery_workflow(tmp_path, monkeypatch):
         ['keecas', 'config', 'show'],
         capture_output=True,
         text=True,
-        cwd=tmp_path
+        cwd=tmp_path,
     )
     assert result.returncode == 0
     assert 'latex' in result.stdout

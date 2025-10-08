@@ -4,11 +4,13 @@ This module bridges Pint unit registry with SymPy symbolic expressions,
 providing seamless conversion between physical quantities and symbolic math.
 """
 
+from typing import Any
+
 import pint
 import sympy.physics.units as sympy_units
-from sympy.physics.units.util import convert_to
 from sympy import nsimplify, sympify
-from typing import Any
+from sympy.physics.units.util import convert_to
+
 
 def _initialize_unitregistry() -> pint.UnitRegistry:
     """Initialize Pint UnitRegistry with locale and format settings from config.
@@ -168,7 +170,7 @@ class SymPyUnitCache:
         sympy_unit = sympy_units.Quantity(
             fullname,
             abbrev=shortname,
-            is_prefixed=is_prefixed
+            is_prefixed=is_prefixed,
         )
 
         # Set scale factor for non-prefixed units (prefixed units handled by SymPy)
@@ -323,7 +325,7 @@ def pint_to_sympy(quantity: pint.Quantity) -> Any:
             sympy_unit = SymPyUnitCache.get_or_create(
                 fullname,
                 shortname,
-                _is_unit_prefixed(fullname)
+                _is_unit_prefixed(fullname),
             )
 
         # Multiply magnitude by unit raised to exponent

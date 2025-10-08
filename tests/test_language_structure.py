@@ -4,10 +4,11 @@ Tests for language file structure and consistency.
 Ensures all language files have consistent structure and no deprecated entries.
 """
 
-import pytest
 import importlib
 import pkgutil
-from pathlib import Path
+
+import pytest
+
 from keecas.localization import languages
 
 

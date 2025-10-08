@@ -30,15 +30,17 @@ comparison. Integrates seamlessly with Pint unit definitions.
 from keecas import symbols, u, pc, show_eqn
 
 # Basic unit conversion
-F = symbols(r"F")
+F, A_load = symbols(r"F A_{load}")
 
 _p = {
     F: 5000*u.N  # Newtons
+    A_load: 120*u.cm**2,
 }
 
 # Convert to kilonewtons
 _v = {
-    F: _p[F] | pc.convert_to(u.kN)
+    F: _p[F] | pc.convert_to(u.kN),
+    A_load: _p[A_load] | pc.convert_to(u.m),
 }
 
 show_eqn([_p, _v])

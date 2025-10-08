@@ -6,6 +6,7 @@ Provides simple translation dictionary lookup with config hierarchy support.
 import importlib
 from typing import Any
 
+
 def get_language_from_config() -> str | None:
     """Get language setting from main config system."""
     try:
@@ -73,7 +74,7 @@ def _load_language_module(language: str) -> dict[str, str]:
                 f"  • Add custom translations to your config.toml file under [translations]\n"
                 f"  • Request '{language}' support by opening an issue at: {issues_url}",
                 UserWarning,
-                stacklevel=3
+                stacklevel=3,
             )
 
     # Fallback to English if language not found
@@ -129,6 +130,7 @@ def get_language() -> str:
 def get_available_languages() -> list[str]:
     """Get list of available language codes."""
     import pkgutil
+
     from . import languages
 
     available = []
@@ -169,5 +171,5 @@ __all__ = [
     "clear_runtime_overrides",
     "reset_to_config",
     "get_language_from_config",
-    "get_custom_replacements_from_config"
+    "get_custom_replacements_from_config",
 ]

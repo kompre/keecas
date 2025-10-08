@@ -7,17 +7,26 @@ All functions are designed to work with SymPy expressions and support
 functional programming patterns for mathematical computation workflows.
 """
 
+from inspect import currentframe
+from itertools import permutations
 from typing import Any
+
 from pipe import Pipe
-from sympy.parsing.sympy_parser import parse_expr as sympy_parse_expr, T
-from sympy import Basic, sympify, S, Mul, MatrixBase, UnevaluatedExpr
+from sympy import (
+    Basic,
+    MatrixBase,
+    Mul,
+    S,
+    UnevaluatedExpr,
+    default_sort_key,
+    sympify,
+    topological_sort,
+)
 from sympy.core.function import UndefinedFunction
+from sympy.parsing.sympy_parser import T
+from sympy.parsing.sympy_parser import parse_expr as sympy_parse_expr
 from sympy.physics.units.util import convert_to as sympy_convert_to
 from sympy.physics.units.util import quantity_simplify as sympy_quantity_simplify
-from sympy import topological_sort, default_sort_key
-from itertools import permutations
-from inspect import currentframe
-from .display import wrap_floats
 
 
 def order_subs(subs: dict[Basic, Any]) -> list[tuple[Basic, Any]]:
@@ -261,15 +270,17 @@ def convert_to(expression: Basic, units: Any = 1) -> Basic:
         from keecas import symbols, u, pc, show_eqn
 
         # Basic unit conversion
-        F = symbols(r"F")
+        F, A_load = symbols(r"F A_{load}")
 
         _p = {
             F: 5000*u.N  # Newtons
+            A_load: 120*u.cm**2,
         }
 
         # Convert to kilonewtons
         _v = {
-            F: _p[F] | pc.convert_to(u.kN)
+            F: _p[F] | pc.convert_to(u.kN),
+            A_load: _p[A_load] | pc.convert_to(u.m),
         }
 
         show_eqn([_p, _v])
@@ -405,7 +416,7 @@ def doit(expression: Basic) -> Basic:
 
 @Pipe
 def parse_expr(
-    expression: str, local_dict: dict[str, Any] | None = None, evaluate: bool = False, **kwargs: Any
+    expression: str, local_dict: dict[str, Any] | None = None, evaluate: bool = False, **kwargs: Any,
 ) -> Basic:
     r"""Parse mathematical expression strings into SymPy symbolic objects.
 
@@ -526,7 +537,7 @@ def parse_expr(
         - Cleaner than verbose SymPy syntax: "F/A" vs sp.Div(F, A)
         - Idiomatic pattern: define symbols, then use string expressions in _e dict
     """
-    
+
     if not local_dict:
         local_dict = dict(currentframe().f_back.f_back.f_back.f_locals)
 
@@ -534,14 +545,14 @@ def parse_expr(
         kwargs["transformations"] = T[:11]
 
     parsed_expr = sympy_parse_expr(
-        expression, evaluate=evaluate, local_dict=local_dict, **kwargs
+        expression, evaluate=evaluate, local_dict=local_dict, **kwargs,
     )
     return parsed_expr
 
 
 @Pipe
 def quantity_simplify(
-    expression: Basic, across_dimensions: bool = True, unit_system: str = "SI", **kwargs: Any
+    expression: Basic, across_dimensions: bool = True, unit_system: str = "SI", **kwargs: Any,
 ) -> Basic:
     r"""Simplify expressions with units by combining and reducing quantities.
 
@@ -630,9 +641,9 @@ def quantity_simplify(
         - Works with both SI and other unit systems
         - May need convert_to() afterward to get desired output units
     """
-    
+
     return sympy_quantity_simplify(
-        expression, across_dimensions=across_dimensions, unit_system=unit_system
+        expression, across_dimensions=across_dimensions, unit_system=unit_system,
     )
 
 
@@ -685,7 +696,7 @@ def as_Mul(expression: tuple[Basic, Basic]) -> Basic:
     Returns:
         Unevaluated multiplication expression for clean display
     """
-    
+
     return UnevaluatedExpr(expression[0]) * UnevaluatedExpr(expression[1])
 
 

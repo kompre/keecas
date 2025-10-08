@@ -7,8 +7,9 @@ SymPy symbol manipulation, and Markdown image display in Jupyter notebooks.
 import os
 from pathlib import Path
 from typing import Any
-from IPython.display import Markdown, display
+
 import flatten_dict as fd
+from IPython.display import Markdown, display
 from ruamel.yaml import YAML
 from sympy import Basic, symbols
 from sympy.core.function import FunctionClass
@@ -25,14 +26,14 @@ def load_data(main: str, updated_value: str) -> dict[str, Any]:
             pass
 
     # caricamento dati esistenti (generati automaticamente)
-    with open(main, "r") as m:
+    with open(main) as m:
         try:
             _main = fd.flatten(yaml.load(m))
         except ValueError:
             _main = {}
 
     # caricamento dei metadata (inseriti manualmente)
-    with open(updated_value, "r") as m:
+    with open(updated_value) as m:
         _updated_value = fd.flatten(yaml.load(m))
 
     return fd.unflatten(_main | _updated_value)
@@ -97,6 +98,6 @@ def insert_images(source_path: str | Path, dest_path: str | Path = ".", fig_opt:
                 image = Path(root) / f
                 display(
                     Markdown(
-                        f"![{image.stem}](<{image.relative_to(dest_path)}>){{{fig_opt}}}"
-                    )
+                        f"![{image.stem}](<{image.relative_to(dest_path)}>){{{fig_opt}}}",
+                    ),
                 )

@@ -1,8 +1,8 @@
 """Tests for Pint-SymPy integration and unit conversion."""
 
-import pytest
 import sympy
-from keecas import u, pc
+
+from keecas import pc, u
 
 
 def test_kgf_to_newton_conversion():

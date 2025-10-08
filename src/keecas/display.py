@@ -1,30 +1,23 @@
 # %%
 from __future__ import annotations
 
-from warnings import warn
-from sympy import (
-    latex,
-    Eq,
-    Le,
-    symbols,
-    Basic,
-    FunctionClass,
-    Dict,
-    S,
-)
-from IPython.display import Markdown, display
 import re
-
-from pint import Quantity
-
-from typing import Any, Literal, Callable, Union
-
-from .dataframe import *
+from collections.abc import Callable
 
 # default values for labels
-from dataclasses import dataclass
+from typing import Any, Literal
+from warnings import warn
+
+from IPython.display import Markdown
+from sympy import (
+    Basic,
+    Eq,
+    Le,
+    latex,
+)
 
 from .config.manager import get_config_manager
+from .dataframe import *
 from .localization import translate
 
 # Use the unified configuration system
@@ -32,8 +25,7 @@ _config_manager = get_config_manager()
 config = _config_manager.options
 
 
-from itertools import chain, zip_longest
-
+from itertools import zip_longest
 
 # Template choice type for IDE autocomplete
 TemplateChoice = Literal["default", "boxed", "minimal"]
@@ -357,15 +349,15 @@ def check(
 
     # Get templates
     templates = _get_check_templates(
-        template_name, success_template_param, failure_template_param
+        template_name, success_template_param, failure_template_param,
     )
 
     # Get localized verification text
     verified_text = translate(
-        "VERIFIED", language=language, substitutions=substitutions
+        "VERIFIED", language=language, substitutions=substitutions,
     )
     not_verified_text = translate(
-        "NOT_VERIFIED", language=language, substitutions=substitutions
+        "NOT_VERIFIED", language=language, substitutions=substitutions,
     )
 
     # Perform the test
@@ -406,8 +398,8 @@ def show_eqn(
     label_command: str | None = None,
     col_wrap: str | dict | list[dict] | Dataframe | tuple | None = None,
     float_format: str | dict | list[dict] | Dataframe | tuple | None = None,
-    cell_formatter: Union[Callable, dict, list, Dataframe, tuple, None] = None,
-    row_formatter: Union[Callable, dict, None] = None,
+    cell_formatter: Callable | dict | list | Dataframe | tuple | None = None,
+    row_formatter: Callable | dict | None = None,
     debug: bool | None = None,
     env_arg: str | None = None,
     **kwargs: Any,
@@ -630,7 +622,7 @@ def show_eqn(
     # warning message in case of too many labels provided
     if not env_config.supports_multiple_labels and isinstance(label, dict):
         warn(
-            f"ATTENTION! label is a dict, while the {environment} does not support multiple labels"
+            f"ATTENTION! label is a dict, while the {environment} does not support multiple labels",
         )
 
     # Use environment separator if not explicitly provided
@@ -701,7 +693,7 @@ def show_eqn(
     # Generate template using environment configuration
     first_key = list(keys)[0] if keys else None
     template = _generate_environment_template(
-        environment, env_config, label, first_key, label_command, env_arg
+        environment, env_config, label, first_key, label_command, env_arg,
     )
 
     # generate the rows
@@ -756,7 +748,7 @@ def show_eqn(
 
     # clean the body
     body = replace_all(
-        body, language=kwargs.get("language"), substitutions=kwargs.get("substitutions")
+        body, language=kwargs.get("language"), substitutions=kwargs.get("substitutions"),
     )
 
     template = template.replace("___body___", body)
@@ -767,7 +759,6 @@ def show_eqn(
     return Markdown(template)
 
 
-import re
 
 
 def wrap_floats(text: str, wrapper: tuple[str, str] = ("", "")) -> str:
@@ -785,7 +776,7 @@ def wrap_floats(text: str, wrapper: tuple[str, str] = ("", "")) -> str:
 
 
 def format_decimal_numbers(
-    text: str | None, format_string: str | None = None
+    text: str | None, format_string: str | None = None,
 ) -> str | None:
     r"""Format all decimal numbers in a LaTeX string with specified precision.
 
@@ -918,7 +909,7 @@ def _get_base_replacements() -> dict[str, str | callable]:
     return {
         r"\\frac": r"\\dfrac",  # first replace all frac with dfrac
         r"\^\{((?:[^{}]|(?:\{(?1)\}))*)}": lambda m: regex.sub(
-            "dfrac", "frac", m.group(0)
+            "dfrac", "frac", m.group(0),
         ),  # then replace all dfrac inside ^{} with frac (small exponent)
         r"\b1 \\cdot": r"",
         r"\\\\": rf"\\\\[{config.latex.vertical_skip}]",
@@ -927,13 +918,13 @@ def _get_base_replacements() -> dict[str, str | callable]:
 
 
 def _get_localized_replacements(
-    language: str | None = None, substitutions: dict[str, str] | None = None
+    language: str | None = None, substitutions: dict[str, str] | None = None,
 ) -> dict[str, str]:
     """Get localized replacements based on current language settings."""
     return {
         r"\bfor\b": translate("for", language=language, substitutions=substitutions),
         r"\botherwise\b": translate(
-            "otherwise", language=language, substitutions=substitutions
+            "otherwise", language=language, substitutions=substitutions,
         ),
         # Domain/Range labels from SymPy LaTeX output (match \text{...} patterns)
         r"\\text\{Domain: \}": f"\\text{{{translate('Domain: ', language=language, substitutions=substitutions)}}}",
@@ -943,7 +934,7 @@ def _get_localized_replacements(
 
 
 def get_replacement_dict(
-    language: str | None = None, substitutions: dict[str, str] | None = None
+    language: str | None = None, substitutions: dict[str, str] | None = None,
 ) -> dict[str, str | callable]:
     """
     Get complete replacement dictionary combining base and localized replacements.
@@ -992,7 +983,7 @@ def replace_all(
 
 
 def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> str:
-    if not "mul_symbol" in kwargs:
+    if "mul_symbol" not in kwargs:
         kwargs["mul_symbol"] = r"\,"
     match (mode := kwargs.get("mode")):
         case "plain" | None:
@@ -1009,7 +1000,7 @@ def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> s
 
 
 def _col_wrap(
-    cw: None | str | tuple[str, str] | dict[type, tuple[str, str]], value: Any
+    cw: None | str | tuple[str, str] | dict[type, tuple[str, str]], value: Any,
 ) -> tuple[str, str]:
     if not cw:
         return ("", "")
