@@ -110,7 +110,7 @@ def _get_locale_from_keecas() -> str:
         Maps keecas language codes to standard locale identifiers
     """
     try:
-        from . import get_language_from_config, get_language
+        from . import get_language, get_language_from_config
 
         # Try to get language from config first, then from current language
         lang = get_language_from_config() or get_language()
@@ -266,7 +266,7 @@ def update_pint_locale(unitregistry: Any, language: str | None = None, verbose: 
 
     # Get or determine the target language
     if language is None:
-        from . import get_language_from_config, get_language
+        from . import get_language, get_language_from_config
         config_lang = get_language_from_config()
         current_lang = get_language()
         language = config_lang or current_lang or 'en'

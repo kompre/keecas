@@ -6,15 +6,17 @@ specifically designed for Quarto rendered PDF documents.
 """
 
 # dataframe
+# pipe_command
+from . import pipe_command as pc
 from .dataframe import Dataframe
 
 # display
 from .display import (
-    config,
-    show_eqn,
     check,
+    config,
     dict_to_eq,
     eq_to_dict,
+    show_eqn,
 )
 
 # formatters
@@ -22,28 +24,27 @@ from .formatters import (
     EarlyExit,
     FormatterChain,
     default_formatter_chain,
-    validate_latex_kwargs,
-    format_markdown,
-    format_pint,
-    format_mul,
-    format_sympy,
     format_float,
     format_int,
+    format_markdown,
+    format_mul,
+    format_pint,
     format_str,
+    format_sympy,
+    validate_latex_kwargs,
 )
 
-# pipe_command
-from . import pipe_command as pc
-
 # initialize pint
-from .pint_sympy import unitregistry as u, update_pint_locale
+from .pint_sympy import unitregistry as u
+from .pint_sympy import update_pint_locale
 
 # Use configuration for pint format
 u.formatter.default_format = config.pint_default_format
 
 # initialize sympy
 import sympy
-from sympy import latex, Eq, Le, symbols, Basic, Dict, S, ImmutableDenseMatrix as Matrix
+from sympy import Basic, Dict, Eq, Le, S, latex, symbols
+from sympy import ImmutableDenseMatrix as Matrix
 
 ## latex printing settings
 sympy.init_printing(mul_symbol=config.latex.default_mul_symbol, order="none")

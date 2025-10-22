@@ -1,18 +1,71 @@
-"""
-Unified Configuration Management for Keecas.
+"""Unified Configuration Management for Keecas.
 
-Manages all configuration options with TOML file support, priority handling,
-and dynamic propagation to affected subsystems.
+Manages all configuration options with TOML file support, hierarchical priority,
+and dynamic propagation to affected subsystems (Pint locale, localization).
+
+The main configuration object is exposed as `config` from the keecas package:
+
+```{python}
+from keecas import config
+
+# Access nested configuration
+config.language = 'it'                          # Italian localization
+config.latex.eq_prefix = 'eq-'                  # LaTeX label prefix
+config.display.default_float_format = '.3f'    # Default float formatting
+config.display.katex = True                     # KaTeX compatibility mode
+
+# Environment configuration
+config.latex.environments.align.separator       # Built-in environment separator
+config.latex.environments.set('custom', {...})  # Custom environment
+```
+
+```python
+# Save configuration
+from keecas.config import get_config_manager
+manager = get_config_manager()
+manager.save_config()  # Save to .keecas/config.toml
+```
+
+## Configuration Hierarchy
+
+Priority order: Local config > Global config > Defaults
+
+- **Local**: `<project>/.keecas/config.toml` (project-specific)
+- **Global**: `~/.keecas/config.toml` (user-wide)
+- **Defaults**: Built-in defaults in dataclass definitions
+
+## Configuration Sections
+
+- `config.latex`: LaTeX equation formatting (eq_prefix, environments, etc.)
+- `config.display`: Display behavior (katex, debug, float_format, etc.)
+- `config.language`: Language and localization (language, disable_pint_locale)
+- `config.translations`: Custom term translations
+- `config.check_templates`: Verification function templates
+
+## Dynamic Propagation
+
+Changes to certain settings automatically propagate:
+
+- `config.language`: Updates Pint locale and localization manager
+- Configuration changes trigger affected subsystem updates
+
+See Also:
+    - LatexConfig: LaTeX equation formatting configuration
+    - DisplayConfig: Display and debugging configuration
+    - LanguageConfig: Language and localization configuration
+    - ConfigManager: Main configuration manager class
 """
 
 import os
+import shutil
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field, fields
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
 import toml
 import tomlkit
-import shutil
-from datetime import datetime
-from dataclasses import dataclass, field, asdict, fields
-from pathlib import Path
-from typing import Any, Callable
 
 
 @dataclass
@@ -86,16 +139,16 @@ class CheckTemplateConfig:
     template_sets: dict[str, dict[str, str]] = field(default_factory=lambda: {
         "default": {
             "success": r"$\textcolor{{green}}{{\left[{symbol}{rhs}\quad \textbf{{{verified_text}}}\right]}}$",
-            "failure": r"$\textcolor{{red}}{{\left[{symbol}{rhs}\quad \textbf{{{not_verified_text}}}\right]}}$"
+            "failure": r"$\textcolor{{red}}{{\left[{symbol}{rhs}\quad \textbf{{{not_verified_text}}}\right]}}$",
         },
         "boxed": {
             "success": r"\colorbox{{green}}{{${symbol}{rhs} \; \checkmark \; \textbf{{{verified_text}}}$}}",
-            "failure": r"\colorbox{{red}}{{${symbol}{rhs} \; \times \; \textbf{{{not_verified_text}}}$}}"
+            "failure": r"\colorbox{{red}}{{${symbol}{rhs} \; \times \; \textbf{{{not_verified_text}}}$}}",
         },
         "minimal": {
             "success": r"${symbol}{rhs} \,\textcolor{{green}}{{\checkmark}}$",
-            "failure": r"${symbol}{rhs} \,\textcolor{{red}}{{\times}}$"
-        }
+            "failure": r"${symbol}{rhs} \,\textcolor{{red}}{{\times}}$",
+        },
     })
 
 
@@ -140,7 +193,7 @@ class EnvironmentConfig:
             line_separator=r" \\" + "\n ",
             supports_multiple_labels=True,
             outer_environment="align",
-            inner_environment=None
+            inner_environment=None,
         )
 
         # Standard equation environment
@@ -149,7 +202,7 @@ class EnvironmentConfig:
             line_separator="",
             supports_multiple_labels=False,
             outer_environment="equation",
-            inner_environment=None
+            inner_environment=None,
         )
 
         # Standard gather environment
@@ -158,7 +211,7 @@ class EnvironmentConfig:
             line_separator=r" \\" + "\n ",
             supports_multiple_labels=True,
             outer_environment="gather",
-            inner_environment=None
+            inner_environment=None,
         )
 
         # Special cases environment - nested structure
@@ -170,9 +223,9 @@ class EnvironmentConfig:
             inner_environment="aligned",
             inner_prefix=r"\left\{",
             inner_suffix=r"\right.",
-            label_position="outer"
+            label_position="outer",
         )
-        
+
         # Special right cases environment - nested structure
         self.rcases = EnvironmentDefinition(
             separator="&",
@@ -182,7 +235,7 @@ class EnvironmentConfig:
             inner_environment="aligned",
             inner_prefix=r"\left.",
             inner_suffix=r"\right\}",
-            label_position="outer"
+            label_position="outer",
         )
 
 
@@ -193,7 +246,7 @@ class EnvironmentConfig:
             supports_multiple_labels=False,
             outer_environment="align",
             inner_environment="aligned",
-            label_position="outer"
+            label_position="outer",
         )
 
         # alignat environment - requires argument for number of column pairs
@@ -202,7 +255,7 @@ class EnvironmentConfig:
             line_separator=r" \\" + "\n ",
             supports_multiple_labels=True,
             outer_environment="alignat",
-            inner_environment=None
+            inner_environment=None,
         )
 
     def get(self, name: str) -> EnvironmentDefinition | None:
@@ -246,7 +299,7 @@ class ConfigOptions:
 
     @language_setting.setter
     def language_setting(self, value: str | None):
-        
+
         self.language_config.language = value
 
     # Backward compatibility - delegate to language_setting
@@ -385,14 +438,42 @@ class ConfigManager:
     """
 
     def __init__(self):
-        self._options = ConfigOptions()
-        # Set back-reference for language propagation
-        self._options._config_manager_ref = self
-        self._options.language_config._config_manager_ref = self
+        """Initialize ConfigManager - always succeeds even with broken configs."""
+        # Path setup - always works
         self._global_config_path = self._get_global_config_path()
         self._local_config_path = self._get_local_config_path()
+
+        # State tracking
+        self._configs_loaded = False
+        self._load_error = None  # Store error for helpful messages
         self._loaded_files = []
-        self.load_configs()
+
+        # Try to load configs, but don't fail if broken
+        try:
+            self._options = ConfigOptions()
+            # Set back-reference for language propagation
+            self._options._config_manager_ref = self
+            self._options.language_config._config_manager_ref = self
+            self.load_configs()
+            self._configs_loaded = True
+        except Exception as e:
+            # Store error but continue - path-only operations still work
+            self._load_error = e
+            # Create minimal options for path-only operations
+            self._options = ConfigOptions()
+            self._options._config_manager_ref = self
+            self._options.language_config._config_manager_ref = self
+
+    def _ensure_loaded(self) -> None:
+        """Ensure configs are loaded, raise helpful error if broken."""
+        if self._load_error:
+            raise RuntimeError(
+                f"Configuration could not be loaded: {self._load_error}\n"
+                f"To fix: keecas config init --force [--global|--local]",
+            )
+        if not self._configs_loaded:
+            self.load_configs()
+            self._configs_loaded = True
 
     def _get_global_config_path(self) -> Path:
         """Get path to global configuration file."""
@@ -430,8 +511,10 @@ class ConfigManager:
     def _load_and_migrate_config(self, config_path: Path) -> None:
         """Load config with automatic migration if needed.
 
-        Args:
-            config_path: Path to configuration file
+        Parameters
+        ----------
+        config_path : Path
+            Path to configuration file
         """
         from .migration import ConfigMigration
         from .schema import get_current_schema_version
@@ -442,7 +525,7 @@ class ConfigManager:
         current_version = get_current_schema_version()
 
         # Load actual config data - use tomlkit to preserve structure
-        with open(config_path, "r", encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             toml_doc = tomlkit.load(f)
             config_data = dict(toml_doc)  # Convert to dict for migration
 
@@ -476,23 +559,27 @@ class ConfigManager:
     def _extract_metadata_from_comments(config_path: Path) -> dict:
         """Extract version metadata from config file header comments.
 
-        Args:
-            config_path: Path to config file
+        Parameters
+        ----------
+        config_path : Path
+            Path to config file
 
-        Returns:
+        Returns
+        -------
+        dict
             Dictionary with metadata (config_version, keecas_version, etc.)
         """
         metadata = {
             "config_version": "0.1.0",  # Default for old configs without header
             "keecas_version": "unknown",
             "generated_at": None,
-            "last_modified": None
+            "last_modified": None,
         }
 
         if not config_path.exists():
             return metadata
 
-        with open(config_path, "r", encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             for line in f:
                 if not line.startswith('#'):
                     break  # Stop at first non-comment line
@@ -509,16 +596,21 @@ class ConfigManager:
         return metadata
 
     def save_config(self, global_config: bool = False, force: bool = False) -> bool:
-        """
-        Save current configuration to file with version metadata.
+        """Save current configuration to file with version metadata.
 
-        Args:
-            global_config: If True, save to global config file
-            force: If True, overwrite existing file
+        Parameters
+        ----------
+        global_config : bool, optional
+            If True, save to global config file
+        force : bool, optional
+            If True, overwrite existing file
 
-        Returns:
+        Returns
+        -------
+        bool
             True if saved successfully, False otherwise
         """
+        self._ensure_loaded()
         config_path = self._global_config_path if global_config else self._local_config_path
 
         if config_path.exists() and not force:
@@ -540,9 +632,12 @@ class ConfigManager:
     def _save_config_file(self, config_path: Path, created_at: str | None = None) -> None:
         """Save config with version metadata in header comments.
 
-        Args:
-            config_path: Path to save configuration file
-            created_at: Optional creation timestamp (preserves during migration)
+        Parameters
+        ----------
+        config_path : Path
+            Path to save configuration file
+        created_at : str | None, optional
+            Optional creation timestamp (preserves during migration)
         """
         from ..version import __version__
         from .schema import get_current_schema_version
@@ -573,11 +668,16 @@ class ConfigManager:
                              migrated_data: dict, created_at: str | None = None) -> None:
         """Save migrated config preserving comments and structure.
 
-        Args:
-            config_path: Path to save configuration file
-            toml_doc: Original tomlkit document (preserves comments)
-            migrated_data: Migrated configuration data
-            created_at: Optional creation timestamp
+        Parameters
+        ----------
+        config_path : Path
+            Path to save configuration file
+        toml_doc : tomlkit.TOMLDocument
+            Original tomlkit document (preserves comments)
+        migrated_data : dict
+            Migrated configuration data
+        created_at : str | None, optional
+            Optional creation timestamp
         """
         from ..version import __version__
         from .schema import get_current_schema_version
@@ -641,7 +741,7 @@ class ConfigManager:
         try:
             template_content = self._generate_config_template(
                 is_global=global_config,
-                comment_style=comment_style
+                comment_style=comment_style,
             )
             with open(config_path, "w", encoding="utf-8") as f:
                 f.write(template_content)
@@ -657,27 +757,34 @@ class ConfigManager:
         return self._global_config_path if global_config else self._local_config_path
 
     def show_config(self, global_config: bool | None = None) -> dict[str, Any]:
-        """
-        Show current configuration.
+        """Show current configuration.
 
-        Args:
-            global_config: If True, show only global config. If False, only local.
-                          If None, show merged configuration.
+        Parameters
+        ----------
+        global_config : bool | None, optional
+            If True, show only global config. If False, only local.
+            If None, show merged configuration.
+
+        Returns
+        -------
+        dict[str, Any]
+            Configuration dictionary
         """
         if global_config is True:
             # Show only global config
             if self._global_config_path.exists():
-                with open(self._global_config_path, "r") as f:
+                with open(self._global_config_path) as f:
                     return toml.load(f)
             return {}
         elif global_config is False:
             # Show only local config
             if self._local_config_path.exists():
-                with open(self._local_config_path, "r") as f:
+                with open(self._local_config_path) as f:
                     return toml.load(f)
             return {}
         else:
-            # Show merged configuration
+            # Show merged configuration - needs loaded config
+            self._ensure_loaded()
             return self._options.to_toml_dict()
 
     def reset_config(self, global_config: bool = False) -> bool:
@@ -692,7 +799,7 @@ class ConfigManager:
             # Generate fresh template with version header (same as init_config)
             template_content = self._generate_config_template(
                 is_global=global_config,
-                comment_style="##"
+                comment_style="##",
             )
             with open(config_path, "w", encoding="utf-8") as f:
                 f.write(template_content)
@@ -706,17 +813,22 @@ class ConfigManager:
 
     def get_option(self, key: str, default: Any = None) -> Any:
         """Get configuration option value."""
+        self._ensure_loaded()
         return getattr(self._options, key, default)
 
     def set_option(self, key: str, value: Any, propagate: bool = True) -> None:
-        """
-        Set configuration option and optionally propagate changes.
+        """Set configuration option and optionally propagate changes.
 
-        Args:
-            key: Option name
-            value: Option value
-            propagate: Whether to propagate changes to affected subsystems
+        Parameters
+        ----------
+        key : str
+            Option name
+        value : Any
+            Option value
+        propagate : bool, optional
+            Whether to propagate changes to affected subsystems
         """
+        self._ensure_loaded()
         if hasattr(self._options, key):
             setattr(self._options, key, value)
             if propagate:
@@ -726,6 +838,7 @@ class ConfigManager:
 
     def _propagate_changes(self, key: str, value: Any) -> None:
         """Propagate configuration changes to affected subsystems."""
+        self._ensure_loaded()
         # Language changes affect both Pint and LocalizationManager
         if key == "language" and value is not None:
             self._update_pint_language(value)
@@ -754,7 +867,7 @@ class ConfigManager:
     def _update_localization_language(self, language: str) -> None:
         """Update LocalizationManager language."""
         try:
-            from .localization import set_language
+            from ..localization import set_language
             set_language(language)
         except ImportError:
             pass  # Module not available
@@ -786,9 +899,10 @@ class ConfigManager:
 
     def _generate_config_template(self, is_global: bool = True, comment_style: str = "##") -> str:
         """Generate a clean, parametrizable configuration template with version header."""
+        from datetime import datetime
+
         from ..version import __version__
         from .schema import get_current_schema_version
-        from datetime import datetime
 
         defaults = ConfigOptions()
 
@@ -796,7 +910,7 @@ class ConfigManager:
         global_values = {}
         if not is_global and self._global_config_path.exists():
             try:
-                with open(self._global_config_path, "r", encoding="utf-8") as f:
+                with open(self._global_config_path, encoding="utf-8") as f:
                     global_data = toml.load(f)
                     temp_config = ConfigOptions()
                     temp_config.update_from_dict(global_data)
@@ -920,15 +1034,15 @@ class ConfigManager:
 {format_template_line("failure_template", defaults.check_templates.failure_template, comment=(not is_global and not check_templates_inherited.get("failure_template")))}
 
 ## Named template sets
-{f"[check_templates.template_sets.default]" if is_global else "# [check_templates.template_sets.default]"}
+{"[check_templates.template_sets.default]" if is_global else "# [check_templates.template_sets.default]"}
 {format_template_line("success", defaults.check_templates.template_sets['default']['success'], comment=not is_global)}
 {format_template_line("failure", defaults.check_templates.template_sets['default']['failure'], comment=not is_global)}
 
-{f"[check_templates.template_sets.boxed]" if is_global else "# [check_templates.template_sets.boxed]"}
+{"[check_templates.template_sets.boxed]" if is_global else "# [check_templates.template_sets.boxed]"}
 {format_template_line("success", defaults.check_templates.template_sets['boxed']['success'], comment=not is_global)}
 {format_template_line("failure", defaults.check_templates.template_sets['boxed']['failure'], comment=not is_global)}
 
-{f"[check_templates.template_sets.minimal]" if is_global else "# [check_templates.template_sets.minimal]"}
+{"[check_templates.template_sets.minimal]" if is_global else "# [check_templates.template_sets.minimal]"}
 {format_template_line("success", defaults.check_templates.template_sets['minimal']['success'], comment=not is_global)}
 {format_template_line("failure", defaults.check_templates.template_sets['minimal']['failure'], comment=not is_global)}
 '''

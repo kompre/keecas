@@ -1,18 +1,19 @@
 import pytest
-from sympy import symbols, Eq, Le, StrictLessThan, GreaterThan, Basic
 from IPython.display import Markdown
+from sympy import Basic, Eq, GreaterThan, Le, StrictLessThan, symbols
+
+from keecas import pipe_command as pc
 from keecas.display import (
     check,
-    show_eqn,
-    wrap_floats,
-    format_decimal_numbers,
     dict_to_eq,
     eq_to_dict,
-    replace_all,
+    format_decimal_numbers,
     latex_inline_dict,
+    replace_all,
+    show_eqn,
+    wrap_floats,
 )
 from keecas.formatters import validate_latex_kwargs
-from keecas import pipe_command as pc
 
 # Test data
 x, y = symbols("x y")
@@ -21,8 +22,6 @@ x, y = symbols("x y")
 def test_import_star():
     """Test that 'from keecas import *' works without AttributeError."""
     # This test ensures __all__ is properly updated with chain-based exports
-    import sys
-    import importlib
 
     # Create a fresh namespace
     namespace = {}
@@ -112,7 +111,7 @@ def test_validate_latex_kwargs():
 
 def test_formatter_returns_none():
     """Test that formatters returning None skip to next formatter."""
-    from keecas import FormatterChain, EarlyExit, default_formatter_chain
+    from keecas import EarlyExit, FormatterChain, default_formatter_chain
 
     # Create a custom formatter that conditionally returns None
     def conditional_formatter(value, col_index=0, **kwargs):
@@ -137,7 +136,7 @@ def test_formatter_returns_none():
 
 def test_formatter_empty_string():
     """Test that formatters can explicitly return empty string via EarlyExit."""
-    from keecas import FormatterChain, EarlyExit
+    from keecas import EarlyExit, FormatterChain
 
     # Formatter that explicitly returns empty string
     def empty_formatter(value, col_index=0, **kwargs):
@@ -161,8 +160,9 @@ def test_formatter_empty_string():
 
 def test_formatter_recursive_call():
     """Test Pint → SymPy transform chain (demonstrates chaining)."""
-    from keecas import u, EarlyExit, FormatterChain, format_pint
-    from sympy import Basic, latex
+    from sympy import latex
+
+    from keecas import EarlyExit, FormatterChain, format_pint, u
 
     # Custom SymPy formatter that underlines everything
     def underline_sympy(value, col_index=0, **kwargs):
@@ -248,7 +248,7 @@ def test_replace_all():
 
     # Reset to English
     set_language("en")
-    
+
 def test_label():
     expr = {
         x: 1,
@@ -388,7 +388,7 @@ def test_check_backward_compatibility_kwargs():
     # Test custom templates via kwargs
     result_kwargs = check(0.5, 1.0, **{
         "success_template": "OK: {symbol}{rhs}",
-        "failure_template": "FAIL: {symbol}{rhs}"
+        "failure_template": "FAIL: {symbol}{rhs}",
     })
     assert "OK:" in result_kwargs.data
 
@@ -529,7 +529,7 @@ def test_environment_custom_from_config():
         "line_separator": r" \\" + "\n ",
         "supports_multiple_labels": True,
         "outer_environment": "align",
-        "inner_environment": None
+        "inner_environment": None,
     })
 
     eqns = {x: 1, y: 2}
@@ -560,7 +560,7 @@ def test_environment_with_multiple_arguments():
         "line_separator": r" \\" + "\n ",
         "supports_multiple_labels": False,
         "outer_environment": "customenv",
-        "inner_environment": None
+        "inner_environment": None,
     })
 
     eqns = {x: 1}
@@ -584,7 +584,7 @@ def test_nested_environment_with_argument():
         "outer_environment": "equation",
         "inner_environment": "aligned",
         "inner_prefix": "",
-        "inner_suffix": ""
+        "inner_suffix": "",
     })
 
     eqns = {x: 1, y: 2}
@@ -605,7 +605,7 @@ def test_inline_environment_dict():
         "separator": "&",
         "line_separator": r" \\" + "\n ",
         "supports_multiple_labels": True,
-        "outer_environment": "align"
+        "outer_environment": "align",
     }
 
     result = show_eqn(eqns, environment=inline_env, debug=True)
@@ -625,7 +625,7 @@ def test_inline_environment_object():
         separator="",
         line_separator="",
         supports_multiple_labels=False,
-        outer_environment="equation"
+        outer_environment="equation",
     )
 
     result = show_eqn(eqns, environment=inline_env, debug=True)
@@ -644,7 +644,7 @@ def test_inline_environment_with_prefixes():
         "supports_multiple_labels": False,
         "outer_environment": "equation",
         "outer_prefix": r"\boxed{",
-        "outer_suffix": "}"
+        "outer_suffix": "}",
     }
 
     result = show_eqn(eqns, environment=inline_env, debug=True)

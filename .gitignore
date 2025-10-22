@@ -24,3 +24,9 @@ __pycache__
 _freeze/
 docs/_site/
 
+# Quartodoc generated files (only commit .qmd source)
+docs/api-reference/
+docs/_inv
+
+
+/.luarc.json

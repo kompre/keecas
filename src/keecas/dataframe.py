@@ -9,30 +9,73 @@ that populate columns across each row.
 from __future__ import annotations
 
 import copy
+from collections.abc import Hashable
 from itertools import chain
-from typing import Any, Hashable
-from sympy import Dict as sympy_dict
+from typing import Any
 
 
 class Dataframe(dict[Hashable, list[Any]]):
+    r"""Custom dictionary-like container for tabular equation data.
+
+    Dataframe maintains tabular structure where all rows have consistent column count.
+    Used by show_eqn() to create multi-column LaTeX output where keys represent row
+    labels in the amsmath block and values are lists that populate columns across
+    each row.
+
+    The Dataframe can be initialized from a list of dicts (where each dict represents
+    a column of data) or from a single dict (where values are lists representing rows).
+
+    Args:
+        *args: If first arg is list of dicts, initializes from column sequences.
+            Otherwise, expects at most one dictionary for row-based initialization.
+        filler: Value used to fill missing entries when sequences have different
+            lengths. Defaults to None.
+        **kwargs: Additional key-value pairs for initialization.
+
+    Examples:
+        ```{python}
+        from keecas import Dataframe, symbols, u
+
+        # Initialize from list of dicts (column-based)
+        F, A = symbols(r"F, A")
+
+        _p = {F: 100*u.kN, A: 20*u.cm**2}
+        _e = {F: "F_applied", A: "A_load"}
+
+        df = Dataframe([_p, _e])
+        df
+        ```
+
+        ```{python}
+        # Initialize from single dict (row-based)
+        df = Dataframe({
+            F: [100*u.kN, "F_applied"],
+            A: [20*u.cm**2, "A_load"]
+        })
+        df
+        ```
+
+        ```{python}
+        # Using filler for missing values
+        _p = {F: 100*u.kN, A: 20*u.cm**2}
+        _e = {F: "F_applied"}  # Missing A
+
+        df = Dataframe([_p, _e], filler="--")
+        df
+        ```
+
+    See Also:
+        - show_eqn(): Main function that uses Dataframe for rendering
+        - create_dataframe(): Factory function for creating pre-sized Dataframes
+
+    Notes:
+        - Keys represent row labels in LaTeX output (LHS symbols)
+        - Values are lists where each element becomes a column in the output
+        - All rows automatically padded to same width using filler value
+        - Supports dict-like operations: update, |, +
+        - Order of keys preserved from first dict in list initialization
+    """
     def __init__(self, *args: Any, filler: Any = None, **kwargs: Any) -> None:
-        """
-        Initialize a Dataframe.
-
-        If the first argument is a list of dictionaries, each dictionary represents
-        a sequence of values that will populate columns in the LaTeX align block.
-        The keys become row labels and values are collected into lists.
-        Otherwise, the Dataframe is initialized from a single dictionary or keyword
-        arguments, where keys become row labels and values are converted to lists
-        of equal length using filler for missing values 
-        (single values become single-item lists).
-
-        Args:
-            *args: If first arg is list of dicts, initializes from sequences.
-                   Otherwise, expects at most one dictionary.
-            filler: Value used to fill missing entries when sequences have different lengths
-            **kwargs: Additional key-value pairs for initialization
-        """
         super().__init__()
         self._width: int = 0
         self._filler: Any = filler
@@ -90,7 +133,7 @@ class Dataframe(dict[Hashable, list[Any]]):
         if args:
             if len(args) > 1:
                 raise TypeError(
-                    "update expected at most 1 arguments, got %d" % len(args)
+                    "update expected at most 1 arguments, got %d" % len(args),
                 )
             other = dict(args[0])
             other.update(kwargs)
@@ -134,7 +177,7 @@ class Dataframe(dict[Hashable, list[Any]]):
         if args:
             if len(args) > 1:
                 raise TypeError(
-                    "update expected at most 1 arguments, got %d" % len(args)
+                    "update expected at most 1 arguments, got %d" % len(args),
                 )
             other = dict(args[0])
             other.update(kwargs)
@@ -150,7 +193,7 @@ class Dataframe(dict[Hashable, list[Any]]):
         max_length = max(
             [len(value) for value in self.values()]
             + [len(value) for value in other.values()]
-            + [self._width]
+            + [self._width],
         )
 
         # Update existing keys and add new ones
@@ -170,19 +213,38 @@ class Dataframe(dict[Hashable, list[Any]]):
         # Update width
         self._width = max_length
 
-    def append(self, other: 'Dataframe' | dict[Hashable, Any] | Any, strict: bool = True) -> None:
-        """
-        Append a single row to the Dataframe.
+    def append(self, other: Dataframe | dict[Hashable, Any] | Any, strict: bool = True) -> None:
+        r"""Append a single column to the Dataframe.
+
+        Adds one new column to the right of existing columns. Each row receives either
+        the corresponding value from 'other' or the filler value if not present.
 
         Args:
-            other: Data to append as a new row. Can be:
-                  - Dataframe: Uses first row of the other Dataframe
-                  - Dict: Uses values from the dictionary
-                  - Any: Uses the same value for all columns
-            strict: If True, only considers keys that exist in self
+            other: Data to append as a new column. Can be:
+                - Dataframe: Uses first column of the other Dataframe (index 0)
+                - dict: Uses values from the dictionary matching existing row keys
+                - Any: Uses the same value for all rows in the new column
+            strict: If True, only considers keys that exist in self. When False,
+                ignores extra keys in 'other'. Defaults to True.
 
-        Note:
-            This adds exactly one row, increasing width by 1 only if there are keys to append to.
+        Examples:
+            ```{python}
+            from keecas import Dataframe, symbols, u
+
+            F, A = symbols(r"F, A")
+
+            # Start with parameters
+            df = Dataframe({F: [100*u.kN], A: [20*u.cm**2]})
+
+            # Append descriptions as new column
+            df.append({F: "applied force", A: "load area"})
+            df
+            ```
+
+        Notes:
+            - Increases width by 1 (adds one column to the right)
+            - Rows without matching keys receive filler value
+            - Does nothing if Dataframe has no keys yet
         """
         # Only proceed if there are existing keys to append to
         if not self.keys():
@@ -196,7 +258,7 @@ class Dataframe(dict[Hashable, list[Any]]):
                 self[key].append(
                     other[key][0]
                     if key in other and len(other[key]) > 0
-                    else self._filler
+                    else self._filler,
                 )
         elif isinstance(other, dict):
             if strict:
@@ -210,25 +272,52 @@ class Dataframe(dict[Hashable, list[Any]]):
 
         self._width += 1
 
-    def extend(self, other: 'Dataframe' | dict[Hashable, Any] | list[Any], strict: bool = True) -> None:
-        """
-        Extend the Dataframe by adding multiple rows from another source.
+    def extend(self, other: Dataframe | dict[Hashable, Any] | list[Any], strict: bool = True) -> None:
+        r"""Extend the Dataframe by adding multiple columns from another source.
+
+        Adds all columns from 'other' to the right of existing columns. This is the
+        batch version of append(), useful for adding multiple columns at once.
 
         Args:
             other: Data to extend with. Can be:
-                  - Dataframe: Adds all rows from the other Dataframe
-                  - Dict: Converts to Dataframe and extends
-                  - List: Extends each column with the list values
-            strict: If True, only considers keys that exist in self
+                - Dataframe: Adds all columns from the other Dataframe
+                - dict: Converts to Dataframe and extends (values as lists for multiple columns)
+                - list: Extends each row with the list values (all rows get same list)
+            strict: If True, only considers row keys that exist in self. When False,
+                new keys from 'other' are added as new rows. Defaults to True.
 
         Raises:
-            ValueError: If other is not a supported type for extension
+            ValueError: If other is not a supported type (Dataframe, dict, or list).
+
+        Examples:
+            ```{python}
+            from keecas import Dataframe, symbols, u, pc
+
+            F, A, sigma = symbols(r"F, A, \sigma")
+
+            # Start with parameters
+            _p = Dataframe({F: [100*u.kN], A: [20*u.cm**2]})
+
+            # Extend with expressions and values
+            _e = Dataframe({F: ["F"], A: ["A"], sigma: ["F/A"]})
+            _v = Dataframe({sigma: [5*u.MPa]}, filler=None)
+
+            _p.extend(_e)
+            _p.extend(_v, strict=False)  # Add new row sigma
+            _p
+            ```
+
+        Notes:
+            - Increases width by number of columns in 'other'
+            - With strict=True, only existing rows are extended
+            - With strict=False, new rows from 'other' are added
+            - Use append() to add a single column, extend() for multiple columns
         """
         if isinstance(other, Dataframe):
             # filter keys
             if strict:
                 other = Dataframe(
-                    {key: other[key] for key in self.keys() if key in other}
+                    {key: other[key] for key in self.keys() if key in other},
                 )
                 if not other:
                     return
@@ -242,7 +331,7 @@ class Dataframe(dict[Hashable, list[Any]]):
                     case (True, True):
                         self[key].extend(
                             other[key]
-                            + [self._filler] * (other_width - len(other[key]))
+                            + [self._filler] * (other_width - len(other[key])),
                         )
                     case (True, False):
                         self[key].extend([self._filler] * other_width)
@@ -282,10 +371,10 @@ class Dataframe(dict[Hashable, list[Any]]):
             self._width += len(other)
         else:
             raise ValueError(
-                "Cannot extend Dataframe with this type. Use 'append' for single values."
+                "Cannot extend Dataframe with this type. Use 'append' for single values.",
             )
 
-    def __add__(self, other: 'Dataframe' | dict[Hashable, Any] | list[Any]) -> 'Dataframe':
+    def __add__(self, other: Dataframe | dict[Hashable, Any] | list[Any]) -> Dataframe:
         """
         Create a new Dataframe by extending this one with other data.
 
@@ -304,7 +393,7 @@ class Dataframe(dict[Hashable, list[Any]]):
         result.extend(other, strict=False)
         return result
 
-    def __or__(self, other: 'Dataframe' | dict[Hashable, Any]) -> 'Dataframe':
+    def __or__(self, other: Dataframe | dict[Hashable, Any]) -> Dataframe:
         """
         Create a new Dataframe by updating this one with other data (| operator).
 
@@ -356,29 +445,71 @@ def create_dataframe(
     seed: Any | list[Any] | dict[Hashable, Any] | Dataframe | None = None,
     default_value: Any = None,
 ) -> Dataframe:
-    """
-    Create a Dataframe with specified keys and width, initialized with seed values.
+    r"""Create a pre-sized Dataframe with specified shape and initial values.
+
+    Factory function for creating Dataframes with predetermined dimensions. Useful
+    when you know the final structure upfront and want to initialize all cells with
+    specific patterns or values.
 
     Args:
-        keys: List of keys (row labels) for the dataframe
-        width: Number of columns (width) for the dataframe
-        seed: Initial values to populate the dataframe. Can be:
-            - Scalar: Same value repeated across all cells
-            - List: Values applied to all rows, padded with default_value
-            - Dict: Per-key initialization (supports mixed list/scalar values)
-            - Dataframe: Copy values from existing dataframe
+        keys: List of keys (row labels) for the Dataframe. These become the symbol
+            keys in LaTeX output when used with show_eqn().
+        width: Number of columns in the Dataframe (number of cells per row).
+        seed: Initial values to populate the Dataframe. Can be:
+            - Scalar (Any): Same value repeated across all cells
+            - list: Values applied to all rows, padded with default_value if shorter
+            - dict: Per-row initialization (supports mixed list/scalar values per key)
+            - Dataframe: Copy values from existing Dataframe
             - None: Fill all cells with default_value
-        default_value: Value used to fill missing entries
+        default_value: Value used to fill missing entries when seed doesn't cover
+            all cells. Defaults to None.
 
     Returns:
-        New Dataframe with specified shape and initial values
+        New Dataframe with specified shape (len(keys), width) and initialized values.
 
-    Example:
-        >>> create_dataframe(['x', 'y'], 3, seed=0)
-        Dataframe({'x': [0, 0, 0], 'y': [0, 0, 0]}, shape=(2, 3))
+    Examples:
+        ```{python}
+        from keecas import symbols
+        from keecas.dataframe import create_dataframe
 
-        >>> create_dataframe(['a', 'b'], 2, seed=[1, 2], default_value=-1)
-        Dataframe({'a': [1, 2], 'b': [1, 2]}, shape=(2, 2))
+        # Create empty structure
+        x, y = symbols(r"x, y")
+        df = create_dataframe([x, y], width=3, seed=None)
+        df
+        ```
+
+        ```{python}
+        # Initialize with scalar seed
+        df = create_dataframe([x, y], width=3, seed=0)
+        df
+        ```
+
+        ```{python}
+        # Initialize with list seed (same for all rows)
+        df = create_dataframe([x, y], width=2, seed=[1, 2])
+        df
+        ```
+
+        ```{python}
+        # Per-row initialization with dict
+        df = create_dataframe(
+            [x, y],
+            width=2,
+            seed={x: [10, 20], y: 99},  # x gets list, y gets scalar
+            default_value=-1
+        )
+        df
+        ```
+
+    See Also:
+        - Dataframe: Main class with initialization options
+        - show_eqn(): Function that uses Dataframe for rendering
+
+    Notes:
+        - All rows guaranteed to have exactly 'width' columns
+        - List seed applies same list to all rows
+        - Dict seed allows per-row customization
+        - Useful for pre-allocating structure before filling with computed values
     """
     df: Dataframe = Dataframe()
 

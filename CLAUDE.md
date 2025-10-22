@@ -2,11 +2,38 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Important: Unicode in Code and Documentation
+
+**NEVER use Unicode special characters in Python code, comments, or docstrings.**
+
+This includes:
+- **Arrows**: Use `->` instead of `→`
+- **Checkmarks**: Use `[exists]`/`[missing]` instead of `✓`/`✗`
+- **Any non-ASCII symbols** in code documentation
+
+**Why**: Windows uses the `charmap` codec by default which cannot encode many Unicode characters. This causes:
+- `UnicodeEncodeError` when building documentation with quartodoc
+- Terminal encoding errors when running CLI tools
+- Inconsistent behavior across platforms
+
+**Where it's OK**: Unicode is fine in:
+- LaTeX strings (e.g., `r"\sigma"` for Greek letters)
+- Code examples in docstrings where LaTeX is expected
+- Output messages displayed through proper encoding
+
+**Rule**: If it goes in a docstring, comment, or print statement - use ASCII only.
+
 ## Project Overview
 
 `keecas` is a Python module for symbolic and units-aware calculations in Jupyter notebooks, specifically designed for Quarto rendered PDF documents. It combines `sympy` (symbolic math), `pint` (units), and `pipe` (functional programming) to provide a streamlined interface for mathematical computations with LaTeX output.
 
 ## Development Commands
+
+### Documentation
+For guidelines on writing API documentation with Google-style docstrings for quartodoc:
+- See **[DOCSTRINGS.md](DOCSTRINGS.md)** for comprehensive guidelines and templates
+- All API reference functions must follow these standards
+- Examples should be tutorial-quality and demonstrate idiomatic usage
 
 ### Testing
 ```bash
@@ -233,10 +260,10 @@ _e = {
 # Preferred import style
 from keecas import symbols, u, pc, show_eqn, config, check
 
-# Configuration for Quarto/KaTeX
-config.katex = True                        # Disable \label{} for KaTeX compatibility
-config.print_label = True                  # Print labels in dev mode
-config.eq_prefix = r"eq-PREFIX-"           # Label prefixing
+# Configuration for Quarto
+config.display.katex = True                # Disable \label{} for KaTeX compatibility (Jupyter dev mode)
+config.display.print_label = True          # Print labels in dev mode
+config.latex.eq_prefix = r"eq-PREFIX-"     # Label prefixing
 config.display.default_float_format = ".3f"  # Default float formatting
 
 # Language and localization (automatic Pint sync)
@@ -394,7 +421,33 @@ For complete details, see `docs/CONVENTIONS.md`.
 ### Jupyter Notebook Integration
 - Primary use case is in Jupyter notebooks for engineering calculations
 - LaTeX output is rendered via IPython.display.Markdown
-- Supports both KaTeX (VS Code) and standard LaTeX rendering
+- **Rendering Engines**:
+  - **KaTeX** (VS Code Jupyter extension): Does not support `\label{}` commands
+  - **MathJax** (Quarto HTML output): Full support with AMS configuration
+- **Equation Numbering & Cross-references**:
+  - Set `config.display.katex = True` during Jupyter development to suppress `\label{}`
+  - Set `config.display.print_label = True` to display labels for easy copy-paste
+  - For Quarto HTML output with working labels, add MathJax AMS config to YAML frontmatter:
+    ```yaml
+    format:
+      html:
+        include-in-header:
+          - text: |
+              <script>
+              MathJax = { tex: { tags: 'ams' } };
+              </script>
+          - text: |
+              <style>
+              .math.display {
+                max-width: 100%;
+                padding-right: 3em;
+              }
+              </style>
+    ```
+  - The CSS prevents horizontal scrollbars by reserving space for equation numbers
+  - With this configuration, `\label{}`, `\ref{}`, and `\eqref{}` work correctly in HTML output
+  - PDF output always supports labels natively
+  - Use `\eqref{eq-label}` for parenthesized references: (1), or `\ref{eq-label}` for plain references: 1
 - Example notebooks: `examples/hello_world.ipynb`, `examples/quarto_example/quarto_example.ipynb`
 
 ### Quarto Examples and Automation

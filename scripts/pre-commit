@@ -11,7 +11,23 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}🔍 Checking for notebook changes...${NC}"
+echo -e "${BLUE}🔍 Checking for changes...${NC}"
+
+# Check for Python source file changes (docstring validation)
+python_changed=$(git diff --cached --name-only --diff-filter=ACM | grep -E "^src/.*\.py$")
+
+if [ -n "$python_changed" ]; then
+    echo -e "${YELLOW}🐍 Validating docstrings for changed Python files...${NC}"
+
+    # Run docstring validation
+    if ! uv run python scripts/validate_docstrings.py; then
+        echo -e "${RED}❌ Docstring validation failed${NC}"
+        echo -e "${RED}   Add docstrings to modified functions or use: git commit --no-verify${NC}"
+        exit 1
+    fi
+
+    echo -e "${GREEN}✅ Docstring validation passed${NC}"
+fi
 
 # Get list of staged .ipynb files in quarto_example directory only
 staged_notebooks=$(git diff --cached --name-only --diff-filter=ACM | grep '\.ipynb$' | grep -E '^examples/quarto_example/')

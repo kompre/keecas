@@ -46,6 +46,7 @@ chmod +x .git/hooks/pre-commit
 echo -e "${GREEN}✅ Pre-commit hook installed successfully!${NC}"
 echo ""
 echo -e "${BLUE}📋 What this hook does:${NC}"
+echo -e "  • Validates docstrings in changed Python files (src/*.py)"
 echo -e "  • Detects when .ipynb files in examples/quarto_example/ are being committed"
 echo -e "  • Automatically converts notebooks to QMD format"
 echo -e "  • Renders notebooks to PDF and HTML with --execute flag"
