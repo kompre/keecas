@@ -115,3 +115,9 @@ quartodoc:
 
 metadata-files: 
   - "api-reference/_sidebar.yml"
+
+
+profile: 
+  group: 
+    - main
+    - dev
