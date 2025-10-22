@@ -81,35 +81,11 @@ jobs:
         cd docs
         uv run quarto render --profile dev
 
-    - name: Checkout gh-pages branch (for dev deployment)
-      if: github.ref == 'refs/heads/dev'
-      uses: actions/checkout@v4
-      with:
-        ref: gh-pages
-        path: gh-pages-content
-
-    - name: Prepare dev deployment
-      if: github.ref == 'refs/heads/dev'
-      run: |
-        # Remove old dev directory if exists
-        rm -rf gh-pages-content/dev
-        # Copy new dev build to gh-pages
-        mkdir -p gh-pages-content/dev
-        cp -r docs/_site/* gh-pages-content/dev/
-        # Ensure .nojekyll exists
-        touch gh-pages-content/.nojekyll
-
-    - name: Upload artifact (main branch)
+    - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
       with:
         path: docs/_site
-
-    - name: Upload artifact (dev branch)
-      uses: actions/upload-pages-artifact@v3
-      if: github.ref == 'refs/heads/dev'
-      with:
-        path: gh-pages-content
 
     - name: Upload build results (for PR testing)
       uses: actions/upload-artifact@v4
