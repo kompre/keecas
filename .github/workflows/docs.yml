@@ -81,11 +81,41 @@ jobs:
         cd docs
         uv run quarto render --profile dev
 
-    - name: Upload artifact
+    - name: Checkout gh-pages for dev merge
+      if: github.ref == 'refs/heads/dev'
+      run: |
+        # Fetch gh-pages branch
+        git fetch origin gh-pages || echo "No gh-pages branch yet"
+
+        # Create temporary directory for merged content
+        mkdir -p /tmp/gh-pages-merged
+
+        # If gh-pages exists, copy its content (this preserves main branch docs)
+        if git rev-parse --verify origin/gh-pages > /dev/null 2>&1; then
+          git checkout origin/gh-pages
+          cp -r . /tmp/gh-pages-merged/ || true
+          git checkout -
+        fi
+
+        # Remove old dev directory and copy new dev build
+        rm -rf /tmp/gh-pages-merged/dev
+        mkdir -p /tmp/gh-pages-merged/dev
+        cp -r docs/_site/* /tmp/gh-pages-merged/dev/
+
+        # Ensure .nojekyll exists at root
+        touch /tmp/gh-pages-merged/.nojekyll
+
+    - name: Upload artifact (main)
       uses: actions/upload-pages-artifact@v3
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+      if: github.ref == 'refs/heads/main'
       with:
         path: docs/_site
+
+    - name: Upload artifact (dev)
+      uses: actions/upload-pages-artifact@v3
+      if: github.ref == 'refs/heads/dev'
+      with:
+        path: /tmp/gh-pages-merged
 
     - name: Upload build results (for PR testing)
       uses: actions/upload-artifact@v4
