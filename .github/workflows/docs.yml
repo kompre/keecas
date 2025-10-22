@@ -69,19 +69,17 @@ jobs:
       id: pages
       uses: actions/configure-pages@v4
 
-    - name: Set site path for dev branch
+    - name: Render Quarto Documentation (main)
+      if: github.ref == 'refs/heads/main'
+      run: |
+        cd docs
+        uv run quarto render --profile main
+
+    - name: Render Quarto Documentation (dev)
       if: github.ref == 'refs/heads/dev'
       run: |
         cd docs
-        # Add site-path to _quarto.yml for dev deployment
-        echo "" >> _quarto.yml
-        echo "website:" >> _quarto.yml
-        echo "  site-path: \"/dev\"" >> _quarto.yml
-
-    - name: Render Quarto Documentation
-      run: |
-        cd docs
-        uv run quarto render
+        uv run quarto render --profile dev
 
     - name: Checkout gh-pages branch (for dev deployment)
       if: github.ref == 'refs/heads/dev'
