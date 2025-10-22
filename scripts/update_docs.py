@@ -32,7 +32,7 @@ def update_api_docs():
     print("SUCCESS: API documentation generated successfully")
 
     # Validate output
-    api_generated_dir = docs_dir / "api-reference" / "_generated"
+    api_generated_dir = docs_dir / "api-reference"
     if not api_generated_dir.exists():
         print(f"WARNING: Generated API directory not created at {api_generated_dir}")
         sys.exit(1)
