@@ -2,17 +2,22 @@ name: Build and Deploy Documentation
 
 on:
   push:
-    branches: [main, feature/documentation-system]
+    branches: [main, dev]
     paths:
       - 'docs/**'
       - 'src/**'
       - '.github/workflows/docs.yml'
   pull_request:
-    branches: [main]
+    branches: [main, dev]
     paths:
       - 'docs/**'
       - 'src/**'
   workflow_dispatch:
+    inputs:
+      pr_number:
+          description: 'PR number to release'
+          required: true
+          type: number
 
 permissions:
   contents: read
