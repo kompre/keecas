@@ -42,13 +42,17 @@ from .pint_sympy import update_pint_locale
 u.formatter.default_format = config.pint_default_format
 
 # initialize sympy
-import sympy
-from sympy import Basic, Dict, Eq, Le, S, latex, symbols
-from sympy import ImmutableDenseMatrix as Matrix
+import sympy  # noqa: E402
+from sympy import Basic, Dict, Eq, Le, S, latex, symbols  # noqa: E402
+from sympy import ImmutableDenseMatrix as Matrix  # noqa: E402
 
 ## latex printing settings
 sympy.init_printing(mul_symbol=config.latex.default_mul_symbol, order="none")
-platex = lambda x: latex(x, mode="inline", mul_symbol=config.latex.default_mul_symbol)
+
+
+def platex(x):
+    """Print LaTeX in inline mode with configured multiplication symbol."""
+    return latex(x, mode="inline", mul_symbol=config.latex.default_mul_symbol)
 
 ## common sympy functions
 __all__ = [
@@ -83,7 +87,8 @@ __all__ = [
     "S",
     "Matrix",
     "platex",
+    "__version__",
 ]
 
 # import version
-from .version import __version__
+from .version import __version__  # noqa: E402

@@ -45,7 +45,7 @@ def test_convert_to():
 
 
 def test_doit():
-    x = symbols("x")
+    symbols("x")
     expression = sin(pi/2)
     result = expression | doit()
     assert result == 1

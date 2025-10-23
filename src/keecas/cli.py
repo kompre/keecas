@@ -150,8 +150,8 @@ def copy_template_to_workdir(template_name: str, work_dir: Path | str, target_fi
 def check_jupyter_available() -> bool:
     """Check if Jupyter is available."""
     try:
-        result = subprocess.run(['jupyter', '--version'],
-                              capture_output=True, text=True, check=True)
+        subprocess.run(['jupyter', '--version'],
+                      capture_output=True, text=True, check=True)
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
@@ -160,8 +160,8 @@ def check_jupyter_available() -> bool:
 def check_jupyterlab_available() -> bool:
     """Check if JupyterLab is available."""
     try:
-        result = subprocess.run(['jupyter', 'lab', '--version'],
-                              capture_output=True, text=True, check=True)
+        subprocess.run(['jupyter', 'lab', '--version'],
+                      capture_output=True, text=True, check=True)
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False

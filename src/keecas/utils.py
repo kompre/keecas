@@ -22,7 +22,7 @@ def load_data(main: str, updated_value: str) -> dict[str, Any]:
     # Check if main file exists
     if not os.path.exists(main):
         # Create an empty file and return an empty dict
-        with open(main, "w") as f:
+        with open(main, "w"):
             pass
 
     # caricamento dati esistenti (generati automaticamente)
@@ -89,7 +89,6 @@ def escape_var(names: str | Any, dict_of_subs: dict[str, str] | None = None, **a
 
 
 def insert_images(source_path: str | Path, dest_path: str | Path = ".", fig_opt: str = "") -> None:
-    images = []
 
     # filtra lista di immagini -> path object
     for root, _, files in os.walk(source_path):

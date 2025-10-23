@@ -294,19 +294,19 @@ def test_display_module_integration():
 
     # Test that config.language works
     config.language = "it"
-    x = symbols('x')
+    symbols('x')
     # This should use Italian translations due to config.language
-    result = show_eqn({"x": "for*x"}, debug=True)
+    show_eqn({"x": "for*x"}, debug=True)
     # Note: This test verifies the integration exists;
     # full LaTeX output testing would require more complex setup
 
     # Test direct language override in show_eqn
-    result_en = show_eqn({"x": "for*x"}, language="en", debug=True)
-    result_it = show_eqn({"x": "for*x"}, language="it", debug=True)
+    show_eqn({"x": "for*x"}, language="en", debug=True)
+    show_eqn({"x": "for*x"}, language="it", debug=True)
 
     # Test direct substitutions (highest priority)
     custom_subs = {"for": "CUSTOM_FOR"}
-    result_custom = show_eqn({"x": "for*x"}, substitutions=custom_subs, debug=True)
+    show_eqn({"x": "for*x"}, substitutions=custom_subs, debug=True)
 
     # Reset
     config.language = None
@@ -319,7 +319,7 @@ def test_verifica_function_localization():
 
     from keecas.display import check, config
 
-    x = symbols('x')
+    symbols('x')
 
     # Reset to defaults
     config.language = None
@@ -335,15 +335,15 @@ def test_verifica_function_localization():
 
     # Test Italian via global setting
     set_language("it")
-    result_it_pass = check(5, 10, Le)
-    result_it_fail = check(15, 10, Le)
+    check(5, 10, Le)
+    check(15, 10, Le)
 
     # Test document-level language override
     config.language = "en"
-    result_doc_en = check(5, 10, Le)
+    check(5, 10, Le)
 
     # Test function-level language override
-    result_func_it = check(5, 10, Le, language="it")
+    check(5, 10, Le, language="it")
 
     # Test direct substitutions (highest priority)
     custom_subs = {
@@ -640,7 +640,6 @@ def test_manual_pint_locale_update():
             assert actual_locale.startswith(expected_locale_prefix), f"Expected locale starting with '{expected_locale_prefix}', got {actual_locale}"
 
         # Test with 'en' - should use conservative behavior (may not change locale)
-        previous_locale = u.formatter.locale
         update_pint_locale('en')
         # 'en' might not change locale due to conservative behavior, so we don't assert a specific change
 
@@ -667,7 +666,6 @@ def test_options_language_auto_sync():
 
     try:
         # Store initial state
-        initial_locale = u.formatter.locale
 
         # Test automatic sync when setting config.language (only for explicitly configured languages)
         test_cases = [
@@ -740,15 +738,13 @@ def test_pint_locale_with_real_formatting():
 
 def test_pint_locale_edge_cases():
     """Test edge cases in Pint localization with improved handling."""
-    from keecas import u, update_pint_locale
+    from keecas import update_pint_locale
 
     # Store current locale
-    initial_locale = u.formatter.locale
 
     # Test invalid language code - should gracefully do nothing
     update_pint_locale('invalid_lang')
     # Should remain unchanged (no fallback to hardcoded locale)
-    current_locale = u.formatter.locale
     # Either stays the same or falls back to a safe locale
 
     # Test empty string - should gracefully do nothing
