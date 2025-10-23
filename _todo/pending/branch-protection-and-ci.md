@@ -868,11 +868,42 @@ FAILED test_pint_locale_english_reset_behavior - Expected 'centimètre', got 'ce
 
 ### Current Status
 
-**Branch**: `fix/linting-errors`
-**CI Status**: ✅ All tests passing
-**Ready For**: PR review and merge to main
+**Branch**: `fix/linting-errors` → ✅ **MERGED to main (PR #14)**
+**Date Merged**: 2025-10-23
+**CI Status**: ✅ All tests passing (159/159)
 
-Once merged:
-- ⏸️ Configure branch protection on GitHub
-- ⏸️ Setup PyPI Trusted Publishing (TestPyPI + PyPI)
-- ⏸️ Test release workflow with `test-release` label
+### Post-Merge Commit on Main
+```
+f4645f7 Fix linting errors to enable CI/CD workflows (#14)
+```
+
+**Included in merge**:
+- ✅ All 56 linting errors fixed
+- ✅ Pre-commit hook optimized (tests removed)
+- ✅ Locale installation added to test workflow
+- ✅ Pre-merge version validation workflow added
+- ✅ Documentation updated (CONTRIBUTING.md)
+
+### Remaining Manual Setup Required
+
+**1. Configure Branch Protection Rules** (GitHub UI):
+- Navigate to: Settings → Branches → Add rule for `main`
+- Required status checks:
+  - `test` (from test.yml)
+  - `Validate Release Version` (from check-release-version.yml)
+- Require pull request before merging
+- Require branches to be up to date
+- Block force pushes and deletions
+
+**2. Setup PyPI Trusted Publishing**:
+- TestPyPI: https://test.pypi.org/manage/account/publishing/
+- Production PyPI: https://pypi.org/manage/account/publishing/
+- Add pending publisher: kompre/keecas, workflow: release.yml
+
+**3. Test Release Workflow**:
+- Create test PR with version bump and `test-release` label
+- Verify TestPyPI publishing works
+- Then ready for production releases
+
+**4. Sync Branches**:
+- Merge main back to dev to keep branches in sync
