@@ -2,6 +2,11 @@
 
 # keecas
 
+[![Tests](https://github.com/kompre/keecas/actions/workflows/test.yml/badge.svg)](https://github.com/kompre/keecas/actions/workflows/test.yml)
+[![PyPI version](https://badge.fury.io/py/keecas.svg)](https://pypi.org/project/keecas/)
+[![Python Version](https://img.shields.io/pypi/pyversions/keecas.svg)](https://pypi.org/project/keecas/)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://kompre.github.io/keecas)
+
 A module for performing symbolic and units-aware calculations in a jupyter notebook. 
 
 ## Introduction
