@@ -7,6 +7,7 @@
 **Tasks awaiting approval in `proposal/`**:
 1. [github-actions-pypi-publishing.md](proposal/github-actions-pypi-publishing.md) - GitHub Actions for PyPI publishing
 2. [config-versioning-and-migration.md](proposal/config-versioning-and-migration.md) - Config file versioning and migration system
+3. [branch-protection-and-ci.md](proposal/branch-protection-and-ci.md) - Branch protection and CI/CD workflow configuration
 
 **Completed tasks**:
 - [programmatic-api-documentation.md](completed/2025-10-23/programmatic-api-documentation.md) - Automated API docs with quartodoc (completed 2025-10-23)
