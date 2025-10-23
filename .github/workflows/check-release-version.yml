@@ -3,7 +3,7 @@ name: Check Release Version
 on:
   pull_request:
     types: [labeled, synchronize, opened, reopened]
-    branches: [main]
+    branches: [main, dev]
 
 jobs:
   check-version:
