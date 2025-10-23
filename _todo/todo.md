@@ -10,6 +10,7 @@
 
 **Completed tasks**:
 - [programmatic-api-documentation.md](completed/2025-10-23/programmatic-api-documentation.md) - Automated API docs with quartodoc (completed 2025-10-23)
+- [docstring-guidelines.md](completed/2025-10-23/docstring-guidelines.md) - Google-style docstring guidelines and validation (completed 2025-10-23)
 
 
 
