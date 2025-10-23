@@ -29,9 +29,10 @@ Thank you for your interest in contributing to Keecas! This guide will help you 
    ```
 
    This installs hooks that automatically:
-   - Run tests
-   - Validate docstrings
+   - Validate docstrings (fast check, < 1s)
    - Render Quarto notebooks (for `examples/quarto_example/`)
+
+   **Note**: Tests run only in CI (not pre-commit) for faster local development
 
 ## Development Workflow
 
@@ -68,9 +69,10 @@ feature-branches → dev → main (protected) → release (automated)
    ```
 
    Pre-commit hooks will automatically:
-   - Run tests
-   - Validate docstrings
+   - Validate docstrings (fast)
    - Render notebooks if changed
+
+   **Tests run in CI** - commits are fast locally!
 
 4. **Push and create PR**:
    ```bash
