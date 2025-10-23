@@ -163,15 +163,15 @@ gh pr create --base dev
 ```
 
 **Pre-commit hooks** (installed via `scripts/install-hooks.sh`):
-- Run tests locally for fast feedback
-- Validate docstrings
+- Validate docstrings (fast check, < 1s)
 - Render Quarto notebooks (for `examples/quarto_example/`)
 - Can be skipped with `git commit --no-verify`
+- **Note**: Tests only run in CI, not pre-commit (for speed)
 
 **CI as gatekeeper**:
-- Local pre-commit provides fast feedback
-- CI validates all PRs before merge to main
-- No duplication: both serve different purposes
+- Local pre-commit provides fast checks (docstrings, notebooks)
+- CI runs comprehensive validation (linting, tests, docstrings)
+- Division of labor: fast local feedback vs thorough CI validation
 
 ## Architecture Overview
 

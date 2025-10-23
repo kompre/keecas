@@ -233,7 +233,7 @@ def test_show_eqn():
     assert r"x & == 1" in result.data or r"x & = 1" in result.data
     assert r"y & == 2" in result.data or r"y & = 2" in result.data
 
-def test_replace_all():
+def test_replace_all_with_localization():
     from keecas.localization import set_language
 
     # Set language to Italian for this test
@@ -505,7 +505,7 @@ def test_environment_config_separator():
     """Test environment configuration controls separator."""
     from keecas.config import get_config_manager
 
-    config_manager = get_config_manager()
+    get_config_manager()
 
     # Test that align uses & separator from config
     eqns = {x: 1, y: 2}

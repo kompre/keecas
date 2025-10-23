@@ -4,7 +4,6 @@ Provides simple translation dictionary lookup with config hierarchy support.
 """
 
 import importlib
-from typing import Any
 
 
 def get_language_from_config() -> str | None:

@@ -772,3 +772,107 @@ Test plan:
 **All code changes complete and pushed to `feature/branch-protection-ci`.**
 
 Next step: Create PR from feature branch to main to test workflow integration.
+
+---
+
+## Post-Merge Issues and Fixes
+
+### Issue #1: Test Workflow Failed with Linting Errors
+**Branch**: `fix/linting-errors`
+**Date**: 2025-10-23
+
+**Problem**: After PR #13 merged to main, test workflow failed with 56 Ruff linting errors:
+- Lambda expressions (E731)
+- Unused variables (F841)
+- Import order issues
+- Whitespace issues
+
+**Root Cause**: Pre-existing linting errors in main codebase that weren't caught because:
+1. Pre-commit hook was running tests (slow, redundant with CI)
+2. Linter wasn't being run consistently locally
+
+**Solution**: Created `fix/linting-errors` branch and fixed all 56 errors:
+- Converted lambda to proper function in `__init__.py`
+- Removed unused variables in CLI code
+- Fixed f-string formatting in dataframe.py
+- Added `# noqa: E402` for intentional late imports
+- Fixed duplicate test function names
+- Used `ruff check --unsafe-fixes --fix` for auto-fixable issues
+
+**Result**: All 159 tests passing after linting fixes ✅
+
+### Issue #2: Pre-commit Hook Running Redundant Tests
+**Date**: 2025-10-23
+
+**Problem**: Pre-commit hook was running full test suite locally (~8 seconds), which:
+- Duplicated CI test runs
+- Slowed down local development
+- Added friction to commit workflow
+
+**Solution**: Optimized `.git/hooks/pre-commit` (already updated in `scripts/pre-commit`):
+- Removed pytest test step
+- Kept fast validation: docstrings (< 1s), notebook rendering
+- Tests now only run in CI where they gate merges
+
+**Documentation Updated**:
+- CONTRIBUTING.md: Documented that tests run only in CI
+- CLAUDE.md: Updated pre-commit hook section
+- Pre-commit hook reinstalled via `bash scripts/install-hooks.sh`
+
+**Result**: Faster commits, no redundancy ✅
+
+### Issue #3: Localization Tests Failing in CI (Ubuntu)
+**Branch**: `fix/linting-errors` (continued)
+**Date**: 2025-10-23
+
+**Problem**: 7 tests in `test_localization.py` failing in CI but passing locally:
+```
+FAILED test_pint_locale_initialization - Expected 'it_', got 'en_US.UTF-8'
+FAILED test_manual_pint_locale_update - Expected 'it_IT', got 'en_US.UTF-8'
+FAILED test_options_language_auto_sync - Expected 'it_IT', got 'en_US.UTF-8'
+FAILED test_pint_locale_fallback_behavior - Expected 'centimetro', got 'centimeter'
+FAILED test_pint_locale_supported_languages - Expected 'zentimeter', got 'centimeter'
+FAILED test_pint_locale_persistence_fix - Expected 'centimetro', got 'centimeter'
+FAILED test_pint_locale_english_reset_behavior - Expected 'centimètre', got 'centimeter'
+```
+
+**Root Cause**: Ubuntu 24.04 CI runners don't have non-English locales installed by default. The code in `src/keecas/localization/pint_locale.py` checks locale availability via `locale.setlocale()`, which fails if the locale isn't installed on the system.
+
+**Affected Locales**:
+- Italian: `it_IT.UTF-8`
+- German: `de_DE.UTF-8`
+- French: `fr_FR.UTF-8`
+- Spanish: `es_ES.UTF-8`
+- Portuguese: `pt_PT.UTF-8`
+
+**Solution**: Updated `.github/workflows/test.yml` to install required locales before running tests:
+```yaml
+- name: Install locales for internationalization tests
+  run: |
+    sudo apt-get update
+    sudo apt-get install -y locales
+    sudo locale-gen it_IT.UTF-8
+    sudo locale-gen de_DE.UTF-8
+    sudo locale-gen fr_FR.UTF-8
+    sudo locale-gen es_ES.UTF-8
+    sudo locale-gen pt_PT.UTF-8
+    sudo update-locale
+```
+
+**Result**: All 159 tests passing in CI ✅ (run #18760742110)
+
+**Test Summary from CI**:
+- Linter: All checks passed ✅
+- Tests: 159 passed, 21 warnings in 13.75s ✅
+- Docstrings: Validation passed ✅
+
+### Current Status
+
+**Branch**: `fix/linting-errors`
+**CI Status**: ✅ All tests passing
+**Ready For**: PR review and merge to main
+
+Once merged:
+- ⏸️ Configure branch protection on GitHub
+- ⏸️ Setup PyPI Trusted Publishing (TestPyPI + PyPI)
+- ⏸️ Test release workflow with `test-release` label

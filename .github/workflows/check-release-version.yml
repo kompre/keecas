@@ -1,0 +1,128 @@
+name: Check Release Version
+
+on:
+  pull_request:
+    types: [labeled, synchronize, opened, reopened]
+    branches: [main]
+
+jobs:
+  check-version:
+    name: Validate Release Version
+    # Only run if PR has release or test-release label
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'release') ||
+      contains(github.event.pull_request.labels.*.name, 'test-release')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0  # Need full history to check tags
+
+      - name: Extract version from pyproject.toml
+        id: version
+        run: |
+          VERSION=$(grep '^version = ' pyproject.toml | cut -d'"' -f2)
+          TAG="v$VERSION"
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+          echo "📦 Version in PR: $VERSION"
+          echo "🏷️  Tag to create: $TAG"
+
+      - name: Check if tag already exists
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+
+          # Fetch tags from remote
+          git fetch --tags
+
+          if git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "❌ Error: Tag $TAG already exists!"
+            echo ""
+            echo "This version has already been released."
+            echo "Please bump the version in pyproject.toml before merging."
+            echo ""
+            echo "Current version in PR: ${{ steps.version.outputs.version }}"
+            echo "Tag already exists: $TAG"
+            echo ""
+            echo "View existing releases: https://github.com/${{ github.repository }}/releases"
+            exit 1
+          fi
+
+          echo "✅ Tag $TAG is available - ready for release!"
+          echo ""
+          echo "When this PR is merged, version ${{ steps.version.outputs.version }} will be released."
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Check if version follows semantic versioning pattern
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-(rc|alpha|beta|dev|a|b)[0-9]+)?$'; then
+            echo "⚠️  Warning: Version doesn't follow semantic versioning: $VERSION"
+            echo "Expected format: MAJOR.MINOR.PATCH or MAJOR.MINOR.PATCH-{rc|alpha|beta|dev}N"
+            echo ""
+            echo "Examples:"
+            echo "  - 1.0.0 (stable release)"
+            echo "  - 1.0.0-rc1 (release candidate)"
+            echo "  - 1.0.0-beta1 (beta release)"
+            echo ""
+            echo "This won't block the release, but consider following semantic versioning."
+          else
+            echo "✅ Version follows semantic versioning: $VERSION"
+          fi
+
+      - name: Check label matches version type
+        env:
+          HAS_RELEASE_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'release') }}
+          HAS_TEST_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'test-release') }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Check if version has pre-release identifier
+          if echo "$VERSION" | grep -qE '(rc|alpha|beta|dev|a[0-9]|b[0-9])'; then
+            IS_PRERELEASE=true
+            echo "📋 Detected pre-release version: $VERSION"
+          else
+            IS_PRERELEASE=false
+            echo "📋 Detected stable version: $VERSION"
+          fi
+
+          # Warn if labels don't match version type
+          if [ "$IS_PRERELEASE" = "true" ] && [ "$HAS_RELEASE_LABEL" = "true" ]; then
+            echo ""
+            echo "⚠️  Warning: PR has 'release' label but version contains pre-release identifier"
+            echo "   Version: $VERSION"
+            echo "   Recommendation: Use 'test-release' label for pre-release versions"
+            echo ""
+            echo "   Pre-release versions automatically go to TestPyPI even with 'release' label."
+          fi
+
+          if [ "$IS_PRERELEASE" = "false" ] && [ "$HAS_TEST_LABEL" = "true" ]; then
+            echo ""
+            echo "ℹ️  Info: PR has 'test-release' label for stable version $VERSION"
+            echo "   This will publish to TestPyPI (good for testing before production)"
+          fi
+
+          echo ""
+          echo "🎯 Release target:"
+          if [ "$HAS_TEST_LABEL" = "true" ]; then
+            echo "   → TestPyPI (test-release label)"
+          elif [ "$IS_PRERELEASE" = "true" ]; then
+            echo "   → TestPyPI (pre-release version)"
+          else
+            echo "   → Production PyPI (stable release)"
+          fi
+
+      - name: Summary
+        run: |
+          echo "## ✅ Release Version Check Passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** \`${{ steps.version.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This PR is ready to be merged and will trigger a release." >> $GITHUB_STEP_SUMMARY

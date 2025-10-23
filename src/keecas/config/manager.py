@@ -970,7 +970,7 @@ class ConfigManager:
         latex_inherited = global_values.get('latex', {})
         display_inherited = global_values.get('display', {})
         language_inherited = global_values.get('language', {})
-        units_inherited = global_values.get('units', {})
+        _units_inherited = global_values.get('units', {})  # Reserved for future use
         translations_inherited = global_values.get('translations', {})
         check_templates_inherited = global_values.get('check_templates', {})
 
