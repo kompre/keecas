@@ -1,0 +1,45 @@
+---
+title: "Getting Started"
+---
+
+Welcome to Keecas! This section will help you get up and running quickly with symbolic and units-aware calculations in Jupyter notebooks.
+
+## Quick Navigation
+
+::: {.grid}
+
+::: {.g-col-4}
+### [Installation](installation.qmd)
+Install Keecas using pip, uv, or development setup.
+:::
+
+::: {.g-col-4}
+### [Quick Start](quickstart.qmd)
+Your first calculations with Keecas in just a few minutes.
+:::
+
+::: {.g-col-4}
+### [Configuration](configuration.qmd)
+Set up your preferences and customize behavior.
+:::
+
+:::
+
+## What You'll Learn
+
+By the end of this section, you'll be able to:
+
+- ✅ Install Keecas and verify it's working
+- ✅ Create your first symbolic calculation with units
+- ✅ Configure Keecas for your specific needs
+- ✅ Use the CLI for quick notebook setup
+
+## Prerequisites
+
+- **Python 3.12 or higher**
+- **Jupyter** (Lab or Notebook) for interactive calculations
+- **Basic Python knowledge** (variables, functions, imports)
+
+## Next Steps
+
+Start with [Installation](installation.qmd) to get Keecas installed on your system.

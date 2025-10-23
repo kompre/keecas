@@ -1,30 +1,3 @@
-[tool.poetry]
-name = "keecas"
-version = "0.1.2"
-description = "A set of tools for symbolic math computation done in a jupyter notebook, aimed specifically for Quarto. It is based mostly on sympy."
-authors = ["kompre <s.follador@gmail.com>"]
-readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.12"
-pint = "^0.24.3"
-pipe = "^2.2"
-sympy = "^1.13.1"
-regex = "^2024.7.24"
-ipython = "^8.26.0"
-flatten-dict = "^0.4.2"
-ruamel-yaml = "^0.18.6"
-
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.3.2"
-ipykernel = "^6.29.5"
-
-[tool.pdm.dev-dependencies]
-dev = [
-    "pytest<9.0.0,>=8.3.2",
-    "ipykernel<7.0.0,>=6.29.5",
-]
 
 [project]
 authors = [
@@ -37,20 +10,62 @@ dependencies = [
     "sympy<2.0.0,>=1.13.1",
     "regex<2025.0.0,>=2024.7.24",
     "ipython<9.0.0,>=8.26.0",
+    "jupyter<2.0.0,>=1.1.1",
+    "notebook<8.0.0,>=7.2.2",
     "flatten-dict<1.0.0,>=0.4.2",
     "ruamel-yaml<1.0.0,>=0.18.6",
+    "toml>=0.10.2",
+    "packaging>=25.0",
+    "tomlkit>=0.13.3",
 ]
 name = "keecas"
-version = "0.1.2"
+version = "1.0.0a1"
 description = "A set of tools for symbolic math computation done in a jupyter notebook, aimed specifically for Quarto. It is based mostly on sympy."
 readme = "README.md"
+
+[project.urls]
+Homepage = "https://github.com/kompre/keecas"
+Repository = "https://github.com/kompre/keecas"
+Issues = "https://github.com/kompre/keecas/issues"
+
+[project.scripts]
+keecas = "keecas.cli:main"
 
 [dependency-groups]
 dev = [
     "pytest<9.0.0,>=8.3.2",
     "ipykernel<7.0.0,>=6.29.5",
+    "pyyaml>=6.0",
+    "quartodoc>=0.11.1",
+    "ruff>=0.14.0",
 ]
 
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort (import sorting)
+    "COM",    # flake8-commas (trailing commas)
+    "UP",     # pyupgrade
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["keecas"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false  # Respect trailing commas
+line-ending = "auto"
+
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["uv_build>=0.8.14,<0.9.0"]
+build-backend = "uv_build"

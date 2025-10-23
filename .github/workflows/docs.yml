@@ -1,0 +1,140 @@
+name: Build and Deploy Documentation
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - 'docs/**'
+      - 'src/**'
+  workflow_dispatch:
+    inputs:
+      pr_number:
+          description: 'PR number to release'
+          required: true
+          type: number
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v1
+      with:
+        version: "latest"
+        enable-cache: true
+
+    - name: Install Python dependencies
+      run: |
+        uv sync --group dev
+        uv pip install -e .
+
+    - name: Setup Quarto
+      uses: quarto-dev/quarto-actions/setup@v2
+      with:
+        version: release
+
+    - name: Configure Quarto Python environment
+      run: |
+        echo "QUARTO_PYTHON=$(uv run which python)" >> $GITHUB_ENV
+
+    - name: Generate API Documentation
+      run: |
+        uv run python scripts/update_docs.py
+
+    - name: Setup Pages
+      id: pages
+      uses: actions/configure-pages@v4
+
+    - name: Render Quarto Documentation (main)
+      if: github.ref == 'refs/heads/main'
+      run: |
+        cd docs
+        uv run quarto render --profile main
+
+    - name: Render Quarto Documentation (dev)
+      if: github.ref == 'refs/heads/dev'
+      run: |
+        cd docs
+        uv run quarto render --profile dev
+
+    - name: Checkout gh-pages for dev merge
+      if: github.ref == 'refs/heads/dev'
+      run: |
+        # Fetch gh-pages branch
+        git fetch origin gh-pages || echo "No gh-pages branch yet"
+
+        # Create temporary directory for merged content
+        mkdir -p /tmp/gh-pages-merged
+
+        # If gh-pages exists, copy its content (this preserves main branch docs)
+        if git rev-parse --verify origin/gh-pages > /dev/null 2>&1; then
+          git checkout origin/gh-pages
+          cp -r . /tmp/gh-pages-merged/ || true
+          git checkout -
+        fi
+
+        # Remove old dev directory and copy new dev build
+        rm -rf /tmp/gh-pages-merged/dev
+        mkdir -p /tmp/gh-pages-merged/dev
+        cp -r docs/_site/* /tmp/gh-pages-merged/dev/
+
+        # Ensure .nojekyll exists at root
+        touch /tmp/gh-pages-merged/.nojekyll
+
+    - name: Upload artifact (main)
+      uses: actions/upload-pages-artifact@v3
+      if: github.ref == 'refs/heads/main'
+      with:
+        path: docs/_site
+
+    - name: Upload artifact (dev)
+      uses: actions/upload-pages-artifact@v3
+      if: github.ref == 'refs/heads/dev'
+      with:
+        path: /tmp/gh-pages-merged
+
+    - name: Upload build results (for PR testing)
+      uses: actions/upload-artifact@v4
+      if: github.event_name == 'pull_request'
+      with:
+        name: documentation-build
+        path: docs/_site
+        retention-days: 7
+
+  deploy:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

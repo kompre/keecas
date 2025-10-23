@@ -6,7 +6,27 @@ __pycache__
 
 .venv
 
-.*/*
+# Ignore all dot folders and their contents
+.*/
+
+# Exception: allow .github directory (for GitHub Actions workflows)
+!.github/
+
 ./keecas.egg-info/*
 
 *egg-info/*
+
+.DS*
+
+# Quarto
+/.quarto/
+**/*.quarto_ipynb
+_freeze/
+docs/_site/
+
+# Quartodoc generated files (only commit .qmd source)
+docs/api-reference/
+docs/_inv
+
+
+/.luarc.json

@@ -2,6 +2,11 @@
 
 # keecas
 
+[![Tests](https://github.com/kompre/keecas/actions/workflows/test.yml/badge.svg)](https://github.com/kompre/keecas/actions/workflows/test.yml)
+[![PyPI version](https://badge.fury.io/py/keecas.svg)](https://pypi.org/project/keecas/)
+[![Python Version](https://img.shields.io/pypi/pyversions/keecas.svg)](https://pypi.org/project/keecas/)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://kompre.github.io/keecas)
+
 A module for performing symbolic and units-aware calculations in a jupyter notebook. 
 
 ## Introduction
@@ -31,10 +36,50 @@ To install keecas, run the following command:
 pip install keecas
 ```
 
-or 
+or
 
 ```bash
 uv add keecas
+```
+
+## Quick Start with CLI
+
+After installation, you can quickly start working with keecas using the built-in CLI:
+
+```bash
+# Launch JupyterLab with minimal keecas template
+keecas edit
+
+# Create or open a specific notebook
+keecas edit analysis.ipynb
+
+# Create temporary notebook (auto-cleanup)
+keecas edit --temp
+
+# List available templates
+keecas edit --list-templates
+
+# Use comprehensive examples template
+keecas edit --template quickstart
+```
+
+The CLI automatically:
+- Creates notebooks from keecas templates with proper imports
+- Launches JupyterLab with the notebook already open
+- Handles temporary sessions with auto-cleanup
+- Provides smart file naming (untitled-1.ipynb, untitled-2.ipynb, etc.)
+
+## Configuration
+
+keecas supports both global and local configuration via TOML files:
+
+```bash
+# Initialize and edit configuration
+keecas config init --global
+keecas config edit --global
+
+# View current configuration
+keecas config show
 ```
 
 
@@ -50,6 +95,7 @@ keecas depends on the following packages:
 *   `regex`
 *   `ruamel-yaml`
 *   `sympy`
+*   `toml` (for configuration management)
 
 ## Testing
 

@@ -1,0 +1,414 @@
+---
+title: "CLI Reference"
+---
+
+# CLI Reference
+
+Keecas provides a comprehensive command-line interface for configuration management and Jupyter integration.
+
+## Installation and Verification
+
+### Check Version
+
+```bash
+keecas --version
+```
+
+Shows the installed Keecas version and verifies the CLI is working.
+
+### Help
+
+```bash
+keecas --help
+```
+
+Display all available commands and options.
+
+## Configuration Management
+
+### Initialize Configuration
+
+Create new configuration files with default settings:
+
+```bash
+# Create global configuration (~/.keecas/config.toml)
+keecas config init --global
+
+# Create local configuration (.keecas/config.toml)
+keecas config init --local
+
+# Force overwrite existing configuration
+keecas config init --global --force
+keecas config init --local --force
+```
+
+### Edit Configuration
+
+Open configuration files for editing:
+
+```bash
+# Edit with terminal editor ($EDITOR)
+keecas config edit --global
+keecas config edit --local
+
+# Open with system default editor (GUI)
+keecas config open --global
+keecas config open --local
+```
+
+**Note:** `edit` uses your terminal editor (vim, nano, etc.) while `open` uses your system's default application (VS Code, gedit, etc.).
+
+### View Configuration
+
+Display current configuration settings:
+
+```bash
+# Show merged configuration (local + global + defaults)
+keecas config show
+
+# Show only global configuration
+keecas config show --global
+
+# Show only local configuration
+keecas config show --local
+
+# Show configuration file paths
+keecas config path
+```
+
+### Reset Configuration
+
+Reset configuration files to defaults:
+
+```bash
+# Reset global configuration
+keecas config reset --global
+
+# Reset local configuration
+keecas config reset --local
+
+# Force reset without confirmation
+keecas config reset --global --force
+```
+
+## Jupyter Integration
+
+### Development Environment
+
+Launch Jupyter with Keecas templates and optimized settings:
+
+```bash
+# Basic launch
+keecas edit
+
+# Open specific file
+keecas edit my_calculation.ipynb
+
+# Launch with template
+keecas edit --template basic
+keecas edit --template structural-analysis
+keecas edit --template beam-design
+
+# Custom settings
+keecas edit --port 8889 --no-browser --token mytoken
+keecas edit --dir /path/to/project --no-lab
+```
+
+**Options:**
+
+- `--template TEMPLATE`: Use predefined notebook template
+- `--port PORT`: Jupyter server port (default: 8888)
+- `--dir DIR`: Working directory for Jupyter
+- `--no-browser`: Don't open browser automatically
+- `--token TOKEN`: Set Jupyter access token
+- `--no-lab`: Use Jupyter Notebook instead of JupyterLab
+- `--temp`: Create temporary notebook (not saved)
+
+### List Available Templates
+
+```bash
+# Show all available templates
+keecas edit --list-templates
+```
+
+Templates include:
+- `basic`: Simple calculation setup
+- `structural-analysis`: Engineering analysis template
+- `beam-design`: Structural beam calculations
+- `verification`: Safety verification template
+
+## Configuration File Format
+
+Configuration files use TOML format with hierarchical settings:
+
+### Global Configuration (`~/.keecas/config.toml`)
+
+```toml
+# Global defaults for all projects
+language = "en"
+katex = false
+eq_prefix = "eq-"
+pint_default_format = ".3f~P"
+disable_pint_locale = false
+
+[custom_translations]
+"VERIFIED" = "VERIFIED"
+"Domain" = "Domain"
+```
+
+### Local Configuration (`.keecas/config.toml`)
+
+```toml
+# Project-specific overrides
+language = "it"                    # Italian for this project
+katex = true                       # VS Code compatibility
+eq_prefix = "eq-bridge-analysis-"  # Project-specific prefix
+
+[custom_translations]
+"VERIFIED" = "VERIFICATO"          # Italian verification terms
+```
+
+### Priority Order
+
+1. **Local** (`.keecas/config.toml`)
+2. **Global** (`~/.keecas/config.toml`)
+3. **Defaults** (built-in)
+
+## Environment Variables
+
+Override configuration with environment variables:
+
+```bash
+# Set global defaults
+export KEECAS_LANGUAGE="it"
+export KEECAS_KATEX="true"
+export KEECAS_EQ_PREFIX="eq-project-"
+
+# Launch with environment settings
+keecas edit
+```
+
+Variable naming: `KEECAS_` + `UPPERCASE_SETTING_NAME`
+
+## Cross-Platform Support
+
+The CLI works consistently across platforms:
+
+### Linux
+```bash
+# Uses $EDITOR for terminal editing
+# Uses xdg-open for GUI editing
+keecas config edit --global
+keecas config open --global
+```
+
+### macOS
+```bash
+# Uses $EDITOR for terminal editing
+# Uses open for GUI editing
+keecas config edit --global
+keecas config open --global
+```
+
+### Windows
+```bash
+# Uses %EDITOR% for terminal editing
+# Uses start for GUI editing
+keecas config edit --global
+keecas config open --global
+```
+
+## Error Handling
+
+Common CLI issues and solutions:
+
+### Configuration Not Found
+
+```bash
+$ keecas config show --global
+Error: Global configuration not found
+
+# Solution: Initialize configuration
+$ keecas config init --global
+```
+
+### Editor Not Set
+
+```bash
+$ keecas config edit --global
+Error: No editor configured
+
+# Solution: Set environment variable
+$ export EDITOR=nano
+$ keecas config edit --global
+```
+
+### Invalid TOML Syntax
+
+```bash
+$ keecas config show
+Error: Invalid TOML syntax in config file
+
+# Solution: Reset or manually fix configuration
+$ keecas config reset --global --force
+```
+
+### Permission Issues
+
+```bash
+$ keecas config init --global
+Error: Permission denied
+
+# Solution: Check home directory permissions
+$ ls -la ~/.keecas/
+$ chmod 755 ~/.keecas/
+```
+
+## Automation and Scripting
+
+### Batch Configuration
+
+```bash
+#!/bin/bash
+# Setup script for new projects
+
+# Initialize local config
+keecas config init --local
+
+# Set project-specific settings
+cat > .keecas/config.toml << EOF
+language = "en"
+katex = true
+eq_prefix = "eq-${PROJECT_NAME}-"
+EOF
+
+echo "Keecas configured for ${PROJECT_NAME}"
+```
+
+### CI/CD Integration
+
+```yaml
+# GitHub Actions example
+- name: Setup Keecas
+  run: |
+    pip install keecas
+    keecas config init --global
+    keecas config show  # Verify configuration
+```
+
+### Jupyter Notebook Automation
+
+```bash
+# Create and launch template notebook
+keecas edit calculation.ipynb --template structural-analysis --no-browser
+
+# Convert notebook to other formats (requires nbconvert)
+jupyter nbconvert calculation.ipynb --to pdf
+```
+
+## Development Workflow
+
+### Typical Project Setup
+
+```bash
+# 1. Create project directory
+mkdir my-analysis && cd my-analysis
+
+# 2. Initialize local configuration
+keecas config init --local
+
+# 3. Customize for project
+keecas config edit --local
+
+# 4. Launch development environment
+keecas edit analysis.ipynb --template basic
+```
+
+### Multi-Project Management
+
+```bash
+# Each project can have its own settings
+cd project-a/
+keecas config init --local
+# Configure for Italian engineering standards
+
+cd ../project-b/
+keecas config init --local
+# Configure for German engineering standards
+
+# Global settings remain consistent
+keecas config show --global
+```
+
+## Troubleshooting Commands
+
+### Diagnostic Information
+
+```bash
+# Check installation
+keecas --version
+
+# Verify configuration files exist and are readable
+keecas config path
+ls -la $(keecas config path --global)
+ls -la $(keecas config path --local)
+
+# Test configuration parsing
+keecas config show --global
+keecas config show --local
+keecas config show  # merged
+
+# Check Jupyter integration
+keecas edit --help
+```
+
+### Reset Everything
+
+```bash
+# Nuclear option: reset all configuration
+keecas config reset --global --force
+keecas config reset --local --force
+
+# Reinitialize with defaults
+keecas config init --global
+keecas config init --local
+```
+
+## Integration with Other Tools
+
+### VS Code Integration
+
+```bash
+# Launch with VS Code optimized settings
+keecas config init --local
+echo 'katex = true' >> .keecas/config.toml
+keecas edit notebook.ipynb
+```
+
+### Quarto Integration
+
+```bash
+# Configure for Quarto document generation
+keecas config init --local
+cat > .keecas/config.toml << EOF
+katex = false
+eq_prefix = "eq-doc-"
+language = "en"
+EOF
+```
+
+### Docker Integration
+
+```dockerfile
+# Dockerfile for Keecas environment
+FROM python:3.12
+RUN pip install keecas
+RUN keecas config init --global
+COPY config.toml /root/.keecas/config.toml
+```
+
+## Next Steps
+
+- See [Configuration](../getting-started/configuration.qmd) for detailed settings
+- Check [Examples](../user-guide/examples.qmd) for workflow patterns
+- Review [API Reference](../api-reference/index.qmd) for programmatic configuration
