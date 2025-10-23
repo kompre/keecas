@@ -657,3 +657,118 @@ gh pr create --base main --label release
 ```
 
 **Ready for approval and implementation.**
+
+---
+
+## Implementation Progress
+
+**Branch**: `feature/branch-protection-ci`
+**Date Started**: 2025-10-23
+
+### Phase 1: Test Workflow ✅ COMPLETED
+**File**: `.github/workflows/test.yml`
+
+Created test workflow that runs on PRs to main:
+- Python 3.13 from `.python-version`
+- uv dependency caching enabled
+- Quarto installation for notebook tests
+- Runs: Ruff linting, pytest, docstring validation
+- Concurrency control (cancels stale runs)
+
+### Phase 2: Branch Protection ⏸️ PENDING (Manual Setup Required)
+Requires GitHub Settings configuration:
+- Navigate to: Settings → Branches → Add rule
+- Pattern: `main`
+- Enable: Require PR, Require status checks (test job)
+- Enable: Require branches to be up to date
+- Disable: Force pushes, deletions
+
+### Phase 3: Release Workflow ✅ COMPLETED
+**File**: `.github/workflows/release.yml`
+
+Created release workflow with:
+- Trigger: PR merge to main with `release` or `test-release` label
+- Label-based targeting (PyPI vs TestPyPI)
+- Version auto-detection from pyproject.toml
+- Pre-release identifier routing (rc, alpha, beta → TestPyPI)
+- Git tag creation and push
+- PyPI publishing via Trusted Publishing (OIDC)
+- GitHub Release with PR notes (softprops/action-gh-release@v2)
+- Tests run before building/publishing
+
+### Phase 4: Integration ✅ COMPLETED
+Verified workflow relationships:
+- test.yml: Independent, runs on PR to main
+- release.yml: Independent, runs on PR merge with label
+- docs.yml: Existing, unchanged, continues to work
+- No conflicts between workflows
+
+### Phase 5: Documentation ✅ COMPLETED
+
+**CONTRIBUTING.md** - Complete guide:
+- Development setup instructions
+- Branch strategy explanation
+- Making changes workflow
+- Testing locally commands
+- Release process for maintainers
+- Coding standards and commit message format
+
+**README.md** - Status badges added:
+- Tests workflow badge
+- PyPI version badge
+- Python version badge
+- Documentation badge
+
+**CLAUDE.md** - CI/CD section added:
+- Branch protection explanation
+- Complete release process (4 steps)
+- Version targeting details (labels + auto-routing)
+- CI workflow descriptions
+- Developer workflow with pre-commit hooks
+- Local vs CI relationship
+
+### Phase 6: PyPI Trusted Publishing ⏸️ PENDING (Manual Setup Required)
+
+**TestPyPI setup** (for testing first release):
+1. Go to: https://test.pypi.org/manage/account/publishing/
+2. Add "pending publisher":
+   - Owner: kompre
+   - Repository: keecas
+   - Workflow: release.yml
+   - Environment: (leave blank)
+
+**Production PyPI setup** (before v1.0.0 release):
+1. Go to: https://pypi.org/manage/account/publishing/
+2. Add "pending publisher":
+   - Owner: kompre
+   - Repository: keecas
+   - Workflow: release.yml
+   - Environment: (leave blank)
+
+### Phase 7: Workflow Verification ⏸️ PENDING
+
+Test plan:
+1. Create test PR from feature branch to main
+2. Verify test workflow runs and passes
+3. Test release workflow:
+   - Option A: Merge with `test-release` label to verify TestPyPI flow
+   - Option B: Wait for actual release
+
+### Summary
+
+**Completed** (5 hours):
+- ✅ Test workflow created and pushed
+- ✅ Release workflow created and pushed
+- ✅ CONTRIBUTING.md comprehensive guide
+- ✅ README.md badges added
+- ✅ CLAUDE.md CI/CD section complete
+
+**Remaining** (manual setup):
+- ⏸️ Configure branch protection on GitHub (5 min)
+- ⏸️ Setup PyPI Trusted Publishing (10 min)
+- ⏸️ Create PR to main for workflow testing
+- ⏸️ Verify workflows function correctly
+
+**All code changes complete and pushed to `feature/branch-protection-ci`.**
+
+Next step: Create PR from feature branch to main to test workflow integration.
