@@ -2,7 +2,19 @@
 title: Keecas Quarto Example
 toc: true
 format:
-  html: default
+  html:
+    include-in-header:
+      - text: |
+          <script>
+          MathJax = { tex: { tags: 'ams' } };
+          </script>
+      - text: |
+          <style>
+          .math.display {
+            max-width: 100%;
+            padding-right: 3em;
+          }
+          </style>
   pdf: default
 echo: false
 keep-tex: false
@@ -407,4 +419,45 @@ failure = '${symbol}{rhs} \,\textcolor{{red}}{{\times}}$'
 ```
 
 This allows you to set project-wide or user-wide styling for all check functions.
+
+## Test using a `QuartoMarkdownBase64`
+
+```{python}
+a, b, c = symbols(r"a b c")
+
+_p = {
+    a: 5 * u.m,
+    b: 12 * u.m,
+    c: a+b
+}
+
+import base64
+
+encode = lambda s: base64.b64encode(s.encode()).decode()
+
+_d = {
+    # a: fr"\QuartoMarkdownBase64{{{encode("length **a**")}}}",
+    b: "length b",
+    c: "total length c",
+}
+
+show_eqn(
+    [_p, _d],
+    environment={
+        'separator': ' & ',
+        'line_separator': r' \\' + '\n',
+        'supports_multiple_labels': True,
+        'outer_environment': 'align',
+        'inner_environment': None,
+        'inner_prefix': '',
+        'inner_suffix': '',
+        'outer_prefix': '```{=latex}\n',
+        'outer_suffix': '\n```',
+        'label_position': 'outer',
+    },
+    debug=True
+)
+
+```
+
 
