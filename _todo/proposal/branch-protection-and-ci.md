@@ -452,7 +452,7 @@ bash scripts/install-hooks.sh
 uv run pytest tests -v
 uv run ruff check src/ tests/
 ```
-```
+
 
 **4. Documentation updates**:
 - Add release workflow diagram to CLAUDE.md
@@ -644,7 +644,7 @@ feature-branches → dev → main (protected) → release (automated)
 **Release process** (post-implementation):
 ```bash
 # 1. Bump version
-vim pyproject.toml  # Update version: 0.1.2 → 1.0.0
+uv version --bump major  # Update version: 0.1.2 → 1.0.0
 
 # 2. Create PR
 git checkout -b release/v1.0.0

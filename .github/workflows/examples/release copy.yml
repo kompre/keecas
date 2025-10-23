@@ -1,0 +1,152 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+
+# Prevent concurrent releases
+concurrency:
+  group: release
+  cancel-in-progress: false  # Queue releases instead of canceling
+
+jobs:
+  release:
+    name: Automated Release
+    # Only run if PR was merged and has 'release' label
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Create releases and tags
+      id-token: write  # OIDC for PyPI Trusted Publishing
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0  # Full history for proper tagging
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Extract version from pyproject.toml
+        id: version
+        run: |
+          VERSION=$(uv version --short)
+          TAG="v$VERSION"
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+          echo "📦 Version: $VERSION"
+          echo "🏷️  Tag: $TAG"
+
+      - name: Determine publish target from version
+        id: target
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Check if version contains pre-release identifiers
+          if echo "$VERSION" | grep -qE '(rc|alpha|beta|dev|a[0-9]|b[0-9])'; then
+            # Pre-release → TestPyPI
+            echo "repository_url=https://test.pypi.org/legacy/" >> $GITHUB_OUTPUT
+            echo "target_name=TestPyPI" >> $GITHUB_OUTPUT
+            echo "is_production=false" >> $GITHUB_OUTPUT
+            echo "🎯 Target: TestPyPI (pre-release detected: $VERSION)"
+          else
+            # Stable release → Production PyPI
+            echo "repository_url=https://upload.pypi.org/legacy/" >> $GITHUB_OUTPUT
+            echo "target_name=PyPI" >> $GITHUB_OUTPUT
+            echo "is_production=true" >> $GITHUB_OUTPUT
+            echo "🎯 Target: Production PyPI (stable release: $VERSION)"
+          fi
+
+      - name: Check if tag already exists
+        run: |
+          if git rev-parse "refs/tags/${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "❌ Error: Tag ${{ steps.version.outputs.tag }} already exists!"
+            echo ""
+            echo "This version has already been released."
+            echo "If you need to release again:"
+            echo "  1. Bump the version: uv version --bump patch"
+            echo "  2. Commit: git commit -am 'chore: bump version'"
+            echo "  3. Push: git push"
+            echo "  4. Rerun this workflow"
+            exit 1
+          fi
+          echo "✅ Tag ${{ steps.version.outputs.tag }} is available"
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git tag -a "${{ steps.version.outputs.tag }}" -m "Release version ${{ steps.version.outputs.version }}
+
+          Released from PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
+          Target: ${{ steps.target.outputs.target_name }}"
+
+          git push origin "${{ steps.version.outputs.tag }}"
+          echo "✅ Created and pushed tag: ${{ steps.version.outputs.tag }}"
+
+      - name: Build package
+        run: |
+          uv build
+          echo "📦 Build artifacts:"
+          ls -lh dist/
+
+          # Show package info
+          echo ""
+          echo "Package details:"
+          tar -tzf dist/*.tar.gz | head -20
+
+      - name: Publish to PyPI
+        if: steps.target.outputs.is_production == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          print-hash: true
+          verbose: true
+
+      - name: Publish to TestPyPI
+        if: steps.target.outputs.is_production == 'false'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+          print-hash: true
+          verbose: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.target.outputs.is_production == 'true' && format('Release {0}', steps.version.outputs.version) || format('Release {0} (TestPyPI)', steps.version.outputs.version) }}
+          body: |
+            # ${{ github.event.pull_request.title }}
+
+            ${{ github.event.pull_request.body }}
+
+            ---
+
+            **📦 Version:** `${{ steps.version.outputs.version }}`
+            **🎯 Published To:** ${{ steps.target.outputs.target_name }}
+
+            ${{ steps.target.outputs.is_production == 'false' && format('⚠️ **This is a test release published to TestPyPI**
+
+            Install from TestPyPI:
+            ```bash
+            pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ gs-batch-pdf=={0}
+            ```
+
+            **TestPyPI Package:** https://test.pypi.org/project/gs-batch-pdf/{0}/', steps.version.outputs.version) || format('**PyPI Package:** https://pypi.org/project/gs-batch-pdf/{0}/', steps.version.outputs.version) }}
+
+            **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ github.event.pull_request.base.sha }}...${{ steps.version.outputs.tag }}
+          files: dist/*
+          draft: false
+          prerelease: ${{ steps.target.outputs.is_production == 'false' || contains(steps.version.outputs.version, 'a') || contains(steps.version.outputs.version, 'b') || contains(steps.version.outputs.version, 'rc') || contains(steps.version.outputs.version, 'dev') }}
+          generate_release_notes: true
