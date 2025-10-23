@@ -147,17 +147,25 @@ Follow conventional commits format:
 
    For TestPyPI testing, use `--label test-release` instead.
 
-3. **Add release notes** in PR description:
+3. **Version validation runs automatically**:
+   When you add the `release` or `test-release` label, a check runs to:
+   - ✅ Verify the tag doesn't already exist
+   - ✅ Validate semantic versioning format
+   - ✅ Check label matches version type
+   - ⚠️ **PR cannot merge if version was already released**
+
+4. **Add release notes** in PR description:
    - Summarize major changes
    - List breaking changes (if any)
    - Mention contributors
 
-4. **Merge PR**:
+5. **Merge PR**:
    - Ensure all tests pass
+   - Ensure version check passes
    - Get required approvals
    - Merge to main
 
-5. **Automated workflow**:
+6. **Automated workflow**:
    - Tests run on merged code
    - Package builds and publishes to PyPI/TestPyPI
    - Git tag created (vX.Y.Z)
@@ -177,6 +185,16 @@ Runs on every PR to `main`:
 - Linting (Ruff)
 - Tests (pytest)
 - Docstring validation
+
+### Release Version Check Workflow
+Runs when `release` or `test-release` label is added to PR:
+- Extracts version from `pyproject.toml`
+- Checks if tag already exists (blocks merge if yes)
+- Validates semantic versioning format
+- Warns if label doesn't match version type
+- Shows release target (PyPI vs TestPyPI)
+
+**Configure as required status check** to prevent merging releases with duplicate versions.
 
 ### Release Workflow
 Runs on PR merge to `main` with release label:
