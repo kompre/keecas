@@ -133,7 +133,7 @@ class Dataframe(dict[Hashable, list[Any]]):
         if args:
             if len(args) > 1:
                 raise TypeError(
-                    "update expected at most 1 arguments, got %d" % len(args),
+                    f"update expected at most 1 arguments, got {len(args)}",
                 )
             other = dict(args[0])
             other.update(kwargs)
@@ -177,7 +177,7 @@ class Dataframe(dict[Hashable, list[Any]]):
         if args:
             if len(args) > 1:
                 raise TypeError(
-                    "update expected at most 1 arguments, got %d" % len(args),
+                    f"update expected at most 1 arguments, got {len(args)}",
                 )
             other = dict(args[0])
             other.update(kwargs)

@@ -29,7 +29,7 @@ _config_manager = get_config_manager()
 config = _config_manager.options
 
 
-from itertools import zip_longest
+from itertools import zip_longest  # noqa: E402
 
 # Template choice type for IDE autocomplete
 TemplateChoice = Literal["default", "boxed", "minimal"]
@@ -211,7 +211,7 @@ def check(
 
     Compares two expressions (already evaluated to numeric values) using a test function and displays a formatted
     message based on the pass/fail status. Return message can be templated as Markdown object. The most common case is to be passed to a show_eqn function as secondary dict (the object will be formatted according to `cell_formatter` specification).
-    
+
     NOTE: if the test cannot evaluate to either True or False, an error will be raised. Common cause for this is that one of the arguments passed are not in the numeric form, but still in symbolic form.
 
     Args:
@@ -252,15 +252,15 @@ def check(
 
         ```{python}
         from keecas import show_eqn
-        
+
         # Capacity check (demand <= capacity)
         N_Ed, N_Rd = symbols(r"N_{Ed}, N_{Rd}")
         _p = {N_Ed: 850*u.kN, N_Rd: 1200*u.kN}
-        
+
         _e = {
             k: k | pc.subs(_p) | pc.N for k in [N_Ed/N_Rd]
         }
-        
+
         _c = {
             k: check(v, 1.0) for k, v in _e.items()
         }
@@ -281,7 +281,7 @@ def check(
             test=Le
         )
         ```
-        
+
         ```{python}
         # Check capacity is greater than demand (reverse comparison)
         check(
@@ -303,7 +303,7 @@ def check(
         ```{python}
         # Custom templates for different visual styles
         from IPython.display import display
-        
+
         # tip: use display() to show output for mid-cell statements
         display(check(0.85, 1.0, template="boxed") )   # Boxed result
         display(check(0.85, 1.0, template="minimal") ) # Minimal formatting
@@ -427,11 +427,11 @@ def show_eqn(
             dict mapping symbols to label strings. Labels formatted as {eq_prefix}{label}{eq_suffix}.
             Omitted in KaTeX mode for notebook compatibility.
         label_command: LaTeX label command (e.g., r"\label"). Defaults to config.latex.default_label_command.
-        col_wrap: Column wrapping specifications for LaTeX formatting. Can be str, dict, list, Dataframe, or 2 element tuple. 
+        col_wrap: Column wrapping specifications for LaTeX formatting. Can be str, dict, list, Dataframe, or 2 element tuple.
             When a 2 element tuple is given `(seed, filler)`, `seed` will be used to create a Dataframe with `filler` as default value.
             List elements can be None (no wrapping), str (prefix only), tuple (prefix, suffix), or Callable.
             Defaults to config.col_wrap.
-        float_format: Format specification for float values (it will not affect int). Can be str (applied to all floats), list of str (per column formatting), dict (per row formatting), dict of list or Dataframe (per cell formatting). 
+        float_format: Format specification for float values (it will not affect int). Can be str (applied to all floats), list of str (per column formatting), dict (per row formatting), dict of list or Dataframe (per cell formatting).
             When a 2 element tuple is given `(seed, filler)`, `seed` will be used to create a Dataframe with `filler` as default value.
             Supports format specs with or without braces (e.g., ".3f" or "{:.3f}").
             Defaults to config.display.default_float_format.
@@ -456,81 +456,81 @@ def show_eqn(
 
         # Basic parameter display
         F, A_load = symbols(r"F, A_{load}")
-        
+
         _p = {
             F: 100*u.kN,
             A_load: 20*u.cm**2
         }
-        
+
         show_eqn(_p)
         ```
 
         ```{python}
         # Multi-column with expressions and values
         sigma = symbols(r"\sigma")
-        
+
         _e = {
             sigma: "F/A_load" | pc.parse_expr
         }
-        
+
         _v = {k: v | pc.subs(_p | _e) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
-        
+
         show_eqn([_p|_e, _v])
         ```
 
         ```{python}
         # Custom formatting and labels
-        
+
         from keecas import config
-        
+
         config.display.print_label = True
-        
+
         # label dictionary
         _l = {
             F: 'force',
             A_load: 'area',
             sigma: 'stress-calc',
         }
-        
+
         # specific float formatting
         _f = {
             F: '{:.1f}', # applied to all element in the row
             A_load: '{:.2f}', # applied to all element in the row
             sigma: [None, None, '.3f'], # per cell formatting
         }
-        
+
         show_eqn([_p|_e, _v], float_format=_f, label=_l)
         ```
-        
+
         ```{python}
         # Custom formatting and description
-        
+
         from keecas import config
-        
+
         config.display.print_label = True
-        
+
         # short description
         _d = {
             F: 'applied force',
             A_load: 'area of application',
             sigma: 'stress',
         }
-        
+
         # use hash function to create unique labels
         _l = {k: hash(v) for k,v in _d.items()}
-        
+
         show_eqn(
-            [_p|_e, _v, _d], 
-            float_format=['', '.2f', '.4f'], 
-            # float_format='.2f', 
+            [_p|_e, _v, _d],
+            float_format=['', '.2f', '.4f'],
+            # float_format='.2f',
             label=_l
         )
         ```
-        
+
         ```{python}
         # Different environments
         from IPython.display import display
-        
+
         # tip: if show_eqn used mid-cell, use display() to emit rendered output to notebook
         display(show_eqn(_p, environment="align"))  # aligned at '=' sign
         show_eqn(_p, environment="gather")    # Centered, no alignment
@@ -549,7 +549,7 @@ def show_eqn(
         }
         show_eqn([_e, _v], environment=custom_env)
         ```
-        
+
         ```{python}
         # Custom environment for one-line display
         one_line_env = {
@@ -905,7 +905,7 @@ def eq_to_dict(result: Eq | list[Eq] | tuple[Eq, ...]) -> dict[Basic, Any]:
         return {result.lhs: result.rhs}
 
 
-import regex
+import regex  # noqa: E402
 
 
 def _get_base_replacements() -> dict[str, str | callable]:
@@ -999,7 +999,8 @@ def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> s
 
     kwargs["mode"] = "plain"
 
-    _latex = lambda x: replace_all(latex(x, **kwargs))
+    def _latex(x):
+        return replace_all(latex(x, **kwargs))
     return f"{wrap[0]}{_latex(var)} = {_latex(mapping[var])}{wrap[1]}"
 
 

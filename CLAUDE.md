@@ -79,6 +79,100 @@ The project uses `uv.lock` for dependency locking. Install dependencies with:
 uv sync
 ```
 
+## CI/CD and Release Process
+
+### Branch Protection
+- **main**: Protected, requires PR + passing tests via GitHub Actions
+- **dev**: Unprotected, allows rapid iteration
+- **Feature branches**: Branch from dev, merge back to dev for collaboration
+- **Release flow**: dev → main (via PR) → automated release
+
+### Release Process
+
+**Creating a release** (maintainers only):
+
+1. **Bump version** on dev branch:
+   ```bash
+   git checkout dev
+   uv version --bump major  # or minor, patch
+   git commit -am "chore: bump version to X.Y.Z"
+   git push origin dev
+   ```
+
+2. **Create PR from dev to main**:
+   ```bash
+   gh pr create --base main --title "Release vX.Y.Z" --label release
+   ```
+   - Use `--label test-release` for TestPyPI testing
+   - Add release notes in PR description
+
+3. **Merge PR**:
+   - Tests run automatically on PR
+   - Branch protection requires passing tests
+   - Merge when approved and tests pass
+
+4. **Automated workflow handles**:
+   - Runs tests on merged code
+   - Creates git tag (vX.Y.Z)
+   - Builds package
+   - Publishes to PyPI or TestPyPI (based on label)
+   - Creates GitHub Release with PR notes
+
+**Version targeting**:
+- `release` label → Production PyPI
+- `test-release` label → TestPyPI
+- Pre-release versions (rc, alpha, beta, dev) automatically route to TestPyPI
+
+### CI Workflows
+
+**test.yml** - Runs on PR to main:
+- Linting (Ruff check)
+- Tests (pytest)
+- Docstring validation
+- Caches uv dependencies for speed
+- Cancels stale runs on new commits
+
+**release.yml** - Runs on PR merge to main with release label:
+- Tests before building
+- Extracts version from pyproject.toml
+- Determines publish target (PyPI/TestPyPI)
+- Creates and pushes git tag
+- Builds package with uv
+- Publishes via PyPI Trusted Publishing (OIDC, no API tokens)
+- Creates GitHub Release with PR notes and changelog
+
+**docs.yml** - Runs on push to main/dev:
+- Generates API documentation with quartodoc
+- Renders Quarto documentation
+- Deploys to GitHub Pages (main at root, dev at /dev/)
+
+### Developer Workflow
+
+**Local development**:
+```bash
+# Create feature branch from dev
+git checkout dev
+git checkout -b feature/your-feature
+
+# Make changes, commit (pre-commit hooks run automatically)
+git commit -am "feat: your feature"
+
+# Push and create PR to dev
+git push -u origin feature/your-feature
+gh pr create --base dev
+```
+
+**Pre-commit hooks** (installed via `scripts/install-hooks.sh`):
+- Validate docstrings (fast check, < 1s)
+- Render Quarto notebooks (for `examples/quarto_example/`)
+- Can be skipped with `git commit --no-verify`
+- **Note**: Tests only run in CI, not pre-commit (for speed)
+
+**CI as gatekeeper**:
+- Local pre-commit provides fast checks (docstrings, notebooks)
+- CI runs comprehensive validation (linting, tests, docstrings)
+- Division of labor: fast local feedback vs thorough CI validation
+
 ## Architecture Overview
 
 ### Core Components
