@@ -19,6 +19,9 @@ from .display import (
     show_eqn,
 )
 
+# label
+from .label import generate_label, generate_unique_label
+
 # formatters
 from .formatters import (
     EarlyExit,
@@ -62,6 +65,8 @@ __all__ = [
     "check",
     "dict_to_eq",
     "eq_to_dict",
+    "generate_label",
+    "generate_unique_label",
     # Formatter exports (chain-based)
     "EarlyExit",
     "FormatterChain",
