@@ -15,7 +15,7 @@ from keecas.config.manager import get_config_manager
 config = get_config_manager().options
 
 
-def generate_id(obj: Any, length: int = 8) -> str:
+def _generate_id(obj: Any, length: int = 8) -> str:
     """
     Generate a stable, unique ID for any Python object.
 
@@ -153,7 +153,7 @@ def _(arg: str, unique_id: bool = False) -> str:
     """Generate label from string input."""
 
     if unique_id:
-        label_text = generate_id(arg)
+        label_text = _generate_id(arg)
     else:
         label_text = arg
 
@@ -173,7 +173,7 @@ def _(arg: dict[Hashable, str], unique_id: bool = False) -> dict[Hashable, str]:
     for key, value in arg.items():
         if value:
             if unique_id:
-                label_text = generate_id((key, value))
+                label_text = _generate_id((key, value))
             else:
                 label_text = value
             result[key] = f"{config.latex.eq_prefix}{label_text}{config.latex.eq_suffix}"
