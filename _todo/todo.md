@@ -5,7 +5,7 @@
 <!-- Tasks moved to proposal phase -->
 
 **Tasks awaiting approval in `proposal/`**:
-<!-- No tasks currently in proposal phase -->
+- [configurable-label-generation.md](proposal/configurable-label-generation.md) - Add config option for stable label generation strategies in show_eqn (awaiting review)
 
 **Tasks in development (`pending/`)**:
 <!-- No tasks currently in development -->

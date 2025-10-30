@@ -709,10 +709,10 @@ def show_eqn(
         keys=keys,
         width=num_cols,
     )
-
-    # generate label dict if none is passed
+    
+    # get the config default label (it could be None), or generate label dict if none is passed
     if not label:
-        label = {k: None for k in keys}
+        label = config.latex.label or {k: None for k in keys}
 
     # define label command
     if not label_command:

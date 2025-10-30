@@ -78,6 +78,7 @@ class LatexConfig:
     default_environment: str = "align"
     default_label_command: str = r"\label"
     default_mul_symbol: str = r"\,"
+    label: "Callable | None" = None  # Runtime-only: default label generator (not serializable to TOML)
     environments: "EnvironmentConfig" = field(default_factory=lambda: None)
 
     def __post_init__(self):
@@ -360,7 +361,10 @@ class ConfigOptions:
     col_wrap: list | None = None
 
     def to_toml_dict(self) -> dict[str, Any]:
-        """Convert to dictionary suitable for TOML serialization."""
+        """Convert to dictionary suitable for TOML serialization.
+
+        Note: latex.label is intentionally excluded (runtime-only, not serializable).
+        """
         data = {
             "latex": {
                 "eq_prefix": self.latex.eq_prefix,
@@ -369,6 +373,7 @@ class ConfigOptions:
                 "default_environment": self.latex.default_environment,
                 "default_label_command": self.latex.default_label_command,
                 "default_mul_symbol": self.latex.default_mul_symbol,
+                # label is intentionally excluded (runtime-only callable)
                 "environments": {
                     name: env.to_dict() for name, env in self.latex.environments.items()
                 },
@@ -1025,6 +1030,11 @@ class ConfigManager:
 {format_value("latex", "default_environment", defaults.latex.default_environment, latex_inherited.get("default_environment"))}
 {format_value("latex", "default_label_command", defaults.latex.default_label_command, latex_inherited.get("default_label_command"))}
 {format_value("latex", "default_mul_symbol", defaults.latex.default_mul_symbol, latex_inherited.get("default_mul_symbol"))}
+
+## Default label generator (runtime-only, cannot be set in TOML)
+## Set via Python: config.latex.label = callable or None
+## When show_eqn(label=None), uses this default
+## Example: config.latex.label = generate_stable_label
 
 ## LaTeX Environments
 ## Customize built-in environments or define new ones
