@@ -68,8 +68,6 @@ def test_generate_label_unique_id_dict(config):
     assert result[A] == result2[A]
 
 
-
-
 def test_generate_unique_label_string(config):
     """Test generate_unique_label convenience function with string."""
     label = generate_unique_label("test-key")
@@ -171,5 +169,3 @@ def test_integration_with_partial():
 
     label_dict = auto_labeler({F: "force", A: "area"})
     assert all(v.startswith("eq-") for v in label_dict.values())
-
-
