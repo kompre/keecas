@@ -44,7 +44,7 @@ class ConfigMigration:
         # Handle unknown from_version (treat as oldest known version)
         if from_version not in all_versions:
             print(
-                f"WARNING: Unknown schema version '{from_version}', treating as oldest known version"
+                f"WARNING: Unknown schema version '{from_version}', treating as oldest known version",
             )
             start_idx = -1  # Start before first version
         else:

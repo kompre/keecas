@@ -124,7 +124,9 @@ def generate_untitled_name(work_dir: Path | str) -> str:
 
 
 def copy_template_to_workdir(
-    template_name: str, work_dir: Path | str, target_filename: str | None = None
+    template_name: str,
+    work_dir: Path | str,
+    target_filename: str | None = None,
 ) -> Path:
     """Copy a template notebook to the working directory."""
     templates_dir = get_templates_dir()
@@ -706,7 +708,8 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Edit command - Launch Jupyter server with templates
     edit_main_parser = main_subparsers.add_parser(
-        "edit", help="Launch Jupyter server with keecas templates"
+        "edit",
+        help="Launch Jupyter server with keecas templates",
     )
     edit_main_parser.add_argument(
         "file",
@@ -715,13 +718,19 @@ def create_parser() -> argparse.ArgumentParser:
         help="Notebook file to open or create (default: untitled-N.ipynb)",
     )
     edit_main_parser.add_argument(
-        "--port", type=int, default=8888, help="Port for Jupyter server (default: 8888)"
+        "--port",
+        type=int,
+        default=8888,
+        help="Port for Jupyter server (default: 8888)",
     )
     edit_main_parser.add_argument(
-        "--dir", default=".", help="Working directory for notebooks (default: current directory)"
+        "--dir",
+        default=".",
+        help="Working directory for notebooks (default: current directory)",
     )
     edit_main_parser.add_argument(
-        "--template", help="Template notebook to create (default: minimal, options: quickstart)"
+        "--template",
+        help="Template notebook to create (default: minimal, options: quickstart)",
     )
     edit_main_parser.add_argument(
         "--no-browser",
@@ -731,7 +740,8 @@ def create_parser() -> argparse.ArgumentParser:
         help="Don't open browser automatically",
     )
     edit_main_parser.add_argument(
-        "--token", help="Security token for Jupyter server (default: disabled for local use)"
+        "--token",
+        help="Security token for Jupyter server (default: disabled for local use)",
     )
     edit_main_parser.add_argument(
         "--no-lab",
@@ -740,7 +750,9 @@ def create_parser() -> argparse.ArgumentParser:
         help="Use classic Jupyter Notebook instead of JupyterLab (default: JupyterLab)",
     )
     edit_main_parser.add_argument(
-        "--list-templates", action="store_true", help="List available templates and exit"
+        "--list-templates",
+        action="store_true",
+        help="List available templates and exit",
     )
     edit_main_parser.add_argument(
         "--temp",
@@ -770,7 +782,9 @@ def create_parser() -> argparse.ArgumentParser:
         help="Initialize local configuration file (default)",
     )
     init_parser.add_argument(
-        "--force", action="store_true", help="Overwrite existing configuration file"
+        "--force",
+        action="store_true",
+        help="Overwrite existing configuration file",
     )
     init_parser.add_argument(
         "--comment-style",
@@ -782,11 +796,15 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Edit command
     edit_parser = config_subparsers.add_parser(
-        "edit", help="Edit configuration file with terminal editor"
+        "edit",
+        help="Edit configuration file with terminal editor",
     )
     edit_group = edit_parser.add_mutually_exclusive_group()
     edit_group.add_argument(
-        "--global", dest="global_config", action="store_true", help="Edit global configuration file"
+        "--global",
+        dest="global_config",
+        action="store_true",
+        help="Edit global configuration file",
     )
     edit_group.add_argument(
         "--local",
@@ -798,11 +816,15 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Open command
     open_parser = config_subparsers.add_parser(
-        "open", help="Open configuration file with system default editor"
+        "open",
+        help="Open configuration file with system default editor",
     )
     open_group = open_parser.add_mutually_exclusive_group()
     open_group.add_argument(
-        "--global", dest="global_config", action="store_true", help="Open global configuration file"
+        "--global",
+        dest="global_config",
+        action="store_true",
+        help="Open global configuration file",
     )
     open_group.add_argument(
         "--local",
@@ -816,7 +838,10 @@ def create_parser() -> argparse.ArgumentParser:
     show_parser = config_subparsers.add_parser("show", help="Show current configuration")
     show_group = show_parser.add_mutually_exclusive_group()
     show_group.add_argument(
-        "--global", dest="global_config", action="store_true", help="Show only global configuration"
+        "--global",
+        dest="global_config",
+        action="store_true",
+        help="Show only global configuration",
     )
     show_group.add_argument("--local", action="store_true", help="Show only local configuration")
     show_parser.set_defaults(func=cmd_show)
@@ -831,7 +856,9 @@ def create_parser() -> argparse.ArgumentParser:
         help="Show only global configuration path",
     )
     path_group.add_argument(
-        "--local", action="store_true", help="Show only local configuration path"
+        "--local",
+        action="store_true",
+        help="Show only local configuration path",
     )
     path_parser.set_defaults(func=cmd_path)
 
@@ -855,7 +882,8 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Version command
     version_parser = config_subparsers.add_parser(
-        "version", help="Show configuration version information"
+        "version",
+        help="Show configuration version information",
     )
     version_group = version_parser.add_mutually_exclusive_group()
     version_group.add_argument(
@@ -874,7 +902,8 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Migrate command
     migrate_parser = config_subparsers.add_parser(
-        "migrate", help="Manually trigger configuration migration"
+        "migrate",
+        help="Manually trigger configuration migration",
     )
     migrate_group = migrate_parser.add_mutually_exclusive_group()
     migrate_group.add_argument(
@@ -890,7 +919,9 @@ def create_parser() -> argparse.ArgumentParser:
         help="Migrate local configuration file (default)",
     )
     migrate_parser.add_argument(
-        "--dry-run", action="store_true", help="Show what would be migrated without making changes"
+        "--dry-run",
+        action="store_true",
+        help="Show what would be migrated without making changes",
     )
     migrate_parser.set_defaults(func=cmd_migrate)
 

@@ -245,7 +245,9 @@ def _was_pint_imported_before_keecas(unitregistry: Any) -> bool:
 
 
 def update_pint_locale(
-    unitregistry: Any, language: str | None = None, verbose: bool = False
+    unitregistry: Any,
+    language: str | None = None,
+    verbose: bool = False,
 ) -> None:
     """Update pint locale based on keecas language setting with smart mode detection.
 
@@ -302,12 +304,14 @@ def update_pint_locale(
     if language == "en":
         # Check if we currently have a non-English locale set by inspecting the actual locale
         current_locale = getattr(unitregistry.formatter, "locale", None) or getattr(
-            unitregistry.formatter, "_locale", None
+            unitregistry.formatter,
+            "_locale",
+            None,
         )
 
         # Determine if we have a non-English locale
         has_non_english_locale = current_locale is not None and not current_locale.startswith(
-            ("en_", "C", "POSIX")
+            ("en_", "C", "POSIX"),
         )
 
         if has_non_english_locale:

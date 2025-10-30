@@ -114,7 +114,9 @@ def get_translations(language: str | None = None) -> dict[str, str]:
 
 
 def translate(
-    key: str, language: str | None = None, substitutions: dict[str, str] | None = None
+    key: str,
+    language: str | None = None,
+    substitutions: dict[str, str] | None = None,
 ) -> str:
     """Translate a single key.
 

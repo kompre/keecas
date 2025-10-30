@@ -488,5 +488,5 @@ default_formatter_chain = FormatterChain(
         format_float,  # Terminal fallback: float
         format_int,  # Terminal fallback: int
         format_str,  # Terminal fallback: str
-    ]
+    ],
 )

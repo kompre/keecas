@@ -70,6 +70,7 @@ def test_generate_label_unique_id_dict(config):
 
 def test_generate_label_callable():
     """Test generate_label with callable input."""
+
     def my_labeler(key, values):
         return f"label-{key}"
 
@@ -143,7 +144,7 @@ def test_show_eqn_with_dict_callable_label(config):
 
     labels = {
         F: force_labeler,
-        A: f"{config.latex.eq_prefix}area-fixed{config.latex.eq_suffix}"
+        A: f"{config.latex.eq_prefix}area-fixed{config.latex.eq_suffix}",
     }
 
     eqns = Dataframe({F: [100], A: [20]})

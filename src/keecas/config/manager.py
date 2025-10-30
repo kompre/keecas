@@ -160,7 +160,7 @@ class CheckTemplateConfig:
                 "success": r"${symbol}{rhs} \,\textcolor{{green}}{{\checkmark}}$",
                 "failure": r"${symbol}{rhs} \,\textcolor{{red}}{{\times}}$",
             },
-        }
+        },
     )
 
 
@@ -556,13 +556,18 @@ class ConfigManager:
             # Perform migration
             try:
                 migrated_data = ConfigMigration.migrate(
-                    config_data, config_version, current_version
+                    config_data,
+                    config_version,
+                    current_version,
                 )
                 self._options.update_from_dict(migrated_data)
 
                 # Save migrated config preserving structure and comments
                 self._save_migrated_config(
-                    config_path, toml_doc, migrated_data, created_at=metadata.get("generated_at")
+                    config_path,
+                    toml_doc,
+                    migrated_data,
+                    created_at=metadata.get("generated_at"),
                 )
                 print(f"SUCCESS: Config migrated successfully to {current_version}")
 
@@ -751,7 +756,10 @@ class ConfigManager:
             f.write(tomlkit.dumps(toml_doc))
 
     def init_config(
-        self, global_config: bool = False, force: bool = False, comment_style: str = "##"
+        self,
+        global_config: bool = False,
+        force: bool = False,
+        comment_style: str = "##",
     ) -> bool:
         """Initialize a new configuration file with parametrizable template."""
         config_path = self._global_config_path if global_config else self._local_config_path

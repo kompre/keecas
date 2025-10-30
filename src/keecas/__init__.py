@@ -19,9 +19,6 @@ from .display import (
     show_eqn,
 )
 
-# label
-from .label import generate_label, generate_unique_label
-
 # formatters
 from .formatters import (
     EarlyExit,
@@ -36,6 +33,9 @@ from .formatters import (
     format_sympy,
     validate_latex_kwargs,
 )
+
+# label
+from .label import generate_label, generate_unique_label
 
 # initialize pint
 from .pint_sympy import unitregistry as u

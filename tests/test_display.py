@@ -169,7 +169,9 @@ def test_formatter_recursive_call():
         if isinstance(value, Basic):
             latex_str = latex(value, **kwargs)
             return EarlyExit(
-                rf"\underline{{{latex_str}}}" if col_index == 0 else rf"= \underline{{{latex_str}}}"
+                rf"\underline{{{latex_str}}}"
+                if col_index == 0
+                else rf"= \underline{{{latex_str}}}",
             )
         return None
 
@@ -178,7 +180,7 @@ def test_formatter_recursive_call():
         [
             format_pint,  # Transform Pint → SymPy
             underline_sympy,  # Render SymPy with underline
-        ]
+        ],
     )
 
     # Test with Pint quantity - should go through:
@@ -297,7 +299,11 @@ def test_check_template_custom():
 
     # Test success case
     result = check(
-        0.5, 1.0, test=Le, success_template=custom_success, failure_template=custom_failure
+        0.5,
+        1.0,
+        test=Le,
+        success_template=custom_success,
+        failure_template=custom_failure,
     )
     assert isinstance(result, Markdown)
     assert "✅" in result.data
@@ -305,7 +311,11 @@ def test_check_template_custom():
 
     # Test failure case
     result = check(
-        1.5, 1.0, test=Le, success_template=custom_success, failure_template=custom_failure
+        1.5,
+        1.0,
+        test=Le,
+        success_template=custom_success,
+        failure_template=custom_failure,
     )
     assert isinstance(result, Markdown)
     assert "❌" in result.data
@@ -376,14 +386,20 @@ def test_check_explicit_parameters():
 
     # Test explicit success/failure template parameters
     result = check(
-        0.5, 1.0, success_template="GOOD: {symbol}{rhs}", failure_template="BAD: {symbol}{rhs}"
+        0.5,
+        1.0,
+        success_template="GOOD: {symbol}{rhs}",
+        failure_template="BAD: {symbol}{rhs}",
     )
     assert "GOOD:" in result.data
     assert r"\le" in result.data
 
     # Test failure case with explicit templates
     result = check(
-        1.5, 1.0, success_template="GOOD: {symbol}{rhs}", failure_template="BAD: {symbol}{rhs}"
+        1.5,
+        1.0,
+        success_template="GOOD: {symbol}{rhs}",
+        failure_template="BAD: {symbol}{rhs}",
     )
     assert "BAD:" in result.data
     assert r">" in result.data
