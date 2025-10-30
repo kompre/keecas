@@ -49,8 +49,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet; then
-            git add -A
+          git add -A
+          if ! git diff --staged --quiet; then
             git commit -m "style: auto-fix linting issues [skip ci]"
             git push
           else
@@ -58,4 +58,4 @@ jobs:
           fi
 
       - name: Verify linting passes
-        run: uv run ruff check src/ tests/
+        run: uv run ruff check src/ tests/ --no-fix
