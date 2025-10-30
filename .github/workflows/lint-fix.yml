@@ -2,7 +2,9 @@ name: Auto-fix Linting Issues
 
 on:
   push:
-    branches: [ main, dev, 'feature/**' ]
+    branches:
+      - dev
+      - 'feature/**'
   pull_request:
     branches: [ main, dev ]
 

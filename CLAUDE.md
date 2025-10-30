@@ -125,12 +125,13 @@ uv sync
 
 ### CI Workflows
 
-**lint-fix.yml** - Runs on every push and PR:
+**lint-fix.yml** - Runs on push to dev/feature branches and PRs:
 - Auto-fixes linting issues (Ruff check --fix + format)
 - Commits fixes automatically if any are found ([skip ci] to avoid loops)
 - Verifies linting passes after auto-fix
 - **Important**: Runs BEFORE test.yml, ensuring clean code for testing
-- **Scope**: Runs on main, dev, and feature/** branches
+- **Scope**: Runs on dev, feature/** branches, and PRs to main/dev
+- **Excluded**: Does NOT run on push to main (protected branch, can't auto-commit)
 
 **test.yml** - Runs on PR to main/dev:
 - Linting verification (Ruff check - read-only)

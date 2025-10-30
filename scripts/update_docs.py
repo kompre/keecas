@@ -18,7 +18,7 @@ def update_api_docs():
     result = subprocess.run(
         ["uv", "run", "quartodoc", "build", "--config", str(docs_dir / "_quarto.yml")],
         capture_output=True,
-        text=True
+        text=True,
     )
 
     if result.returncode != 0:
