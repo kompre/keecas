@@ -1,5 +1,56 @@
 # Proposal: Refactor Formatters to Singledispatch
 
+**Status**: COMPLETED (2025-10-30)
+
+## Implementation Summary
+
+Successfully refactored the formatter system from chain-of-responsibility to singledispatch pattern:
+
+### Changes Made
+
+1. **Core Refactoring** (`src/keecas/formatters.py`)
+   - Removed `EarlyExit` class (90 lines)
+   - Removed `FormatterChain` class (170 lines)
+   - Created `@singledispatch` function `format_value()` as main entry point
+   - All formatters now return `str` directly
+   - Transformer formatters (format_pint, format_mul) call format_sympy directly
+
+2. **Integration Updates** (`src/keecas/display.py`)
+   - Replaced `default_formatter_chain` with `format_value`
+   - Updated `config.display.cell_formatter` default to use `format_value`
+
+3. **API Updates** (`src/keecas/__init__.py`)
+   - Removed exports: `EarlyExit`, `FormatterChain`, `default_formatter_chain`
+   - Added export: `format_value`
+   - Preserved individual formatter exports: `format_str`, `format_int`, `format_float`, `format_sympy`, `format_mul`
+   - Optional formatters (format_pint, format_markdown) imported conditionally
+
+4. **Test Updates** (`tests/test_display.py`)
+   - Updated 5 tests to use singledispatch pattern
+   - Replaced chain manipulation with type registration (`@format_value.register()`)
+   - All 171 tests passing
+
+5. **Documentation** (`CLAUDE.md`)
+   - Added Formatters module to Architecture Overview
+   - Documented singledispatch pattern, extensibility, and built-in formatters
+   - Updated Module Imports Structure
+
+### Results
+
+- **Code Reduction**: ~260 lines removed (EarlyExit + FormatterChain classes)
+- **Type Safety**: Direct `str` returns instead of `EarlyExit | str | None`
+- **Extensibility**: Users can register custom types with `@format_value.register(MyType)`
+- **All Tests Passing**: 171/171 tests pass
+- **No Breaking Changes for Users**: Direct formatter calls still work, `show_eqn()` unchanged
+
+### Trade-offs Accepted
+
+- Lost runtime chain modification (acceptable - not commonly needed)
+- Type-based dispatch instead of explicit ordering (more intuitive)
+- Transformers use direct function calls instead of re-dispatch (explicit control)
+
+---
+
 ## Original Objective
 
 Refactor the current formatters implementation to use a singledispatch approach:

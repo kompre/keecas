@@ -692,18 +692,16 @@ def show_eqn(
 
     ### cell_formatter
     # Import default formatter
-    from keecas.formatters import default_formatter_chain
+    from keecas.formatters import format_value
 
     # Step 1: Determine default if not provided
     if cell_formatter is None:
-        cell_formatter = config.display.cell_formatter or default_formatter_chain
+        cell_formatter = config.display.cell_formatter or format_value
 
     # Step 2: Create Dataframe (single line, matching float_format pattern)
     cell_formatters = create_dataframe(
         seed=cell_formatter if not isinstance(cell_formatter, tuple) else cell_formatter[0],
-        default_value=default_formatter_chain
-        if not isinstance(cell_formatter, tuple)
-        else cell_formatter[1],
+        default_value=format_value if not isinstance(cell_formatter, tuple) else cell_formatter[1],
         keys=keys,
         width=num_cols,
     )

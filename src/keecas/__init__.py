@@ -21,18 +21,25 @@ from .display import (
 
 # formatters
 from .formatters import (
-    EarlyExit,
-    FormatterChain,
-    default_formatter_chain,
     format_float,
     format_int,
-    format_markdown,
     format_mul,
-    format_pint,
     format_str,
     format_sympy,
+    format_value,
     validate_latex_kwargs,
 )
+
+# Import optional formatters if available (for type registration)
+try:
+    from .formatters import format_markdown  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    from .formatters import format_pint  # noqa: F401
+except ImportError:
+    pass
 
 # label
 from .label import generate_label, generate_unique_label
@@ -68,13 +75,9 @@ __all__ = [
     "eq_to_dict",
     "generate_label",
     "generate_unique_label",
-    # Formatter exports (chain-based)
-    "EarlyExit",
-    "FormatterChain",
-    "default_formatter_chain",
+    # Formatter exports (singledispatch-based)
+    "format_value",
     "validate_latex_kwargs",
-    "format_markdown",
-    "format_pint",
     "format_mul",
     "format_sympy",
     "format_float",

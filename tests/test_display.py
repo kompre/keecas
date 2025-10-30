@@ -1,6 +1,6 @@
 import pytest
 from IPython.display import Markdown
-from sympy import Basic, Eq, GreaterThan, Le, StrictLessThan, symbols
+from sympy import Eq, GreaterThan, Le, StrictLessThan, symbols
 
 from keecas import pipe_command as pc
 from keecas.display import (
@@ -29,30 +29,31 @@ def test_import_star():
     # Execute import *
     exec("from keecas import *", namespace)
 
-    # Verify chain-based exports are available
-    assert "EarlyExit" in namespace
-    assert "FormatterChain" in namespace
-    assert "default_formatter_chain" in namespace
-    assert "format_markdown" in namespace
-    assert "format_pint" in namespace
+    # Verify singledispatch-based exports are available
+    assert "format_value" in namespace
     assert "format_mul" in namespace
     assert "format_sympy" in namespace
+    assert "format_int" in namespace
+    assert "format_float" in namespace
+    assert "format_str" in namespace
 
-    # Verify old exports are NOT present
+    # Verify old chain-based exports are NOT present
+    assert "EarlyExit" not in namespace
+    assert "FormatterChain" not in namespace
+    assert "default_formatter_chain" not in namespace
     assert "default_cell_formatter_registry" not in namespace
     assert "cell_formatter" not in namespace
-    assert "default_cell_formatter" not in namespace  # Removed - just use default_formatter_chain
+    assert "default_cell_formatter" not in namespace
 
-    # Verify the imports are actually usable
-    EarlyExit = namespace["EarlyExit"]
-    FormatterChain = namespace["FormatterChain"]
+    # Verify format_value is actually usable
+    format_value = namespace["format_value"]
 
     # Test basic functionality
-    exit_obj = EarlyExit("test")
-    assert exit_obj.result == "test"
+    result = format_value(42, col_index=0)
+    assert result == "42"
 
-    chain = FormatterChain([])
-    assert isinstance(chain.formatters, list)
+    result = format_value(42, col_index=1)
+    assert result == "= 42"
 
 
 def test_check():
@@ -75,24 +76,24 @@ def test_check():
 
 
 def test_default_cell_formatter():
-    """Test default_formatter_chain function."""
-    from keecas import default_formatter_chain
+    """Test format_value function with singledispatch."""
+    from keecas import format_value
 
     expr = Eq(x, y)
     # Test column 0 (LHS)
-    result_col0 = default_formatter_chain(expr, 0)
+    result_col0 = format_value(expr, 0)
     assert isinstance(result_col0, str)
     assert r"x = y" in result_col0
 
     # Test column 1 (RHS)
-    result_col1 = default_formatter_chain(expr, 1)
+    result_col1 = format_value(expr, 1)
     assert isinstance(result_col1, str)
     assert "=" in result_col1  # Should have = prefix
 
     # Test with kwargs (mul_symbol)
     expr_mul = x * y
-    result_default = default_formatter_chain(expr_mul, 0)
-    result_dot = default_formatter_chain(expr_mul, 0, mul_symbol="dot")
+    result_default = format_value(expr_mul, 0)
+    result_dot = format_value(expr_mul, 0, mul_symbol="dot")
     assert result_default != result_dot  # Should be different with different mul_symbol
 
 
@@ -109,48 +110,45 @@ def test_validate_latex_kwargs():
         validate_latex_kwargs(invalid_kwargs)
 
 
-def test_formatter_returns_none():
-    """Test that formatters returning None skip to next formatter."""
-    from keecas import EarlyExit, FormatterChain, default_formatter_chain
+def test_formatter_custom_registration():
+    """Test that custom formatters can be registered with singledispatch."""
+    from keecas import format_value
 
-    # Create a custom formatter that conditionally returns None
-    def conditional_formatter(value, col_index=0, **kwargs):
-        # Only handle values > 100, otherwise return None to skip to next
-        if isinstance(value, int) and value > 100:
-            return EarlyExit(f"LARGE: {value}" if col_index == 0 else f"= LARGE: {value}")
-        return None  # Skip to next formatter
+    # Define a custom type
+    class LargeInt:
+        def __init__(self, value):
+            self.value = value
 
-    # Create custom chain with our formatter first
-    custom_chain = FormatterChain(default_formatter_chain.formatters.copy())
-    custom_chain.insert(0, conditional_formatter)  # Insert at beginning
+    # Register a custom formatter for LargeInt
+    @format_value.register(LargeInt)
+    def format_large_int(value, col_index=0, **kwargs):
+        # Custom formatting for LargeInt type
+        return f"LARGE: {value.value}" if col_index == 0 else f"= LARGE: {value.value}"
 
     # Test with value > 100 - should use our formatter
-    result_large = show_eqn({x: 150}, cell_formatter=custom_chain)
+    result_large = show_eqn({x: LargeInt(150)})
     assert "LARGE: 150" in result_large.data
 
-    # Test with value <= 100 - should skip to built-in int formatter
-    result_small = show_eqn({y: 50}, cell_formatter=custom_chain)
+    # Test with regular int - should use built-in int formatter
+    result_small = show_eqn({y: 50})
     assert "LARGE" not in result_small.data
-    assert "50" in result_small.data  # Falls back to default int formatter
+    assert "50" in result_small.data  # Uses default int formatter
 
 
 def test_formatter_empty_string():
-    """Test that formatters can explicitly return empty string via EarlyExit."""
-    from keecas import EarlyExit, FormatterChain
+    """Test that formatters can explicitly return empty string."""
+    from keecas import format_value
 
-    # Formatter that explicitly returns empty string
-    def empty_formatter(value, col_index=0, **kwargs):
-        if isinstance(value, EmptyType):
-            return EarlyExit("")  # Explicit empty (not None)
-        return None
-
+    # Define custom type
     class EmptyType:
         pass
 
-    # Create chain with just our formatter
-    custom_chain = FormatterChain([empty_formatter])
+    # Register formatter that explicitly returns empty string
+    @format_value.register(EmptyType)
+    def format_empty(value, col_index=0, **kwargs):
+        return ""  # Explicit empty string
 
-    result = show_eqn({x: EmptyType()}, cell_formatter=custom_chain)
+    result = show_eqn({x: EmptyType()})
 
     # Should have empty content between separator and line end
     assert "& " in result.data or "& \\" in result.data
@@ -158,41 +156,23 @@ def test_formatter_empty_string():
     assert "None" not in result.data
 
 
-def test_formatter_recursive_call():
-    """Test Pint → SymPy transform chain (demonstrates chaining)."""
-    from sympy import latex
+def test_formatter_pint_transformation():
+    """Test Pint → SymPy transformation with format_pint."""
+    from keecas import format_value, u
 
-    from keecas import EarlyExit, FormatterChain, format_pint, u
+    # Test with Pint quantity - should be transformed to SymPy and formatted
+    # format_pint converts Quantity → SymPy, then calls format_sympy
+    result = show_eqn({x: 5 * u.meter})
 
-    # Custom SymPy formatter that underlines everything
-    def underline_sympy(value, col_index=0, **kwargs):
-        if isinstance(value, Basic):
-            latex_str = latex(value, **kwargs)
-            return EarlyExit(
-                rf"\underline{{{latex_str}}}"
-                if col_index == 0
-                else rf"= \underline{{{latex_str}}}",
-            )
-        return None
-
-    # Create chain: Pint transforms to SymPy, then our custom formatter renders
-    custom_chain = FormatterChain(
-        [
-            format_pint,  # Transform Pint → SymPy
-            underline_sympy,  # Render SymPy with underline
-        ],
-    )
-
-    # Test with Pint quantity - should go through:
-    # 1. format_pint → converts to SymPy
-    # 2. underline_sympy → underlines the SymPy expression
-    result = show_eqn({x: 5 * u.meter}, cell_formatter=custom_chain)
-
-    # Should be underlined (our custom formatter)
-    assert r"\underline{" in result.data
     # Should have the value
     assert "5" in result.data
-    # No cleanup needed - chain is local to this test!
+    # Should have meter units (abbreviated as 'm' or full 'meter')
+    assert "\\text{m}" in result.data or "meter" in result.data or "mathrm" in result.data
+
+    # Test direct formatting of Pint quantity
+    result_direct = format_value(5 * u.meter, col_index=0)
+    assert isinstance(result_direct, str)
+    assert "5" in result_direct
 
 
 def test_wrap_floats():

@@ -1,56 +1,43 @@
 """Cell and row formatters for LaTeX equation rendering.
 
-This module provides a chain-based formatter system for formatting cell values
-in mathematical equations. Formatters are executed in explicit order, allowing
-easy modification and prototyping in Jupyter notebooks.
+This module provides a singledispatch-based formatter system for formatting
+cell values in mathematical equations. Formatters are dispatched based on
+value type, providing a clean and extensible interface.
 
-Formatter Return Values:
-    - Return EarlyExit(result): Stop chain, use this result
-    - Return transformed value: Pass to next formatter in chain
-    - Return None: Skip to next formatter (no transformation)
+Formatter Architecture:
+    - Main entry point: format_value(value, col_index, **kwargs) -> str
+    - Type-based dispatch using @singledispatch decorator
+    - Each type has a registered formatter implementation
+    - Transformers (Pint, Mul) call other formatters directly
+    - Fallback to sympy.latex() for unhandled types
 
 Example:
-    Basic chain with transformers and terminals:
+    Basic usage with type dispatch:
 
-    >>> from keecas import FormatterChain, EarlyExit
-    >>> from sympy import Basic, latex, S
-    >>> import pint
+    >>> from keecas import format_value
+    >>> from sympy import symbols
     >>>
-    >>> def format_pint(value, col_index=None, **kwargs):
-    ...     '''Transform Pint to SymPy.'''
-    ...     if isinstance(value, pint.Quantity):
-    ...         return S(value)  # Transform, continue chain
-    ...     return None  # Skip
-    ...
-    >>> def format_sympy(value, col_index=None, **kwargs):
-    ...     '''Render SymPy to LaTeX.'''
-    ...     if isinstance(value, Basic):
-    ...         latex_str = latex(value, **kwargs)
-    ...         return EarlyExit(latex_str)  # Done!
-    ...     return None
-    ...
-    >>> chain = FormatterChain([format_pint, format_sympy])
-    >>> print(chain)  # See order
-    FormatterChain([format_pint, format_sympy])
+    >>> x = symbols('x')
+    >>> format_value(x, col_index=0)
+    'x'
+    >>>
+    >>> format_value(3.14159, col_index=1)
+    '= 3.14159'
+    >>>
+    >>> format_value("hello", col_index=0)
+    '\\\\text{hello}'
 
-    Modifying chain in notebook (no kernel restart needed):
+    Custom type registration:
 
-    >>> # Add debug formatter
-    >>> def debug_fmt(value, col_index=None, **kwargs):
-    ...     print(f"Debug: {type(value)=}")
-    ...     return None
-    ...
-    >>> chain.insert(0, debug_fmt)  # Add at beginning
-    >>> chain.remove(debug_fmt)     # Remove it
-    >>> chain.move_up(format_sympy)  # Reorder
+    >>> @format_value.register(MyCustomType)
+    ... def format_custom(value, col_index=0, **kwargs):
+    ...     return r"\\text{Custom: " + str(value) + "}"
 """
 
 import inspect
-from collections.abc import Callable
+from functools import singledispatch
 from typing import Any
 
-import pint
-from IPython.display import Markdown
 from sympy import Basic, Mul, S, latex
 
 
@@ -87,406 +74,273 @@ def validate_latex_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     return kwargs
 
 
-class EarlyExit:
-    """Sentinel to signal chain should stop and return result.
+@singledispatch
+def format_value(value: Any, col_index: int = 0, **kwargs) -> str:
+    """Format a value to LaTeX string using type-based dispatch.
 
-    When a formatter returns EarlyExit(result), the chain stops executing
-    and returns the wrapped result string immediately.
+    This is the main entry point for formatting values in keecas equations.
+    Dispatches to specialized formatters based on value type. For unhandled
+    types, falls back to sympy.latex().
 
-    Example:
-        >>> def format_int(value, col_index=None, **kwargs):
-        ...     if isinstance(value, int):
-        ...         return EarlyExit(str(value))  # Stop chain
-        ...     return None  # Continue to next formatter
+    Parameters
+    ----------
+    value : Any
+        Value to format (any type)
+    col_index : int, optional
+        Column index - 0 for LHS, 1+ for RHS (default: 0)
+        Affects formatting (e.g., "= " prefix for RHS in numeric types)
+    **kwargs
+        Additional arguments passed to latex() function
+        (e.g., mul_symbol, mode, fold_frac_powers)
+
+    Returns
+    -------
+    str
+        LaTeX string representation
+
+    Examples
+    --------
+    >>> from sympy import symbols
+    >>> x = symbols('x')
+    >>> format_value(x)
+    'x'
+    >>>
+    >>> format_value(42, col_index=1)
+    '= 42'
+    >>>
+    >>> format_value("text", col_index=0)
+    '\\\\text{text}'
+
+    Notes
+    -----
+    To register custom type formatters:
+
+    >>> @format_value.register(MyType)
+    ... def format_mytype(value, col_index=0, **kwargs):
+    ...     return r"\\text{My custom format}"
+
+    Supported types (built-in registrations):
+    - str: Plain text wrapped in \\text{}
+    - int: Integers with optional "= " prefix
+    - float: Floats with optional "= " prefix
+    - IPython.display.Markdown: Wrapped in \\text{}
+    - pint.Quantity: Converted to SymPy, then formatted
+    - sympy.Mul: Numeric/unit separation, then formatted as Basic
+    - sympy.Basic: LaTeX via sympy.latex()
+
+    See Also
+    --------
+    format_str : String formatter
+    format_int : Integer formatter
+    format_float : Float formatter
+    format_sympy : SymPy expression formatter
     """
-
-    def __init__(self, result: str):
-        """Initialize EarlyExit with result string.
-
-        Parameters
-        ----------
-        result : str
-            The formatted string to return from chain
-        """
-        self.result = result
-
-    def __repr__(self):
-        return f"EarlyExit({self.result!r})"
+    # Default fallback for unhandled types
+    return latex(value, **kwargs)
 
 
-class FormatterChain:
-    """Chain of formatters executed in explicit order.
+# Built-in formatters - registered with singledispatch
 
-    Formatters are regular functions stored in a list, making it easy to
-    inspect, modify, and reorder them without kernel restart.
 
-    Attributes:
-        formatters: List of formatter functions (publicly accessible)
+@format_value.register(str)
+def format_str(value: str, col_index: int = 0, **kwargs) -> str:
+    """Format Python strings to LaTeX text.
 
-    Example:
-        >>> chain = FormatterChain([format_pint, format_sympy])
-        >>> print(chain)  # See current order
-        >>> chain.insert(0, my_formatter)  # Add at beginning
-        >>> chain.move_up(format_sympy)    # Reorder
+    Parameters
+    ----------
+    value : str
+        String value to format
+    col_index : int, optional
+        Column index (0 = LHS, 1+ = RHS)
+    **kwargs
+        Ignored
+
+    Returns
+    -------
+    str
+        LaTeX string with \\text{} wrapper
     """
+    if col_index == 0:
+        return rf"\text{{{value}}}"
+    else:
+        return rf"\quad\text{{{value}}}"
 
-    def __init__(self, formatters: list[Callable] | None = None):
-        """Initialize formatter chain.
+
+@format_value.register(int)
+def format_int(value: int, col_index: int = 0, **kwargs) -> str:
+    """Format Python integers to LaTeX.
+
+    Parameters
+    ----------
+    value : int
+        Integer value to format
+    col_index : int, optional
+        Column index (0 = LHS, 1+ = RHS)
+    **kwargs
+        Ignored
+
+    Returns
+    -------
+    str
+        LaTeX string representation of integer
+    """
+    if col_index == 0:
+        return str(value)
+    else:
+        return f"= {value}"
+
+
+@format_value.register(float)
+def format_float(value: float, col_index: int = 0, **kwargs) -> str:
+    """Format Python floats to LaTeX.
+
+    Note: Float precision formatting is handled by format_decimal_numbers()
+    in display.py after this formatter returns the string.
+
+    Parameters
+    ----------
+    value : float
+        Float value to format
+    col_index : int, optional
+        Column index (0 = LHS, 1+ = RHS)
+    **kwargs
+        Ignored
+
+    Returns
+    -------
+    str
+        LaTeX string representation of float
+    """
+    if col_index == 0:
+        return str(value)
+    else:
+        return f"= {value}"
+
+
+# Optional dependency: IPython Markdown
+try:
+    from IPython.display import Markdown
+
+    @format_value.register(Markdown)
+    def format_markdown(value: Markdown, col_index: int = 0, **kwargs) -> str:
+        """Format IPython Markdown objects to LaTeX text.
 
         Parameters
         ----------
-        formatters : list[Callable] | None, optional
-            List of formatter functions. Each should have signature:
-            (value, col_index, **kwargs) -> str | EarlyExit | None
-        """
-        self.formatters = formatters or []
-
-    def __call__(self, value: Any, col_index: int, **kwargs) -> str:
-        """Execute formatter chain on value.
-
-        Formatters are executed in order until one returns EarlyExit or
-        all formatters complete.
-
-        Parameters
-        ----------
-        value : Any
-            Value to format
-        col_index : int
+        value : Markdown
+            Markdown object to format
+        col_index : int, optional
             Column index (0 = LHS, 1+ = RHS)
         **kwargs
-            Additional arguments passed to latex() and formatters
+            Ignored
 
         Returns
         -------
         str
-            Formatted LaTeX string
-
-        Notes
-        -----
-        Chain Semantics:
-        - Formatter returns EarlyExit(result): Stop, return result
-        - Formatter returns transformed value: Pass to next formatter
-        - Formatter returns None: Skip to next formatter
-        - No formatter handles: Fall back to latex(value, **kwargs)
+            LaTeX string with \\text{} wrapper
         """
-        current_value = value
+        if col_index == 0:
+            return rf"\text{{{value.data}}}"
+        else:
+            return rf"\quad\text{{{value.data}}}"
 
-        for formatter in self.formatters:
-            result = formatter(current_value, col_index, **kwargs)
+except ImportError:
+    pass
 
-            if isinstance(result, EarlyExit):
-                return result.result  # Stop chain
-            elif result is not None:
-                current_value = result  # Transform, continue
-            # None = skip to next
 
-        # Fallback: no formatter returned EarlyExit
-        return latex(current_value, **kwargs)
+# Optional dependency: Pint
+try:
+    import pint
 
-    def __repr__(self):
-        """Show formatter names for easy inspection."""
-        names = [f.__name__ for f in self.formatters]
-        return f"FormatterChain({names})"
+    @format_value.register(pint.Quantity)
+    def format_pint(value: pint.Quantity, col_index: int = 0, **kwargs) -> str:
+        """Format Pint quantities by converting to SymPy first.
 
-    # Helper methods for chain manipulation
+        This is a transformer formatter - it converts Pint Quantity to
+        SymPy expression, then calls format_sympy() directly.
 
-    def insert(self, index: int, formatter: Callable) -> None:
-        """Insert formatter at specific position.
+        Transformation chain: Quantity -> SymPy -> format_sympy
 
         Parameters
         ----------
-        index : int
-            Position to insert at
-        formatter : Callable
-            Formatter function to insert
+        value : pint.Quantity
+            Pint quantity to format
+        col_index : int, optional
+            Column index (0 = LHS, 1+ = RHS)
+        **kwargs
+            Passed to format_sympy()
+
+        Returns
+        -------
+        str
+            LaTeX string from SymPy formatting
         """
-        self.formatters.insert(index, formatter)
+        sympy_expr = S(value)  # Convert to SymPy
+        return format_sympy(sympy_expr, col_index, **kwargs)
 
-    def remove(self, formatter: Callable) -> None:
-        """Remove formatter from chain.
-
-        Parameters
-        ----------
-        formatter : Callable
-            Formatter function to remove
-        """
-        self.formatters.remove(formatter)
-
-    def append(self, formatter: Callable) -> None:
-        """Append formatter to end of chain.
-
-        Parameters
-        ----------
-        formatter : Callable
-            Formatter function to append
-        """
-        self.formatters.append(formatter)
-
-    def clear(self) -> None:
-        """Remove all formatters from chain."""
-        self.formatters.clear()
-
-    def move(self, formatter: Callable, new_index: int) -> None:
-        """Move formatter to new position in chain.
-
-        Parameters
-        ----------
-        formatter : Callable
-            The formatter function to move
-        new_index : int
-            Target index position
-
-        Examples
-        --------
-        >>> chain.move(format_pint, 0)  # Move to beginning
-        >>> chain.move(format_sympy, -1)  # Move to end
-        """
-        current_index = self.formatters.index(formatter)
-        self.formatters.pop(current_index)
-        self.formatters.insert(new_index, formatter)
-
-    def move_up(self, formatter: Callable, steps: int = 1) -> None:
-        """Move formatter toward beginning of chain (lower index).
-
-        Parameters
-        ----------
-        formatter : Callable
-            The formatter function to move
-        steps : int, optional
-            Number of positions to move up (default 1)
-
-        Examples
-        --------
-        >>> chain.move_up(format_pint)      # Move up by 1
-        >>> chain.move_up(format_sympy, 2)  # Move up by 2
-        """
-        current_index = self.formatters.index(formatter)
-        new_index = max(0, current_index - steps)
-        self.formatters.pop(current_index)
-        self.formatters.insert(new_index, formatter)
-
-    def move_down(self, formatter: Callable, steps: int = 1) -> None:
-        """Move formatter toward end of chain (higher index).
-
-        Parameters
-        ----------
-        formatter : Callable
-            The formatter function to move
-        steps : int, optional
-            Number of positions to move down (default 1)
-
-        Examples
-        --------
-        >>> chain.move_down(format_pint)      # Move down by 1
-        >>> chain.move_down(format_sympy, 2)  # Move down by 2
-        """
-        current_index = self.formatters.index(formatter)
-        new_index = min(len(self.formatters) - 1, current_index + steps)
-        self.formatters.pop(current_index)
-        self.formatters.insert(new_index, formatter)
+except ImportError:
+    pass
 
 
-# Built-in formatters
+@format_value.register(Mul)
+def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
+    """Format Mul expressions with numeric/unit separation.
 
+    For Mul without free symbols (e.g., 5*meter), applies transformation
+    to separate numeric and unit parts, then formats as SymPy Basic.
 
-def format_markdown(value, col_index: int = 0, **kwargs) -> EarlyExit | None:
-    """Format Markdown objects.
+    Transformation: 5*meter -> UnevaluatedExpr(5) * UnevaluatedExpr(meter)
+    LaTeX output: "5 \\cdot \\mathrm{meter}" instead of "5meter"
 
     Parameters
     ----------
-    value : Any
-        Value to check
+    value : Mul
+        Multiplication expression to format
     col_index : int, optional
         Column index (0 = LHS, 1+ = RHS)
     **kwargs
-        Ignored
+        Passed to format_sympy()
 
     Returns
     -------
-    EarlyExit | None
-        EarlyExit with LaTeX text if Markdown, None otherwise
-    """
-    if isinstance(value, Markdown):
-        if col_index == 0:
-            return EarlyExit(rf"\text{{{value.data}}}")
-        else:
-            return EarlyExit(rf"\quad\text{{{value.data}}}")
-    return None
-
-
-def format_pint(value, col_index: int = 0, **kwargs) -> Basic | None:
-    """Convert Pint quantities to SymPy.
-
-    This is a transformer - it returns the converted value for the next
-    formatter (likely format_sympy) to handle.
-
-    Parameters
-    ----------
-    value : Any
-        Value to check
-    col_index : int, optional
-        Column index (not used)
-    **kwargs
-        Passed through
-
-    Returns
-    -------
-    Basic | None
-        SymPy expression if Pint Quantity, None otherwise
-    """
-    if isinstance(value, pint.Quantity):
-        return S(value)  # Transform to SymPy, continue chain
-    return None
-
-
-def format_mul(value, col_index: int = 0, **kwargs) -> Mul | None:
-    """Transform Mul without symbols to separated numeric+unit form.
-
-    If the object is a Mul without any symbols (e.g., 5*meter), it represents
-    a numeric value multiplied by a unit. Transform it using as_two_terms for
-    better formatting where numeric and unit parts are visually separated.
-
-    Parameters
-    ----------
-    value : Any
-        Value to check and potentially transform
-    col_index : int, optional
-        Column index (not used)
-    **kwargs
-        Passed through
-
-    Returns
-    -------
-    Mul | None
-        Transformed Mul as UnevaluatedExpr if applicable, None otherwise
-
-    Examples
-    --------
-    Input:  5*meter (Mul with no free symbols)
-    Output: UnevaluatedExpr(5) * UnevaluatedExpr(meter)
-    LaTeX: "5 \\cdot \\mathrm{meter}" instead of "5meter"
+    str
+        LaTeX string representation
     """
     # Import here to avoid circular dependency
     from keecas import pipe_command as pc
 
-    if isinstance(value, Mul) and not value.free_symbols:
+    if not value.free_symbols:
         # Transform to separated form: numeric * unit
         transformed = value | pc.as_two_terms(as_mul=True)
-        return transformed  # Continue to next formatter (likely format_sympy)
+        # Call format_sympy directly (Mul is a Basic subclass)
+        return format_sympy(transformed, col_index, **kwargs)
 
-    return None  # Not a Mul or has symbols, skip
+    # Has symbols - format as regular SymPy expression
+    return format_sympy(value, col_index, **kwargs)
 
 
-def format_sympy(value, col_index: int = 0, **kwargs) -> EarlyExit | None:
+@format_value.register(Basic)
+def format_sympy(value: Basic, col_index: int = 0, **kwargs) -> str:
     """Format SymPy expressions to LaTeX.
 
-    Parameters
-    ----------
-    value : Any
-        Value to check
-    col_index : int, optional
-        Column index (0 = LHS, 1+ = RHS)
-    **kwargs
-        Passed to latex() function (e.g., mul_symbol, mode)
-
-    Returns
-    -------
-    EarlyExit | None
-        EarlyExit with LaTeX string if SymPy Basic, None otherwise
-    """
-    if isinstance(value, Basic):
-        latex_str = latex(value, **kwargs)
-        if col_index == 0:
-            return EarlyExit(latex_str)
-        else:
-            return EarlyExit(f"= {latex_str}")
-    return None
-
-
-def format_float(value, col_index: int = 0, **kwargs) -> EarlyExit | None:
-    """Format Python floats.
+    This is the main formatter for all SymPy objects (Basic subclasses).
 
     Parameters
     ----------
-    value : Any
-        Value to check
+    value : Basic
+        SymPy expression to format
     col_index : int, optional
         Column index (0 = LHS, 1+ = RHS)
     **kwargs
-        Ignored
+        Passed to sympy.latex() function (e.g., mul_symbol, mode)
 
     Returns
     -------
-    EarlyExit | None
-        EarlyExit with string if float, None otherwise
+    str
+        LaTeX string representation
     """
-    if isinstance(value, float):
-        if col_index == 0:
-            return EarlyExit(str(value))
-        else:
-            return EarlyExit(f"= {value}")
-    return None
-
-
-def format_int(value, col_index: int = 0, **kwargs) -> EarlyExit | None:
-    """Format Python integers.
-
-    Parameters
-    ----------
-    value : Any
-        Value to check
-    col_index : int, optional
-        Column index (0 = LHS, 1+ = RHS)
-    **kwargs
-        Ignored
-
-    Returns
-    -------
-    EarlyExit | None
-        EarlyExit with string if int, None otherwise
-    """
-    if isinstance(value, int):
-        if col_index == 0:
-            return EarlyExit(str(value))
-        else:
-            return EarlyExit(f"= {value}")
-    return None
-
-
-def format_str(value, col_index: int = 0, **kwargs) -> EarlyExit | None:
-    """Format Python strings.
-
-    Parameters
-    ----------
-    value : Any
-        Value to check
-    col_index : int, optional
-        Column index (0 = LHS, 1+ = RHS)
-    **kwargs
-        Ignored
-
-    Returns
-    -------
-    EarlyExit | None
-        EarlyExit with LaTeX text if string, None otherwise
-    """
-    if isinstance(value, str):
-        if col_index == 0:
-            return EarlyExit(rf"\text{{{value}}}")
-        else:
-            return EarlyExit(rf"\quad\text{{{value}}}")
-    return None
-
-
-# Default formatter chain with built-in formatters
-default_formatter_chain = FormatterChain(
-    [
-        format_markdown,  # Terminal: Markdown objects
-        format_pint,  # Transformer: Pint -> SymPy
-        format_mul,  # Transformer: numeric Mul -> separated form
-        format_sympy,  # Terminal: SymPy expressions
-        format_float,  # Terminal fallback: float
-        format_int,  # Terminal fallback: int
-        format_str,  # Terminal fallback: str
-    ],
-)
+    latex_str = latex(value, **kwargs)
+    if col_index == 0:
+        return latex_str
+    else:
+        return f"= {latex_str}"
