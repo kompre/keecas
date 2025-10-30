@@ -11,7 +11,6 @@ from keecas.display import (
     latex_inline_dict,
     replace_all,
     show_eqn,
-    wrap_floats,
 )
 from keecas.formatters import validate_latex_kwargs
 
@@ -173,12 +172,6 @@ def test_formatter_pint_transformation():
     result_direct = format_value(5 * u.meter, col_index=0)
     assert isinstance(result_direct, str)
     assert "5" in result_direct
-
-
-def test_wrap_floats():
-    text = "The value is 3.14159 and -2.71828"
-    result = wrap_floats(text, wrapper=("(", ")"))
-    assert result == "The value is (3.14159) and (-2.71828)"
 
 
 def test_format_decimal_numbers():

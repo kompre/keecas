@@ -789,43 +789,6 @@ def show_eqn(
     return Markdown(template)
 
 
-def wrap_floats(text: str, wrapper: tuple[str, str] = ("", "")) -> str:
-    """Wrap all decimal numbers in a text string with prefix and suffix.
-
-    Finds all decimal numbers (e.g., 3.14, -2.71) in the input text and wraps
-    them with the provided prefix and suffix strings. Useful for adding LaTeX
-    formatting around numbers.
-
-    Args:
-        text: Input text containing decimal numbers
-        wrapper: Tuple of (prefix, suffix) strings to wrap numbers with.
-            Default is ("", "") for no wrapping.
-
-    Returns:
-        Text with all decimal numbers wrapped
-
-    Examples:
-        >>> wrap_floats("The value is 3.14", wrapper=("(", ")"))
-        'The value is (3.14)'
-        >>> wrap_floats("x = 2.5 and y = -1.7", wrapper=("\\\\textbf{", "}"))
-        'x = \\\\textbf{2.5} and y = \\\\textbf{-1.7}'
-
-    See Also:
-        - `~~display.format_decimal_numbers`: Format decimal numbers with precision
-    """
-    # Define a regular expression pattern to match decimal numbers
-    float_pattern = re.compile(r"-?\d+\.\d+")
-
-    # Define a function to use as replacement
-    def _wrap_match(match):
-        return f"{wrapper[0]}{match.group(0)}{wrapper[1]}"
-
-    # Use re.sub to replace all matches with the wrapped version
-    wrapped_text = float_pattern.sub(_wrap_match, text)
-
-    return wrapped_text
-
-
 def format_decimal_numbers(
     text: str | None,
     format_string: str | None = None,
