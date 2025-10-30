@@ -81,6 +81,14 @@ quartodoc:
         - display.check
         - display.format_decimal_numbers
         - display.replace_all
+    - title: Label Module
+      desc: Label generation
+      contents:
+        - name: label
+          children: linked
+        - label.generate_label
+        - label.generate_unique_label
+        - label.generate_id
     - title: Dataframe Module
       desc: Custom dictionary-like container for tabular equation data
       contents:
