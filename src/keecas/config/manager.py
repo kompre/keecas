@@ -78,7 +78,9 @@ class LatexConfig:
     default_environment: str = "align"
     default_label_command: str = r"\label"
     default_mul_symbol: str = r"\,"
-    label: "Callable | None" = None  # Runtime-only: default label generator (not serializable to TOML)
+    label: "Callable | None" = (
+        None  # Runtime-only: default label generator (not serializable to TOML)
+    )
     environments: "EnvironmentConfig" = field(default_factory=lambda: None)
 
     def __post_init__(self):

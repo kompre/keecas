@@ -709,7 +709,7 @@ def show_eqn(
         keys=keys,
         width=num_cols,
     )
-    
+
     # get the config default label (it could be None), or generate label dict if none is passed
     if not label:
         label = config.latex.label or {k: None for k in keys}
