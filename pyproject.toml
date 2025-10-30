@@ -19,7 +19,7 @@ dependencies = [
     "tomlkit>=0.13.3",
 ]
 name = "keecas"
-version = "1.0.0a5"
+version = "1.0.0a6"
 description = "A set of tools for symbolic math computation done in a jupyter notebook, aimed specifically for Quarto. It is based mostly on sympy."
 readme = "README.md"
 
@@ -43,6 +43,9 @@ dev = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+exclude = [
+    "*.ipynb",  # Exclude Jupyter notebooks from linting
+]
 
 [tool.ruff.lint]
 select = [
