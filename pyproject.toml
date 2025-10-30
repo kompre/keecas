@@ -43,6 +43,9 @@ dev = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+exclude = [
+    "*.ipynb",  # Exclude Jupyter notebooks from linting
+]
 
 [tool.ruff.lint]
 select = [
