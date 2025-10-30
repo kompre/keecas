@@ -85,6 +85,7 @@ def test_or_operator():
     assert df3.length == 3
     assert df3.shape == (3, 2)
 
+
 def test_or_operator_with_unequal_width():
     """Test | operator merges dataframes with unequal width (like dict merge)"""
     df1 = Dataframe({"a": [1, 2], "b": [3, 4]})

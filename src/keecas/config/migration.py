@@ -43,7 +43,9 @@ class ConfigMigration:
 
         # Handle unknown from_version (treat as oldest known version)
         if from_version not in all_versions:
-            print(f"WARNING: Unknown schema version '{from_version}', treating as oldest known version")
+            print(
+                f"WARNING: Unknown schema version '{from_version}', treating as oldest known version"
+            )
             start_idx = -1  # Start before first version
         else:
             start_idx = all_versions.index(from_version)
@@ -88,7 +90,7 @@ class ConfigMigration:
                     user_value = current_config.pop(old_key)
 
                     # Handle nested keys (e.g., "display.pint_default_format")
-                    parts = new_key.split('.')
+                    parts = new_key.split(".")
                     if len(parts) > 1:
                         # Create nested structure
                         current_level = current_config

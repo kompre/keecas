@@ -57,6 +57,7 @@ def platex(x):
     """Print LaTeX in inline mode with configured multiplication symbol."""
     return latex(x, mode="inline", mul_symbol=config.latex.default_mul_symbol)
 
+
 ## common sympy functions
 __all__ = [
     "Dataframe",

@@ -9,11 +9,11 @@ from .migration import ConfigMigration
 from .schema import SCHEMAS, get_current_schema_version, get_schema
 
 __all__ = [
-    'ConfigManager',
-    'get_config_manager',
-    'EnvironmentDefinition',
-    'ConfigMigration',
-    'SCHEMAS',
-    'get_current_schema_version',
-    'get_schema',
+    "ConfigManager",
+    "get_config_manager",
+    "EnvironmentDefinition",
+    "ConfigMigration",
+    "SCHEMAS",
+    "get_current_schema_version",
+    "get_schema",
 ]

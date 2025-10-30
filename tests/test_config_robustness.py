@@ -1,6 +1,5 @@
 """Tests for robust config handling with broken/invalid configuration files."""
 
-
 import pytest
 import toml
 
@@ -12,14 +11,15 @@ def test_import_with_broken_global_config(tmp_path, monkeypatch):
     fake_home.mkdir()
     config_file = fake_home / ".keecas" / "config.toml"
     config_file.parent.mkdir(parents=True)
-    config_file.write_text('language = [broken syntax  # Invalid TOML syntax')
+    config_file.write_text("language = [broken syntax  # Invalid TOML syntax")
 
     # Monkeypatch HOME/USERPROFILE to use fake directory (cross-platform)
-    monkeypatch.setenv('HOME', str(fake_home))
-    monkeypatch.setenv('USERPROFILE', str(fake_home))
+    monkeypatch.setenv("HOME", str(fake_home))
+    monkeypatch.setenv("USERPROFILE", str(fake_home))
 
     # Import should succeed
     from keecas.config.manager import ConfigManager
+
     manager = ConfigManager()
 
     # Should have load error stored
@@ -39,10 +39,11 @@ def test_import_with_broken_local_config(tmp_path, monkeypatch):
     # Create broken local config
     config_file = tmp_path / ".keecas" / "config.toml"
     config_file.parent.mkdir(parents=True)
-    config_file.write_text('katex = True  # Invalid: should be true (no quotes)')
+    config_file.write_text("katex = True  # Invalid: should be true (no quotes)")
 
     # Import should succeed
     from keecas.config.manager import ConfigManager
+
     manager = ConfigManager()
 
     # Should have load error stored
@@ -57,9 +58,10 @@ def test_path_only_operations_work_with_broken_config(tmp_path, monkeypatch):
     # Create broken config
     config_file = tmp_path / ".keecas" / "config.toml"
     config_file.parent.mkdir(parents=True)
-    config_file.write_text('invalid syntax here!')
+    config_file.write_text("invalid syntax here!")
 
     from keecas.config.manager import ConfigManager
+
     manager = ConfigManager()
 
     # Path-only operations should succeed
@@ -75,9 +77,10 @@ def test_init_config_force_works_with_broken_config(tmp_path, monkeypatch):
     # Create broken config
     config_file = tmp_path / ".keecas" / "config.toml"
     config_file.parent.mkdir(parents=True)
-    config_file.write_text('broken broken broken')
+    config_file.write_text("broken broken broken")
 
     from keecas.config.manager import ConfigManager
+
     manager = ConfigManager()
 
     # init_config with force should succeed
@@ -86,7 +89,7 @@ def test_init_config_force_works_with_broken_config(tmp_path, monkeypatch):
     # New config should be valid
     config_data = toml.load(config_file)
     assert config_data is not None
-    assert 'latex' in config_data
+    assert "latex" in config_data
 
 
 def test_config_dependent_operation_fails_with_helpful_error(tmp_path, monkeypatch):
@@ -96,9 +99,10 @@ def test_config_dependent_operation_fails_with_helpful_error(tmp_path, monkeypat
     # Create broken config
     config_file = tmp_path / ".keecas" / "config.toml"
     config_file.parent.mkdir(parents=True)
-    config_file.write_text('language = True  # Invalid TOML')
+    config_file.write_text("language = True  # Invalid TOML")
 
     from keecas.config.manager import ConfigManager
+
     manager = ConfigManager()
 
     # Config-dependent operations should raise RuntimeError with recovery hint
@@ -119,19 +123,20 @@ def test_show_config_specific_file_works_with_broken_config(tmp_path, monkeypatc
     config_file.parent.mkdir(parents=True)
 
     valid_config = {
-        'latex': {'eq_prefix': 'eq-test-'},
-        'display': {'katex': True},
+        "latex": {"eq_prefix": "eq-test-"},
+        "display": {"katex": True},
     }
-    with open(config_file, 'w') as f:
+    with open(config_file, "w") as f:
         toml.dump(valid_config, f)
 
     from keecas.config.manager import ConfigManager
+
     manager = ConfigManager()
 
     # Should be able to show local config directly (no merge needed)
     local_config = manager.show_config(global_config=False)
     assert local_config is not None
-    assert local_config.get('latex', {}).get('eq_prefix') == 'eq-test-'
+    assert local_config.get("latex", {}).get("eq_prefix") == "eq-test-"
 
 
 def test_normal_usage_unaffected_by_lazy_loading(tmp_path, monkeypatch):
@@ -143,13 +148,14 @@ def test_normal_usage_unaffected_by_lazy_loading(tmp_path, monkeypatch):
     config_file.parent.mkdir(parents=True)
 
     valid_config = {
-        'latex': {'eq_prefix': 'eq-normal-'},
-        'display': {'katex': False, 'debug': True},
+        "latex": {"eq_prefix": "eq-normal-"},
+        "display": {"katex": False, "debug": True},
     }
-    with open(config_file, 'w') as f:
+    with open(config_file, "w") as f:
         toml.dump(valid_config, f)
 
     from keecas.config.manager import ConfigManager
+
     manager = ConfigManager()
 
     # Should load successfully
@@ -158,11 +164,11 @@ def test_normal_usage_unaffected_by_lazy_loading(tmp_path, monkeypatch):
 
     # All operations should work
     merged_config = manager.show_config()
-    assert merged_config['latex']['eq_prefix'] == 'eq-normal-'
-    assert merged_config['display']['debug'] is True
+    assert merged_config["latex"]["eq_prefix"] == "eq-normal-"
+    assert merged_config["display"]["debug"] is True
 
     # Options should be accessible
-    assert manager._options.latex.eq_prefix == 'eq-normal-'
+    assert manager._options.latex.eq_prefix == "eq-normal-"
 
 
 def test_set_option_fails_with_broken_config(tmp_path, monkeypatch):
@@ -172,14 +178,15 @@ def test_set_option_fails_with_broken_config(tmp_path, monkeypatch):
     # Create broken config
     config_file = tmp_path / ".keecas" / "config.toml"
     config_file.parent.mkdir(parents=True)
-    config_file.write_text('invalid toml content')
+    config_file.write_text("invalid toml content")
 
     from keecas.config.manager import ConfigManager
+
     manager = ConfigManager()
 
     # set_option should fail with helpful error
     with pytest.raises(RuntimeError) as exc_info:
-        manager.set_option('katex', True)
+        manager.set_option("katex", True)
 
     assert "keecas config init --force" in str(exc_info.value)
 
@@ -194,11 +201,12 @@ def test_get_option_fails_with_broken_config(tmp_path, monkeypatch):
     config_file.write_text('bad = "syntax')
 
     from keecas.config.manager import ConfigManager
+
     manager = ConfigManager()
 
     # get_option should fail with helpful error
     with pytest.raises(RuntimeError) as exc_info:
-        manager.get_option('katex')
+        manager.get_option("katex")
 
     assert "could not be loaded" in str(exc_info.value).lower()
 
@@ -210,9 +218,10 @@ def test_save_config_fails_with_broken_existing_config(tmp_path, monkeypatch):
     # Create broken config
     config_file = tmp_path / ".keecas" / "config.toml"
     config_file.parent.mkdir(parents=True)
-    config_file.write_text('broken')
+    config_file.write_text("broken")
 
     from keecas.config.manager import ConfigManager
+
     manager = ConfigManager()
 
     # save_config should fail with helpful error
@@ -229,7 +238,7 @@ def test_recovery_workflow(tmp_path, monkeypatch):
     # 1. Start with broken config
     config_file = tmp_path / ".keecas" / "config.toml"
     config_file.parent.mkdir(parents=True)
-    config_file.write_text('completely broken')
+    config_file.write_text("completely broken")
 
     from keecas.config.manager import ConfigManager
 
@@ -251,8 +260,8 @@ def test_recovery_workflow(tmp_path, monkeypatch):
     assert manager2._configs_loaded is True
     assert manager2._load_error is None
     merged_config = manager2.show_config()
-    assert 'latex' in merged_config
-    assert 'display' in merged_config
+    assert "latex" in merged_config
+    assert "display" in merged_config
 
 
 def test_language_runtime_propagation(tmp_path, monkeypatch):
@@ -264,9 +273,9 @@ def test_language_runtime_propagation(tmp_path, monkeypatch):
     config_file.parent.mkdir(parents=True)
 
     valid_config = {
-        'language': {'disable_pint_locale': True},
+        "language": {"disable_pint_locale": True},
     }
-    with open(config_file, 'w') as f:
+    with open(config_file, "w") as f:
         toml.dump(valid_config, f)
 
     from keecas.config.manager import ConfigManager
@@ -278,19 +287,19 @@ def test_language_runtime_propagation(tmp_path, monkeypatch):
 
     # Initially no language set
     assert config.language is None
-    assert get_language() == 'en'  # Default
+    assert get_language() == "en"  # Default
 
     # Set language at runtime
-    config.language = 'it'
+    config.language = "it"
 
     # Verify propagation
-    assert config.language == 'it'
-    assert get_language() == 'it'
-    assert translate('VERIFIED') == 'VERIFICATO'
-    assert translate('NOT_VERIFIED') == 'NON VERIFICATO'
+    assert config.language == "it"
+    assert get_language() == "it"
+    assert translate("VERIFIED") == "VERIFICATO"
+    assert translate("NOT_VERIFIED") == "NON VERIFICATO"
 
     # Test changing to another language
-    config.language = 'de'
-    assert get_language() == 'de'
-    assert translate('VERIFIED') == 'BESTÄTIGT'
-    assert translate('NOT_VERIFIED') == 'NICHT BESTÄTIGT'
+    config.language = "de"
+    assert get_language() == "de"
+    assert translate("VERIFIED") == "BESTÄTIGT"
+    assert translate("NOT_VERIFIED") == "NICHT BESTÄTIGT"

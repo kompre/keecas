@@ -30,6 +30,7 @@ except ImportError:
 def _get_config_manager():
     """Lazy import of config manager to avoid startup overhead."""
     from .config.manager import get_config_manager
+
     return get_config_manager()
 
 
@@ -43,12 +44,13 @@ def get_version() -> str:
 
 def get_editor() -> str:
     """Get the preferred text editor from environment variables."""
-    return os.environ.get('EDITOR') or os.environ.get('VISUAL') or 'nano'
+    return os.environ.get("EDITOR") or os.environ.get("VISUAL") or "nano"
 
 
 def get_system_editor() -> str:
     """Get the system default editor command for opening files."""
     import platform
+
     system = platform.system().lower()
 
     if system == "linux":
@@ -82,7 +84,7 @@ def find_free_port(start_port: int = 8888, max_attempts: int = 10) -> int | None
     for port in range(start_port, start_port + max_attempts):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(('localhost', port))
+                s.bind(("localhost", port))
                 return port
         except OSError:
             continue
@@ -93,6 +95,7 @@ def get_templates_dir() -> Path:
     """Get the templates directory path."""
     # Get the package installation directory
     import keecas
+
     package_dir = Path(keecas.__file__).parent
     # Look for templates in parent directory (for development)
     templates_dir = package_dir.parent.parent / "templates"
@@ -120,7 +123,9 @@ def generate_untitled_name(work_dir: Path | str) -> str:
         counter += 1
 
 
-def copy_template_to_workdir(template_name: str, work_dir: Path | str, target_filename: str | None = None) -> Path:
+def copy_template_to_workdir(
+    template_name: str, work_dir: Path | str, target_filename: str | None = None
+) -> Path:
     """Copy a template notebook to the working directory."""
     templates_dir = get_templates_dir()
     template_path = templates_dir / f"{template_name}.ipynb"
@@ -150,8 +155,7 @@ def copy_template_to_workdir(template_name: str, work_dir: Path | str, target_fi
 def check_jupyter_available() -> bool:
     """Check if Jupyter is available."""
     try:
-        subprocess.run(['jupyter', '--version'],
-                      capture_output=True, text=True, check=True)
+        subprocess.run(["jupyter", "--version"], capture_output=True, text=True, check=True)
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
@@ -160,8 +164,7 @@ def check_jupyter_available() -> bool:
 def check_jupyterlab_available() -> bool:
     """Check if JupyterLab is available."""
     try:
-        subprocess.run(['jupyter', 'lab', '--version'],
-                      capture_output=True, text=True, check=True)
+        subprocess.run(["jupyter", "lab", "--version"], capture_output=True, text=True, check=True)
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
@@ -171,19 +174,19 @@ def cmd_init(args: argparse.Namespace) -> None:
     """Initialize a new configuration file."""
     config_manager = _get_config_manager()
     # Handle mutually exclusive group default
-    global_config = getattr(args, 'global_config', False)
+    global_config = getattr(args, "global_config", False)
 
     success = config_manager.init_config(
         global_config=global_config,
         force=args.force,
-        comment_style=getattr(args, 'comment_style', '##'),
+        comment_style=getattr(args, "comment_style", "##"),
     )
 
     if success:
         config_type = "global" if global_config else "local"
         config_path = config_manager.get_config_path(global_config)
         print(f"Initialized {config_type} configuration file: {config_path}")
-        if hasattr(args, 'comment_style') and args.comment_style != '##':
+        if hasattr(args, "comment_style") and args.comment_style != "##":
             print(f"Using comment style: '{args.comment_style}'")
     else:
         sys.exit(1)
@@ -193,14 +196,14 @@ def cmd_config_edit(args: argparse.Namespace) -> None:
     """Edit configuration file in the user's preferred editor."""
     config_manager = _get_config_manager()
     # Handle mutually exclusive group default
-    global_config = getattr(args, 'global_config', False)
+    global_config = getattr(args, "global_config", False)
     config_path = config_manager.get_config_path(global_config)
 
     # Create file if it doesn't exist
     if not config_path.exists():
         print(f"Configuration file doesn't exist: {config_path}")
         create = input("Create it now? [y/N]: ").lower().strip()
-        if create in ('y', 'yes'):
+        if create in ("y", "yes"):
             if not config_manager.init_config(global_config=global_config, force=False):
                 sys.exit(1)
         else:
@@ -227,16 +230,16 @@ def cmd_config_edit(args: argparse.Namespace) -> None:
 def cmd_edit(args: argparse.Namespace) -> None:
     """Launch Jupyter server with keecas notebook templates."""
     # Handle template listing
-    if getattr(args, 'list_templates', False):
+    if getattr(args, "list_templates", False):
         templates_dir = get_templates_dir()
         if templates_dir.exists():
             templates = [f.stem for f in templates_dir.glob("*.ipynb")]
             if templates:
                 print("Available templates:")
                 for template in sorted(templates):
-                    if template == 'minimal':
+                    if template == "minimal":
                         print(f"  {template} (default) - Basic keecas setup")
-                    elif template == 'quickstart':
+                    elif template == "quickstart":
                         print(f"  {template} - Comprehensive examples and patterns")
                     else:
                         print(f"  {template}")
@@ -247,7 +250,7 @@ def cmd_edit(args: argparse.Namespace) -> None:
         return
 
     # Default to JupyterLab unless --no-lab is specified
-    use_lab = not getattr(args, 'no_lab', False)
+    use_lab = not getattr(args, "no_lab", False)
 
     if use_lab:
         if not check_jupyterlab_available():
@@ -272,12 +275,12 @@ def cmd_edit(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     # Set up working directory
-    use_temp = getattr(args, 'temp', False)
+    use_temp = getattr(args, "temp", False)
     temp_dir = None
 
     if use_temp:
         # Create temporary directory for session
-        temp_dir = tempfile.mkdtemp(prefix='keecas_session_')
+        temp_dir = tempfile.mkdtemp(prefix="keecas_session_")
         work_dir = Path(temp_dir)
         print(f"Created temporary session directory: {work_dir}")
     else:
@@ -286,7 +289,7 @@ def cmd_edit(args: argparse.Namespace) -> None:
 
     # Handle file argument and template creation
     notebook_path = None
-    target_file = getattr(args, 'file', None)
+    target_file = getattr(args, "file", None)
 
     if target_file:
         # File specified - either open existing or create new
@@ -298,7 +301,9 @@ def cmd_edit(args: argparse.Namespace) -> None:
             print(f"Opening existing notebook: {notebook_path}")
         else:
             # File doesn't exist - create from template
-            template_name = args.template if hasattr(args, 'template') and args.template else 'minimal'
+            template_name = (
+                args.template if hasattr(args, "template") and args.template else "minimal"
+            )
             try:
                 notebook_path = copy_template_to_workdir(template_name, work_dir, target_file)
                 print(f"Created notebook from template '{template_name}': {notebook_path}")
@@ -313,12 +318,12 @@ def cmd_edit(args: argparse.Namespace) -> None:
                 sys.exit(1)
     else:
         # No file specified - create with untitled name
-        template_name = args.template if hasattr(args, 'template') and args.template else 'minimal'
+        template_name = args.template if hasattr(args, "template") and args.template else "minimal"
         untitled_name = generate_untitled_name(work_dir)
 
         try:
             notebook_path = copy_template_to_workdir(template_name, work_dir, untitled_name)
-            if template_name == 'minimal':
+            if template_name == "minimal":
                 print(f"Created keecas notebook: {notebook_path}")
             else:
                 print(f"Created notebook from template '{template_name}': {notebook_path}")
@@ -335,31 +340,37 @@ def cmd_edit(args: argparse.Namespace) -> None:
     # Prepare Jupyter command
     if use_lab:
         jupyter_cmd = [
-            'jupyter', 'lab',
-            '--port', str(port),
-            '--notebook-dir', str(work_dir),
+            "jupyter",
+            "lab",
+            "--port",
+            str(port),
+            "--notebook-dir",
+            str(work_dir),
         ]
     else:
         jupyter_cmd = [
-            'jupyter', 'notebook',
-            '--port', str(port),
-            '--notebook-dir', str(work_dir),
+            "jupyter",
+            "notebook",
+            "--port",
+            str(port),
+            "--notebook-dir",
+            str(work_dir),
         ]
 
     # Add file to open automatically if specified
     if notebook_path:
         relative_path = notebook_path.relative_to(work_dir)
-        jupyter_cmd.extend(['--ServerApp.file_to_run', str(relative_path)])
+        jupyter_cmd.extend(["--ServerApp.file_to_run", str(relative_path)])
 
     if not args.browser:
-        jupyter_cmd.append('--no-browser')
+        jupyter_cmd.append("--no-browser")
 
     # Add token configuration for security
-    if hasattr(args, 'token') and args.token:
-        jupyter_cmd.extend(['--IdentityProvider.token', args.token])
+    if hasattr(args, "token") and args.token:
+        jupyter_cmd.extend(["--IdentityProvider.token", args.token])
     else:
         # Disable authentication for local development convenience
-        jupyter_cmd.extend(['--IdentityProvider.token='])
+        jupyter_cmd.extend(["--IdentityProvider.token="])
 
     interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
     print(f"Starting {interface_name} server on port {port}...")
@@ -455,14 +466,14 @@ def cmd_open(args: argparse.Namespace) -> None:
     """Open configuration file with the system default editor."""
     config_manager = _get_config_manager()
     # Handle mutually exclusive group default
-    global_config = getattr(args, 'global_config', False)
+    global_config = getattr(args, "global_config", False)
     config_path = config_manager.get_config_path(global_config)
 
     # Create file if it doesn't exist
     if not config_path.exists():
         print(f"Configuration file doesn't exist: {config_path}")
         create = input("Create it now? [y/N]: ").lower().strip()
-        if create in ('y', 'yes'):
+        if create in ("y", "yes"):
             if not config_manager.init_config(global_config=global_config, force=False):
                 sys.exit(1)
         else:
@@ -547,12 +558,12 @@ def cmd_reset(args: argparse.Namespace) -> None:
     """Reset configuration to defaults."""
     config_manager = _get_config_manager()
     # Handle mutually exclusive group default
-    global_config = getattr(args, 'global_config', False)
+    global_config = getattr(args, "global_config", False)
     config_type = "global" if global_config else "local"
 
     if not args.force:
         confirm = input(f"Reset {config_type} configuration to defaults? [y/N]: ").lower().strip()
-        if confirm not in ('y', 'yes'):
+        if confirm not in ("y", "yes"):
             print("Cancelled.")
             return
 
@@ -567,10 +578,12 @@ def cmd_config_version(args: argparse.Namespace) -> None:
     from .config.schema import get_current_schema_version
 
     config_manager = _get_config_manager()
-    global_config = getattr(args, 'global_config', False)
+    global_config = getattr(args, "global_config", False)
 
     # Determine which config file to check
-    config_path = config_manager._global_config_path if global_config else config_manager._local_config_path
+    config_path = (
+        config_manager._global_config_path if global_config else config_manager._local_config_path
+    )
 
     if not config_path.exists():
         config_type = "global" if global_config else "local"
@@ -584,13 +597,13 @@ def cmd_config_version(args: argparse.Namespace) -> None:
     print(f"Config file: {config_path}")
     print(f"Schema version: {metadata.get('config_version', 'unknown')}")
     print(f"Generated by: keecas v{metadata.get('keecas_version', 'unknown')}")
-    if metadata.get('generated_at'):
+    if metadata.get("generated_at"):
         print(f"Created: {metadata['generated_at']}")
-    if metadata.get('last_modified'):
+    if metadata.get("last_modified"):
         print(f"Modified: {metadata['last_modified']}")
 
     current_schema = get_current_schema_version()
-    config_schema = metadata.get('config_version', '0.1.0')
+    config_schema = metadata.get("config_version", "0.1.0")
 
     if ConfigMigration.needs_migration(config_schema, current_schema):
         print(f"\nWARNING: Migration available: {config_schema} -> {current_schema}")
@@ -607,11 +620,13 @@ def cmd_migrate(args: argparse.Namespace) -> None:
     from .config.schema import get_current_schema_version
 
     config_manager = _get_config_manager()
-    global_config = getattr(args, 'global_config', False)
-    dry_run = getattr(args, 'dry_run', False)
+    global_config = getattr(args, "global_config", False)
+    dry_run = getattr(args, "dry_run", False)
 
     # Determine which config file to migrate
-    config_path = config_manager._global_config_path if global_config else config_manager._local_config_path
+    config_path = (
+        config_manager._global_config_path if global_config else config_manager._local_config_path
+    )
 
     if not config_path.exists():
         config_type = "global" if global_config else "local"
@@ -662,6 +677,7 @@ def cmd_migrate(args: argparse.Namespace) -> None:
 
             # Create a temporary config manager to save the migrated config
             from .config.manager import ConfigManager
+
             temp_config = ConfigManager.__new__(ConfigManager)
             temp_config._options = config_manager._options
             temp_config._save_config_file(config_path, created_at=metadata.get("generated_at"))
@@ -683,115 +699,199 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     # Add version argument
-    parser.add_argument('--version', action='version', version=f'keecas {keecas_version}')
+    parser.add_argument("--version", action="version", version=f"keecas {keecas_version}")
 
     # Add main subparsers
-    main_subparsers = parser.add_subparsers(dest='main_command', help='Main commands')
+    main_subparsers = parser.add_subparsers(dest="main_command", help="Main commands")
 
     # Edit command - Launch Jupyter server with templates
-    edit_main_parser = main_subparsers.add_parser('edit', help='Launch Jupyter server with keecas templates')
-    edit_main_parser.add_argument('file', nargs='?', default=None,
-                                 help='Notebook file to open or create (default: untitled-N.ipynb)')
-    edit_main_parser.add_argument('--port', type=int, default=8888,
-                                 help='Port for Jupyter server (default: 8888)')
-    edit_main_parser.add_argument('--dir', default='.',
-                                 help='Working directory for notebooks (default: current directory)')
-    edit_main_parser.add_argument('--template',
-                                 help='Template notebook to create (default: minimal, options: quickstart)')
-    edit_main_parser.add_argument('--no-browser', dest='browser', action='store_false', default=True,
-                                 help="Don't open browser automatically")
-    edit_main_parser.add_argument('--token',
-                                 help='Security token for Jupyter server (default: disabled for local use)')
-    edit_main_parser.add_argument('--no-lab', action='store_true', default=False,
-                                 help='Use classic Jupyter Notebook instead of JupyterLab (default: JupyterLab)')
-    edit_main_parser.add_argument('--list-templates', action='store_true',
-                                 help='List available templates and exit')
-    edit_main_parser.add_argument('--temp', action='store_true', default=False,
-                                 help='Create temporary notebook (auto-cleanup when server stops)')
+    edit_main_parser = main_subparsers.add_parser(
+        "edit", help="Launch Jupyter server with keecas templates"
+    )
+    edit_main_parser.add_argument(
+        "file",
+        nargs="?",
+        default=None,
+        help="Notebook file to open or create (default: untitled-N.ipynb)",
+    )
+    edit_main_parser.add_argument(
+        "--port", type=int, default=8888, help="Port for Jupyter server (default: 8888)"
+    )
+    edit_main_parser.add_argument(
+        "--dir", default=".", help="Working directory for notebooks (default: current directory)"
+    )
+    edit_main_parser.add_argument(
+        "--template", help="Template notebook to create (default: minimal, options: quickstart)"
+    )
+    edit_main_parser.add_argument(
+        "--no-browser",
+        dest="browser",
+        action="store_false",
+        default=True,
+        help="Don't open browser automatically",
+    )
+    edit_main_parser.add_argument(
+        "--token", help="Security token for Jupyter server (default: disabled for local use)"
+    )
+    edit_main_parser.add_argument(
+        "--no-lab",
+        action="store_true",
+        default=False,
+        help="Use classic Jupyter Notebook instead of JupyterLab (default: JupyterLab)",
+    )
+    edit_main_parser.add_argument(
+        "--list-templates", action="store_true", help="List available templates and exit"
+    )
+    edit_main_parser.add_argument(
+        "--temp",
+        action="store_true",
+        default=False,
+        help="Create temporary notebook (auto-cleanup when server stops)",
+    )
     edit_main_parser.set_defaults(func=cmd_edit)
 
     # Config subcommand
-    config_parser = main_subparsers.add_parser('config', help='Configuration management')
-    config_subparsers = config_parser.add_subparsers(dest='command', help='Configuration commands')
+    config_parser = main_subparsers.add_parser("config", help="Configuration management")
+    config_subparsers = config_parser.add_subparsers(dest="command", help="Configuration commands")
 
     # Init command
-    init_parser = config_subparsers.add_parser('init', help='Initialize a new configuration file')
+    init_parser = config_subparsers.add_parser("init", help="Initialize a new configuration file")
     init_group = init_parser.add_mutually_exclusive_group()
-    init_group.add_argument('--global', dest='global_config', action='store_true',
-                          help='Initialize global configuration file')
-    init_group.add_argument('--local', dest='local_config', action='store_true',
-                          help='Initialize local configuration file (default)')
-    init_parser.add_argument('--force', action='store_true',
-                           help='Overwrite existing configuration file')
-    init_parser.add_argument('--comment-style', dest='comment_style', default='##',
-                           help='Comment style for values to uncomment (default: "##")')
+    init_group.add_argument(
+        "--global",
+        dest="global_config",
+        action="store_true",
+        help="Initialize global configuration file",
+    )
+    init_group.add_argument(
+        "--local",
+        dest="local_config",
+        action="store_true",
+        help="Initialize local configuration file (default)",
+    )
+    init_parser.add_argument(
+        "--force", action="store_true", help="Overwrite existing configuration file"
+    )
+    init_parser.add_argument(
+        "--comment-style",
+        dest="comment_style",
+        default="##",
+        help='Comment style for values to uncomment (default: "##")',
+    )
     init_parser.set_defaults(func=cmd_init)
 
     # Edit command
-    edit_parser = config_subparsers.add_parser('edit', help='Edit configuration file with terminal editor')
+    edit_parser = config_subparsers.add_parser(
+        "edit", help="Edit configuration file with terminal editor"
+    )
     edit_group = edit_parser.add_mutually_exclusive_group()
-    edit_group.add_argument('--global', dest='global_config', action='store_true',
-                          help='Edit global configuration file')
-    edit_group.add_argument('--local', dest='local_config', action='store_true',
-                          help='Edit local configuration file (default)')
+    edit_group.add_argument(
+        "--global", dest="global_config", action="store_true", help="Edit global configuration file"
+    )
+    edit_group.add_argument(
+        "--local",
+        dest="local_config",
+        action="store_true",
+        help="Edit local configuration file (default)",
+    )
     edit_parser.set_defaults(func=cmd_config_edit)
 
     # Open command
-    open_parser = config_subparsers.add_parser('open', help='Open configuration file with system default editor')
+    open_parser = config_subparsers.add_parser(
+        "open", help="Open configuration file with system default editor"
+    )
     open_group = open_parser.add_mutually_exclusive_group()
-    open_group.add_argument('--global', dest='global_config', action='store_true',
-                          help='Open global configuration file')
-    open_group.add_argument('--local', dest='local_config', action='store_true',
-                          help='Open local configuration file (default)')
+    open_group.add_argument(
+        "--global", dest="global_config", action="store_true", help="Open global configuration file"
+    )
+    open_group.add_argument(
+        "--local",
+        dest="local_config",
+        action="store_true",
+        help="Open local configuration file (default)",
+    )
     open_parser.set_defaults(func=cmd_open)
 
     # Show command
-    show_parser = config_subparsers.add_parser('show', help='Show current configuration')
+    show_parser = config_subparsers.add_parser("show", help="Show current configuration")
     show_group = show_parser.add_mutually_exclusive_group()
-    show_group.add_argument('--global', dest='global_config', action='store_true',
-                          help='Show only global configuration')
-    show_group.add_argument('--local', action='store_true',
-                          help='Show only local configuration')
+    show_group.add_argument(
+        "--global", dest="global_config", action="store_true", help="Show only global configuration"
+    )
+    show_group.add_argument("--local", action="store_true", help="Show only local configuration")
     show_parser.set_defaults(func=cmd_show)
 
     # Path command
-    path_parser = config_subparsers.add_parser('path', help='Show configuration file paths')
+    path_parser = config_subparsers.add_parser("path", help="Show configuration file paths")
     path_group = path_parser.add_mutually_exclusive_group()
-    path_group.add_argument('--global', dest='global_config', action='store_true',
-                          help='Show only global configuration path')
-    path_group.add_argument('--local', action='store_true',
-                          help='Show only local configuration path')
+    path_group.add_argument(
+        "--global",
+        dest="global_config",
+        action="store_true",
+        help="Show only global configuration path",
+    )
+    path_group.add_argument(
+        "--local", action="store_true", help="Show only local configuration path"
+    )
     path_parser.set_defaults(func=cmd_path)
 
     # Reset command
-    reset_parser = config_subparsers.add_parser('reset', help='Reset configuration to defaults')
+    reset_parser = config_subparsers.add_parser("reset", help="Reset configuration to defaults")
     reset_group = reset_parser.add_mutually_exclusive_group()
-    reset_group.add_argument('--global', dest='global_config', action='store_true',
-                           help='Reset global configuration file')
-    reset_group.add_argument('--local', dest='local_config', action='store_true',
-                           help='Reset local configuration file (default)')
-    reset_parser.add_argument('--force', action='store_true',
-                            help='Reset without confirmation')
+    reset_group.add_argument(
+        "--global",
+        dest="global_config",
+        action="store_true",
+        help="Reset global configuration file",
+    )
+    reset_group.add_argument(
+        "--local",
+        dest="local_config",
+        action="store_true",
+        help="Reset local configuration file (default)",
+    )
+    reset_parser.add_argument("--force", action="store_true", help="Reset without confirmation")
     reset_parser.set_defaults(func=cmd_reset)
 
     # Version command
-    version_parser = config_subparsers.add_parser('version', help='Show configuration version information')
+    version_parser = config_subparsers.add_parser(
+        "version", help="Show configuration version information"
+    )
     version_group = version_parser.add_mutually_exclusive_group()
-    version_group.add_argument('--global', dest='global_config', action='store_true',
-                             help='Show global configuration version')
-    version_group.add_argument('--local', dest='local_config', action='store_true',
-                             help='Show local configuration version (default)')
+    version_group.add_argument(
+        "--global",
+        dest="global_config",
+        action="store_true",
+        help="Show global configuration version",
+    )
+    version_group.add_argument(
+        "--local",
+        dest="local_config",
+        action="store_true",
+        help="Show local configuration version (default)",
+    )
     version_parser.set_defaults(func=cmd_config_version)
 
     # Migrate command
-    migrate_parser = config_subparsers.add_parser('migrate', help='Manually trigger configuration migration')
+    migrate_parser = config_subparsers.add_parser(
+        "migrate", help="Manually trigger configuration migration"
+    )
     migrate_group = migrate_parser.add_mutually_exclusive_group()
-    migrate_group.add_argument('--global', dest='global_config', action='store_true',
-                             help='Migrate global configuration file')
-    migrate_group.add_argument('--local', dest='local_config', action='store_true',
-                             help='Migrate local configuration file (default)')
-    migrate_parser.add_argument('--dry-run', action='store_true',
-                              help='Show what would be migrated without making changes')
+    migrate_group.add_argument(
+        "--global",
+        dest="global_config",
+        action="store_true",
+        help="Migrate global configuration file",
+    )
+    migrate_group.add_argument(
+        "--local",
+        dest="local_config",
+        action="store_true",
+        help="Migrate local configuration file (default)",
+    )
+    migrate_parser.add_argument(
+        "--dry-run", action="store_true", help="Show what would be migrated without making changes"
+    )
     migrate_parser.set_defaults(func=cmd_migrate)
 
     return parser
@@ -803,8 +903,8 @@ def main() -> None:
     args = parser.parse_args()
 
     # Handle main command routing
-    if args.main_command in ('config', 'edit'):
-        if not hasattr(args, 'func'):
+    if args.main_command in ("config", "edit"):
+        if not hasattr(args, "func"):
             parser.print_help()
             sys.exit(1)
         try:
@@ -821,5 +921,5 @@ def main() -> None:
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

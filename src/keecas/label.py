@@ -6,9 +6,9 @@ lowercase IDs suitable for use as automatic reference labels.
 """
 
 import hashlib
-from functools import singledispatch, partial
-from typing import Any, Callable
-from collections.abc import Hashable
+from collections.abc import Callable, Hashable
+from functools import singledispatch
+from typing import Any
 
 
 def generate_id(obj: Any, length: int = 8) -> str:
@@ -32,7 +32,7 @@ def generate_id(obj: Any, length: int = 8) -> str:
     obj_str = _serialize_object(obj)
 
     # Generate SHA-256 hash
-    hash_obj = hashlib.sha256(obj_str.encode('utf-8'))
+    hash_obj = hashlib.sha256(obj_str.encode("utf-8"))
     hash_hex = hash_obj.hexdigest()
 
     # Convert to base36 (0-9, a-z) for compact alphanumeric representation
@@ -51,7 +51,7 @@ def _serialize_object(obj: Any) -> str:
         # For sympy objects, repr gives a stable representation
         obj_repr = repr(obj)
         # Verify it's stable by checking if it's a simple repr
-        if obj_repr and not obj_repr.startswith('<'):
+        if obj_repr and not obj_repr.startswith("<"):
             return obj_repr
     except Exception:
         pass
@@ -76,16 +76,16 @@ def _serialize_object(obj: Any) -> str:
 def _to_base36(num: int) -> str:
     """Convert an integer to base36 string (0-9, a-z)."""
     if num == 0:
-        return '0'
+        return "0"
 
-    digits = '0123456789abcdefghijklmnopqrstuvwxyz'
+    digits = "0123456789abcdefghijklmnopqrstuvwxyz"
     result = []
 
     while num > 0:
         result.append(digits[num % 36])
         num //= 36
 
-    return ''.join(reversed(result))
+    return "".join(reversed(result))
 
 
 @singledispatch
@@ -152,6 +152,7 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
 def _(arg: str, unique_id: bool = False) -> str:
     """Generate label from string input."""
     from keecas.config.manager import get_config_manager
+
     config = get_config_manager().options
 
     if unique_id:
@@ -172,6 +173,7 @@ def _(arg: dict[Hashable, Any], unique_id: bool = False) -> dict[Hashable, str]:
     - If value is None or empty, return empty string
     """
     from keecas.config.manager import get_config_manager
+
     config = get_config_manager().options
 
     result = {}
