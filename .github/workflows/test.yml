@@ -2,7 +2,7 @@ name: Run Tests
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev]
 
 concurrency:
   group: test-${{ github.event.pull_request.number }}

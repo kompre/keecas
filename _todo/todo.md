@@ -5,12 +5,13 @@
 <!-- Tasks moved to proposal phase -->
 
 **Tasks awaiting approval in `proposal/`**:
-1. [config-versioning-and-migration.md](proposal/config-versioning-and-migration.md) - Config file versioning and migration system
+<!-- No tasks currently in proposal phase -->
 
 **Tasks in development (`pending/`)**:
-1. [branch-protection-and-ci.md](pending/branch-protection-and-ci.md) - Branch protection and CI/CD workflow configuration (in progress on feature/branch-protection-ci)
+<!-- No tasks currently in development -->
 
 **Completed tasks**:
+- [branch-protection-and-ci.md](completed/2025-10-24/branch-protection-and-ci.md) - Complete CI/CD pipeline with test and release workflows, branch protection guide, and comprehensive documentation (completed 2025-10-24)
 - [programmatic-api-documentation.md](completed/2025-10-23/programmatic-api-documentation.md) - Automated API docs with quartodoc (completed 2025-10-23)
 - [docstring-guidelines.md](completed/2025-10-23/docstring-guidelines.md) - Google-style docstring guidelines and validation (completed 2025-10-23)
 

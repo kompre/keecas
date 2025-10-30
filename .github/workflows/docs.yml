@@ -5,19 +5,13 @@ on:
     branches: [main, dev]
     paths:
       - 'docs/**'
-      - 'src/**'
-      - '.github/workflows/docs.yml'
-  pull_request:
-    branches: [main, dev]
-    paths:
-      - 'docs/**'
-      - 'src/**'
-  workflow_dispatch:
-    inputs:
-      pr_number:
-          description: 'PR number to release'
-          required: true
-          type: number
+      - 'src/keecas/**/*.py'          # Only source files (API docs)
+      - 'scripts/update_docs.py'      # Doc generation script
+      - '.github/workflows/docs.yml'  # This workflow
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]                # Auto-rebuild after releases
+  workflow_dispatch:                  # Manual trigger
 
 permissions:
   contents: read
@@ -50,7 +44,6 @@ jobs:
     - name: Install Python dependencies
       run: |
         uv sync --group dev
-        uv pip install -e .
 
     - name: Setup Quarto
       uses: quarto-dev/quarto-actions/setup@v2
@@ -81,41 +74,71 @@ jobs:
         cd docs
         uv run quarto render --profile dev
 
-    - name: Checkout gh-pages for dev merge
-      if: github.ref == 'refs/heads/dev'
+    - name: Merge with existing gh-pages
+      if: github.event_name != 'pull_request'
       run: |
-        # Fetch gh-pages branch
-        git fetch origin gh-pages || echo "No gh-pages branch yet"
-
-        # Create temporary directory for merged content
-        mkdir -p /tmp/gh-pages-merged
-
-        # If gh-pages exists, copy its content (this preserves main branch docs)
-        if git rev-parse --verify origin/gh-pages > /dev/null 2>&1; then
-          git checkout origin/gh-pages
-          cp -r . /tmp/gh-pages-merged/ || true
-          git checkout -
+        # Determine target directory based on branch
+        if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          TARGET_DIR="root"
+          echo "📁 Deploying to: root (main docs)"
+        else
+          TARGET_DIR="dev"
+          echo "📁 Deploying to: dev/ subdirectory"
         fi
 
-        # Remove old dev directory and copy new dev build
-        rm -rf /tmp/gh-pages-merged/dev
-        mkdir -p /tmp/gh-pages-merged/dev
-        cp -r docs/_site/* /tmp/gh-pages-merged/dev/
+        # Create staging directory
+        mkdir -p /tmp/gh-pages-staged
+
+        # Fetch and extract current gh-pages if it exists
+        if git fetch origin gh-pages 2>/dev/null; then
+          echo "📥 Fetching existing gh-pages content..."
+          git archive origin/gh-pages | tar -x -C /tmp/gh-pages-staged
+          echo "✅ Preserved existing gh-pages content"
+        else
+          echo "ℹ️  No existing gh-pages found (first deployment)"
+        fi
+
+        # Update target directory with new docs
+        if [ "$TARGET_DIR" = "root" ]; then
+          # Main branch: replace root, preserve /dev subdirectory
+          echo "🔄 Updating root docs, preserving /dev..."
+
+          # Backup dev directory if it exists
+          if [ -d "/tmp/gh-pages-staged/dev" ]; then
+            mv /tmp/gh-pages-staged/dev /tmp/dev-backup
+            echo "✅ Backed up /dev directory"
+          fi
+
+          # Clear root and copy new main docs
+          rm -rf /tmp/gh-pages-staged/*
+          cp -r docs/_site/* /tmp/gh-pages-staged/
+
+          # Restore dev directory
+          if [ -d "/tmp/dev-backup" ]; then
+            mv /tmp/dev-backup /tmp/gh-pages-staged/dev
+            echo "✅ Restored /dev directory"
+          fi
+        else
+          # Dev branch: replace /dev subdirectory, preserve root
+          echo "🔄 Updating /dev docs, preserving root..."
+          rm -rf /tmp/gh-pages-staged/dev
+          mkdir -p /tmp/gh-pages-staged/dev
+          cp -r docs/_site/* /tmp/gh-pages-staged/dev/
+          echo "✅ Updated /dev directory"
+        fi
 
         # Ensure .nojekyll exists at root
-        touch /tmp/gh-pages-merged/.nojekyll
+        touch /tmp/gh-pages-staged/.nojekyll
 
-    - name: Upload artifact (main)
-      uses: actions/upload-pages-artifact@v3
-      if: github.ref == 'refs/heads/main'
-      with:
-        path: docs/_site
+        echo "✅ Staged docs for deployment"
+        echo "📊 Contents:"
+        ls -la /tmp/gh-pages-staged/
 
-    - name: Upload artifact (dev)
+    - name: Upload merged artifact
       uses: actions/upload-pages-artifact@v3
-      if: github.ref == 'refs/heads/dev'
+      if: github.event_name != 'pull_request'
       with:
-        path: /tmp/gh-pages-merged
+        path: /tmp/gh-pages-staged
 
     - name: Upload build results (for PR testing)
       uses: actions/upload-artifact@v4

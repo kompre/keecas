@@ -31,7 +31,7 @@ This includes:
 
 ### Documentation
 For guidelines on writing API documentation with Google-style docstrings for quartodoc:
-- See **[DOCSTRINGS.md](DOCSTRINGS.md)** for comprehensive guidelines and templates
+- See **[docs/DOCSTRINGS.md](docs/DOCSTRINGS.md)** for comprehensive guidelines and templates
 - All API reference functions must follow these standards
 - Examples should be tutorial-quality and demonstrate idiomatic usage
 
@@ -125,8 +125,16 @@ uv sync
 
 ### CI Workflows
 
-**test.yml** - Runs on PR to main:
-- Linting (Ruff check)
+**lint-fix.yml** - Runs on push to dev/feature branches and PRs:
+- Auto-fixes linting issues (Ruff check --fix + format)
+- Commits fixes automatically if any are found ([skip ci] to avoid loops)
+- Verifies linting passes after auto-fix
+- **Important**: Runs BEFORE test.yml, ensuring clean code for testing
+- **Scope**: Runs on dev, feature/** branches, and PRs to main/dev
+- **Excluded**: Does NOT run on push to main (protected branch, can't auto-commit)
+
+**test.yml** - Runs on PR to main/dev:
+- Linting verification (Ruff check - read-only)
 - Tests (pytest)
 - Docstring validation
 - Caches uv dependencies for speed
@@ -163,15 +171,17 @@ gh pr create --base dev
 ```
 
 **Pre-commit hooks** (installed via `scripts/install-hooks.sh`):
+- Auto-fix linting issues with Ruff (check + format)
 - Validate docstrings (fast check, < 1s)
 - Render Quarto notebooks (for `examples/quarto_example/`)
 - Can be skipped with `git commit --no-verify`
 - **Note**: Tests only run in CI, not pre-commit (for speed)
 
-**CI as gatekeeper**:
-- Local pre-commit provides fast checks (docstrings, notebooks)
-- CI runs comprehensive validation (linting, tests, docstrings)
-- Division of labor: fast local feedback vs thorough CI validation
+**Two-layer linting strategy**:
+- **Layer 1 (Local)**: Pre-commit hook auto-fixes 95% of linting issues before push
+- **Layer 2 (CI)**: `lint-fix.yml` workflow catches remaining 5% (e.g., Claude GitHub Action sessions)
+- **Result**: Zero-friction linting with no sync issues (fixes always on feature branches)
+- **When to pull**: After CI auto-commits fixes, just `git pull` the branch before continuing work
 
 ## Architecture Overview
 
