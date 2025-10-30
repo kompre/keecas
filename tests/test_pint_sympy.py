@@ -87,7 +87,7 @@ def test_unit_cache():
     kgf2 = sympy.S(1 * u.kgf)
 
     # Should be using the same cached unit
-    assert 'force_kilogram' in SymPyUnitCache._units
+    assert "force_kilogram" in SymPyUnitCache._units
     # Both conversions should work the same
     assert kgf1 == kgf2
 
@@ -101,4 +101,4 @@ def test_unknown_unit_graceful_failure():
     # This is tested by the fact that the code doesn't crash
     kgf_sympy = sympy.S(1 * u.kgf)
     assert kgf_sympy is not None
-    assert hasattr(sympy_units, 'force_kilogram')
+    assert hasattr(sympy_units, "force_kilogram")

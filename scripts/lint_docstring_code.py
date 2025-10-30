@@ -7,9 +7,9 @@ and runs Ruff on them to check for style issues like missing trailing commas.
 """
 
 import re
+import subprocess
 import sys
 import tempfile
-import subprocess
 from pathlib import Path
 
 

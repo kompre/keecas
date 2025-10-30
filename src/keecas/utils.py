@@ -89,7 +89,6 @@ def escape_var(names: str | Any, dict_of_subs: dict[str, str] | None = None, **a
 
 
 def insert_images(source_path: str | Path, dest_path: str | Path = ".", fig_opt: str = "") -> None:
-
     # filtra lista di immagini -> path object
     for root, _, files in os.walk(source_path):
         for f in files:

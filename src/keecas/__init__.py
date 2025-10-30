@@ -34,6 +34,9 @@ from .formatters import (
     validate_latex_kwargs,
 )
 
+# label
+from .label import generate_label, generate_unique_label
+
 # initialize pint
 from .pint_sympy import unitregistry as u
 from .pint_sympy import update_pint_locale
@@ -54,6 +57,7 @@ def platex(x):
     """Print LaTeX in inline mode with configured multiplication symbol."""
     return latex(x, mode="inline", mul_symbol=config.latex.default_mul_symbol)
 
+
 ## common sympy functions
 __all__ = [
     "Dataframe",
@@ -62,6 +66,8 @@ __all__ = [
     "check",
     "dict_to_eq",
     "eq_to_dict",
+    "generate_label",
+    "generate_unique_label",
     # Formatter exports (chain-based)
     "EarlyExit",
     "FormatterChain",

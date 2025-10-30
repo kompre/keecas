@@ -71,13 +71,17 @@ import tomlkit
 @dataclass
 class LatexConfig:
     """LaTeX equation output configuration."""
+
     eq_prefix: str = "eq-"
     eq_suffix: str = ""
     vertical_skip: str = "8pt"
     default_environment: str = "align"
     default_label_command: str = r"\label"
     default_mul_symbol: str = r"\,"
-    environments: 'EnvironmentConfig' = field(default_factory=lambda: None)
+    label: "Callable | None" = (
+        None  # Runtime-only: default label generator (not serializable to TOML)
+    )
+    environments: "EnvironmentConfig" = field(default_factory=lambda: None)
 
     def __post_init__(self):
         """Initialize environments if not provided."""
@@ -88,18 +92,20 @@ class LatexConfig:
 @dataclass
 class DisplayConfig:
     """Display and debugging behavior configuration."""
+
     print_label: bool = False
     debug: bool = False
     katex: bool = False
     default_float_format: str | None = None
     pint_default_format: str = ".2f~P"
-    cell_formatter: 'Callable[[Any, int], str] | None' = None  # Custom cell formatter
-    row_formatter: 'Callable[[str], str] | None' = None  # Custom row formatter
+    cell_formatter: "Callable[[Any, int], str] | None" = None  # Custom cell formatter
+    row_formatter: "Callable[[str], str] | None" = None  # Custom row formatter
 
 
 @dataclass
 class LanguageConfig:
     """Language and localization configuration."""
+
     _language: str | None = field(default=None, init=False)
     disable_pint_locale: bool = True  # Disable by default to preserve compact unit symbols
     pint_language_mode: str = "auto"  # "auto" or "manual"
@@ -114,47 +120,57 @@ class LanguageConfig:
         """Set language and automatically update Pint locale and localization manager."""
         self._language = value
         # Trigger propagation through the config manager
-        if hasattr(self, '_config_manager_ref'):
-            self._config_manager_ref._propagate_changes('language', value)
+        if hasattr(self, "_config_manager_ref"):
+            self._config_manager_ref._propagate_changes("language", value)
 
 
 @dataclass
 class UnitsConfig:
     """Units formatting configuration."""
+
     pass
 
 
 @dataclass
 class TranslationsConfig:
     """Custom term translations configuration."""
+
     translations: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
 class CheckTemplateConfig:
     """Check function template configuration."""
-    success_template: str = r"$\textcolor{{green}}{{\left[{symbol}{rhs}\quad \textbf{{{verified_text}}}\right]}}$"
-    failure_template: str = r"$\textcolor{{red}}{{\left[{symbol}{rhs}\quad \textbf{{{not_verified_text}}}\right]}}$"
+
+    success_template: str = (
+        r"$\textcolor{{green}}{{\left[{symbol}{rhs}\quad \textbf{{{verified_text}}}\right]}}$"
+    )
+    failure_template: str = (
+        r"$\textcolor{{red}}{{\left[{symbol}{rhs}\quad \textbf{{{not_verified_text}}}\right]}}$"
+    )
     # Named template sets
-    template_sets: dict[str, dict[str, str]] = field(default_factory=lambda: {
-        "default": {
-            "success": r"$\textcolor{{green}}{{\left[{symbol}{rhs}\quad \textbf{{{verified_text}}}\right]}}$",
-            "failure": r"$\textcolor{{red}}{{\left[{symbol}{rhs}\quad \textbf{{{not_verified_text}}}\right]}}$",
+    template_sets: dict[str, dict[str, str]] = field(
+        default_factory=lambda: {
+            "default": {
+                "success": r"$\textcolor{{green}}{{\left[{symbol}{rhs}\quad \textbf{{{verified_text}}}\right]}}$",
+                "failure": r"$\textcolor{{red}}{{\left[{symbol}{rhs}\quad \textbf{{{not_verified_text}}}\right]}}$",
+            },
+            "boxed": {
+                "success": r"\colorbox{{green}}{{${symbol}{rhs} \; \checkmark \; \textbf{{{verified_text}}}$}}",
+                "failure": r"\colorbox{{red}}{{${symbol}{rhs} \; \times \; \textbf{{{not_verified_text}}}$}}",
+            },
+            "minimal": {
+                "success": r"${symbol}{rhs} \,\textcolor{{green}}{{\checkmark}}$",
+                "failure": r"${symbol}{rhs} \,\textcolor{{red}}{{\times}}$",
+            },
         },
-        "boxed": {
-            "success": r"\colorbox{{green}}{{${symbol}{rhs} \; \checkmark \; \textbf{{{verified_text}}}$}}",
-            "failure": r"\colorbox{{red}}{{${symbol}{rhs} \; \times \; \textbf{{{not_verified_text}}}$}}",
-        },
-        "minimal": {
-            "success": r"${symbol}{rhs} \,\textcolor{{green}}{{\checkmark}}$",
-            "failure": r"${symbol}{rhs} \,\textcolor{{red}}{{\times}}$",
-        },
-    })
+    )
 
 
 @dataclass
 class EnvironmentDefinition:
     """Single LaTeX environment definition."""
+
     separator: str
     line_separator: str
     supports_multiple_labels: bool
@@ -167,13 +183,13 @@ class EnvironmentDefinition:
     label_position: str = "outer"
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'EnvironmentDefinition':
+    def from_dict(cls, data: dict[str, Any]) -> "EnvironmentDefinition":
         """Create from dictionary, filtering unknown keys."""
         valid_fields = {f.name for f in fields(cls)}
         filtered_data = {k: v for k, v in data.items() if k in valid_fields}
         # Convert empty string to None for inner_environment
-        if 'inner_environment' in filtered_data and filtered_data['inner_environment'] == '':
-            filtered_data['inner_environment'] = None
+        if "inner_environment" in filtered_data and filtered_data["inner_environment"] == "":
+            filtered_data["inner_environment"] = None
         return cls(**filtered_data)
 
     def to_dict(self) -> dict[str, Any]:
@@ -186,6 +202,7 @@ class EnvironmentConfig:
 
     Access environments as attributes: config.environments.align.separator
     """
+
     def __init__(self):
         # Standard align environment
         self.align = EnvironmentDefinition(
@@ -238,7 +255,6 @@ class EnvironmentConfig:
             label_position="outer",
         )
 
-
         # Special split environment - nested structure
         self.split = EnvironmentDefinition(
             separator="&",
@@ -282,6 +298,7 @@ class ConfigOptions:
     """
     Unified configuration for Keecas with proper TOML sections.
     """
+
     latex: LatexConfig = field(default_factory=LatexConfig)
     display: DisplayConfig = field(default_factory=DisplayConfig)
     language_config: LanguageConfig = field(default_factory=LanguageConfig)
@@ -291,7 +308,7 @@ class ConfigOptions:
 
     def __post_init__(self):
         """Set up cross-references for language propagation."""
-        self.language_config._config_manager_ref = getattr(self, '_config_manager_ref', None)
+        self.language_config._config_manager_ref = getattr(self, "_config_manager_ref", None)
 
     @property
     def language_setting(self) -> str | None:
@@ -299,7 +316,6 @@ class ConfigOptions:
 
     @language_setting.setter
     def language_setting(self, value: str | None):
-
         self.language_config.language = value
 
     # Backward compatibility - delegate to language_setting
@@ -347,82 +363,88 @@ class ConfigOptions:
     col_wrap: list | None = None
 
     def to_toml_dict(self) -> dict[str, Any]:
-        """Convert to dictionary suitable for TOML serialization."""
+        """Convert to dictionary suitable for TOML serialization.
+
+        Note: latex.label is intentionally excluded (runtime-only, not serializable).
+        """
         data = {
-            'latex': {
-                'eq_prefix': self.latex.eq_prefix,
-                'eq_suffix': self.latex.eq_suffix,
-                'vertical_skip': self.latex.vertical_skip,
-                'default_environment': self.latex.default_environment,
-                'default_label_command': self.latex.default_label_command,
-                'default_mul_symbol': self.latex.default_mul_symbol,
-                'environments': {name: env.to_dict() for name, env in self.latex.environments.items()},
+            "latex": {
+                "eq_prefix": self.latex.eq_prefix,
+                "eq_suffix": self.latex.eq_suffix,
+                "vertical_skip": self.latex.vertical_skip,
+                "default_environment": self.latex.default_environment,
+                "default_label_command": self.latex.default_label_command,
+                "default_mul_symbol": self.latex.default_mul_symbol,
+                # label is intentionally excluded (runtime-only callable)
+                "environments": {
+                    name: env.to_dict() for name, env in self.latex.environments.items()
+                },
             },
-            'display': {
-                'print_label': self.display.print_label,
-                'debug': self.display.debug,
-                'katex': self.display.katex,
-                'default_float_format': self.display.default_float_format,
-                'pint_default_format': self.display.pint_default_format,
+            "display": {
+                "print_label": self.display.print_label,
+                "debug": self.display.debug,
+                "katex": self.display.katex,
+                "default_float_format": self.display.default_float_format,
+                "pint_default_format": self.display.pint_default_format,
             },
-            'language': {
-                'disable_pint_locale': self.language_config.disable_pint_locale,
-                'pint_language_mode': self.language_config.pint_language_mode,
+            "language": {
+                "disable_pint_locale": self.language_config.disable_pint_locale,
+                "pint_language_mode": self.language_config.pint_language_mode,
             },
-            'check_templates': {
-                'success_template': self.check_templates.success_template,
-                'failure_template': self.check_templates.failure_template,
-                'template_sets': self.check_templates.template_sets,
+            "check_templates": {
+                "success_template": self.check_templates.success_template,
+                "failure_template": self.check_templates.failure_template,
+                "template_sets": self.check_templates.template_sets,
             },
         }
 
         # Add language if set
         if self.language_config.language is not None:
-            data['language']['language'] = self.language_config.language
+            data["language"]["language"] = self.language_config.language
 
         # Add custom translations if any
         if self.translations.translations:
-            data['translations'] = self.translations.translations
+            data["translations"] = self.translations.translations
 
         return data
 
     def update_from_dict(self, data: dict[str, Any]) -> None:
         """Update configuration from dictionary (loaded from TOML)."""
         for section_key, section_data in data.items():
-            if section_key == 'latex' and isinstance(section_data, dict):
+            if section_key == "latex" and isinstance(section_data, dict):
                 for key, value in section_data.items():
-                    if key == 'environments' and isinstance(value, dict):
+                    if key == "environments" and isinstance(value, dict):
                         # Handle nested environments under latex
                         for env_name, env_config in value.items():
                             if isinstance(env_config, dict):
                                 self.latex.environments.set(env_name, env_config)
                     elif hasattr(self.latex, key):
                         setattr(self.latex, key, value)
-            elif section_key == 'display' and isinstance(section_data, dict):
+            elif section_key == "display" and isinstance(section_data, dict):
                 for key, value in section_data.items():
                     if hasattr(self.display, key):
                         setattr(self.display, key, value)
-            elif section_key == 'language' and isinstance(section_data, dict):
+            elif section_key == "language" and isinstance(section_data, dict):
                 # Process disable_pint_locale FIRST to prevent unwanted locale changes
-                if 'disable_pint_locale' in section_data:
-                    self.language_config.disable_pint_locale = section_data['disable_pint_locale']
+                if "disable_pint_locale" in section_data:
+                    self.language_config.disable_pint_locale = section_data["disable_pint_locale"]
 
                 # Then process other language settings
                 for key, value in section_data.items():
-                    if key == 'disable_pint_locale':
+                    if key == "disable_pint_locale":
                         continue  # Already processed
-                    elif key == 'language':
+                    elif key == "language":
                         # Use the property setter to trigger propagation
                         self.language_config.language = value
                     elif hasattr(self.language_config, key):
                         setattr(self.language_config, key, value)
-            elif section_key == 'units' and isinstance(section_data, dict):
+            elif section_key == "units" and isinstance(section_data, dict):
                 for key, value in section_data.items():
                     if hasattr(self.units, key):
                         setattr(self.units, key, value)
-            elif section_key == 'translations' and isinstance(section_data, dict):
+            elif section_key == "translations" and isinstance(section_data, dict):
                 self.translations.translations.update(section_data)
-            elif section_key == 'check_templates' and isinstance(section_data, dict):
+            elif section_key == "check_templates" and isinstance(section_data, dict):
                 for key, value in section_data.items():
                     if hasattr(self.check_templates, key):
                         setattr(self.check_templates, key, value)
@@ -540,11 +562,20 @@ class ConfigManager:
 
             # Perform migration
             try:
-                migrated_data = ConfigMigration.migrate(config_data, config_version, current_version)
+                migrated_data = ConfigMigration.migrate(
+                    config_data,
+                    config_version,
+                    current_version,
+                )
                 self._options.update_from_dict(migrated_data)
 
                 # Save migrated config preserving structure and comments
-                self._save_migrated_config(config_path, toml_doc, migrated_data, created_at=metadata.get("generated_at"))
+                self._save_migrated_config(
+                    config_path,
+                    toml_doc,
+                    migrated_data,
+                    created_at=metadata.get("generated_at"),
+                )
                 print(f"SUCCESS: Config migrated successfully to {current_version}")
 
             except Exception as e:
@@ -581,17 +612,17 @@ class ConfigManager:
 
         with open(config_path, encoding="utf-8") as f:
             for line in f:
-                if not line.startswith('#'):
+                if not line.startswith("#"):
                     break  # Stop at first non-comment line
 
-                if 'Schema version:' in line:
-                    metadata['config_version'] = line.split(':', 1)[1].strip()
-                elif 'Generated by keecas v' in line:
-                    metadata['keecas_version'] = line.split('v')[1].strip()
-                elif 'Created:' in line:
-                    metadata['generated_at'] = line.split(':', 1)[1].strip()
-                elif 'Last updated:' in line:
-                    metadata['last_modified'] = line.split(':', 1)[1].strip()
+                if "Schema version:" in line:
+                    metadata["config_version"] = line.split(":", 1)[1].strip()
+                elif "Generated by keecas v" in line:
+                    metadata["keecas_version"] = line.split("v")[1].strip()
+                elif "Created:" in line:
+                    metadata["generated_at"] = line.split(":", 1)[1].strip()
+                elif "Last updated:" in line:
+                    metadata["last_modified"] = line.split(":", 1)[1].strip()
 
         return metadata
 
@@ -651,7 +682,7 @@ class ConfigManager:
             # Try to preserve existing creation time from file
             if config_path.exists():
                 existing_metadata = self._extract_metadata_from_comments(config_path)
-                created_at = existing_metadata.get('generated_at')
+                created_at = existing_metadata.get("generated_at")
             # If still None, this is a new file
             if created_at is None:
                 created_at = now
@@ -664,8 +695,13 @@ class ConfigManager:
             f.write(f"# Last updated: {now}\n\n")
             toml.dump(config_dict, f)
 
-    def _save_migrated_config(self, config_path: Path, toml_doc: tomlkit.TOMLDocument,
-                             migrated_data: dict, created_at: str | None = None) -> None:
+    def _save_migrated_config(
+        self,
+        config_path: Path,
+        toml_doc: tomlkit.TOMLDocument,
+        migrated_data: dict,
+        created_at: str | None = None,
+    ) -> None:
         """Save migrated config preserving comments and structure.
 
         Parameters
@@ -726,7 +762,12 @@ class ConfigManager:
             f.write(f"# Last updated: {now}\n\n")
             f.write(tomlkit.dumps(toml_doc))
 
-    def init_config(self, global_config: bool = False, force: bool = False, comment_style: str = "##") -> bool:
+    def init_config(
+        self,
+        global_config: bool = False,
+        force: bool = False,
+        comment_style: str = "##",
+    ) -> bool:
         """Initialize a new configuration file with parametrizable template."""
         config_path = self._global_config_path if global_config else self._local_config_path
 
@@ -860,6 +901,7 @@ class ConfigManager:
 
         try:
             from ..pint_sympy import update_pint_locale
+
             update_pint_locale(language)
         except ImportError:
             pass  # Module not available
@@ -868,6 +910,7 @@ class ConfigManager:
         """Update LocalizationManager language."""
         try:
             from ..localization import set_language
+
             set_language(language)
         except ImportError:
             pass  # Module not available
@@ -876,6 +919,7 @@ class ConfigManager:
         """Update Pint default format."""
         try:
             from .pint_sympy import u
+
             u.formatter.default_format = format_str
         except ImportError:
             pass  # Module not available
@@ -884,6 +928,7 @@ class ConfigManager:
         """Update SymPy printing settings."""
         try:
             import sympy as sp
+
             sp.init_printing(mul_symbol=self._options.default_mul_symbol, order="none")
         except ImportError:
             pass  # Module not available
@@ -924,12 +969,12 @@ class ConfigManager:
         # Generate version header
         schema_version = get_current_schema_version()
         now = datetime.now().isoformat()
-        version_header = f'''# Generated by keecas v{__version__}
+        version_header = f"""# Generated by keecas v{__version__}
 # Schema version: {schema_version}
 # Created: {now}
 # Last updated: {now}
 
-'''
+"""
 
         # Helper function to format values
         def format_value(section_name, key, default_val, inherited_val=None):
@@ -937,10 +982,10 @@ class ConfigManager:
             if default_val is None and (inherited_val is None or not is_global):
                 # Generate commented example for None default
                 example_values = {
-                    'default_float_format': '".3f"',  # Example format spec
+                    "default_float_format": '".3f"',  # Example format spec
                 }
                 example = example_values.get(key, '""')
-                return f'# {key} = {example}'
+                return f"# {key} = {example}"
 
             if is_global:
                 # Global config: all values active
@@ -950,7 +995,7 @@ class ConfigManager:
                 # Local config: show inherited values but commented with # for easy toggle
                 display_val = inherited_val if inherited_val is not None else default_val
                 toml_line = toml.dumps({key: display_val}).strip()
-                return f'# {toml_line}' if toml_line else f'# {key} = ""'
+                return f"# {toml_line}" if toml_line else f'# {key} = ""'
 
         # Helper function to format template strings as TOML literal strings
         def format_template(template_str, comment=False):
@@ -967,14 +1012,14 @@ class ConfigManager:
                 return f"{key} = {formatted_template}"
 
         # Extract inherited values for local config
-        latex_inherited = global_values.get('latex', {})
-        display_inherited = global_values.get('display', {})
-        language_inherited = global_values.get('language', {})
-        _units_inherited = global_values.get('units', {})  # Reserved for future use
-        translations_inherited = global_values.get('translations', {})
-        check_templates_inherited = global_values.get('check_templates', {})
+        latex_inherited = global_values.get("latex", {})
+        display_inherited = global_values.get("display", {})
+        language_inherited = global_values.get("language", {})
+        _units_inherited = global_values.get("units", {})  # Reserved for future use
+        translations_inherited = global_values.get("translations", {})
+        check_templates_inherited = global_values.get("check_templates", {})
 
-        template = f'''# Keecas {config_type} Configuration
+        template = f"""# Keecas {config_type} Configuration
 # {"=" * (len(config_type) + 30)}
 ## {config_scope.capitalize()} settings for keecas symbolic math calculations
 ## Remove '#' to activate settings (local configs inherit from global)
@@ -987,6 +1032,11 @@ class ConfigManager:
 {format_value("latex", "default_environment", defaults.latex.default_environment, latex_inherited.get("default_environment"))}
 {format_value("latex", "default_label_command", defaults.latex.default_label_command, latex_inherited.get("default_label_command"))}
 {format_value("latex", "default_mul_symbol", defaults.latex.default_mul_symbol, latex_inherited.get("default_mul_symbol"))}
+
+## Default label generator (runtime-only, cannot be set in TOML)
+## Set via Python: config.latex.label = callable or None
+## When show_eqn(label=None), uses this default
+## Example: config.latex.label = generate_stable_label
 
 ## LaTeX Environments
 ## Customize built-in environments or define new ones
@@ -1035,17 +1085,17 @@ class ConfigManager:
 
 ## Named template sets
 {"[check_templates.template_sets.default]" if is_global else "# [check_templates.template_sets.default]"}
-{format_template_line("success", defaults.check_templates.template_sets['default']['success'], comment=not is_global)}
-{format_template_line("failure", defaults.check_templates.template_sets['default']['failure'], comment=not is_global)}
+{format_template_line("success", defaults.check_templates.template_sets["default"]["success"], comment=not is_global)}
+{format_template_line("failure", defaults.check_templates.template_sets["default"]["failure"], comment=not is_global)}
 
 {"[check_templates.template_sets.boxed]" if is_global else "# [check_templates.template_sets.boxed]"}
-{format_template_line("success", defaults.check_templates.template_sets['boxed']['success'], comment=not is_global)}
-{format_template_line("failure", defaults.check_templates.template_sets['boxed']['failure'], comment=not is_global)}
+{format_template_line("success", defaults.check_templates.template_sets["boxed"]["success"], comment=not is_global)}
+{format_template_line("failure", defaults.check_templates.template_sets["boxed"]["failure"], comment=not is_global)}
 
 {"[check_templates.template_sets.minimal]" if is_global else "# [check_templates.template_sets.minimal]"}
-{format_template_line("success", defaults.check_templates.template_sets['minimal']['success'], comment=not is_global)}
-{format_template_line("failure", defaults.check_templates.template_sets['minimal']['failure'], comment=not is_global)}
-'''
+{format_template_line("success", defaults.check_templates.template_sets["minimal"]["success"], comment=not is_global)}
+{format_template_line("failure", defaults.check_templates.template_sets["minimal"]["failure"], comment=not is_global)}
+"""
 
         # Add inherited custom translations for local config
         if not is_global and translations_inherited:

@@ -6,6 +6,8 @@ lowercase IDs suitable for use as automatic reference labels.
 """
 
 import hashlib
+from collections.abc import Hashable
+from functools import singledispatch
 from typing import Any
 
 
@@ -30,17 +32,13 @@ def generate_id(obj: Any, length: int = 8) -> str:
     obj_str = _serialize_object(obj)
 
     # Generate SHA-256 hash
-    hash_obj = hashlib.sha256(obj_str.encode('utf-8'))
+    hash_obj = hashlib.sha256(obj_str.encode("utf-8"))
     hash_hex = hash_obj.hexdigest()
 
-    # Convert to base36 (0-9, a-z), or numeric (0-9) for more compact representation
+    # Convert to base36 (0-9, a-z) for compact alphanumeric representation
     # Take first 20 hex chars (80 bits) for conversion
     hash_int = int(hash_hex[:20], 16)
-    match type:
-        case "alphanumeric":
-            out_str = _to_base36(hash_int)
-        case "numeric":
-            out_str = str(hash_int)
+    out_str = _to_base36(hash_int)
 
     # Return first 'length' characters
     return out_str[:length].lower()
@@ -53,7 +51,7 @@ def _serialize_object(obj: Any) -> str:
         # For sympy objects, repr gives a stable representation
         obj_repr = repr(obj)
         # Verify it's stable by checking if it's a simple repr
-        if obj_repr and not obj_repr.startswith('<'):
+        if obj_repr and not obj_repr.startswith("<"):
             return obj_repr
     except Exception:
         pass
@@ -78,13 +76,158 @@ def _serialize_object(obj: Any) -> str:
 def _to_base36(num: int) -> str:
     """Convert an integer to base36 string (0-9, a-z)."""
     if num == 0:
-        return '0'
+        return "0"
 
-    digits = '0123456789abcdefghijklmnopqrstuvwxyz'
+    digits = "0123456789abcdefghijklmnopqrstuvwxyz"
     result = []
 
     while num > 0:
         result.append(digits[num % 36])
         num //= 36
 
-    return ''.join(reversed(result))
+    return "".join(reversed(result))
+
+
+@singledispatch
+def generate_label(arg: Any, unique_id: bool = False) -> Any:
+    """Generate formatted label text for use with show_eqn.
+
+    This function processes label inputs and returns formatted label strings
+    that include the configured prefix and suffix. It supports multiple input
+    types through singledispatch.
+
+    Args:
+        arg: Label input. Can be:
+            - str: Single label string
+            - dict: Dictionary mapping keys to label strings
+        unique_id: If True, generate a unique hash-based ID instead of using
+            the provided label text. Defaults to False.
+
+    Returns:
+        Formatted label(s) with prefix and suffix applied:
+        - str input returns formatted str
+        - dict input returns dict with formatted values
+
+    Examples:
+        >>> from keecas import symbols
+        >>> from keecas.label import generate_label
+        >>> from keecas.config.manager import get_config_manager
+        >>>
+        >>> # String label
+        >>> generate_label("my-label")
+        'eq-my-label'
+        >>>
+        >>> # Dict label
+        >>> F, A = symbols("F, A")
+        >>> labels = {F: "force", A: "area"}
+        >>> generate_label(labels)
+        {F: 'eq-force', A: 'eq-area'}
+        >>>
+        >>> # Unique ID generation
+        >>> label = generate_label("key", unique_id=True)
+        >>> label.startswith("eq-")
+        True
+
+    See Also:
+        - generate_unique_label: Convenience function for unique ID generation
+        - show_eqn: Main display function that uses labels
+
+    Notes:
+        - Labels are formatted with config.latex.eq_prefix and config.latex.eq_suffix
+        - Callable labels should be passed directly to show_eqn, not to generate_label
+        - Unique IDs are deterministic hash-based identifiers
+    """
+    raise TypeError(f"Unsupported type for generate_label: {type(arg)}")
+
+
+@generate_label.register(str)
+def _(arg: str, unique_id: bool = False) -> str:
+    """Generate label from string input."""
+    from keecas.config.manager import get_config_manager
+
+    config = get_config_manager().options
+
+    if unique_id:
+        label_text = generate_id(arg)
+    else:
+        label_text = arg
+
+    return f"{config.latex.eq_prefix}{label_text}{config.latex.eq_suffix}"
+
+
+@generate_label.register(dict)
+def _(arg: dict[Hashable, str], unique_id: bool = False) -> dict[Hashable, str]:
+    """Generate labels from dict input.
+
+    For each key-value pair in the dict:
+    - If value is a string, format it with prefix/suffix
+    - If value is None or empty, return empty string
+    """
+    from keecas.config.manager import get_config_manager
+
+    config = get_config_manager().options
+
+    result = {}
+    for key, value in arg.items():
+        if value:
+            if unique_id:
+                label_text = generate_id((key, value))
+            else:
+                label_text = value
+            result[key] = f"{config.latex.eq_prefix}{label_text}{config.latex.eq_suffix}"
+        else:
+            result[key] = ""
+
+    return result
+
+
+@generate_label.register(list)
+def generate_label_from_list(arg: list, unique_id: bool = False):
+    """Generate label from list input."""
+    return generate_label(str(arg), unique_id=unique_id)
+
+
+def generate_unique_label(arg: str | dict[Hashable, Any]) -> str | dict[Hashable, str]:
+    """Generate unique hash-based labels.
+
+    Convenience function that calls generate_label with unique_id=True.
+    Useful for automatically generating deterministic labels without
+    manual naming.
+
+    Args:
+        arg: Label input (str or dict)
+
+    Returns:
+        Formatted label(s) with unique hash-based identifiers
+
+    Examples:
+        >>> from keecas import symbols
+        >>> from keecas.label import generate_unique_label
+        >>>
+        >>> # String label
+        >>> label = generate_unique_label("my-key")
+        >>> label.startswith("eq-")
+        True
+        >>>
+        >>> # Dict label
+        >>> F, A = symbols("F, A")
+        >>> labels = generate_unique_label({F: "force", A: "area"})
+        >>> all(v.startswith("eq-") for v in labels.values())
+        True
+        >>>
+        >>> # Can be used with partial functions
+        >>> from functools import partial
+        >>> auto_labeler = partial(generate_unique_label)
+        >>> auto_labeler("test")
+        'eq-...'
+
+    See Also:
+        - generate_label: Main label generation function
+        - show_eqn: Display function that uses labels
+
+    Notes:
+        - Generates deterministic hash-based IDs
+        - Same input always produces same ID
+        - Useful for automatic label generation in Dataframes
+    """
+    return generate_label(arg, unique_id=True)

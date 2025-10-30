@@ -75,16 +75,13 @@ class Dataframe(dict[Hashable, list[Any]]):
         - Supports dict-like operations: update, |, +
         - Order of keys preserved from first dict in list initialization
     """
+
     def __init__(self, *args: Any, filler: Any = None, **kwargs: Any) -> None:
         super().__init__()
         self._width: int = 0
         self._filler: Any = filler
 
-        if (
-            args
-            and isinstance(args[0], list)
-            and all(isinstance(item, dict) for item in args[0])
-        ):
+        if args and isinstance(args[0], list) and all(isinstance(item, dict) for item in args[0]):
             self._init_from_list_of_dicts(args[0])
         else:
             self._update_initial(*args, **kwargs)
@@ -204,9 +201,7 @@ class Dataframe(dict[Hashable, list[Any]]):
         for key in self:
             if key not in other:
                 if len(self[key]) < max_length:
-                    self[key] = self[key] + [self._filler] * (
-                        max_length - len(self[key])
-                    )
+                    self[key] = self[key] + [self._filler] * (max_length - len(self[key]))
                 else:
                     self[key] = self[key][:max_length]
 
@@ -256,9 +251,7 @@ class Dataframe(dict[Hashable, list[Any]]):
 
             for key in self.keys():
                 self[key].append(
-                    other[key][0]
-                    if key in other and len(other[key]) > 0
-                    else self._filler,
+                    other[key][0] if key in other and len(other[key]) > 0 else self._filler,
                 )
         elif isinstance(other, dict):
             if strict:
@@ -272,7 +265,11 @@ class Dataframe(dict[Hashable, list[Any]]):
 
         self._width += 1
 
-    def extend(self, other: Dataframe | dict[Hashable, Any] | list[Any], strict: bool = True) -> None:
+    def extend(
+        self,
+        other: Dataframe | dict[Hashable, Any] | list[Any],
+        strict: bool = True,
+    ) -> None:
         r"""Extend the Dataframe by adding multiple columns from another source.
 
         Adds all columns from 'other' to the right of existing columns. This is the
@@ -330,8 +327,7 @@ class Dataframe(dict[Hashable, list[Any]]):
                 match (key in self, key in other):
                     case (True, True):
                         self[key].extend(
-                            other[key]
-                            + [self._filler] * (other_width - len(other[key])),
+                            other[key] + [self._filler] * (other_width - len(other[key])),
                         )
                     case (True, False):
                         self[key].extend([self._filler] * other_width)
@@ -536,9 +532,7 @@ def create_dataframe(
             if key in seed:
                 if isinstance(seed[key], list):
                     # List value for this row
-                    df[key] = seed[key][:width] + [default_value] * (
-                        width - len(seed[key])
-                    )
+                    df[key] = seed[key][:width] + [default_value] * (width - len(seed[key]))
                 else:
                     # Single value for this row
                     df[key] = [seed[key]] * width

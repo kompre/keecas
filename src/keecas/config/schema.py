@@ -43,7 +43,9 @@ def migrate_0_1_to_1_0(old_config: dict) -> dict:
         if "display" not in new_config:
             new_config["display"] = {}
         new_config["display"]["pint_default_format"] = user_value  # Preserve it
-        print(f"Migrated 'pint_default_format' -> 'display.pint_default_format' (value: {user_value})")
+        print(
+            f"Migrated 'pint_default_format' -> 'display.pint_default_format' (value: {user_value})",
+        )
 
     # DEPRECATED: Warn but preserve for now (remove in v2.0.0)
     if "sep" in new_config:
@@ -62,7 +64,9 @@ def migrate_0_1_to_1_0(old_config: dict) -> dict:
             new_config["display"] = {}
         # Convert numeric precision to format string, preserving user intent
         new_config["display"]["default_float_format"] = f".{precision}f"
-        print(f"Converted 'float_precision={precision}' -> 'display.default_float_format=\".{precision}f\"'")
+        print(
+            f"Converted 'float_precision={precision}' -> 'display.default_float_format=\".{precision}f\"'",
+        )
 
     return new_config
 
@@ -97,6 +101,7 @@ def get_current_schema_version() -> str:
         Latest schema version string
     """
     from packaging import version
+
     return max(SCHEMAS.keys(), key=version.parse)
 
 

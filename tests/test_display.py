@@ -168,14 +168,20 @@ def test_formatter_recursive_call():
     def underline_sympy(value, col_index=0, **kwargs):
         if isinstance(value, Basic):
             latex_str = latex(value, **kwargs)
-            return EarlyExit(rf"\underline{{{latex_str}}}" if col_index == 0 else rf"= \underline{{{latex_str}}}")
+            return EarlyExit(
+                rf"\underline{{{latex_str}}}"
+                if col_index == 0
+                else rf"= \underline{{{latex_str}}}",
+            )
         return None
 
     # Create chain: Pint transforms to SymPy, then our custom formatter renders
-    custom_chain = FormatterChain([
-        format_pint,      # Transform Pint → SymPy
-        underline_sympy,  # Render SymPy with underline
-    ])
+    custom_chain = FormatterChain(
+        [
+            format_pint,  # Transform Pint → SymPy
+            underline_sympy,  # Render SymPy with underline
+        ],
+    )
 
     # Test with Pint quantity - should go through:
     # 1. format_pint → converts to SymPy
@@ -233,6 +239,7 @@ def test_show_eqn():
     assert r"x & == 1" in result.data or r"x & = 1" in result.data
     assert r"y & == 2" in result.data or r"y & = 2" in result.data
 
+
 def test_replace_all_with_localization():
     from keecas.localization import set_language
 
@@ -249,12 +256,13 @@ def test_replace_all_with_localization():
     # Reset to English
     set_language("en")
 
+
 def test_label():
     expr = {
         x: 1,
         y: 2,
     }
-    result = show_eqn(expr, environment='cases',  label="single_label", debug=True)
+    result = show_eqn(expr, environment="cases", label="single_label", debug=True)
     assert r"single_label" in result.data
 
 
@@ -290,17 +298,25 @@ def test_check_template_custom():
     custom_failure = r"❌ {symbol}{rhs} FAIL"
 
     # Test success case
-    result = check(0.5, 1.0, test=Le,
-                  success_template=custom_success,
-                  failure_template=custom_failure)
+    result = check(
+        0.5,
+        1.0,
+        test=Le,
+        success_template=custom_success,
+        failure_template=custom_failure,
+    )
     assert isinstance(result, Markdown)
     assert "✅" in result.data
     assert "OK" in result.data
 
     # Test failure case
-    result = check(1.5, 1.0, test=Le,
-                  success_template=custom_success,
-                  failure_template=custom_failure)
+    result = check(
+        1.5,
+        1.0,
+        test=Le,
+        success_template=custom_success,
+        failure_template=custom_failure,
+    )
     assert isinstance(result, Markdown)
     assert "❌" in result.data
     assert "FAIL" in result.data
@@ -308,18 +324,18 @@ def test_check_template_custom():
 
 def test_check_template_variables():
     """Test that all template variables are available."""
-    template = r"{symbol}|{rhs}|{verified_text}|{not_verified_text}|{color}|{test_result}|{result_text}"
+    template = (
+        r"{symbol}|{rhs}|{verified_text}|{not_verified_text}|{color}|{test_result}|{result_text}"
+    )
 
-    result = check(0.5, 1.0, test=Le,
-                  success_template=template,
-                  failure_template=template)
+    result = check(0.5, 1.0, test=Le, success_template=template, failure_template=template)
 
     # Check that variables are substituted
     assert r"\le" in result.data  # symbol
-    assert "1.0" in result.data   # rhs
+    assert "1.0" in result.data  # rhs
     # Check for localized text (might be VERIFIED or VERIFICATO depending on current language)
-    assert ("VERIFIED" in result.data or "VERIFICATO" in result.data)  # verified_text
-    assert "green" in result.data # color
+    assert "VERIFIED" in result.data or "VERIFICATO" in result.data  # verified_text
+    assert "green" in result.data  # color
     assert "True" in result.data  # test_result
 
 
@@ -339,16 +355,24 @@ def test_check_different_test_types_with_templates():
     template_failure = r"{symbol}{rhs} FAIL"
 
     # Test with GreaterThan
-    result = check(2.0, 1.0, test=GreaterThan,
-                  success_template=template_success,
-                  failure_template=template_failure)
+    result = check(
+        2.0,
+        1.0,
+        test=GreaterThan,
+        success_template=template_success,
+        failure_template=template_failure,
+    )
     assert r"\ge" in result.data
     assert "PASS" in result.data
 
     # Test with StrictLessThan
-    result = check(0.5, 1.0, test=StrictLessThan,
-                  success_template=template_success,
-                  failure_template=template_failure)
+    result = check(
+        0.5,
+        1.0,
+        test=StrictLessThan,
+        success_template=template_success,
+        failure_template=template_failure,
+    )
     assert r"<" in result.data
     assert "PASS" in result.data
 
@@ -361,16 +385,22 @@ def test_check_explicit_parameters():
     assert r"\textcolor{green}{\checkmark}" in result.data
 
     # Test explicit success/failure template parameters
-    result = check(0.5, 1.0,
-                  success_template="GOOD: {symbol}{rhs}",
-                  failure_template="BAD: {symbol}{rhs}")
+    result = check(
+        0.5,
+        1.0,
+        success_template="GOOD: {symbol}{rhs}",
+        failure_template="BAD: {symbol}{rhs}",
+    )
     assert "GOOD:" in result.data
     assert r"\le" in result.data
 
     # Test failure case with explicit templates
-    result = check(1.5, 1.0,
-                  success_template="GOOD: {symbol}{rhs}",
-                  failure_template="BAD: {symbol}{rhs}")
+    result = check(
+        1.5,
+        1.0,
+        success_template="GOOD: {symbol}{rhs}",
+        failure_template="BAD: {symbol}{rhs}",
+    )
     assert "BAD:" in result.data
     assert r">" in result.data
 
@@ -386,10 +416,14 @@ def test_check_backward_compatibility_kwargs():
     assert r"\colorbox{green}" in result.data
 
     # Test custom templates via kwargs
-    result_kwargs = check(0.5, 1.0, **{
-        "success_template": "OK: {symbol}{rhs}",
-        "failure_template": "FAIL: {symbol}{rhs}",
-    })
+    result_kwargs = check(
+        0.5,
+        1.0,
+        **{
+            "success_template": "OK: {symbol}{rhs}",
+            "failure_template": "FAIL: {symbol}{rhs}",
+        },
+    )
     assert "OK:" in result_kwargs.data
 
 
@@ -487,6 +521,7 @@ def test_environment_split():
 def test_environment_unknown_fallback():
     """Test unknown environment falls back to align."""
     import warnings
+
     eqns = {x: 1, y: 2}
 
     with warnings.catch_warnings(record=True) as w:
@@ -524,13 +559,16 @@ def test_environment_custom_from_config():
     config_manager = get_config_manager()
 
     # Add custom environment
-    config_manager.options.latex.environments.set("custom_test", {
-        "separator": "&",
-        "line_separator": r" \\" + "\n ",
-        "supports_multiple_labels": True,
-        "outer_environment": "align",
-        "inner_environment": None,
-    })
+    config_manager.options.latex.environments.set(
+        "custom_test",
+        {
+            "separator": "&",
+            "line_separator": r" \\" + "\n ",
+            "supports_multiple_labels": True,
+            "outer_environment": "align",
+            "inner_environment": None,
+        },
+    )
 
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, environment="custom_test", debug=True)
@@ -555,13 +593,16 @@ def test_environment_with_multiple_arguments():
     config_manager = get_config_manager()
 
     # Add custom environment for testing
-    config_manager.options.latex.environments.set("test_multi_arg", {
-        "separator": "&",
-        "line_separator": r" \\" + "\n ",
-        "supports_multiple_labels": False,
-        "outer_environment": "customenv",
-        "inner_environment": None,
-    })
+    config_manager.options.latex.environments.set(
+        "test_multi_arg",
+        {
+            "separator": "&",
+            "line_separator": r" \\" + "\n ",
+            "supports_multiple_labels": False,
+            "outer_environment": "customenv",
+            "inner_environment": None,
+        },
+    )
 
     eqns = {x: 1}
     result = show_eqn(eqns, environment="test_multi_arg", env_arg="{2}{l}", debug=True)
@@ -577,15 +618,18 @@ def test_nested_environment_with_argument():
     config_manager = get_config_manager()
 
     # Add custom nested environment for testing
-    config_manager.options.latex.environments.set("test_nested_arg", {
-        "separator": "&",
-        "line_separator": r" \\" + "\n ",
-        "supports_multiple_labels": False,
-        "outer_environment": "equation",
-        "inner_environment": "aligned",
-        "inner_prefix": "",
-        "inner_suffix": "",
-    })
+    config_manager.options.latex.environments.set(
+        "test_nested_arg",
+        {
+            "separator": "&",
+            "line_separator": r" \\" + "\n ",
+            "supports_multiple_labels": False,
+            "outer_environment": "equation",
+            "inner_environment": "aligned",
+            "inner_prefix": "",
+            "inner_suffix": "",
+        },
+    )
 
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, environment="test_nested_arg", env_arg="{2}", debug=True)
@@ -756,7 +800,7 @@ def test_float_format_structure():
     float_format = {x: ".3f", y: ".2f"}
     result = show_eqn(eqns, float_format=float_format, debug=True)
     assert "3.142" in result.data  # x formatted with .3f
-    assert "2.72" in result.data   # y formatted with .2f
+    assert "2.72" in result.data  # y formatted with .2f
 
     # Test with dict containing list - cell-by-cell formatting for multiple columns
     eqns_list = [{x: 3.14159}, {x: 2.71828}]  # Creates: x & =3.14159 & =2.71828
@@ -764,14 +808,14 @@ def test_float_format_structure():
     float_format_with_list = {x: [None, ".3f", ".1f"]}  # None for key, then value formats
     result = show_eqn(eqns_list, float_format=float_format_with_list, debug=True)
     assert "3.142" in result.data  # First value column with .3f
-    assert "2.7" in result.data    # Second value column with .1f
+    assert "2.7" in result.data  # Second value column with .1f
 
     # Test with tuple (seed, default) pattern - key uses one format, other keys use default
     eqns = {x: 1.5, y: 2.5}
     float_format = ({x: ".1f"}, ".2f")  # x uses .1f, y uses default .2f
     result = show_eqn(eqns, float_format=float_format, debug=True)
-    assert "1.5" in result.data    # x with .1f
-    assert "2.50" in result.data   # y with .2f
+    assert "1.5" in result.data  # x with .1f
+    assert "2.50" in result.data  # y with .2f
 
 
 if __name__ == "__main__":
