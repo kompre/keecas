@@ -223,8 +223,8 @@ def generate_unique_label(arg: str | dict[Hashable, Any]) -> str | dict[Hashable
         'eq-...'
 
     See Also:
-        - generate_label: Main label generation function
-        - show_eqn: Display function that uses labels
+        - `~~label.generate_label`: Main label generation function
+        - `~~display.show_eqn`: Display function that uses labels
 
     Notes:
         - Generates deterministic hash-based IDs

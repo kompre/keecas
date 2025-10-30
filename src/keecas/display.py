@@ -323,9 +323,9 @@ def check(
         ```
 
     See Also:
-        - show_eqn(): Display mathematical equations
-        - config: Global configuration for language and formatting
-        - translate(): Low-level translation function
+        - `~~display.show_eqn`: Display mathematical equations
+        - `~~config.manager.ConfigManager`: Global configuration for language and formatting
+        - `~~localization.translate`: Low-level translation function
 
     Notes:
         - Returns green indicator for passing checks, red for failing (default template)
@@ -584,10 +584,10 @@ def show_eqn(
         ```
 
     See Also:
-        - `check()`: Engineering verification with localization
-        - dict_to_eq(): Convert dict to SymPy Eq objects
-        - eq_to_dict(): Convert SymPy Eq objects to dict
-        - `config`: Global configuration object
+        - `~~display.check`: Engineering verification with localization
+        - `~~display.dict_to_eq`: Convert dict to SymPy Eq objects
+        - `~~display.eq_to_dict`: Convert SymPy Eq objects to dict
+        - `~~config.manager.ConfigManager`: Global configuration object
 
     Notes:
         - LaTeX output respects config.katex setting (disables labels for KaTeX compatibility)
@@ -882,8 +882,8 @@ def format_decimal_numbers(
         ```
 
     See Also:
-        - show_eqn(): Main display function with built-in float formatting
-        - config.display.default_float_format: Global default format setting
+        - `~~display.show_eqn`: Main display function with built-in float formatting
+        - `~~config.schema.DisplayConfig`: Display configuration (see `default_float_format` attribute)
 
     Notes:
         - Only matches decimal numbers (requires decimal point)
