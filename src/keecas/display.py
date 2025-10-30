@@ -37,55 +37,69 @@ TemplateChoice = Literal["default", "boxed", "minimal"]
 
 
 def _attach_label(
-    label: str | dict[str, str] | None,
+    label: str | dict[str, str] | Callable | None,
     key: str | None = None,
     label_command: str | None = None,
+    values: list[Any] | None = None,
 ) -> str:
     r"""Attach a label to a given key.
 
     Args:
-        label: The label or label dictionary
+        label: The label or label dictionary. Can be:
+            - str: Single label string (pre-formatted)
+            - dict: Dictionary mapping keys to label strings or callables
+            - Callable: Function to generate label (called with key and values)
         key: The key to attach the label to, or None for single labels
         label_command: LaTeX label command (e.g., r"\label")
+        values: List of values for this row (used with callable labels)
 
     Returns:
         LaTeX label command string, or empty string if no label or KaTeX mode
 
     Notes:
-        - The label is constructed using config.latex.eq_prefix, label[key], and config.latex.eq_suffix
+        - Labels should be pre-formatted using generate_label() before passing to show_eqn
         - If config.display.print_label is True, the key and label are printed for debugging
         - Labels are omitted in KaTeX mode for Jupyter notebook compatibility
+        - Callable labels are evaluated with (key, values) arguments
     """
     if not label_command:
         label_command = config.latex.default_label_command
 
-    if isinstance(label, dict):
-        text_label = (
-            rf"{config.latex.eq_prefix}{label[key]}{config.latex.eq_suffix}"
-            if label.get(key)
-            else ""
-        )
+    # Handle callable label (single callable for all keys)
+    if callable(label) and key is not None:
+        text_label = label(key, values)
         if config.display.print_label:
             print(f"{key}: {text_label}") if text_label else None
 
         return (
-            rf" {label_command}{{{text_label}}} "
-            if label.get(key)
-            and not config.display.katex  # don't add the label if there is no label to add, and if katex engine is used for rendering (i.e. jupyter notebook)
-            else ""
+            rf" {label_command}{{{text_label}}} " if text_label and not config.display.katex else ""
+        )
+
+    if isinstance(label, dict):
+        label_value = label.get(key)
+
+        # Handle callable value in dict
+        if callable(label_value):
+            text_label = label_value(key, values)
+        elif label_value:
+            text_label = label_value
+        else:
+            text_label = ""
+
+        if config.display.print_label:
+            print(f"{key}: {text_label}") if text_label else None
+
+        return (
+            rf" {label_command}{{{text_label}}} " if text_label and not config.display.katex else ""
         )
 
     if isinstance(label, str) and not key:
-        text_label = rf"{config.latex.eq_prefix}{label}{config.latex.eq_suffix}"
+        text_label = label
 
         if config.display.print_label:
             print(f"label: {text_label}" if text_label else None)
 
-        return (
-            rf" {label_command}{{{text_label}}} "
-            if not config.display.katex  # don't add the label if there is no label to add, and if katex engine is used for rendering (i.e. jupyter notebook)
-            else ""
-        )
+        return rf" {label_command}{{{text_label}}} " if not config.display.katex else ""
 
     return ""
 
@@ -404,7 +418,7 @@ def show_eqn(
     eqns: dict[Basic, Any] | list[dict[Basic, Any]] | Dataframe,
     environment: str | dict[str, Any] | None = None,
     sep: str | list[str] | None = None,
-    label: str | dict[str, str] | None = None,
+    label: str | dict[str, str | Callable] | Callable | None = None,
     label_command: str | None = None,
     col_wrap: str | dict | list[dict] | Dataframe | tuple | None = None,
     float_format: str | dict | list[dict] | Dataframe | tuple | None = None,
@@ -429,8 +443,12 @@ def show_eqn(
         sep: Separator(s) between cells in the amsmath block (e.g. `LHS & RHS & ...`). Can be string or list of strings
             for finer customization (separator goes in between each column, so first separator is between first and second column, etc). Defaults to environment's default separator
             (None uses environment default: "&" for align, "" for equation/gather).
-        label: Label(s) for cross-referencing equations. Can be string (single label) or
-            dict mapping symbols to label strings. Labels formatted as {eq_prefix}{label}{eq_suffix}.
+        label: Label(s) for cross-referencing equations. Can be:
+            - str: Single label string (pre-formatted with generate_label)
+            - dict: Mapping symbols to label strings or callables
+            - Callable: Function that generates labels, called as callable(key, value_list)
+            Labels should be pre-formatted using generate_label() before passing to show_eqn.
+            Callable labels are evaluated with (key, Dataframe[key]) arguments.
             Omitted in KaTeX mode for notebook compatibility.
         label_command: LaTeX label command (e.g., r"\label"). Defaults to config.latex.default_label_command.
         col_wrap: Column wrapping specifications for LaTeX formatting. Can be str, dict, list, Dataframe, or 2 element tuple.
@@ -739,7 +757,7 @@ def show_eqn(
             cells.append(cell_content)
 
         # Join cells to form row
-        body_lines[key] = " ".join(cells) + _attach_label(label, key, label_command)
+        body_lines[key] = " ".join(cells) + _attach_label(label, key, label_command, list_values)
 
     # Apply row-level formatters
     if row_formatter is not None:
