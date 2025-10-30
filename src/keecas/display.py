@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
-
-# default values for labels
+from itertools import zip_longest
 from typing import Any, Literal
 from warnings import warn
 
-from IPython.display import Markdown
+import regex
+from IPython.display import Latex
 from sympy import (
     Basic,
     Le,
@@ -27,388 +27,12 @@ from .localization import translate
 # Use the unified configuration system
 config = get_config_manager().options
 
-from itertools import zip_longest  # noqa: E402
-
 # Template choice type for IDE autocomplete
 TemplateChoice = Literal["default", "boxed", "minimal"]
 
-
-def _attach_label(
-    label: str | dict[str, str] | Callable[[list[Any]], str] | None,
-    key: str | None = None,
-    label_command: str | None = None,
-    values: list[Any] | None = None,
-) -> str:
-    r"""Attach a label to a given key.
-
-    Args:
-        label: The label or label dictionary. Can be:
-            - str: Single label string (pre-formatted)
-            - dict: Dictionary mapping keys to label strings or callables
-            - Callable: Function to generate label (receives single list: [key] + values)
-        key: The key to attach the label to, or None for single labels
-        label_command: LaTeX label command (e.g., r"\label")
-        values: List of values for this row (used with callable labels)
-
-    Returns:
-        LaTeX label command string, or empty string if no label or KaTeX mode
-
-    Notes:
-        - Labels should be pre-formatted using generate_label() before passing to show_eqn
-        - If config.display.print_label is True, the key and label are printed for debugging
-        - Labels are omitted in KaTeX mode for Jupyter notebook compatibility
-        - Callable labels receive a single list argument: [key] + values
-    """
-    if not label_command:
-        label_command = config.latex.default_label_command
-
-    # Handle callable label (single callable for all keys)
-    if callable(label) and key is not None:
-        text_label = label([key] + values)
-        if config.display.print_label:
-            print(f"{key}: {text_label}") if text_label else None
-
-        return (
-            rf" {label_command}{{{text_label}}} " if text_label and not config.display.katex else ""
-        )
-
-    if isinstance(label, dict):
-        label_value = label.get(key)
-
-        # Handle callable value in dict
-        if callable(label_value):
-            text_label = label_value([key] + values)
-        elif label_value:
-            text_label = label_value
-        else:
-            text_label = ""
-
-        if config.display.print_label:
-            print(f"{key}: {text_label}") if text_label else None
-
-        return (
-            rf" {label_command}{{{text_label}}} " if text_label and not config.display.katex else ""
-        )
-
-    if isinstance(label, str) and not key:
-        text_label = label
-
-        if config.display.print_label:
-            print(f"label: {text_label}" if text_label else None)
-
-        return rf" {label_command}{{{text_label}}} " if not config.display.katex else ""
-
-    return ""
-
-
-def _generate_environment_template(
-    environment: str,
-    env_config,
-    label: str | dict[str, str] | None,
-    first_key: str | None = None,
-    label_command: str | None = None,
-    env_arg: str | None = None,
-) -> str:
-    """Generate complete LaTeX template with ___body___ placeholder.
-
-    Args:
-        environment: Environment name (may include '*' for starred variant)
-        env_config: EnvironmentDefinition object
-        label: Label string or label dictionary
-        first_key: First key for single-label environments
-        label_command: LaTeX label command
-        env_arg: Optional argument string for environment (e.g., "{2}" for alignat{2}).
-                 User provides complete argument including braces.
-
-    Returns:
-        LaTeX template string with ___body___ placeholder
-    """
-    outer_env = env_config.outer_environment
-    inner_env = env_config.inner_environment
-
-    # Handle starred environments
-    if "*" in environment:
-        outer_env += "*"
-
-    # Use env_arg directly (already includes braces) or empty string
-    arg_str = env_arg if env_arg else ""
-
-    if inner_env is None:
-        # Standard environment: \begin{env}{arg}___body___\end{env}
-        outer_prefix = env_config.outer_prefix
-        outer_suffix = env_config.outer_suffix
-
-        # Single label environments attach label to begin statement
-        label_str = (
-            _attach_label(label, first_key, label_command)
-            if not env_config.supports_multiple_labels
-            else ""
-        )
-
-        template = (
-            rf"{outer_prefix}\begin{{{outer_env}}}{arg_str}{label_str}"
-            + "\n___body___\n"
-            + rf"\end{{{outer_env}}}{outer_suffix}"
-        )
-    else:
-        # Nested environment: \begin{outer}\n\t\prefix\begin{inner}{arg}___body___\end{inner}\suffix\n\end{outer}
-        # Argument goes on inner environment by default
-        inner_prefix = env_config.inner_prefix
-        inner_suffix = env_config.inner_suffix
-        outer_prefix = env_config.outer_prefix
-        outer_suffix = env_config.outer_suffix
-
-        # Label goes on outer environment for nested structures
-        label_str = _attach_label(label, None, label_command)
-
-        template = rf"""{outer_prefix}\begin{{{outer_env}}}{label_str}
-	{inner_prefix}\begin{{{inner_env}}}{arg_str}
-___body___
-	\end{{{inner_env}}}{inner_suffix}
-\end{{{outer_env}}}{outer_suffix}"""
-
-    return template
-
-
-# Template processing helpers for check function
-def _get_check_templates(
-    template_name: str | None = None,
-    success_override: str | None = None,
-    failure_override: str | None = None,
-) -> dict[str, str]:
-    """Get check templates from config or overrides."""
-    # Use overrides if provided
-    if success_override and failure_override:
-        return {"success": success_override, "failure": failure_override}
-
-    # Use named template set if specified
-    if template_name and template_name in config.check_templates.template_sets:
-        template_set = config.check_templates.template_sets[template_name]
-        return {"success": template_set["success"], "failure": template_set["failure"]}
-
-    # Fall back to default config templates
-    return {
-        "success": config.check_templates.success_template,
-        "failure": config.check_templates.failure_template,
-    }
-
-
-def _format_check_template(template: str, **variables: Any) -> str:
-    """Format template string with variable substitution."""
-    try:
-        return template.format(**variables)
-    except KeyError as e:
-        # If template is missing required variables, fall back to default
-        warn(f"Template missing variable {e}, using default template")
-        default_template = (
-            config.check_templates.success_template
-            if variables.get("test_result")
-            else config.check_templates.failure_template
-        )
-        return default_template.format(**variables)
-
-
-# check verification result
-def check(
-    lhs: int | float,
-    rhs: int | float,
-    test: type = Le,
-    template: TemplateChoice | None = None,
-    success_template: str | None = None,
-    failure_template: str | None = None,
-    **kwargs: Any,
-) -> Markdown:
-    r"""Engineering verification function with localized pass/fail indicators.
-
-    Compares two expressions (already evaluated to numeric values) using a test function and displays a formatted
-    message based on the pass/fail status. Return message can be templated as Markdown object. The most common case is to be passed to a show_eqn function as secondary dict (the object will be formatted according to `cell_formatter` specification).
-
-    NOTE: if the test cannot evaluate to either True or False, an error will be raised. Common cause for this is that one of the arguments passed are not in the numeric form, but still in symbolic form.
-
-    Args:
-        lhs: evaluated left-hand side expression (e.g., calculated stress or utilization ratio).
-        rhs: evaluated right-hand side expression (e.g., allowable limit or capacity).
-        test: Comparison function from SymPy's relational module. Options:
-            - Le: LessThan (default, less than or equal)
-            - Ge: GreaterThan (greater than or equal)
-            - Lt: StrictLessThan (strictly less than)
-            - Gt: StrictGreaterThan (strictly greater than)
-            - Eq: Equality
-            - Ne: Unequality
-            Defaults to Le (less than or equal to).
-        template: Named template set for formatting. Options: "default", "boxed", "minimal".
-            Controls visual presentation of verification result.
-        success_template: Custom template string for passing checks. Available variables:
-            {symbol}, {rhs}, {verified_text}, {color}, {test_result}, {result_text}.
-        failure_template: Custom template string for failing checks. Same variables as success_template.
-        **kwargs: Additional keyword arguments:
-            - language (str): Document-level language override (e.g., 'it', 'de', 'fr')
-            - substitutions (dict): Custom translation dictionary for "VERIFIED"/"NOT_VERIFIED"
-
-    Returns:
-        IPython.display.Markdown object that depends on conditions (true or false).
-
-    Examples:
-        ```{python}
-        from keecas import symbols, u, pc, check
-        from sympy import Le, Ge
-
-        # Basic utilization check (calculated <= allowable)
-        sigma_Sd, sigma_Rd = symbols(r"\sigma_{Sd}, \sigma_{Rd}")
-        _p = {sigma_Sd: 150*u.MPa, sigma_Rd: 200*u.MPa}
-
-        utilization = sigma_Sd / sigma_Rd | pc.subs(_p) | pc.N
-        check(utilization, 1.0, test=Le)  # Check if <= 1.0 (passes)
-        ```
-
-        ```{python}
-        from keecas import show_eqn
-
-        # Capacity check (demand <= capacity)
-        N_Ed, N_Rd = symbols(r"N_{Ed}, N_{Rd}")
-        _p = {N_Ed: 850*u.kN, N_Rd: 1200*u.kN}
-
-        _e = {
-            k: k | pc.subs(_p) | pc.N for k in [N_Ed/N_Rd]
-        }
-
-        _c = {
-            k: check(v, 1.0) for k, v in _e.items()
-        }
-
-        # use along show_eqn
-        show_eqn([_p | _e, _c])
-        ```
-
-        ```{python}
-        # Multiple checks with different tests
-        tau_Sd, tau_Rd = symbols(r"\tau_{Sd}, \tau_{Rd}")
-        _v = {tau_Sd: 45*u.MPa, tau_Rd: 50*u.MPa}
-
-        # Check shear stress is less than limit
-        check(
-            tau_Sd | pc.subs(_v) | pc.N,
-            tau_Rd | pc.subs(_v) | pc.N,
-            test=Le
-        )
-        ```
-
-        ```{python}
-        # Check capacity is greater than demand (reverse comparison)
-        check(
-            tau_Rd | pc.subs(_v) | pc.N,
-            tau_Sd | pc.subs(_v) | pc.N,
-            test=Ge
-        )
-        ```
-
-        ```{python}
-        # Localized verification (Italian)
-        from keecas import config
-        config.language = 'it'
-
-        utilization = 0.75
-        check(utilization, 1.0, test=Le)  # Shows "VERIFICATO" in Italian
-        ```
-
-        ```{python}
-        # Custom templates for different visual styles
-        from IPython.display import display
-
-        # tip: use display() to show output for mid-cell statements
-        display(check(0.85, 1.0, template="boxed") )   # Boxed result
-        display(check(0.85, 1.0, template="minimal") ) # Minimal formatting
-        check(0.85, 1.0, template="default")  # Standard formatting
-        ```
-
-    See Also:
-        - `~~display.show_eqn`: Display mathematical equations
-        - `~~config.manager.ConfigManager`: Global configuration for language and formatting
-        - `~~localization.translate`: Low-level translation function
-
-    Notes:
-        - Returns green indicator for passing checks, red for failing (default template)
-        - Verification text ("VERIFIED"/"NOT_VERIFIED") automatically localized per config.language
-        - Supports 10 languages: de, es, fr, it, pt, da, nl, no, sv, en
-        - Template variables allow full customization of output format
-        - Commonly used with utilization ratios: check(calculated/allowable, 1.0)
-        - Test functions from SymPy: Le, Ge, Lt, Gt, Eq, Ne
-    """
-    # Determine comparison symbols based on test type
-    match test.__name__:
-        case "LessThan":
-            symbol_if_true = r"\le"
-            symbol_if_false = r">"
-        case "StrictLessThan":
-            symbol_if_true = r"<"
-            symbol_if_false = r"\ge"
-        case "GreaterThan":
-            symbol_if_true = r"\ge"
-            symbol_if_false = r"<"
-        case "StrictGreaterThan":
-            symbol_if_true = r">"
-            symbol_if_false = r"\le"
-        case "Equality":
-            symbol_if_true = r"="
-            symbol_if_false = r"\neq"
-        case "Unequality":
-            symbol_if_true = r"\neq"
-            symbol_if_false = r"="
-
-    # Extract template parameters (explicit args take precedence over kwargs for backward compatibility)
-    template_name = template or kwargs.get("template")
-    success_template_param = success_template or kwargs.get("success_template")
-    failure_template_param = failure_template or kwargs.get("failure_template")
-    language = kwargs.get("language")
-    substitutions = kwargs.get("substitutions")
-
-    # Get templates
-    templates = _get_check_templates(
-        template_name,
-        success_template_param,
-        failure_template_param,
-    )
-
-    # Get localized verification text
-    verified_text = translate(
-        "VERIFIED",
-        language=language,
-        substitutions=substitutions,
-    )
-    not_verified_text = translate(
-        "NOT_VERIFIED",
-        language=language,
-        substitutions=substitutions,
-    )
-
-    # Perform the test
-    test_result = test(lhs, rhs)
-
-    # Select template and symbol based on result
-    if test_result:
-        template_str = templates["success"]
-        symbol = symbol_if_true
-        color = "green"
-        result_text = verified_text
-    else:
-        template_str = templates["failure"]
-        symbol = symbol_if_false
-        color = "red"
-        result_text = not_verified_text
-
-    # Format template with variables
-    formatted_result = _format_check_template(
-        template_str,
-        symbol=symbol,
-        rhs=latex(rhs),
-        verified_text=verified_text,
-        not_verified_text=not_verified_text,
-        color=color,
-        test_result=test_result,
-        result_text=result_text,
-    )
-
-    return Markdown(formatted_result)
+# ============================================================================
+# PUBLIC API - Main Display Functions
+# ============================================================================
 
 
 def show_eqn(
@@ -424,7 +48,7 @@ def show_eqn(
     debug: bool | None = None,
     env_arg: str | None = None,
     **kwargs: Any,
-) -> Markdown:
+) -> Latex:
     r"""Display mathematical equations as formatted LaTeX amsmath block.
 
     Converts Python dictionaries containing symbolic expressions into rendered LaTeX
@@ -469,7 +93,7 @@ def show_eqn(
             - Other sympy.latex() parameters (e.g., mul_symbol, fold_frac_powers)
 
     Returns:
-        IPython.display.Markdown object containing rendered LaTeX equations
+        IPython.display.Latex object containing rendered LaTeX equations
 
     Examples:
         ```{python}
@@ -774,7 +398,7 @@ def show_eqn(
     body = join_token.join(body_lines.values())
 
     # clean the body
-    body = replace_all(
+    body = _replace_all(
         body,
         language=kwargs.get("language"),
         substitutions=kwargs.get("substitutions"),
@@ -785,7 +409,214 @@ def show_eqn(
     if debug:
         print(template)
 
-    return Markdown(template)
+    return Latex(template)
+
+
+def check(
+    lhs: int | float,
+    rhs: int | float,
+    test: type = Le,
+    template: TemplateChoice | None = None,
+    success_template: str | None = None,
+    failure_template: str | None = None,
+    **kwargs: Any,
+) -> Latex:
+    r"""Engineering verification function with localized pass/fail indicators.
+
+    Compares two expressions (already evaluated to numeric values) using a test function and displays a formatted
+    message based on the pass/fail status. Return message can be templated as Latex object. The most common case is to be passed to a show_eqn function as secondary dict (the object will be formatted according to `cell_formatter` specification).
+
+    NOTE: if the test cannot evaluate to either True or False, an error will be raised. Common cause for this is that one of the arguments passed are not in the numeric form, but still in symbolic form.
+
+    Args:
+        lhs: evaluated left-hand side expression (e.g., calculated stress or utilization ratio).
+        rhs: evaluated right-hand side expression (e.g., allowable limit or capacity).
+        test: Comparison function from SymPy's relational module. Options:
+            - Le: LessThan (default, less than or equal)
+            - Ge: GreaterThan (greater than or equal)
+            - Lt: StrictLessThan (strictly less than)
+            - Gt: StrictGreaterThan (strictly greater than)
+            - Eq: Equality
+            - Ne: Unequality
+            Defaults to Le (less than or equal to).
+        template: Named template set for formatting. Options: "default", "boxed", "minimal".
+            Controls visual presentation of verification result.
+        success_template: Custom template string for passing checks. Available variables:
+            {symbol}, {rhs}, {verified_text}, {color}, {test_result}, {result_text}.
+        failure_template: Custom template string for failing checks. Same variables as success_template.
+        **kwargs: Additional keyword arguments:
+            - language (str): Document-level language override (e.g., 'it', 'de', 'fr')
+            - substitutions (dict): Custom translation dictionary for "VERIFIED"/"NOT_VERIFIED"
+
+    Returns:
+        IPython.display.Latex object that depends on conditions (true or false).
+
+    Examples:
+        ```{python}
+        from keecas import symbols, u, pc, check
+        from sympy import Le, Ge
+
+        # Basic utilization check (calculated <= allowable)
+        sigma_Sd, sigma_Rd = symbols(r"\sigma_{Sd}, \sigma_{Rd}")
+        _p = {sigma_Sd: 150*u.MPa, sigma_Rd: 200*u.MPa}
+
+        utilization = sigma_Sd / sigma_Rd | pc.subs(_p) | pc.N
+        check(utilization, 1.0, test=Le)  # Check if <= 1.0 (passes)
+        ```
+
+        ```{python}
+        from keecas import show_eqn
+
+        # Capacity check (demand <= capacity)
+        N_Ed, N_Rd = symbols(r"N_{Ed}, N_{Rd}")
+        _p = {N_Ed: 850*u.kN, N_Rd: 1200*u.kN}
+
+        _e = {
+            k: k | pc.subs(_p) | pc.N for k in [N_Ed/N_Rd]
+        }
+
+        _c = {
+            k: check(v, 1.0) for k, v in _e.items()
+        }
+
+        # use along show_eqn
+        show_eqn([_p | _e, _c])
+        ```
+
+        ```{python}
+        # Multiple checks with different tests
+        tau_Sd, tau_Rd = symbols(r"\tau_{Sd}, \tau_{Rd}")
+        _v = {tau_Sd: 45*u.MPa, tau_Rd: 50*u.MPa}
+
+        # Check shear stress is less than limit
+        check(
+            tau_Sd | pc.subs(_v) | pc.N,
+            tau_Rd | pc.subs(_v) | pc.N,
+            test=Le
+        )
+        ```
+
+        ```{python}
+        # Check capacity is greater than demand (reverse comparison)
+        check(
+            tau_Rd | pc.subs(_v) | pc.N,
+            tau_Sd | pc.subs(_v) | pc.N,
+            test=Ge
+        )
+        ```
+
+        ```{python}
+        # Localized verification (Italian)
+        from keecas import config
+        config.language = 'it'
+
+        utilization = 0.75
+        check(utilization, 1.0, test=Le)  # Shows "VERIFICATO" in Italian
+        ```
+
+        ```{python}
+        # Custom templates for different visual styles
+        from IPython.display import display
+
+        # tip: use display() to show output for mid-cell statements
+        display(check(0.85, 1.0, template="boxed") )   # Boxed result
+        display(check(0.85, 1.0, template="minimal") ) # Minimal formatting
+        check(0.85, 1.0, template="default")  # Standard formatting
+        ```
+
+    See Also:
+        - `~~display.show_eqn`: Display mathematical equations
+        - `~~config.manager.ConfigManager`: Global configuration for language and formatting
+        - `~~localization.translate`: Low-level translation function
+
+    Notes:
+        - Returns green indicator for passing checks, red for failing (default template)
+        - Verification text ("VERIFIED"/"NOT_VERIFIED") automatically localized per config.language
+        - Supports 10 languages: de, es, fr, it, pt, da, nl, no, sv, en
+        - Template variables allow full customization of output format
+        - Commonly used with utilization ratios: check(calculated/allowable, 1.0)
+        - Test functions from SymPy: Le, Ge, Lt, Gt, Eq, Ne
+    """
+    # Determine comparison symbols based on test type
+    match test.__name__:
+        case "LessThan":
+            symbol_if_true = r"\le"
+            symbol_if_false = r">"
+        case "StrictLessThan":
+            symbol_if_true = r"<"
+            symbol_if_false = r"\ge"
+        case "GreaterThan":
+            symbol_if_true = r"\ge"
+            symbol_if_false = r"<"
+        case "StrictGreaterThan":
+            symbol_if_true = r">"
+            symbol_if_false = r"\le"
+        case "Equality":
+            symbol_if_true = r"="
+            symbol_if_false = r"\neq"
+        case "Unequality":
+            symbol_if_true = r"\neq"
+            symbol_if_false = r"="
+
+    # Extract template parameters (explicit args take precedence over kwargs for backward compatibility)
+    template_name = template or kwargs.get("template")
+    success_template_param = success_template or kwargs.get("success_template")
+    failure_template_param = failure_template or kwargs.get("failure_template")
+    language = kwargs.get("language")
+    substitutions = kwargs.get("substitutions")
+
+    # Get templates
+    templates = _get_check_templates(
+        template_name,
+        success_template_param,
+        failure_template_param,
+    )
+
+    # Get localized verification text
+    verified_text = translate(
+        "VERIFIED",
+        language=language,
+        substitutions=substitutions,
+    )
+    not_verified_text = translate(
+        "NOT_VERIFIED",
+        language=language,
+        substitutions=substitutions,
+    )
+
+    # Perform the test
+    test_result = test(lhs, rhs)
+
+    # Select template and symbol based on result
+    if test_result:
+        template_str = templates["success"]
+        symbol = symbol_if_true
+        color = "green"
+        result_text = verified_text
+    else:
+        template_str = templates["failure"]
+        symbol = symbol_if_false
+        color = "red"
+        result_text = not_verified_text
+
+    # Format template with variables
+    formatted_result = _format_check_template(
+        template_str,
+        symbol=symbol,
+        rhs=latex(rhs),
+        verified_text=verified_text,
+        not_verified_text=not_verified_text,
+        color=color,
+        test_result=test_result,
+        result_text=result_text,
+    )
+
+    return Latex(formatted_result)
+
+
+# ============================================================================
+# PUBLIC API - Utility Functions
+# ============================================================================
 
 
 def format_decimal_numbers(
@@ -903,89 +734,6 @@ def format_decimal_numbers(
     return re.sub(r"-?\d+\.\d+", _format_match, text)
 
 
-import regex  # noqa: E402
-
-
-def _get_base_replacements() -> dict[str, str | callable]:
-    """Get non-localizable replacements that are always applied."""
-    return {
-        r"\\frac": r"\\dfrac",  # first replace all frac with dfrac
-        r"\^\{((?:[^{}]|(?:\{(?1)\}))*)}": lambda m: regex.sub(
-            "dfrac",
-            "frac",
-            m.group(0),
-        ),  # then replace all dfrac inside ^{} with frac (small exponent)
-        r"\b1 \\cdot": r"",
-        r"\\\\": rf"\\\\[{config.latex.vertical_skip}]",
-        r"\\,": r"{\,}",
-    }
-
-
-def _get_localized_replacements(
-    language: str | None = None,
-    substitutions: dict[str, str] | None = None,
-) -> dict[str, str]:
-    """Get localized replacements based on current language settings."""
-    return {
-        r"\bfor\b": translate("for", language=language, substitutions=substitutions),
-        r"\botherwise\b": translate(
-            "otherwise",
-            language=language,
-            substitutions=substitutions,
-        ),
-        # Domain/Range labels from SymPy LaTeX output (match \text{...} patterns)
-        r"\\text\{Domain: \}": f"\\text{{{translate('Domain: ', language=language, substitutions=substitutions)}}}",
-        r"\\text\{Domain on \}": f"\\text{{{translate('Domain on ', language=language, substitutions=substitutions)}}}",
-        r"\\text\{Range\}": f"\\text{{{translate('Range', language=language, substitutions=substitutions)}}}",
-    }
-
-
-def get_replacement_dict(
-    language: str | None = None,
-    substitutions: dict[str, str] | None = None,
-) -> dict[str, str | callable]:
-    """
-    Get complete replacement dictionary combining base and localized replacements.
-
-    Args:
-        language: Document-level language override (if None, uses global language settings)
-        substitutions: Direct substitution dictionary
-
-    Returns:
-        Complete replacement dictionary for regex processing
-    """
-    replacements = _get_base_replacements()
-    replacements.update(_get_localized_replacements(language, substitutions))
-    return replacements
-
-
-# %% replace all the key, value pair
-def replace_all(
-    body: str,
-    reps: dict[str, str | callable] | None = None,
-    language: str | None = None,
-    substitutions: dict[str, str] | None = None,
-) -> str:
-    """
-    Replace patterns in body text using localization-aware replacements.
-
-    Args:
-        body: Text to process
-        reps: Custom replacement dictionary (overrides default)
-        language: Document-level language override (if None, uses global language settings)
-        substitutions: Direct substitution dictionary
-
-    Returns:
-        Processed text with replacements applied
-    """
-    if reps is None:
-        reps = get_replacement_dict(language=language, substitutions=substitutions)
-
-    for pattern, repl in reps.items():
-        body = regex.sub(pattern, repl, body)
-    return body
-
-
 def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> str:
     """Generate inline LaTeX equation from a variable and its value in a mapping.
 
@@ -1030,9 +778,98 @@ def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> s
     kwargs["mode"] = "plain"
 
     def _latex(x):
-        return replace_all(latex(x, **kwargs))
+        return _replace_all(latex(x, **kwargs))
 
     return f"{wrap[0]}{_latex(var)} = {_latex(mapping[var])}{wrap[1]}"
+
+
+# ============================================================================
+# PRIVATE HELPERS - Text Replacement and Localization
+# ============================================================================
+
+
+def _replace_all(
+    body: str,
+    reps: dict[str, str | callable] | None = None,
+    language: str | None = None,
+    substitutions: dict[str, str] | None = None,
+) -> str:
+    """
+    Replace patterns in body text using localization-aware replacements.
+
+    Args:
+        body: Text to process
+        reps: Custom replacement dictionary (overrides default)
+        language: Document-level language override (if None, uses global language settings)
+        substitutions: Direct substitution dictionary
+
+    Returns:
+        Processed text with replacements applied
+    """
+    if reps is None:
+        reps = _get_replacement_dict(language=language, substitutions=substitutions)
+
+    for pattern, repl in reps.items():
+        body = regex.sub(pattern, repl, body)
+    return body
+
+
+def _get_replacement_dict(
+    language: str | None = None,
+    substitutions: dict[str, str] | None = None,
+) -> dict[str, str | callable]:
+    """
+    Get complete replacement dictionary combining base and localized replacements.
+
+    Args:
+        language: Document-level language override (if None, uses global language settings)
+        substitutions: Direct substitution dictionary
+
+    Returns:
+        Complete replacement dictionary for regex processing
+    """
+    replacements = _get_base_replacements()
+    replacements.update(_get_localized_replacements(language, substitutions))
+    return replacements
+
+
+def _get_localized_replacements(
+    language: str | None = None,
+    substitutions: dict[str, str] | None = None,
+) -> dict[str, str]:
+    """Get localized replacements based on current language settings."""
+    return {
+        r"\bfor\b": translate("for", language=language, substitutions=substitutions),
+        r"\botherwise\b": translate(
+            "otherwise",
+            language=language,
+            substitutions=substitutions,
+        ),
+        # Domain/Range labels from SymPy LaTeX output (match \text{...} patterns)
+        r"\\text\{Domain: \}": f"\\text{{{translate('Domain: ', language=language, substitutions=substitutions)}}}",
+        r"\\text\{Domain on \}": f"\\text{{{translate('Domain on ', language=language, substitutions=substitutions)}}}",
+        r"\\text\{Range\}": f"\\text{{{translate('Range', language=language, substitutions=substitutions)}}}",
+    }
+
+
+def _get_base_replacements() -> dict[str, str | callable]:
+    """Get non-localizable replacements that are always applied."""
+    return {
+        r"\\frac": r"\\dfrac",  # first replace all frac with dfrac
+        r"\^\{((?:[^{}]|(?:\{(?1)\}))*)}": lambda m: regex.sub(
+            "dfrac",
+            "frac",
+            m.group(0),
+        ),  # then replace all dfrac inside ^{} with frac (small exponent)
+        r"\b1 \\cdot": r"",
+        r"\\\\": rf"\\\\[{config.latex.vertical_skip}]",
+        r"\\,": r"{\,}",
+    }
+
+
+# ============================================================================
+# PRIVATE HELPERS - Formatting and Template Generation
+# ============================================================================
 
 
 def _col_wrap(
@@ -1054,3 +891,177 @@ def _col_wrap(
                 return col_wraps
 
     return ("", "")
+
+
+def _attach_label(
+    label: str | dict[str, str] | Callable[[list[Any]], str] | None,
+    key: str | None = None,
+    label_command: str | None = None,
+    values: list[Any] | None = None,
+) -> str:
+    r"""Attach a label to a given key.
+
+    Args:
+        label: The label or label dictionary. Can be:
+            - str: Single label string (pre-formatted)
+            - dict: Dictionary mapping keys to label strings or callables
+            - Callable: Function to generate label (receives single list: [key] + values)
+        key: The key to attach the label to, or None for single labels
+        label_command: LaTeX label command (e.g., r"\label")
+        values: List of values for this row (used with callable labels)
+
+    Returns:
+        LaTeX label command string, or empty string if no label or KaTeX mode
+
+    Notes:
+        - Labels should be pre-formatted using generate_label() before passing to show_eqn
+        - If config.display.print_label is True, the key and label are printed for debugging
+        - Labels are omitted in KaTeX mode for Jupyter notebook compatibility
+        - Callable labels receive a single list argument: [key] + values
+    """
+    if not label_command:
+        label_command = config.latex.default_label_command
+
+    # Handle callable label (single callable for all keys)
+    if callable(label) and key is not None:
+        text_label = label([key] + values)
+        if config.display.print_label:
+            print(f"{key}: {text_label}") if text_label else None
+
+        return (
+            rf" {label_command}{{{text_label}}} " if text_label and not config.display.katex else ""
+        )
+
+    if isinstance(label, dict):
+        label_value = label.get(key)
+
+        # Handle callable value in dict
+        if callable(label_value):
+            text_label = label_value([key] + values)
+        elif label_value:
+            text_label = label_value
+        else:
+            text_label = ""
+
+        if config.display.print_label:
+            print(f"{key}: {text_label}") if text_label else None
+
+        return (
+            rf" {label_command}{{{text_label}}} " if text_label and not config.display.katex else ""
+        )
+
+    if isinstance(label, str) and not key:
+        text_label = label
+
+        if config.display.print_label:
+            print(f"label: {text_label}" if text_label else None)
+
+        return rf" {label_command}{{{text_label}}} " if not config.display.katex else ""
+
+    return ""
+
+
+def _generate_environment_template(
+    environment: str,
+    env_config,
+    label: str | dict[str, str] | None,
+    first_key: str | None = None,
+    label_command: str | None = None,
+    env_arg: str | None = None,
+) -> str:
+    """Generate complete LaTeX template with ___body___ placeholder.
+
+    Args:
+        environment: Environment name (may include '*' for starred variant)
+        env_config: EnvironmentDefinition object
+        label: Label string or label dictionary
+        first_key: First key for single-label environments
+        label_command: LaTeX label command
+        env_arg: Optional argument string for environment (e.g., "{2}" for alignat{2}).
+                 User provides complete argument including braces.
+
+    Returns:
+        LaTeX template string with ___body___ placeholder
+    """
+    outer_env = env_config.outer_environment
+    inner_env = env_config.inner_environment
+
+    # Handle starred environments
+    if "*" in environment:
+        outer_env += "*"
+
+    # Use env_arg directly (already includes braces) or empty string
+    arg_str = env_arg if env_arg else ""
+
+    if inner_env is None:
+        # Standard environment: \begin{env}{arg}___body___\end{env}
+        outer_prefix = env_config.outer_prefix
+        outer_suffix = env_config.outer_suffix
+
+        # Single label environments attach label to begin statement
+        label_str = (
+            _attach_label(label, first_key, label_command)
+            if not env_config.supports_multiple_labels
+            else ""
+        )
+
+        template = (
+            rf"{outer_prefix}\begin{{{outer_env}}}{arg_str}{label_str}"
+            + "\n___body___\n"
+            + rf"\end{{{outer_env}}}{outer_suffix}"
+        )
+    else:
+        # Nested environment: \begin{outer}\n\t\prefix\begin{inner}{arg}___body___\end{inner}\suffix\n\end{outer}
+        # Argument goes on inner environment by default
+        inner_prefix = env_config.inner_prefix
+        inner_suffix = env_config.inner_suffix
+        outer_prefix = env_config.outer_prefix
+        outer_suffix = env_config.outer_suffix
+
+        # Label goes on outer environment for nested structures
+        label_str = _attach_label(label, None, label_command)
+
+        template = rf"""{outer_prefix}\begin{{{outer_env}}}{label_str}
+	{inner_prefix}\begin{{{inner_env}}}{arg_str}
+___body___
+	\end{{{inner_env}}}{inner_suffix}
+\end{{{outer_env}}}{outer_suffix}"""
+
+    return template
+
+
+def _get_check_templates(
+    template_name: str | None = None,
+    success_override: str | None = None,
+    failure_override: str | None = None,
+) -> dict[str, str]:
+    """Get check templates from config or overrides."""
+    # Use overrides if provided
+    if success_override and failure_override:
+        return {"success": success_override, "failure": failure_override}
+
+    # Use named template set if specified
+    if template_name and template_name in config.check_templates.template_sets:
+        template_set = config.check_templates.template_sets[template_name]
+        return {"success": template_set["success"], "failure": template_set["failure"]}
+
+    # Fall back to default config templates
+    return {
+        "success": config.check_templates.success_template,
+        "failure": config.check_templates.failure_template,
+    }
+
+
+def _format_check_template(template: str, **variables: Any) -> str:
+    """Format template string with variable substitution."""
+    try:
+        return template.format(**variables)
+    except KeyError as e:
+        # If template is missing required variables, fall back to default
+        warn(f"Template missing variable {e}, using default template")
+        default_template = (
+            config.check_templates.success_template
+            if variables.get("test_result")
+            else config.check_templates.failure_template
+        )
+        return default_template.format(**variables)

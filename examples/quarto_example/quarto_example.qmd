@@ -31,7 +31,7 @@ This example demonstrates all the key features of `keecas` for symbolic and unit
 # from keecas import *
 
 # or explicit import (this is about all you need)
-from keecas import symbols, u, pc, show_eqn, config, check
+from keecas import check, config, pc, show_eqn, symbols, u
 ```
 
 ```{python}
@@ -140,7 +140,6 @@ show_eqn([_p | _e, _v])
 
 ```{python}
 #| execution: {iopub.execute_input: '2025-10-03T07:51:40.022370Z', iopub.status.busy: '2025-10-03T07:51:40.022195Z', iopub.status.idle: '2025-10-03T07:51:40.025950Z', shell.execute_reply: '2025-10-03T07:51:40.025685Z'}
-from sympy import S
 
 # Material properties
 E_steel, E_concrete = symbols("E_{steel}, E_{concrete}")
@@ -150,7 +149,6 @@ _p = {
     E_concrete: 30 * u.GPa,
 }
 
-from IPython.display import Markdown
 
 _d = {E_steel: "steel elastic modulus", E_concrete: "concrete elastic modulus"}
 
@@ -203,7 +201,7 @@ Using the `check` function for design checks:
 #| execution: {iopub.execute_input: '2025-10-03T07:51:40.038659Z', iopub.status.busy: '2025-10-03T07:51:40.038548Z', iopub.status.idle: '2025-10-03T07:51:40.046279Z', shell.execute_reply: '2025-10-03T07:51:40.046017Z'}
 # Design checks
 sigma_Sd, tau_Sd, sigma_Rd, tau_Rd = symbols(
-    r"\sigma_{Sd}, \tau_{Sd}, \sigma_{Rd}, \tau_{Rd}"
+    r"\sigma_{Sd}, \tau_{Sd}, \sigma_{Rd}, \tau_{Rd}",
 )
 
 _p = {
@@ -237,7 +235,7 @@ The type of comparison in the `check` function can be specified, as well the val
 #| execution: {iopub.execute_input: '2025-10-03T07:51:40.047280Z', iopub.status.busy: '2025-10-03T07:51:40.047133Z', iopub.status.idle: '2025-10-03T07:51:40.050781Z', shell.execute_reply: '2025-10-03T07:51:40.050531Z'}
 a, b, c, d, f = symbols("a, b, c, d, f")
 
-from sympy import Le, Lt, Ge, Gt, Eq
+from sympy import Eq, Ge, Gt, Le, Lt
 
 _expr = {
     a: (3, Le, 1),
@@ -266,7 +264,7 @@ Using `pc.subs` will automatically order the substitutions pairs topologically, 
 any_order_params = {
     x: y**2,
     y: a+1,
-    a: 3
+    a: 3,
 }
 
 
@@ -287,7 +285,7 @@ _d = {
 }
 
 show_eqn(
-    [_v, _d], 
+    [_v, _d],
     environment="cases",
 )
 ```
@@ -305,7 +303,7 @@ _d = {
 }
 
 show_eqn(
-    [_v, _d], 
+    [_v, _d],
     environment="cases",
 )
 ```
@@ -378,12 +376,12 @@ custom_failure = r"❌ ${symbol}{rhs}$ \textbf{{FAIL}}"
 ratio_ok = 0.8  # Should pass
 ratio_fail = 1.2  # Should fail
 
-check_ok = check(ratio_ok, 1.0, 
+check_ok = check(ratio_ok, 1.0,
                 success_template=custom_success,
                 failure_template=custom_failure)
 
 check_fail = check(ratio_fail, 1.0,
-                  success_template=custom_success, 
+                  success_template=custom_success,
                   failure_template=custom_failure)
 
 custom_demo = {
@@ -428,7 +426,7 @@ a, b, c = symbols(r"a b c")
 _p = {
     a: 5 * u.m,
     b: 12 * u.m,
-    c: a+b
+    c: a+b,
 }
 
 import base64
@@ -455,7 +453,7 @@ show_eqn(
         'outer_suffix': '\n```',
         'label_position': 'outer',
     },
-    debug=True
+    debug=True,
 )
 
 ```

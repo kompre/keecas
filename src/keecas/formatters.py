@@ -219,7 +219,7 @@ def format_float(value: float, col_index: int = 0, **kwargs) -> str:
 
 # Optional dependency: IPython Markdown
 try:
-    from IPython.display import Markdown
+    from IPython.display import Latex, Markdown
 
     @format_value.register(Markdown)
     def format_markdown(value: Markdown, col_index: int = 0, **kwargs) -> str:
@@ -229,6 +229,29 @@ try:
         ----------
         value : Markdown
             Markdown object to format
+        col_index : int, optional
+            Column index (0 = LHS, 1+ = RHS)
+        **kwargs
+            Ignored
+
+        Returns
+        -------
+        str
+            LaTeX string with \\text{} wrapper
+        """
+        if col_index == 0:
+            return rf"\text{{{value.data}}}"
+        else:
+            return rf"\quad\text{{{value.data}}}"
+
+    @format_value.register(Latex)
+    def format_latex(value: Latex, col_index: int = 0, **kwargs) -> str:
+        """Format IPython Latex objects to LaTeX text.
+
+        Parameters
+        ----------
+        value : Latex
+            Latex object to format
         col_index : int, optional
             Column index (0 = LHS, 1+ = RHS)
         **kwargs

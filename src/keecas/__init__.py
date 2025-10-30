@@ -33,6 +33,11 @@ from .utils import dict_to_eq, eq_to_dict
 
 # Import optional formatters if available (for type registration)
 try:
+    from .formatters import format_latex  # noqa: F401
+except ImportError:
+    pass
+
+try:
     from .formatters import format_markdown  # noqa: F401
 except ImportError:
     pass

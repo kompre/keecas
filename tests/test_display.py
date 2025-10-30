@@ -1,13 +1,13 @@
 import pytest
-from IPython.display import Markdown
+from IPython.display import Latex
 from sympy import Eq, GreaterThan, Le, StrictLessThan, symbols
 
 from keecas import pipe_command as pc
 from keecas.display import (
+    _replace_all,
     check,
     format_decimal_numbers,
     latex_inline_dict,
-    replace_all,
     show_eqn,
 )
 from keecas.formatters import validate_latex_kwargs
@@ -59,17 +59,17 @@ def test_check():
     x = 1
     y = 2
     result = check(x, y, test=Le)
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert r"\textcolor{green}" in result.data
 
     # Test for GreaterThan
     result = check(x, y, test=GreaterThan)
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert r"\textcolor{red}" in result.data
 
     # Test for StrictLessThan
     result = check(x, y, test=StrictLessThan)
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert r"\textcolor{green}" in result.data
 
 
@@ -193,7 +193,7 @@ def test_eq_to_dict():
 
 def test_replace_all():
     body = r"\frac{1}{2}"
-    result = replace_all(body)
+    result = _replace_all(body)
     assert result == r"\dfrac{1}{2}"
 
 
@@ -206,7 +206,7 @@ def test_latex_inline_dict():
 def test_show_eqn():
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, debug=True)
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     # New formatter adds "= " prefix for RHS values
     assert r"x & == 1" in result.data or r"x & = 1" in result.data
     assert r"y & == 2" in result.data or r"y & = 2" in result.data
@@ -241,7 +241,7 @@ def test_label():
 def test_check_template_default():
     """Test default template behavior."""
     result = check(0.5, 1.0, test=Le)
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert r"\textcolor{green}" in result.data
     assert r"\left[" in result.data
     assert r"\le" in result.data
@@ -250,7 +250,7 @@ def test_check_template_default():
 def test_check_template_boxed():
     """Test named template set (boxed)."""
     result = check(0.5, 1.0, test=Le, template="boxed")
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert r"\colorbox{green}" in result.data
     assert r"\checkmark" in result.data
 
@@ -258,7 +258,7 @@ def test_check_template_boxed():
 def test_check_template_minimal():
     """Test named template set (minimal)."""
     result = check(0.5, 1.0, test=Le, template="minimal")
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert r"\checkmark" in result.data
     # Should not contain the full bracket structure
     assert r"\left[" not in result.data
@@ -277,7 +277,7 @@ def test_check_template_custom():
         success_template=custom_success,
         failure_template=custom_failure,
     )
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert "✅" in result.data
     assert "OK" in result.data
 
@@ -289,7 +289,7 @@ def test_check_template_custom():
         success_template=custom_success,
         failure_template=custom_failure,
     )
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert "❌" in result.data
     assert "FAIL" in result.data
 
@@ -315,7 +315,7 @@ def test_check_template_invalid():
     """Test handling of invalid template names."""
     # Invalid template name should fall back to default
     result = check(0.5, 1.0, test=Le, template="nonexistent")
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     # Should use default template
     assert r"\textcolor{green}" in result.data
     assert r"\left[" in result.data
@@ -353,7 +353,7 @@ def test_check_explicit_parameters():
     """Test new explicit parameters work correctly."""
     # Test explicit template parameter
     result = check(0.5, 1.0, template="minimal")
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert r"\textcolor{green}{\checkmark}" in result.data
 
     # Test explicit success/failure template parameters
@@ -420,7 +420,7 @@ def test_environment_align():
     """Test standard align environment."""
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, environment="align", debug=True)
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert r"\begin{align}" in result.data
     assert r"\end{align}" in result.data
     assert "&" in result.data  # separator
@@ -431,7 +431,7 @@ def test_environment_align_starred():
     """Test starred align* environment."""
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, environment="align*", debug=True)
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert r"\begin{align*}" in result.data
     assert r"\end{align*}" in result.data
 
@@ -440,7 +440,7 @@ def test_environment_equation():
     """Test equation environment (no separator, single label)."""
     eqns = {x: 1}
     result = show_eqn(eqns, environment="equation", debug=True)
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert r"\begin{equation}" in result.data
     assert r"\end{equation}" in result.data
     assert "&" not in result.data  # no separator
@@ -451,7 +451,7 @@ def test_environment_gather():
     """Test gather environment (no separator, multiple labels)."""
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, environment="gather", debug=True)
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert r"\begin{gather}" in result.data
     assert r"\end{gather}" in result.data
     assert "&" not in result.data  # no separator
@@ -461,7 +461,7 @@ def test_environment_cases():
     """Test nested cases environment."""
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, environment="cases", label="test-label", debug=True)
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert r"\begin{align}" in result.data
     assert r"\end{align}" in result.data
     assert r"\begin{aligned}" in result.data
@@ -474,7 +474,7 @@ def test_environment_cases_starred():
     """Test nested cases* environment (starred outer)."""
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, environment="cases*", debug=True)
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert r"\begin{align*}" in result.data
     assert r"\end{align*}" in result.data
     assert r"\begin{aligned}" in result.data
@@ -485,7 +485,7 @@ def test_environment_split():
     """Test nested split environment."""
     eqns = {x: 1, y: 2}
     result = show_eqn(eqns, environment="split", label="test-label", debug=True)
-    assert isinstance(result, Markdown)
+    assert isinstance(result, Latex)
     assert r"\begin{align}" in result.data
     assert r"\begin{aligned}" in result.data
 
