@@ -22,14 +22,14 @@ Docstrings should teach users how to use the API effectively through clear expla
 
 **Example - Wrong:**
 ```python
-def check(lhs: Basic, rhs: Basic, test=Le) -> Markdown:
+def check(lhs: Basic, rhs: Basic, test=Le) -> Latex:
     """..."""
 ```
 *Problem*: Suggests function accepts symbolic SymPy objects, but it actually requires expressions that evaluate to boolean.
 
 **Example - Right:**
 ```python
-def check(lhs: Any, rhs: Any, test: type = Le) -> Markdown:
+def check(lhs: Any, rhs: Any, test: type = Le) -> Latex:
     r"""Engineering verification function with localized pass/fail indicators.
 
     Compares two values using a test function that must evaluate to `True` or `False`.
@@ -85,7 +85,7 @@ Args:
 
 **Example:**
 ```python
-def show_eqn(...) -> Markdown:
+def show_eqn(...) -> Latex:
     r"""Display mathematical equations as formatted LaTeX amsmath block.
 
     Examples:
@@ -113,7 +113,7 @@ def show_eqn(...) -> Markdown:
 
 **Example - Wrong:**
 ```python
-def check(...) -> Markdown:
+def check(...) -> Latex:
     """Compares two expressions using a test function and displays a formatted
     verification result with color-coded pass/fail indicators.
     """
@@ -122,7 +122,7 @@ def check(...) -> Markdown:
 
 **Example - Right:**
 ```python
-def check(...) -> Markdown:
+def check(...) -> Latex:
     r"""Engineering verification function with localized pass/fail indicators.
 
     Compares two values using a test function that must evaluate to `True` or `False`

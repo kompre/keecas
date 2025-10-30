@@ -554,7 +554,7 @@ def test_show_eqn_language_replacements():
 
 def test_word_boundary_protection():
     """Test that partial string matches are prevented by word boundaries."""
-    from keecas.display import replace_all
+    from keecas.display import _replace_all
 
     # Test cases that should NOT be replaced (partial matches)
     protected_cases = [
@@ -581,7 +581,7 @@ def test_word_boundary_protection():
     # Test protected cases (should NOT change)
     for text, lang_code in protected_cases:
         set_language(lang_code)
-        result = replace_all(text)
+        result = _replace_all(text)
         assert result == text, (
             f"Word boundary protection failed for '{text}' in {lang_code}: got '{result}'"
         )
@@ -589,7 +589,7 @@ def test_word_boundary_protection():
     # Test replacement cases (should change)
     for original, lang_code, expected in replacement_cases:
         set_language(lang_code)
-        result = replace_all(original)
+        result = _replace_all(original)
         assert result == expected, (
             f"Word replacement failed for '{original}' in {lang_code}: expected '{expected}', got '{result}'"
         )

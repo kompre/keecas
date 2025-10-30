@@ -11,7 +11,7 @@ from typing import Any
 import flatten_dict as fd
 from IPython.display import Markdown, display
 from ruamel.yaml import YAML
-from sympy import Basic, symbols
+from sympy import Basic, Eq, symbols
 from sympy.core.function import FunctionClass
 
 yaml = YAML()
@@ -99,3 +99,63 @@ def insert_images(source_path: str | Path, dest_path: str | Path = ".", fig_opt:
                         f"![{image.stem}](<{image.relative_to(dest_path)}>){{{fig_opt}}}",
                     ),
                 )
+
+
+def dict_to_eq(result: dict[Basic, Any]) -> Eq | list[Eq]:
+    """Convert a dictionary to SymPy Eq object(s).
+
+    Converts a dictionary of symbol-value pairs to SymPy equality objects.
+    Returns a single Eq if the dictionary has one item, or a list of Eq
+    objects if multiple items.
+
+    Args:
+        result: Dictionary mapping SymPy symbols to values
+
+    Returns:
+        Single Eq object if one item, list of Eq objects if multiple items
+
+    Examples:
+        >>> from sympy import symbols
+        >>> x, y = symbols('x, y')
+        >>> dict_to_eq({x: 5})
+        Eq(x, 5)
+        >>> dict_to_eq({x: 5, y: 10})
+        [Eq(x, 5), Eq(y, 10)]
+
+    See Also:
+        - `~~utils.eq_to_dict`: Convert SymPy Eq objects to dictionary
+        - `~~display.show_eqn`: Display mathematical equations (uses dicts internally)
+    """
+    eq = [Eq(k, v) for k, v in result.items()]
+    return eq if len(eq) > 1 else eq[0]
+
+
+def eq_to_dict(result: Eq | list[Eq] | tuple[Eq, ...]) -> dict[Basic, Any]:
+    """Convert SymPy Eq object(s) to dictionary.
+
+    Converts SymPy equality objects to a dictionary mapping left-hand side
+    symbols to right-hand side values. Handles single Eq objects, lists,
+    or tuples of Eq objects.
+
+    Args:
+        result: Single Eq object, or list/tuple of Eq objects
+
+    Returns:
+        Dictionary mapping LHS symbols to RHS values
+
+    Examples:
+        >>> from sympy import symbols, Eq
+        >>> x, y = symbols('x, y')
+        >>> eq_to_dict(Eq(x, 5))
+        {x: 5}
+        >>> eq_to_dict([Eq(x, 5), Eq(y, 10)])
+        {x: 5, y: 10}
+
+    See Also:
+        - `~~utils.dict_to_eq`: Convert dictionary to SymPy Eq objects
+        - `~~display.show_eqn`: Display mathematical equations (uses dicts internally)
+    """
+    if hasattr(result, "__iter__"):
+        return {x.lhs: x.rhs for x in result}
+    else:
+        return {result.lhs: result.rhs}

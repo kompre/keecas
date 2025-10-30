@@ -31,7 +31,7 @@ This includes:
 
 ### Documentation
 For guidelines on writing API documentation with Google-style docstrings for quartodoc:
-- See **[docs/DOCSTRINGS.md](docs/DOCSTRINGS.md)** for comprehensive guidelines and templates
+- See **[_docs/DOCSTRINGS.md](_docs/DOCSTRINGS.md)** for comprehensive guidelines and templates
 - All API reference functions must follow these standards
 - Examples should be tutorial-quality and demonstrate idiomatic usage
 
@@ -209,12 +209,27 @@ gh pr create --base dev
    - **LaTeX Context**: Keys represent row labels in LaTeX amsmath align blocks, values are lists that populate columns across each row
    - **Terminology**: Use "sequence" instead of "column" when describing input data to avoid confusion with LaTeX output columns
 
-3. **Pipe Commands** (`src/keecas/pipe_command.py`)
+3. **Formatters Module** (`src/keecas/formatters.py`)
+   - **Singledispatch-based** formatter system for converting values to LaTeX strings
+   - **Main Entry Point**: `format_value(value, col_index, **kwargs)` - type-based dispatch to specialized formatters
+   - **Built-in Formatters**:
+     - `format_str`: Python strings -> `\text{...}`
+     - `format_int`: Integers with optional `= ` prefix for RHS
+     - `format_float`: Floats (precision handled by `format_decimal_numbers()` in display.py)
+     - `format_sympy`: SymPy expressions -> LaTeX via `sympy.latex()`
+     - `format_mul`: Mul expressions with numeric/unit separation transformation
+     - `format_pint`: Pint Quantity -> SymPy -> format_sympy (transformer)
+     - `format_markdown`: IPython Markdown objects -> `\text{...}`
+   - **Extensibility**: Users can register custom formatters with `@format_value.register(MyType)`
+   - **Transformers**: format_pint and format_mul transform values then call format_sympy directly
+   - **No Sentinel Classes**: Returns LaTeX strings directly (no EarlyExit wrapper)
+
+4. **Pipe Commands** (`src/keecas/pipe_command.py`)
    - Wraps common SymPy functions as `@Pipe` decorators for functional composition
    - Key functions: `subs`, `N`, `convert_to`, `doit`, `parse_expr`, `quantity_simplify`
    - Enables chain operations like `expr | pc.subs(vals) | pc.convert_to(units) | pc.N`
 
-4. **Pint-SymPy Bridge** (`src/keecas/pint_sympy.py`)
+5. **Pint-SymPy Bridge** (`src/keecas/pint_sympy.py`)
    - Integrates Pint unit registry with SymPy symbolic expressions
    - Provides `unitregistry as u` for unit definitions
    - `update_pint_locale()`: Function for manual locale control
@@ -222,18 +237,18 @@ gh pr create --base dev
    - **Language Integration**: 5 fully supported languages (de, es, fr, it, pt) with English fallback for others
    - **Conservative Behavior**: Intelligent locale switching that preserves system defaults
 
-5. **Configuration System** (`src/keecas/config.py`)
+6. **Configuration System** (`src/keecas/config.py`)
    - **Unified TOML Configuration**: `.keecas/config.toml` files for global and local settings
    - **Hierarchical Priority**: Local > Global > Defaults
    - **Dynamic Propagation**: Configuration changes automatically update Pint locale and localization
    - **CLI Integration**: Full command-line interface for configuration management
 
-6. **CLI Interface** (`src/keecas/cli.py`)
+7. **CLI Interface** (`src/keecas/cli.py`)
    - **Cross-platform Configuration Management**: Edit configs with terminal or system editors
    - **Version Display**: Built-in version information and help
    - **Consistent Interface**: All commands support explicit `--global` and `--local` flags
 
-7. **Localization System** (`src/keecas/localization/`)
+8. **Localization System** (`src/keecas/localization/`)
    - **Multi-language Support**: 10 languages with domain-specific translations
    - **SymPy Integration**: Localized mathematical terms (Domain, Range, verification terms)
    - **Automatic Sync**: Language changes propagate to Pint unit formatting
@@ -250,6 +265,7 @@ gh pr create --base dev
 The main `__init__.py` exposes:
 - `Dataframe` class
 - Display functions (`show_eqn`, `config`, `check`, `dict_to_eq`, `eq_to_dict`)
+- Formatters (`format_value`, `format_str`, `format_int`, `format_float`, `format_sympy`, `format_mul`, and optional `format_pint`, `format_markdown`)
 - Pipe commands as `pc` namespace
 - Unit registry as `u` and `update_pint_locale` function
 - Common SymPy symbols and functions (`symbols`, `latex`, `Eq`, `Le`, etc.)
@@ -513,7 +529,7 @@ sigma, tau, gamma = symbols("sigma, tau, gamma")
 - Use individual variables instead of dicts for related data
 - Mix cell-local and global patterns unnecessarily
 
-For complete details, see `docs/CONVENTIONS.md`.
+For complete details, see `_docs/CONVENTIONS.md`.
 
 ### Testing Strategy
 - Tests are located in `tests/` directory

@@ -10,8 +10,12 @@ from collections.abc import Hashable
 from functools import singledispatch
 from typing import Any
 
+from keecas.config.manager import get_config_manager
 
-def generate_id(obj: Any, length: int = 8) -> str:
+config = get_config_manager().options
+
+
+def _generate_id(obj: Any, length: int = 8) -> str:
     """
     Generate a stable, unique ID for any Python object.
 
@@ -100,6 +104,7 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
         arg: Label input. Can be:
             - str: Single label string
             - dict: Dictionary mapping keys to label strings
+            - list: Converted to string representation, then labeled
         unique_id: If True, generate a unique hash-based ID instead of using
             the provided label text. Defaults to False.
 
@@ -107,11 +112,10 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
         Formatted label(s) with prefix and suffix applied:
         - str input returns formatted str
         - dict input returns dict with formatted values
+        - list input returns formatted str (converted via str())
 
     Examples:
-        >>> from keecas import symbols
-        >>> from keecas.label import generate_label
-        >>> from keecas.config.manager import get_config_manager
+        >>> from keecas import symbols, generate_label
         >>>
         >>> # String label
         >>> generate_label("my-label")
@@ -123,14 +127,18 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
         >>> generate_label(labels)
         {F: 'eq-force', A: 'eq-area'}
         >>>
+        >>> # List label (converted to string)
+        >>> generate_label(["item1", "item2"])
+        "eq-['item1', 'item2']"
+        >>>
         >>> # Unique ID generation
         >>> label = generate_label("key", unique_id=True)
         >>> label.startswith("eq-")
         True
 
     See Also:
-        - generate_unique_label: Convenience function for unique ID generation
-        - show_eqn: Main display function that uses labels
+        - `~~label.generate_unique_label`: Convenience function for unique ID generation
+        - `~~display.show_eqn`: Main display function that uses labels
 
     Notes:
         - Labels are formatted with config.latex.eq_prefix and config.latex.eq_suffix
@@ -143,12 +151,9 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
 @generate_label.register(str)
 def _(arg: str, unique_id: bool = False) -> str:
     """Generate label from string input."""
-    from keecas.config.manager import get_config_manager
-
-    config = get_config_manager().options
 
     if unique_id:
-        label_text = generate_id(arg)
+        label_text = _generate_id(arg)
     else:
         label_text = arg
 
@@ -163,15 +168,12 @@ def _(arg: dict[Hashable, str], unique_id: bool = False) -> dict[Hashable, str]:
     - If value is a string, format it with prefix/suffix
     - If value is None or empty, return empty string
     """
-    from keecas.config.manager import get_config_manager
-
-    config = get_config_manager().options
 
     result = {}
     for key, value in arg.items():
         if value:
             if unique_id:
-                label_text = generate_id((key, value))
+                label_text = _generate_id((key, value))
             else:
                 label_text = value
             result[key] = f"{config.latex.eq_prefix}{label_text}{config.latex.eq_suffix}"
@@ -182,8 +184,8 @@ def _(arg: dict[Hashable, str], unique_id: bool = False) -> dict[Hashable, str]:
 
 
 @generate_label.register(list)
-def generate_label_from_list(arg: list, unique_id: bool = False):
-    """Generate label from list input."""
+def _(arg: list, unique_id: bool = False):
+    """Generate label from list input by converting to string representation."""
     return generate_label(str(arg), unique_id=unique_id)
 
 
@@ -201,8 +203,7 @@ def generate_unique_label(arg: str | dict[Hashable, Any]) -> str | dict[Hashable
         Formatted label(s) with unique hash-based identifiers
 
     Examples:
-        >>> from keecas import symbols
-        >>> from keecas.label import generate_unique_label
+        >>> from keecas import symbols, generate_unique_label
         >>>
         >>> # String label
         >>> label = generate_unique_label("my-key")
@@ -222,8 +223,8 @@ def generate_unique_label(arg: str | dict[Hashable, Any]) -> str | dict[Hashable
         'eq-...'
 
     See Also:
-        - generate_label: Main label generation function
-        - show_eqn: Display function that uses labels
+        - `~~label.generate_label`: Main label generation function
+        - `~~display.show_eqn`: Display function that uses labels
 
     Notes:
         - Generates deterministic hash-based IDs

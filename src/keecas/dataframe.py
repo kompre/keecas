@@ -65,8 +65,8 @@ class Dataframe(dict[Hashable, list[Any]]):
         ```
 
     See Also:
-        - show_eqn(): Main function that uses Dataframe for rendering
-        - create_dataframe(): Factory function for creating pre-sized Dataframes
+        - `~~display.show_eqn`: Main function that uses Dataframe for rendering
+        - `~~dataframe.create_dataframe`: Factory function for creating pre-sized Dataframes
 
     Notes:
         - Keys represent row labels in LaTeX output (LHS symbols)
@@ -498,8 +498,8 @@ def create_dataframe(
         ```
 
     See Also:
-        - Dataframe: Main class with initialization options
-        - show_eqn(): Function that uses Dataframe for rendering
+        - `~~dataframe.Dataframe`: Main class with initialization options
+        - `~~display.show_eqn`: Function that uses Dataframe for rendering
 
     Notes:
         - All rows guaranteed to have exactly 'width' columns
