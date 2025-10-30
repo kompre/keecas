@@ -266,7 +266,9 @@ class Dataframe(dict[Hashable, list[Any]]):
         self._width += 1
 
     def extend(
-        self, other: Dataframe | dict[Hashable, Any] | list[Any], strict: bool = True
+        self,
+        other: Dataframe | dict[Hashable, Any] | list[Any],
+        strict: bool = True,
     ) -> None:
         r"""Extend the Dataframe by adding multiple columns from another source.
 

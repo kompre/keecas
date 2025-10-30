@@ -187,7 +187,7 @@ def test_no_duplicate_values_within_language():
                     key,
                 ) not in allowed_duplicates:
                     pytest.fail(
-                        f"Language {modname} has duplicate translation '{value}' for keys '{key}' and '{existing_key}'"
+                        f"Language {modname} has duplicate translation '{value}' for keys '{key}' and '{existing_key}'",
                     )
             else:
                 value_to_keys[value] = key

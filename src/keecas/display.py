@@ -724,7 +724,7 @@ def show_eqn(
                 float_format[key],
                 cell_formatters[key],  # Add to zip_longest
                 fillvalue="",
-            )
+            ),
         ):
             # Apply formatter with column index and latex kwargs
             if v is not None:
