@@ -10,6 +10,8 @@ from collections.abc import Hashable
 from functools import singledispatch
 from typing import Any
 
+from keecas.config.manager import get_config_manager
+
 
 def generate_id(obj: Any, length: int = 8) -> str:
     """
@@ -109,9 +111,7 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
         - dict input returns dict with formatted values
 
     Examples:
-        >>> from keecas import symbols
-        >>> from keecas.label import generate_label
-        >>> from keecas.config.manager import get_config_manager
+        >>> from keecas import symbols, generate_label
         >>>
         >>> # String label
         >>> generate_label("my-label")
@@ -143,8 +143,6 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
 @generate_label.register(str)
 def _(arg: str, unique_id: bool = False) -> str:
     """Generate label from string input."""
-    from keecas.config.manager import get_config_manager
-
     config = get_config_manager().options
 
     if unique_id:
@@ -163,8 +161,6 @@ def _(arg: dict[Hashable, str], unique_id: bool = False) -> dict[Hashable, str]:
     - If value is a string, format it with prefix/suffix
     - If value is None or empty, return empty string
     """
-    from keecas.config.manager import get_config_manager
-
     config = get_config_manager().options
 
     result = {}
@@ -201,8 +197,7 @@ def generate_unique_label(arg: str | dict[Hashable, Any]) -> str | dict[Hashable
         Formatted label(s) with unique hash-based identifiers
 
     Examples:
-        >>> from keecas import symbols
-        >>> from keecas.label import generate_unique_label
+        >>> from keecas import symbols, generate_unique_label
         >>>
         >>> # String label
         >>> label = generate_unique_label("my-key")
