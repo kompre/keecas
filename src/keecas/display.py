@@ -26,9 +26,7 @@ from .dataframe import Dataframe, create_dataframe
 from .localization import translate
 
 # Use the unified configuration system
-_config_manager = get_config_manager()
-config = _config_manager.options
-
+config = get_config_manager().options
 
 from itertools import zip_longest  # noqa: E402
 
