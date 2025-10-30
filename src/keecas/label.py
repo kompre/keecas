@@ -137,8 +137,8 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
         True
 
     See Also:
-        - generate_unique_label: Convenience function for unique ID generation
-        - show_eqn: Main display function that uses labels
+        - `~~label.generate_unique_label`: Convenience function for unique ID generation
+        - `~~display.show_eqn`: Main display function that uses labels
 
     Notes:
         - Labels are formatted with config.latex.eq_prefix and config.latex.eq_suffix
