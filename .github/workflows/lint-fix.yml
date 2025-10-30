@@ -42,8 +42,8 @@ jobs:
 
       - name: Auto-fix linting issues
         run: |
-          uv run ruff check --fix .
-          uv run ruff format .
+          uv run ruff check --fix src/ tests/
+          uv run ruff format src/ tests/
 
       - name: Commit auto-fixes if any
         run: |
@@ -58,4 +58,4 @@ jobs:
           fi
 
       - name: Verify linting passes
-        run: uv run ruff check .
+        run: uv run ruff check src/ tests/

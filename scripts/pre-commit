@@ -13,22 +13,22 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}🔍 Checking for changes...${NC}"
 
-# Auto-fix linting issues with Ruff
+# Auto-fix linting issues with Ruff (src/ and tests/ only)
 echo -e "${YELLOW}🔧 Running Ruff auto-fix...${NC}"
-if ! uv run ruff check --fix . 2>/dev/null; then
+if ! uv run ruff check --fix src/ tests/ 2>/dev/null; then
     echo -e "${RED}❌ Ruff check failed${NC}"
     echo -e "${RED}   Fix the errors above or use: git commit --no-verify${NC}"
     exit 1
 fi
 
-if ! uv run ruff format . 2>/dev/null; then
+if ! uv run ruff format src/ tests/ 2>/dev/null; then
     echo -e "${RED}❌ Ruff format failed${NC}"
     echo -e "${RED}   Fix the errors above or use: git commit --no-verify${NC}"
     exit 1
 fi
 
 # Re-add any files that were auto-fixed
-git diff --name-only | xargs -r git add 2>/dev/null || true
+git diff --name-only | grep -E '^(src/|tests/)' | xargs -r git add 2>/dev/null || true
 
 echo -e "${GREEN}✅ Ruff auto-fix completed${NC}"
 
