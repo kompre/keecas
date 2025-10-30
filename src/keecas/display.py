@@ -790,15 +790,38 @@ def show_eqn(
 
 
 def wrap_floats(text: str, wrapper: tuple[str, str] = ("", "")) -> str:
+    """Wrap all decimal numbers in a text string with prefix and suffix.
+
+    Finds all decimal numbers (e.g., 3.14, -2.71) in the input text and wraps
+    them with the provided prefix and suffix strings. Useful for adding LaTeX
+    formatting around numbers.
+
+    Args:
+        text: Input text containing decimal numbers
+        wrapper: Tuple of (prefix, suffix) strings to wrap numbers with.
+            Default is ("", "") for no wrapping.
+
+    Returns:
+        Text with all decimal numbers wrapped
+
+    Examples:
+        >>> wrap_floats("The value is 3.14", wrapper=("(", ")"))
+        'The value is (3.14)'
+        >>> wrap_floats("x = 2.5 and y = -1.7", wrapper=("\\\\textbf{", "}"))
+        'x = \\\\textbf{2.5} and y = \\\\textbf{-1.7}'
+
+    See Also:
+        - `~~display.format_decimal_numbers`: Format decimal numbers with precision
+    """
     # Define a regular expression pattern to match decimal numbers
     float_pattern = re.compile(r"-?\d+\.\d+")
 
     # Define a function to use as replacement
-    def wrap_match(match):
+    def _wrap_match(match):
         return f"{wrapper[0]}{match.group(0)}{wrapper[1]}"
 
     # Use re.sub to replace all matches with the wrapped version
-    wrapped_text = float_pattern.sub(wrap_match, text)
+    wrapped_text = float_pattern.sub(_wrap_match, text)
 
     return wrapped_text
 
@@ -911,19 +934,67 @@ def format_decimal_numbers(
     except (ValueError, KeyError) as e:
         raise ValueError(f"Invalid float_format '{format_string}': {e}")
 
-    def format_match(match):
+    def _format_match(match):
         value = float(match.group())
         return normalized_format.format(value)
 
-    return re.sub(r"-?\d+\.\d+", format_match, text)
+    return re.sub(r"-?\d+\.\d+", _format_match, text)
 
 
 def dict_to_eq(result: dict[Basic, Any]) -> Eq | list[Eq]:
+    """Convert a dictionary to SymPy Eq object(s).
+
+    Converts a dictionary of symbol-value pairs to SymPy equality objects.
+    Returns a single Eq if the dictionary has one item, or a list of Eq
+    objects if multiple items.
+
+    Args:
+        result: Dictionary mapping SymPy symbols to values
+
+    Returns:
+        Single Eq object if one item, list of Eq objects if multiple items
+
+    Examples:
+        >>> from sympy import symbols
+        >>> x, y = symbols('x, y')
+        >>> dict_to_eq({x: 5})
+        Eq(x, 5)
+        >>> dict_to_eq({x: 5, y: 10})
+        [Eq(x, 5), Eq(y, 10)]
+
+    See Also:
+        - `~~display.eq_to_dict`: Convert SymPy Eq objects to dictionary
+        - `~~display.show_eqn`: Display mathematical equations (uses dicts internally)
+    """
     eq = [Eq(k, v) for k, v in result.items()]
     return eq if len(eq) > 1 else eq[0]
 
 
 def eq_to_dict(result: Eq | list[Eq] | tuple[Eq, ...]) -> dict[Basic, Any]:
+    """Convert SymPy Eq object(s) to dictionary.
+
+    Converts SymPy equality objects to a dictionary mapping left-hand side
+    symbols to right-hand side values. Handles single Eq objects, lists,
+    or tuples of Eq objects.
+
+    Args:
+        result: Single Eq object, or list/tuple of Eq objects
+
+    Returns:
+        Dictionary mapping LHS symbols to RHS values
+
+    Examples:
+        >>> from sympy import symbols, Eq
+        >>> x, y = symbols('x, y')
+        >>> eq_to_dict(Eq(x, 5))
+        {x: 5}
+        >>> eq_to_dict([Eq(x, 5), Eq(y, 10)])
+        {x: 5, y: 10}
+
+    See Also:
+        - `~~display.dict_to_eq`: Convert dictionary to SymPy Eq objects
+        - `~~display.show_eqn`: Display mathematical equations (uses dicts internally)
+    """
     if hasattr(result, "__iter__"):
         return {x.lhs: x.rhs for x in result}
     else:
@@ -1018,6 +1089,36 @@ def replace_all(
 
 
 def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> str:
+    """Generate inline LaTeX equation from a variable and its value in a mapping.
+
+    Creates a formatted LaTeX string showing "var = value" where both the
+    variable and value are rendered as LaTeX. Supports different modes for
+    wrapping the output (plain, inline math, or environment).
+
+    Args:
+        var: SymPy symbol to display on left-hand side
+        mapping: Dictionary containing the value for the variable
+        **kwargs: Additional arguments passed to sympy.latex()
+            - mode: Output mode - "plain" (default), "inline" (with $...$),
+                    or environment name (with \\begin{}...\\end{})
+            - mul_symbol: Multiplication symbol (default: "\\,")
+            - Other sympy.latex() parameters
+
+    Returns:
+        Formatted LaTeX string with localization applied
+
+    Examples:
+        >>> from sympy import symbols
+        >>> x = symbols('x')
+        >>> latex_inline_dict(x, {x: 5})
+        'x = 5'
+        >>> latex_inline_dict(x, {x: 5}, mode="inline")
+        '$x = 5$'
+
+    See Also:
+        - `~~display.show_eqn`: Main display function for multiple equations
+        - `~~display.dict_to_eq`: Convert dictionary to SymPy Eq objects
+    """
     if "mul_symbol" not in kwargs:
         kwargs["mul_symbol"] = r"\,"
     match mode := kwargs.get("mode"):
