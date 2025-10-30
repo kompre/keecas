@@ -8,20 +8,16 @@ TRANSLATIONS = {
     # SymPy LaTeX words
     "for": "para",
     "otherwise": "de lo contrario",
-
     # Domain/Range labels from SymPy LaTeX output
     "Domain: ": "Dominio: ",
     "Domain on ": "Dominio en ",
     "Range": "Rango",
-
     # Boolean verification states
     "VERIFIED": "VERIFICADO",
     "NOT_VERIFIED": "NO VERIFICADO",
-
     # Common mathematical terms
     "True": "Verdadero",
     "False": "Falso",
-
     # Additional terms that might be useful
     "if": "si",
     "then": "entonces",

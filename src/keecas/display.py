@@ -3,6 +3,7 @@
 This module provides functions for rendering LaTeX equations in Jupyter notebooks using IPython.display.Markdown.
 
 """
+
 from __future__ import annotations
 
 import re
@@ -75,7 +76,6 @@ def _attach_label(
         )
 
     if isinstance(label, str) and not key:
-
         text_label = rf"{config.latex.eq_prefix}{label}{config.latex.eq_suffix}"
 
         if config.display.print_label:
@@ -353,15 +353,21 @@ def check(
 
     # Get templates
     templates = _get_check_templates(
-        template_name, success_template_param, failure_template_param,
+        template_name,
+        success_template_param,
+        failure_template_param,
     )
 
     # Get localized verification text
     verified_text = translate(
-        "VERIFIED", language=language, substitutions=substitutions,
+        "VERIFIED",
+        language=language,
+        substitutions=substitutions,
     )
     not_verified_text = translate(
-        "NOT_VERIFIED", language=language, substitutions=substitutions,
+        "NOT_VERIFIED",
+        language=language,
+        substitutions=substitutions,
     )
 
     # Perform the test
@@ -587,9 +593,7 @@ def show_eqn(
     from keecas.formatters import validate_latex_kwargs
 
     # Filter out localization parameters that shouldn't go to latex()
-    latex_kwargs = {
-        k: v for k, v in kwargs.items() if k not in ["language", "substitutions"]
-    }
+    latex_kwargs = {k: v for k, v in kwargs.items() if k not in ["language", "substitutions"]}
 
     # Set default mul_symbol if not provided
     if "mul_symbol" not in latex_kwargs:
@@ -681,7 +685,9 @@ def show_eqn(
     # Step 2: Create Dataframe (single line, matching float_format pattern)
     cell_formatters = create_dataframe(
         seed=cell_formatter if not isinstance(cell_formatter, tuple) else cell_formatter[0],
-        default_value=default_formatter_chain if not isinstance(cell_formatter, tuple) else cell_formatter[1],
+        default_value=default_formatter_chain
+        if not isinstance(cell_formatter, tuple)
+        else cell_formatter[1],
         keys=keys,
         width=num_cols,
     )
@@ -697,7 +703,12 @@ def show_eqn(
     # Generate template using environment configuration
     first_key = list(keys)[0] if keys else None
     template = _generate_environment_template(
-        environment, env_config, label, first_key, label_command, env_arg,
+        environment,
+        env_config,
+        label,
+        first_key,
+        label_command,
+        env_arg,
     )
 
     # generate the rows
@@ -705,19 +716,21 @@ def show_eqn(
     for key, list_values in eqns.items():
         # Generate cells with custom formatters
         cells = []
-        for col_idx, (v, s, cw, ff, cf) in enumerate(zip_longest(
-            ([key] + list_values),
-            sep,
-            col_wrap[key],
-            float_format[key],
-            cell_formatters[key],  # Add to zip_longest
-            fillvalue="",
-        )):
+        for col_idx, (v, s, cw, ff, cf) in enumerate(
+            zip_longest(
+                ([key] + list_values),
+                sep,
+                col_wrap[key],
+                float_format[key],
+                cell_formatters[key],  # Add to zip_longest
+                fillvalue="",
+            )
+        ):
             # Apply formatter with column index and latex kwargs
             if v is not None:
                 formatted_value = cf(v, col_idx, **latex_kwargs)  # Pass latex kwargs to formatter
                 # Note: formatted_value is never None - registry ensures fallback
-                cell_content = f"{_col_wrap(cw,v)[0]}{formatted_value}{_col_wrap(cw, v)[-1]}"
+                cell_content = f"{_col_wrap(cw, v)[0]}{formatted_value}{_col_wrap(cw, v)[-1]}"
             else:
                 cell_content = " "
 
@@ -735,10 +748,7 @@ def show_eqn(
             body_lines = {k: row_formatter(v) for k, v in body_lines.items()}
         elif isinstance(row_formatter, dict):
             # Key-specific row formatters (dict keys = symbol keys)
-            body_lines = {
-                k: row_formatter.get(k, lambda x: x)(v)
-                for k, v in body_lines.items()
-            }
+            body_lines = {k: row_formatter.get(k, lambda x: x)(v) for k, v in body_lines.items()}
     elif config.display.row_formatter is not None:
         # Use config default if available
         row_func = config.display.row_formatter
@@ -752,7 +762,9 @@ def show_eqn(
 
     # clean the body
     body = replace_all(
-        body, language=kwargs.get("language"), substitutions=kwargs.get("substitutions"),
+        body,
+        language=kwargs.get("language"),
+        substitutions=kwargs.get("substitutions"),
     )
 
     template = template.replace("___body___", body)
@@ -761,8 +773,6 @@ def show_eqn(
         print(template)
 
     return Markdown(template)
-
-
 
 
 def wrap_floats(text: str, wrapper: tuple[str, str] = ("", "")) -> str:
@@ -780,7 +790,8 @@ def wrap_floats(text: str, wrapper: tuple[str, str] = ("", "")) -> str:
 
 
 def format_decimal_numbers(
-    text: str | None, format_string: str | None = None,
+    text: str | None,
+    format_string: str | None = None,
 ) -> str | None:
     r"""Format all decimal numbers in a LaTeX string with specified precision.
 
@@ -913,7 +924,9 @@ def _get_base_replacements() -> dict[str, str | callable]:
     return {
         r"\\frac": r"\\dfrac",  # first replace all frac with dfrac
         r"\^\{((?:[^{}]|(?:\{(?1)\}))*)}": lambda m: regex.sub(
-            "dfrac", "frac", m.group(0),
+            "dfrac",
+            "frac",
+            m.group(0),
         ),  # then replace all dfrac inside ^{} with frac (small exponent)
         r"\b1 \\cdot": r"",
         r"\\\\": rf"\\\\[{config.latex.vertical_skip}]",
@@ -922,13 +935,16 @@ def _get_base_replacements() -> dict[str, str | callable]:
 
 
 def _get_localized_replacements(
-    language: str | None = None, substitutions: dict[str, str] | None = None,
+    language: str | None = None,
+    substitutions: dict[str, str] | None = None,
 ) -> dict[str, str]:
     """Get localized replacements based on current language settings."""
     return {
         r"\bfor\b": translate("for", language=language, substitutions=substitutions),
         r"\botherwise\b": translate(
-            "otherwise", language=language, substitutions=substitutions,
+            "otherwise",
+            language=language,
+            substitutions=substitutions,
         ),
         # Domain/Range labels from SymPy LaTeX output (match \text{...} patterns)
         r"\\text\{Domain: \}": f"\\text{{{translate('Domain: ', language=language, substitutions=substitutions)}}}",
@@ -938,7 +954,8 @@ def _get_localized_replacements(
 
 
 def get_replacement_dict(
-    language: str | None = None, substitutions: dict[str, str] | None = None,
+    language: str | None = None,
+    substitutions: dict[str, str] | None = None,
 ) -> dict[str, str | callable]:
     """
     Get complete replacement dictionary combining base and localized replacements.
@@ -989,7 +1006,7 @@ def replace_all(
 def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> str:
     if "mul_symbol" not in kwargs:
         kwargs["mul_symbol"] = r"\,"
-    match (mode := kwargs.get("mode")):
+    match mode := kwargs.get("mode"):
         case "plain" | None:
             wrap = ("", "")
         case "inline":
@@ -1001,11 +1018,13 @@ def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> s
 
     def _latex(x):
         return replace_all(latex(x, **kwargs))
+
     return f"{wrap[0]}{_latex(var)} = {_latex(mapping[var])}{wrap[1]}"
 
 
 def _col_wrap(
-    cw: None | str | tuple[str, str] | dict[type, tuple[str, str]], value: Any,
+    cw: None | str | tuple[str, str] | dict[type, tuple[str, str]],
+    value: Any,
 ) -> tuple[str, str]:
     if not cw:
         return ("", "")

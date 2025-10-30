@@ -30,7 +30,7 @@ def generate_id(obj: Any, length: int = 8) -> str:
     obj_str = _serialize_object(obj)
 
     # Generate SHA-256 hash
-    hash_obj = hashlib.sha256(obj_str.encode('utf-8'))
+    hash_obj = hashlib.sha256(obj_str.encode("utf-8"))
     hash_hex = hash_obj.hexdigest()
 
     # Convert to base36 (0-9, a-z), or numeric (0-9) for more compact representation
@@ -53,7 +53,7 @@ def _serialize_object(obj: Any) -> str:
         # For sympy objects, repr gives a stable representation
         obj_repr = repr(obj)
         # Verify it's stable by checking if it's a simple repr
-        if obj_repr and not obj_repr.startswith('<'):
+        if obj_repr and not obj_repr.startswith("<"):
             return obj_repr
     except Exception:
         pass
@@ -78,13 +78,13 @@ def _serialize_object(obj: Any) -> str:
 def _to_base36(num: int) -> str:
     """Convert an integer to base36 string (0-9, a-z)."""
     if num == 0:
-        return '0'
+        return "0"
 
-    digits = '0123456789abcdefghijklmnopqrstuvwxyz'
+    digits = "0123456789abcdefghijklmnopqrstuvwxyz"
     result = []
 
     while num > 0:
         result.append(digits[num % 36])
         num //= 36
 
-    return ''.join(reversed(result))
+    return "".join(reversed(result))

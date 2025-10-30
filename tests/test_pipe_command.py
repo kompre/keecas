@@ -46,14 +46,14 @@ def test_convert_to():
 
 def test_doit():
     symbols("x")
-    expression = sin(pi/2)
+    expression = sin(pi / 2)
     result = expression | doit()
     assert result == 1
 
 
 def test_parse_expr():
     expr_str = "x**2 + y"
-    local_dict = {'x': 2, 'y': 3}
+    local_dict = {"x": 2, "y": 3}
     result = expr_str | parse_expr(local_dict=local_dict, evaluate=True)
     expected = sympy_parse_expr(expr_str, local_dict=local_dict)
     assert result == expected

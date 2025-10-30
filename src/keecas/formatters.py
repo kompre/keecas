@@ -74,7 +74,7 @@ def validate_latex_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     """
     # Get valid latex() parameters
     latex_sig = inspect.signature(latex)
-    valid_params = set(latex_sig.parameters.keys()) - {'expr'}  # Exclude positional 'expr'
+    valid_params = set(latex_sig.parameters.keys()) - {"expr"}  # Exclude positional 'expr'
 
     # Check for invalid parameters
     invalid_params = set(kwargs.keys()) - valid_params
@@ -288,6 +288,7 @@ class FormatterChain:
 
 # Built-in formatters
 
+
 def format_markdown(value, col_index: int = 0, **kwargs) -> EarlyExit | None:
     """Format Markdown objects.
 
@@ -478,12 +479,14 @@ def format_str(value, col_index: int = 0, **kwargs) -> EarlyExit | None:
 
 
 # Default formatter chain with built-in formatters
-default_formatter_chain = FormatterChain([
-    format_markdown,  # Terminal: Markdown objects
-    format_pint,      # Transformer: Pint -> SymPy
-    format_mul,       # Transformer: numeric Mul -> separated form
-    format_sympy,     # Terminal: SymPy expressions
-    format_float,     # Terminal fallback: float
-    format_int,       # Terminal fallback: int
-    format_str,       # Terminal fallback: str
-])
+default_formatter_chain = FormatterChain(
+    [
+        format_markdown,  # Terminal: Markdown objects
+        format_pint,  # Transformer: Pint -> SymPy
+        format_mul,  # Transformer: numeric Mul -> separated form
+        format_sympy,  # Terminal: SymPy expressions
+        format_float,  # Terminal fallback: float
+        format_int,  # Terminal fallback: int
+        format_str,  # Terminal fallback: str
+    ]
+)

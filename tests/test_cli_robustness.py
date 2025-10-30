@@ -12,18 +12,18 @@ def test_cli_config_path_works_with_broken_config(tmp_path, monkeypatch):
     # Create broken config
     config_file = tmp_path / ".keecas" / "config.toml"
     config_file.parent.mkdir(parents=True)
-    config_file.write_text('invalid syntax!')
+    config_file.write_text("invalid syntax!")
 
     # Run CLI command
     result = subprocess.run(
-        ['keecas', 'config', 'path', '--local'],
+        ["keecas", "config", "path", "--local"],
         capture_output=True,
         text=True,
         cwd=tmp_path,
     )
 
     assert result.returncode == 0
-    assert '.keecas' in result.stdout and 'config.toml' in result.stdout
+    assert ".keecas" in result.stdout and "config.toml" in result.stdout
 
 
 def test_cli_init_force_overwrites_broken_config(tmp_path, monkeypatch):
@@ -33,24 +33,24 @@ def test_cli_init_force_overwrites_broken_config(tmp_path, monkeypatch):
     # Create broken config
     config_file = tmp_path / ".keecas" / "config.toml"
     config_file.parent.mkdir(parents=True)
-    config_file.write_text('completely broken content here')
+    config_file.write_text("completely broken content here")
 
     # Run CLI command to fix
     result = subprocess.run(
-        ['keecas', 'config', 'init', '--local', '--force'],
+        ["keecas", "config", "init", "--local", "--force"],
         capture_output=True,
         text=True,
         cwd=tmp_path,
     )
 
     assert result.returncode == 0
-    assert 'Configuration template created' in result.stdout
+    assert "Configuration template created" in result.stdout
 
     # Verify config is now valid
     config_data = toml.load(config_file)
     assert config_data is not None
-    assert 'latex' in config_data
-    assert 'display' in config_data
+    assert "latex" in config_data
+    assert "display" in config_data
 
 
 def test_cli_show_fails_gracefully_with_broken_config(tmp_path, monkeypatch):
@@ -60,11 +60,11 @@ def test_cli_show_fails_gracefully_with_broken_config(tmp_path, monkeypatch):
     # Create broken config
     config_file = tmp_path / ".keecas" / "config.toml"
     config_file.parent.mkdir(parents=True)
-    config_file.write_text('language = True  # Invalid')
+    config_file.write_text("language = True  # Invalid")
 
     # Run CLI command - should fail but with helpful error
     result = subprocess.run(
-        ['keecas', 'config', 'show'],
+        ["keecas", "config", "show"],
         capture_output=True,
         text=True,
         cwd=tmp_path,
@@ -75,7 +75,10 @@ def test_cli_show_fails_gracefully_with_broken_config(tmp_path, monkeypatch):
 
     # Should mention how to fix
     combined_output = result.stdout + result.stderr
-    assert 'keecas config init --force' in combined_output or 'could not be loaded' in combined_output.lower()
+    assert (
+        "keecas config init --force" in combined_output
+        or "could not be loaded" in combined_output.lower()
+    )
 
 
 def test_cli_show_local_works_with_broken_config(tmp_path, monkeypatch):
@@ -87,23 +90,23 @@ def test_cli_show_local_works_with_broken_config(tmp_path, monkeypatch):
     config_file.parent.mkdir(parents=True)
 
     valid_config = {
-        'latex': {'eq_prefix': 'test-'},
-        'display': {'katex': True},
+        "latex": {"eq_prefix": "test-"},
+        "display": {"katex": True},
     }
-    with open(config_file, 'w') as f:
+    with open(config_file, "w") as f:
         toml.dump(valid_config, f)
 
     # Run CLI command
     result = subprocess.run(
-        ['keecas', 'config', 'show', '--local'],
+        ["keecas", "config", "show", "--local"],
         capture_output=True,
         text=True,
         cwd=tmp_path,
     )
 
     assert result.returncode == 0
-    assert 'eq_prefix' in result.stdout
-    assert 'test-' in result.stdout
+    assert "eq_prefix" in result.stdout
+    assert "test-" in result.stdout
 
 
 def test_cli_full_recovery_workflow(tmp_path, monkeypatch):
@@ -113,11 +116,11 @@ def test_cli_full_recovery_workflow(tmp_path, monkeypatch):
     # 1. Create broken config
     config_file = tmp_path / ".keecas" / "config.toml"
     config_file.parent.mkdir(parents=True)
-    config_file.write_text('broken')
+    config_file.write_text("broken")
 
     # 2. Path command still works
     result = subprocess.run(
-        ['keecas', 'config', 'path', '--local'],
+        ["keecas", "config", "path", "--local"],
         capture_output=True,
         text=True,
         cwd=tmp_path,
@@ -126,7 +129,7 @@ def test_cli_full_recovery_workflow(tmp_path, monkeypatch):
 
     # 3. Show command fails
     result = subprocess.run(
-        ['keecas', 'config', 'show'],
+        ["keecas", "config", "show"],
         capture_output=True,
         text=True,
         cwd=tmp_path,
@@ -135,7 +138,7 @@ def test_cli_full_recovery_workflow(tmp_path, monkeypatch):
 
     # 4. Fix with init --force
     result = subprocess.run(
-        ['keecas', 'config', 'init', '--local', '--force'],
+        ["keecas", "config", "init", "--local", "--force"],
         capture_output=True,
         text=True,
         cwd=tmp_path,
@@ -144,10 +147,10 @@ def test_cli_full_recovery_workflow(tmp_path, monkeypatch):
 
     # 5. Now show works
     result = subprocess.run(
-        ['keecas', 'config', 'show'],
+        ["keecas", "config", "show"],
         capture_output=True,
         text=True,
         cwd=tmp_path,
     )
     assert result.returncode == 0
-    assert 'latex' in result.stdout
+    assert "latex" in result.stdout

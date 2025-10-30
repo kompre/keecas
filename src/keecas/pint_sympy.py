@@ -32,6 +32,7 @@ def _initialize_unitregistry() -> pint.UnitRegistry:
     # Get default format from config
     try:
         from .config.manager import get_config_manager
+
         config = get_config_manager()
         registry.formatter.default_format = config.options.display.pint_default_format
     except Exception:
@@ -110,7 +111,9 @@ def update_pint_locale(language: str | None = None, verbose: bool = False) -> No
         - Manual mode activated if user directly modifies unitregistry.formatter
     """
     from .localization.pint_locale import update_pint_locale as _update_pint_locale
+
     _update_pint_locale(unitregistry, language, verbose)
+
 
 class SymPyUnitCache:
     r"""Cache for dynamically created SymPy units to avoid redundant creation.
@@ -194,8 +197,8 @@ class SymPyUnitCache:
                         reference *= unit_obj ** nsimplify(exponent)
 
                         # Accumulate SymPy's scale factors
-                        if hasattr(unit_obj, 'scale_factor'):
-                            sympy_scale *= unit_obj.scale_factor ** exponent
+                        if hasattr(unit_obj, "scale_factor"):
+                            sympy_scale *= unit_obj.scale_factor**exponent
                     else:
                         # Base unit doesn't exist in SymPy - skip scale factor
                         break

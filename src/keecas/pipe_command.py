@@ -43,9 +43,7 @@ def order_subs(subs: dict[Basic, Any]) -> list[tuple[Basic, Any]]:
     """
 
     # Generate edges between each vertex
-    edges = [
-        (i, j) for i, j in permutations(subs.items(), 2) if sympify(i[1]).has(j[0])
-    ]
+    edges = [(i, j) for i, j in permutations(subs.items(), 2) if sympify(i[1]).has(j[0])]
 
     # Reorder the dict with topological_sort
     return topological_sort((subs.items(), edges), default_sort_key)
@@ -58,7 +56,6 @@ def subs(
     sorted: bool = True,
     # simplify_quantity=True, **kwargs
 ) -> Basic:
-
     r"""Substitute variables in symbolic expressions with values or other expressions.
 
     Applies substitutions to SymPy expressions while handling dependencies between
@@ -412,11 +409,12 @@ def doit(expression: Basic) -> Basic:
     return expression.doit()
 
 
-
-
 @Pipe
 def parse_expr(
-    expression: str, local_dict: dict[str, Any] | None = None, evaluate: bool = False, **kwargs: Any,
+    expression: str,
+    local_dict: dict[str, Any] | None = None,
+    evaluate: bool = False,
+    **kwargs: Any,
 ) -> Basic:
     r"""Parse mathematical expression strings into SymPy symbolic objects.
 
@@ -545,14 +543,20 @@ def parse_expr(
         kwargs["transformations"] = T[:11]
 
     parsed_expr = sympy_parse_expr(
-        expression, evaluate=evaluate, local_dict=local_dict, **kwargs,
+        expression,
+        evaluate=evaluate,
+        local_dict=local_dict,
+        **kwargs,
     )
     return parsed_expr
 
 
 @Pipe
 def quantity_simplify(
-    expression: Basic, across_dimensions: bool = True, unit_system: str = "SI", **kwargs: Any,
+    expression: Basic,
+    across_dimensions: bool = True,
+    unit_system: str = "SI",
+    **kwargs: Any,
 ) -> Basic:
     r"""Simplify expressions with units by combining and reducing quantities.
 
@@ -645,7 +649,9 @@ def quantity_simplify(
     """
 
     return sympy_quantity_simplify(
-        expression, across_dimensions=across_dimensions, unit_system=unit_system,
+        expression,
+        across_dimensions=across_dimensions,
+        unit_system=unit_system,
     )
 
 
