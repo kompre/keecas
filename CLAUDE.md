@@ -31,7 +31,7 @@ This includes:
 
 ### Documentation
 For guidelines on writing API documentation with Google-style docstrings for quartodoc:
-- See **[docs/DOCSTRINGS.md](docs/DOCSTRINGS.md)** for comprehensive guidelines and templates
+- See **[_docs/DOCSTRINGS.md](_docs/DOCSTRINGS.md)** for comprehensive guidelines and templates
 - All API reference functions must follow these standards
 - Examples should be tutorial-quality and demonstrate idiomatic usage
 
@@ -513,7 +513,7 @@ sigma, tau, gamma = symbols("sigma, tau, gamma")
 - Use individual variables instead of dicts for related data
 - Mix cell-local and global patterns unnecessarily
 
-For complete details, see `docs/CONVENTIONS.md`.
+For complete details, see `_docs/CONVENTIONS.md`.
 
 ### Testing Strategy
 - Tests are located in `tests/` directory
