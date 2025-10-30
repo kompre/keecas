@@ -6,7 +6,7 @@ lowercase IDs suitable for use as automatic reference labels.
 """
 
 import hashlib
-from collections.abc import Callable, Hashable
+from collections.abc import Hashable
 from functools import singledispatch
 from typing import Any
 
@@ -100,7 +100,6 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
         arg: Label input. Can be:
             - str: Single label string
             - dict: Dictionary mapping keys to label strings
-            - Callable: Function that generates labels (called with key and value list)
         unique_id: If True, generate a unique hash-based ID instead of using
             the provided label text. Defaults to False.
 
@@ -108,7 +107,6 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
         Formatted label(s) with prefix and suffix applied:
         - str input returns formatted str
         - dict input returns dict with formatted values
-        - Callable input returns the callable itself (processed later)
 
     Examples:
         >>> from keecas import symbols
@@ -129,12 +127,6 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
         >>> label = generate_label("key", unique_id=True)
         >>> label.startswith("eq-")
         True
-        >>>
-        >>> # Callable (returns callable for later evaluation)
-        >>> def my_labeler(key, values):
-        ...     return f"label-{key}"
-        >>> generate_label(my_labeler)
-        <function my_labeler at ...>
 
     See Also:
         - generate_unique_label: Convenience function for unique ID generation
@@ -142,7 +134,7 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
 
     Notes:
         - Labels are formatted with config.latex.eq_prefix and config.latex.eq_suffix
-        - Callable inputs are returned as-is for later evaluation in show_eqn
+        - Callable labels should be passed directly to show_eqn, not to generate_label
         - Unique IDs are deterministic hash-based identifiers
     """
     raise TypeError(f"Unsupported type for generate_label: {type(arg)}")
@@ -164,11 +156,10 @@ def _(arg: str, unique_id: bool = False) -> str:
 
 
 @generate_label.register(dict)
-def _(arg: dict[Hashable, Any], unique_id: bool = False) -> dict[Hashable, str]:
+def _(arg: dict[Hashable, str], unique_id: bool = False) -> dict[Hashable, str]:
     """Generate labels from dict input.
 
     For each key-value pair in the dict:
-    - If value is a callable, return it as-is for later evaluation
     - If value is a string, format it with prefix/suffix
     - If value is None or empty, return empty string
     """
@@ -178,10 +169,7 @@ def _(arg: dict[Hashable, Any], unique_id: bool = False) -> dict[Hashable, str]:
 
     result = {}
     for key, value in arg.items():
-        if callable(value):
-            # Keep callables for later evaluation
-            result[key] = value
-        elif value:
+        if value:
             if unique_id:
                 label_text = generate_id((key, value))
             else:
@@ -191,15 +179,6 @@ def _(arg: dict[Hashable, Any], unique_id: bool = False) -> dict[Hashable, str]:
             result[key] = ""
 
     return result
-
-
-@generate_label.register
-def _(arg: Callable, unique_id: bool = False) -> Callable:
-    """Return callable as-is for later evaluation.
-
-    The callable will be evaluated in show_eqn with (key, value_list) arguments.
-    """
-    return arg
 
 
 def generate_unique_label(arg: str | dict[Hashable, Any]) -> str | dict[Hashable, str]:
