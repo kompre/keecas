@@ -46,6 +46,17 @@ jobs:
         with:
           version: release
 
+      - name: Install locales for internationalization tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y locales
+          sudo locale-gen it_IT.UTF-8
+          sudo locale-gen de_DE.UTF-8
+          sudo locale-gen fr_FR.UTF-8
+          sudo locale-gen es_ES.UTF-8
+          sudo locale-gen pt_PT.UTF-8
+          sudo update-locale
+
       - name: Install dependencies
         run: uv sync --group dev
 
