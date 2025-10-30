@@ -80,7 +80,6 @@ quartodoc:
         - display.show_eqn
         - display.check
         - display.format_decimal_numbers
-        - display.replace_all
     - title: Label Module
       desc: Label generation
       contents:
