@@ -14,8 +14,6 @@ from .dataframe import Dataframe
 from .display import (
     check,
     config,
-    dict_to_eq,
-    eq_to_dict,
     show_eqn,
 )
 
@@ -29,6 +27,9 @@ from .formatters import (
     format_value,
     validate_latex_kwargs,
 )
+
+# utils
+from .utils import dict_to_eq, eq_to_dict
 
 # Import optional formatters if available (for type registration)
 try:

@@ -5,14 +5,13 @@ from sympy import Eq, GreaterThan, Le, StrictLessThan, symbols
 from keecas import pipe_command as pc
 from keecas.display import (
     check,
-    dict_to_eq,
-    eq_to_dict,
     format_decimal_numbers,
     latex_inline_dict,
     replace_all,
     show_eqn,
 )
 from keecas.formatters import validate_latex_kwargs
+from keecas.utils import dict_to_eq, eq_to_dict
 
 # Test data
 x, y = symbols("x y")

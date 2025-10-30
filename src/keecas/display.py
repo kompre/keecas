@@ -16,7 +16,6 @@ from warnings import warn
 from IPython.display import Markdown
 from sympy import (
     Basic,
-    Eq,
     Le,
     latex,
 )
@@ -904,66 +903,6 @@ def format_decimal_numbers(
     return re.sub(r"-?\d+\.\d+", _format_match, text)
 
 
-def dict_to_eq(result: dict[Basic, Any]) -> Eq | list[Eq]:
-    """Convert a dictionary to SymPy Eq object(s).
-
-    Converts a dictionary of symbol-value pairs to SymPy equality objects.
-    Returns a single Eq if the dictionary has one item, or a list of Eq
-    objects if multiple items.
-
-    Args:
-        result: Dictionary mapping SymPy symbols to values
-
-    Returns:
-        Single Eq object if one item, list of Eq objects if multiple items
-
-    Examples:
-        >>> from sympy import symbols
-        >>> x, y = symbols('x, y')
-        >>> dict_to_eq({x: 5})
-        Eq(x, 5)
-        >>> dict_to_eq({x: 5, y: 10})
-        [Eq(x, 5), Eq(y, 10)]
-
-    See Also:
-        - `~~display.eq_to_dict`: Convert SymPy Eq objects to dictionary
-        - `~~display.show_eqn`: Display mathematical equations (uses dicts internally)
-    """
-    eq = [Eq(k, v) for k, v in result.items()]
-    return eq if len(eq) > 1 else eq[0]
-
-
-def eq_to_dict(result: Eq | list[Eq] | tuple[Eq, ...]) -> dict[Basic, Any]:
-    """Convert SymPy Eq object(s) to dictionary.
-
-    Converts SymPy equality objects to a dictionary mapping left-hand side
-    symbols to right-hand side values. Handles single Eq objects, lists,
-    or tuples of Eq objects.
-
-    Args:
-        result: Single Eq object, or list/tuple of Eq objects
-
-    Returns:
-        Dictionary mapping LHS symbols to RHS values
-
-    Examples:
-        >>> from sympy import symbols, Eq
-        >>> x, y = symbols('x, y')
-        >>> eq_to_dict(Eq(x, 5))
-        {x: 5}
-        >>> eq_to_dict([Eq(x, 5), Eq(y, 10)])
-        {x: 5, y: 10}
-
-    See Also:
-        - `~~display.dict_to_eq`: Convert dictionary to SymPy Eq objects
-        - `~~display.show_eqn`: Display mathematical equations (uses dicts internally)
-    """
-    if hasattr(result, "__iter__"):
-        return {x.lhs: x.rhs for x in result}
-    else:
-        return {result.lhs: result.rhs}
-
-
 import regex  # noqa: E402
 
 
@@ -1018,10 +957,6 @@ def get_replacement_dict(
     replacements = _get_base_replacements()
     replacements.update(_get_localized_replacements(language, substitutions))
     return replacements
-
-
-# Legacy replacement dict for backward compatibility
-replacement = get_replacement_dict()
 
 
 # %% replace all the key, value pair
