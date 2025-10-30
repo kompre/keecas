@@ -12,6 +12,8 @@ from typing import Any
 
 from keecas.config.manager import get_config_manager
 
+config = get_config_manager().options
+
 
 def generate_id(obj: Any, length: int = 8) -> str:
     """
@@ -102,6 +104,7 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
         arg: Label input. Can be:
             - str: Single label string
             - dict: Dictionary mapping keys to label strings
+            - list: Converted to string representation, then labeled
         unique_id: If True, generate a unique hash-based ID instead of using
             the provided label text. Defaults to False.
 
@@ -109,6 +112,7 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
         Formatted label(s) with prefix and suffix applied:
         - str input returns formatted str
         - dict input returns dict with formatted values
+        - list input returns formatted str (converted via str())
 
     Examples:
         >>> from keecas import symbols, generate_label
@@ -122,6 +126,10 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
         >>> labels = {F: "force", A: "area"}
         >>> generate_label(labels)
         {F: 'eq-force', A: 'eq-area'}
+        >>>
+        >>> # List label (converted to string)
+        >>> generate_label(["item1", "item2"])
+        "eq-['item1', 'item2']"
         >>>
         >>> # Unique ID generation
         >>> label = generate_label("key", unique_id=True)
@@ -143,7 +151,6 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
 @generate_label.register(str)
 def _(arg: str, unique_id: bool = False) -> str:
     """Generate label from string input."""
-    config = get_config_manager().options
 
     if unique_id:
         label_text = generate_id(arg)
@@ -161,7 +168,6 @@ def _(arg: dict[Hashable, str], unique_id: bool = False) -> dict[Hashable, str]:
     - If value is a string, format it with prefix/suffix
     - If value is None or empty, return empty string
     """
-    config = get_config_manager().options
 
     result = {}
     for key, value in arg.items():
@@ -178,8 +184,8 @@ def _(arg: dict[Hashable, str], unique_id: bool = False) -> dict[Hashable, str]:
 
 
 @generate_label.register(list)
-def generate_label_from_list(arg: list, unique_id: bool = False):
-    """Generate label from list input."""
+def _(arg: list, unique_id: bool = False):
+    """Generate label from list input by converting to string representation."""
     return generate_label(str(arg), unique_id=unique_id)
 
 
