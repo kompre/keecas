@@ -93,7 +93,10 @@ def test_show_eqn_with_callable_label(config):
     """Test show_eqn with callable label."""
     F, A = symbols("F, A")
 
-    def my_labeler(key, values):
+    def my_labeler(args):
+        # Callable receives [key] + values as single list
+        key = args[0]
+        values = args[1:]
         # Generate label based on key and number of values
         return f"{config.latex.eq_prefix}{key}-{len(values)}{config.latex.eq_suffix}"
 
@@ -108,7 +111,8 @@ def test_show_eqn_with_dict_callable_label(config):
     """Test show_eqn with dict containing callable labels."""
     F, A = symbols("F, A")
 
-    def force_labeler(key, values):
+    def force_labeler(args):
+        # Callable receives [key] + values as single list
         return f"{config.latex.eq_prefix}force-custom{config.latex.eq_suffix}"
 
     labels = {
@@ -124,13 +128,14 @@ def test_show_eqn_with_dict_callable_label(config):
 
 
 def test_callable_label_receives_correct_arguments():
-    """Test that callable labels receive key and value list."""
+    """Test that callable labels receive single list argument: [key] + values."""
     F, A = symbols("F, A")
 
     received_args = []
 
-    def capture_labeler(key, values):
-        received_args.append((key, values))
+    def capture_labeler(args):
+        # Callable receives [key] + values as single list
+        received_args.append(args)
         return "eq-test"
 
     eqns = Dataframe({F: [100, 200], A: [20]})
@@ -139,13 +144,14 @@ def test_callable_label_receives_correct_arguments():
     # Should have been called for each key
     assert len(received_args) == 2
 
-    # Check F's call
+    # Check F's call - should be [F, 100, 200]
     f_call = [call for call in received_args if call[0] == F][0]
-    assert f_call[1] == [100, 200]
+    assert f_call == [F, 100, 200]
 
     # Check A's call - Dataframe pads shorter rows with None
+    # Should be [A, 20, None]
     a_call = [call for call in received_args if call[0] == A][0]
-    assert a_call[1] == [20, None]  # Dataframe auto-pads to equal length
+    assert a_call == [A, 20, None]  # Dataframe auto-pads to equal length
 
 
 def test_generate_label_unsupported_type():

@@ -180,6 +180,11 @@ def _(arg: dict[Hashable, str], unique_id: bool = False) -> dict[Hashable, str]:
 
     return result
 
+@generate_label.register(list)
+def generate_label_from_list(arg: list, unique_id: bool = False):
+    """Generate label from list input."""
+    return generate_label(str(arg), unique_id=unique_id)
+    
 
 def generate_unique_label(arg: str | dict[Hashable, Any]) -> str | dict[Hashable, str]:
     """Generate unique hash-based labels.

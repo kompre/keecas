@@ -37,7 +37,7 @@ TemplateChoice = Literal["default", "boxed", "minimal"]
 
 
 def _attach_label(
-    label: str | dict[str, str] | Callable | None,
+    label: str | dict[str, str] | Callable[[list[Any]], str] | None,
     key: str | None = None,
     label_command: str | None = None,
     values: list[Any] | None = None,
@@ -48,7 +48,7 @@ def _attach_label(
         label: The label or label dictionary. Can be:
             - str: Single label string (pre-formatted)
             - dict: Dictionary mapping keys to label strings or callables
-            - Callable: Function to generate label (called with key and values)
+            - Callable: Function to generate label (receives single list: [key] + values)
         key: The key to attach the label to, or None for single labels
         label_command: LaTeX label command (e.g., r"\label")
         values: List of values for this row (used with callable labels)
@@ -60,14 +60,14 @@ def _attach_label(
         - Labels should be pre-formatted using generate_label() before passing to show_eqn
         - If config.display.print_label is True, the key and label are printed for debugging
         - Labels are omitted in KaTeX mode for Jupyter notebook compatibility
-        - Callable labels are evaluated with (key, values) arguments
+        - Callable labels receive a single list argument: [key] + values
     """
     if not label_command:
         label_command = config.latex.default_label_command
 
     # Handle callable label (single callable for all keys)
     if callable(label) and key is not None:
-        text_label = label(key, values)
+        text_label = label([key] + values)
         if config.display.print_label:
             print(f"{key}: {text_label}") if text_label else None
 
@@ -80,7 +80,7 @@ def _attach_label(
 
         # Handle callable value in dict
         if callable(label_value):
-            text_label = label_value(key, values)
+            text_label = label_value([key] + values)
         elif label_value:
             text_label = label_value
         else:
@@ -446,9 +446,9 @@ def show_eqn(
         label: Label(s) for cross-referencing equations. Can be:
             - str: Single label string (pre-formatted with generate_label)
             - dict: Mapping symbols to label strings or callables
-            - Callable: Function that generates labels, called as callable(key, value_list)
+            - Callable: Function that generates labels, receives single list: [key] + Dataframe[key]
             Labels should be pre-formatted using generate_label() before passing to show_eqn.
-            Callable labels are evaluated with (key, Dataframe[key]) arguments.
+            Callable labels receive a single list argument: [key, value1, value2, ...].
             Omitted in KaTeX mode for notebook compatibility.
         label_command: LaTeX label command (e.g., r"\label"). Defaults to config.latex.default_label_command.
         col_wrap: Column wrapping specifications for LaTeX formatting. Can be str, dict, list, Dataframe, or 2 element tuple.
