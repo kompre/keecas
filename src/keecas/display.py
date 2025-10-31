@@ -36,12 +36,12 @@ TemplateChoice = Literal["default", "boxed", "minimal"]
 
 
 def show_eqn(
-    eqns: dict[Basic, Any] | list[dict[Basic, Any]] | Dataframe,
+    eqns: dict[Any, Any] | list[dict[Any, Any]] | Dataframe,
     environment: str | dict[str, Any] | None = None,
     sep: str | list[str] | None = None,
     label: str | dict[str, str | Callable] | Callable | None = None,
     label_command: str | None = None,
-    col_wrap: str | dict | list[dict] | Dataframe | tuple | None = None,
+    col_wrap: str | dict | list[dict] | Dataframe | tuple | Callable | None = None,
     float_format: str | dict | list[dict] | Dataframe | tuple | None = None,
     cell_formatter: Callable | dict | list | Dataframe | tuple | None = None,
     row_formatter: Callable | dict | None = None,
