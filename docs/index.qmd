@@ -5,7 +5,11 @@ subtitle: "Symbolic and units-aware calculations for Jupyter notebooks"
 
 Welcome to Keecas, a Python package for symbolic and units-aware calculations in Jupyter notebooks, specifically designed for Quarto rendered PDF documents.
 
-## What is Keecas?
+## What is Keecas? 
+
+Keecas goal is to provide the user with a way to write symbolic mathematical expressions with as minimal boiler-plate code as possible, and then display them as nicely formatted latex amsmath block, that will be rendered by Jupyter/Quarto. 
+
+Since an equation is essentially a mapping between the left hand side (lhs) and the right hand side (rhs) , keecas uses the dict as its main container, where the key is the lhs and the value is the rhs. This way the user can write easy to read dict and dict comprehension, resulting in quite clean notebook's cell. 
 
 Keecas combines three powerful Python libraries:
 
@@ -31,12 +35,12 @@ This combination provides a streamlined interface for mathematical computations 
 from keecas import symbols, u, pc, show_eqn
 
 # Define symbols with LaTeX notation
-F, A, sigma = symbols(r"F, A, \sigma")
+F_d, A_load, sigma = symbols(r"F_{d}, A_{load}, \sigma")
 
 # Parameters with units
 _p = {
-    F: 10 * u.kN,
-    A: 50 * u.cm**2,
+    F_d: 10 * u.kN,
+    A_load: 50 * u.cm**2,
 }
 
 # Expressions
@@ -44,12 +48,21 @@ _e = {
     sigma: "F / A" | pc.parse_expr
 }
 
-# Evaluate and display
+# Evaluate
 _v = {
     k: v | pc.subs(_e | _p) | pc.convert_to([u.MPa]) | pc.N
     for k, v in _e.items()
 }
 
+# Description
+_d = {
+				F_d: "design force",
+    A_load: "loaded area",
+    sigma: "applied pressure",
+}
+
+
+# Display
 show_eqn([_p | _e, _v])
 ```
 
