@@ -116,11 +116,11 @@ def dict_to_eq(result: dict[Basic, Any]) -> Eq | list[Eq]:
 
     Examples:
         >>> from sympy import symbols
-        >>> x, y = symbols('x, y')
-        >>> dict_to_eq({x: 5})
-        Eq(x, 5)
-        >>> dict_to_eq({x: 5, y: 10})
-        [Eq(x, 5), Eq(y, 10)]
+        >>> sigma_Sd, tau_Sd = symbols(r'\sigma_{Sd}, \tau_{Sd}')
+        >>> dict_to_eq({sigma_Sd: 5})
+        Eq(sigma_Sd, 5)
+        >>> dict_to_eq({sigma_Sd: 5, tau_Sd: 10})
+        [Eq(sigma_Sd, 5), Eq(tau_Sd, 10)]
 
     See Also:
         - `~~utils.eq_to_dict`: Convert SymPy Eq objects to dictionary
@@ -145,11 +145,11 @@ def eq_to_dict(result: Eq | list[Eq] | tuple[Eq, ...]) -> dict[Basic, Any]:
 
     Examples:
         >>> from sympy import symbols, Eq
-        >>> x, y = symbols('x, y')
-        >>> eq_to_dict(Eq(x, 5))
-        {x: 5}
-        >>> eq_to_dict([Eq(x, 5), Eq(y, 10)])
-        {x: 5, y: 10}
+        >>> sigma_Sd, tau_Sd = symbols(r'\sigma_{Sd}, \tau_{Sd}')
+        >>> eq_to_dict(Eq(sigma_Sd, 5))
+        {sigma_Sd: 5}
+        >>> eq_to_dict([Eq(sigma_Sd, 5), Eq(tau_Sd, 10)])
+        {sigma_Sd: 5, tau_Sd: 10}
 
     See Also:
         - `~~utils.dict_to_eq`: Convert dictionary to SymPy Eq objects

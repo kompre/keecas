@@ -28,8 +28,8 @@ def _generate_id(obj: Any, length: int = 8) -> str:
 
     Examples:
         >>> from sympy import symbols
-        >>> x = symbols('x')
-        >>> generate_id(x)  # Will always return same ID for symbol 'x'
+        >>> sigma_Sd = symbols(r'\sigma_{Sd}')
+        >>> generate_id(sigma_Sd)  # Will always return same ID for symbol
         >>> generate_id("test_string", length=6)
     """
     # Create a stable string representation
@@ -121,11 +121,11 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
         >>> generate_label("my-label")
         'eq-my-label'
         >>>
-        >>> # Dict label
-        >>> F, A = symbols("F, A")
-        >>> labels = {F: "force", A: "area"}
+        >>> # Dict label with subscripted symbols
+        >>> F, A_load = symbols(r"F, A_{load}")
+        >>> labels = {F: "force", A_load: "area"}
         >>> generate_label(labels)
-        {F: 'eq-force', A: 'eq-area'}
+        {F: 'eq-force', A_load: 'eq-area'}
         >>>
         >>> # List label (converted to string)
         >>> generate_label(["item1", "item2"])
@@ -210,9 +210,9 @@ def generate_unique_label(arg: str | dict[Hashable, Any]) -> str | dict[Hashable
         >>> label.startswith("eq-")
         True
         >>>
-        >>> # Dict label
-        >>> F, A = symbols("F, A")
-        >>> labels = generate_unique_label({F: "force", A: "area"})
+        >>> # Dict label with subscripted symbols
+        >>> F, A_load = symbols(r"F, A_{load}")
+        >>> labels = generate_unique_label({F: "force", A_load: "area"})
         >>> all(v.startswith("eq-") for v in labels.values())
         True
         >>>
