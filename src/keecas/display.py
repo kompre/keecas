@@ -759,7 +759,7 @@ def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> s
         from keecas.display import latex_inline_dict
 
         # Define symbol with subscript
-        sigma_Sd = symbols(r"\sigma_{Sd}")
+        sigma_Sd = symbols(r"\\sigma_{Sd}")
 
         # Basic usage
         latex_inline_dict(sigma_Sd, {sigma_Sd: 5})

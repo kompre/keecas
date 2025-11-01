@@ -16,7 +16,7 @@ Example:
     from keecas import format_value, symbols
 
     # Define symbol with subscript
-    sigma_Rd = symbols(r"\sigma_{Rd}")
+    sigma_Rd = symbols(r"\\sigma_{Rd}")
 
     # Format symbol (column 0 - LHS)
     format_value(sigma_Rd, col_index=0)
@@ -110,7 +110,7 @@ def format_value(value: Any, col_index: int = 0, **kwargs) -> str:
     from keecas import format_value, symbols
 
     # Define symbol with subscript
-    sigma_Rd = symbols(r"\sigma_{Rd}")
+    sigma_Rd = symbols(r"\\sigma_{Rd}")
 
     # Format symbol (LHS)
     format_value(sigma_Rd)

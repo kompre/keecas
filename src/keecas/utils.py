@@ -120,15 +120,15 @@ def dict_to_eq(result: dict[Basic, Any]) -> Eq | list[Eq]:
         from keecas.utils import dict_to_eq
 
         # Define symbols with subscripts
-        sigma_Sd, tau_Sd = symbols(r"\sigma_{Sd}, \tau_{Sd}")
+        sigma_Sd, tau_Sd = symbols(r"\\sigma_{Sd}, \tau_{Sd}")
 
         # Single equation
         dict_to_eq({sigma_Sd: 5})
-        # Returns: Eq(\sigma_{Sd}, 5)
+        # Returns: Eq(\\sigma_{Sd}, 5)
 
         # Multiple equations
         dict_to_eq({sigma_Sd: 5, tau_Sd: 10})
-        # Returns: [Eq(\sigma_{Sd}, 5), Eq(\tau_{Sd}, 10)]
+        # Returns: [Eq(\\sigma_{Sd}, 5), Eq(\tau_{Sd}, 10)]
         ```
 
     See Also:
@@ -159,15 +159,15 @@ def eq_to_dict(result: Eq | list[Eq] | tuple[Eq, ...]) -> dict[Basic, Any]:
         from sympy import Eq
 
         # Define symbols with subscripts
-        sigma_Sd, tau_Sd = symbols(r"\sigma_{Sd}, \tau_{Sd}")
+        sigma_Sd, tau_Sd = symbols(r"\\sigma_{Sd}, \tau_{Sd}")
 
         # Single equation
         eq_to_dict(Eq(sigma_Sd, 5))
-        # Returns: {\sigma_{Sd}: 5}
+        # Returns: {\\sigma_{Sd}: 5}
 
         # Multiple equations
         eq_to_dict([Eq(sigma_Sd, 5), Eq(tau_Sd, 10)])
-        # Returns: {\sigma_{Sd}: 5, \tau_{Sd}: 10}
+        # Returns: {\\sigma_{Sd}: 5, \tau_{Sd}: 10}
         ```
 
     See Also:
