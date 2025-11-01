@@ -17,7 +17,7 @@ Example:
     >>> from keecas import format_value
     >>> from sympy import symbols
     >>>
-    >>> sigma_Sd = symbols(r'\sigma_{Sd}')
+    >>> sigma_Sd = symbols(r'\\sigma_{Sd}')
     >>> format_value(sigma_Sd, col_index=0)
     '\\sigma_{Sd}'
     >>>
@@ -101,7 +101,7 @@ def format_value(value: Any, col_index: int = 0, **kwargs) -> str:
     Examples
     --------
     >>> from sympy import symbols
-    >>> sigma_Rd = symbols(r'\sigma_{Rd}')
+    >>> sigma_Rd = symbols(r'\\sigma_{Rd}')
     >>> format_value(sigma_Rd)
     '\\sigma_{Rd}'
     >>>

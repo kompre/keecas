@@ -755,7 +755,7 @@ def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> s
 
     Examples:
         >>> from sympy import symbols
-        >>> sigma_Sd = symbols(r'\sigma_{Sd}')
+        >>> sigma_Sd = symbols(r'\\sigma_{Sd}')
         >>> latex_inline_dict(sigma_Sd, {sigma_Sd: 5})
         '\\sigma_{Sd} = 5'
         >>> latex_inline_dict(sigma_Sd, {sigma_Sd: 5}, mode="inline")

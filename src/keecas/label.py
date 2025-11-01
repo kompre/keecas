@@ -16,7 +16,7 @@ config = get_config_manager().options
 
 
 def _generate_id(obj: Any, length: int = 8) -> str:
-    """
+    r"""
     Generate a stable, unique ID for any Python object.
 
     Args:

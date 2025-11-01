@@ -116,7 +116,7 @@ def dict_to_eq(result: dict[Basic, Any]) -> Eq | list[Eq]:
 
     Examples:
         >>> from sympy import symbols
-        >>> sigma_Sd, tau_Sd = symbols(r'\sigma_{Sd}, \tau_{Sd}')
+        >>> sigma_Sd, tau_Sd = symbols(r'\\sigma_{Sd}, \tau_{Sd}')
         >>> dict_to_eq({sigma_Sd: 5})
         Eq(sigma_Sd, 5)
         >>> dict_to_eq({sigma_Sd: 5, tau_Sd: 10})
@@ -145,7 +145,7 @@ def eq_to_dict(result: Eq | list[Eq] | tuple[Eq, ...]) -> dict[Basic, Any]:
 
     Examples:
         >>> from sympy import symbols, Eq
-        >>> sigma_Sd, tau_Sd = symbols(r'\sigma_{Sd}, \tau_{Sd}')
+        >>> sigma_Sd, tau_Sd = symbols(r'\\sigma_{Sd}, \tau_{Sd}')
         >>> eq_to_dict(Eq(sigma_Sd, 5))
         {sigma_Sd: 5}
         >>> eq_to_dict([Eq(sigma_Sd, 5), Eq(tau_Sd, 10)])
