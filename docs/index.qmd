@@ -44,7 +44,7 @@ _p = {
 
 # Expressions
 _e = {
-    sigma: "F / A" | pc.parse_expr
+    sigma: "F_d / A_load" | pc.parse_expr
 }
 
 # Evaluate
