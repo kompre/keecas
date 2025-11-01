@@ -115,12 +115,21 @@ def dict_to_eq(result: dict[Basic, Any]) -> Eq | list[Eq]:
         Single Eq object if one item, list of Eq objects if multiple items
 
     Examples:
-        >>> from sympy import symbols
-        >>> sigma_Sd, tau_Sd = symbols(r'\\sigma_{Sd}, \tau_{Sd}')
-        >>> dict_to_eq({sigma_Sd: 5})
-        Eq(sigma_Sd, 5)
-        >>> dict_to_eq({sigma_Sd: 5, tau_Sd: 10})
-        [Eq(sigma_Sd, 5), Eq(tau_Sd, 10)]
+        ```{python}
+        from keecas import symbols
+        from keecas.utils import dict_to_eq
+
+        # Define symbols with subscripts
+        sigma_Sd, tau_Sd = symbols(r"\\sigma_{Sd}, \tau_{Sd}")
+
+        # Single equation
+        dict_to_eq({sigma_Sd: 5})
+        # Returns: Eq(\\sigma_{Sd}, 5)
+
+        # Multiple equations
+        dict_to_eq({sigma_Sd: 5, tau_Sd: 10})
+        # Returns: [Eq(\\sigma_{Sd}, 5), Eq(\tau_{Sd}, 10)]
+        ```
 
     See Also:
         - `~~utils.eq_to_dict`: Convert SymPy Eq objects to dictionary
@@ -144,12 +153,22 @@ def eq_to_dict(result: Eq | list[Eq] | tuple[Eq, ...]) -> dict[Basic, Any]:
         Dictionary mapping LHS symbols to RHS values
 
     Examples:
-        >>> from sympy import symbols, Eq
-        >>> sigma_Sd, tau_Sd = symbols(r'\\sigma_{Sd}, \tau_{Sd}')
-        >>> eq_to_dict(Eq(sigma_Sd, 5))
-        {sigma_Sd: 5}
-        >>> eq_to_dict([Eq(sigma_Sd, 5), Eq(tau_Sd, 10)])
-        {sigma_Sd: 5, tau_Sd: 10}
+        ```{python}
+        from keecas import symbols
+        from keecas.utils import eq_to_dict
+        from sympy import Eq
+
+        # Define symbols with subscripts
+        sigma_Sd, tau_Sd = symbols(r"\\sigma_{Sd}, \tau_{Sd}")
+
+        # Single equation
+        eq_to_dict(Eq(sigma_Sd, 5))
+        # Returns: {\\sigma_{Sd}: 5}
+
+        # Multiple equations
+        eq_to_dict([Eq(sigma_Sd, 5), Eq(tau_Sd, 10)])
+        # Returns: {\\sigma_{Sd}: 5, \tau_{Sd}: 10}
+        ```
 
     See Also:
         - `~~utils.dict_to_eq`: Convert dictionary to SymPy Eq objects

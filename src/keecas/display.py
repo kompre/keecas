@@ -754,12 +754,21 @@ def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> s
         Formatted LaTeX string with localization applied
 
     Examples:
-        >>> from sympy import symbols
-        >>> sigma_Sd = symbols(r'\\sigma_{Sd}')
-        >>> latex_inline_dict(sigma_Sd, {sigma_Sd: 5})
-        '\\sigma_{Sd} = 5'
-        >>> latex_inline_dict(sigma_Sd, {sigma_Sd: 5}, mode="inline")
-        '$\\sigma_{Sd} = 5$'
+        ```{python}
+        from keecas import symbols
+        from keecas.display import latex_inline_dict
+
+        # Define symbol with subscript
+        sigma_Sd = symbols(r"\\sigma_{Sd}")
+
+        # Basic usage
+        latex_inline_dict(sigma_Sd, {sigma_Sd: 5})
+        # Returns: '\\sigma_{Sd} = 5'
+
+        # Inline mode with $ delimiters
+        latex_inline_dict(sigma_Sd, {sigma_Sd: 5}, mode="inline")
+        # Returns: '$\\sigma_{Sd} = 5$'
+        ```
 
     See Also:
         - `~~display.show_eqn`: Main display function for multiple equations

@@ -27,10 +27,21 @@ def _generate_id(obj: Any, length: int = 8) -> str:
         A lowercase alphanumeric string of specified length
 
     Examples:
-        >>> from sympy import symbols
-        >>> sigma_Sd = symbols(r'\sigma_{Sd}')
-        >>> generate_id(sigma_Sd)  # Will always return same ID for symbol
-        >>> generate_id("test_string", length=6)
+        ```{python}
+        from keecas import symbols
+        from keecas.label import generate_id
+
+        # Define symbol with subscript
+        sigma_Sd = symbols(r"\sigma_{Sd}")
+
+        # Generate stable ID for symbol
+        generate_id(sigma_Sd)  # Always returns same ID for this symbol
+        # Returns: 'a1b2c3d4' (example)
+
+        # Custom length
+        generate_id("test_string", length=6)
+        # Returns: 'x9y8z7' (example)
+        ```
     """
     # Create a stable string representation
     obj_str = _serialize_object(obj)
@@ -115,26 +126,28 @@ def generate_label(arg: Any, unique_id: bool = False) -> Any:
         - list input returns formatted str (converted via str())
 
     Examples:
-        >>> from keecas import symbols, generate_label
-        >>>
-        >>> # String label
-        >>> generate_label("my-label")
-        'eq-my-label'
-        >>>
-        >>> # Dict label with subscripted symbols
-        >>> F, A_load = symbols(r"F, A_{load}")
-        >>> labels = {F: "force", A_load: "area"}
-        >>> generate_label(labels)
-        {F: 'eq-force', A_load: 'eq-area'}
-        >>>
-        >>> # List label (converted to string)
-        >>> generate_label(["item1", "item2"])
-        "eq-['item1', 'item2']"
-        >>>
-        >>> # Unique ID generation
-        >>> label = generate_label("key", unique_id=True)
-        >>> label.startswith("eq-")
-        True
+        ```{python}
+        from keecas import symbols, generate_label
+
+        # String label
+        generate_label("my-label")
+        # Returns: 'eq-my-label'
+
+        # Dict label with subscripted symbols
+        F, A_load = symbols(r"F, A_{load}")
+        labels = {F: "force", A_load: "area"}
+        generate_label(labels)
+        # Returns: {F: 'eq-force', A_{load}: 'eq-area'}
+
+        # List label (converted to string)
+        generate_label(["item1", "item2"])
+        # Returns: "eq-['item1', 'item2']"
+
+        # Unique ID generation
+        label = generate_label("key", unique_id=True)
+        label.startswith("eq-")
+        # Returns: True
+        ```
 
     See Also:
         - `~~label.generate_unique_label`: Convenience function for unique ID generation
@@ -203,24 +216,26 @@ def generate_unique_label(arg: str | dict[Hashable, Any]) -> str | dict[Hashable
         Formatted label(s) with unique hash-based identifiers
 
     Examples:
-        >>> from keecas import symbols, generate_unique_label
-        >>>
-        >>> # String label
-        >>> label = generate_unique_label("my-key")
-        >>> label.startswith("eq-")
-        True
-        >>>
-        >>> # Dict label with subscripted symbols
-        >>> F, A_load = symbols(r"F, A_{load}")
-        >>> labels = generate_unique_label({F: "force", A_load: "area"})
-        >>> all(v.startswith("eq-") for v in labels.values())
-        True
-        >>>
-        >>> # Can be used with partial functions
-        >>> from functools import partial
-        >>> auto_labeler = partial(generate_unique_label)
-        >>> auto_labeler("test")
-        'eq-...'
+        ```{python}
+        from keecas import symbols, generate_unique_label
+
+        # String label
+        label = generate_unique_label("my-key")
+        label.startswith("eq-")
+        # Returns: True
+
+        # Dict label with subscripted symbols
+        F, A_load = symbols(r"F, A_{load}")
+        labels = generate_unique_label({F: "force", A_load: "area"})
+        all(v.startswith("eq-") for v in labels.values())
+        # Returns: True
+
+        # Can be used with partial functions
+        from functools import partial
+        auto_labeler = partial(generate_unique_label)
+        auto_labeler("test")
+        # Returns: 'eq-...' (hash-based ID)
+        ```
 
     See Also:
         - `~~label.generate_label`: Main label generation function
