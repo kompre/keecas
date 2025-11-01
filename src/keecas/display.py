@@ -99,7 +99,7 @@ def show_eqn(
         ```{python}
         from keecas import symbols, u, pc, show_eqn
 
-        # Basic parameter display
+        # Basic parameter display with subscripted symbols
         F, A_load = symbols(r"F, A_{load}")
 
         _p = {
@@ -112,10 +112,10 @@ def show_eqn(
 
         ```{python}
         # Multi-column with expressions and values
-        sigma = symbols(r"\sigma")
+        sigma_Sd = symbols(r"\sigma_{Sd}")
 
         _e = {
-            sigma: "F/A_load" | pc.parse_expr
+            sigma_Sd: "F/A_load" | pc.parse_expr
         }
 
         _v = {k: v | pc.subs(_p | _e) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
@@ -134,14 +134,14 @@ def show_eqn(
         _l = {
             F: 'force',
             A_load: 'area',
-            sigma: 'stress-calc',
+            sigma_Sd: 'stress-calc',
         }
 
         # specific float formatting
         _f = {
             F: '{:.1f}', # applied to all element in the row
             A_load: '{:.2f}', # applied to all element in the row
-            sigma: [None, None, '.3f'], # per cell formatting
+            sigma_Sd: [None, None, '.3f'], # per cell formatting
         }
 
         show_eqn([_p|_e, _v], float_format=_f, label=_l)
@@ -158,7 +158,7 @@ def show_eqn(
         _d = {
             F: 'applied force',
             A_load: 'area of application',
-            sigma: 'stress',
+            sigma_Sd: 'stress',
         }
 
         # use hash function to create unique labels
@@ -655,21 +655,21 @@ def format_decimal_numbers(
         from keecas.display import format_decimal_numbers
 
         # Basic usage with shorthand notation
-        latex = r"\sigma = 1.23456 \text{ MPa}"
+        latex = r"\sigma_{Sd} = 1.23456 \text{ MPa}"
         formatted = format_decimal_numbers(latex, ".2f")
         print(formatted)
         ```
 
         ```{python}
         # Multiple decimal numbers in one string
-        latex = r"F = 100.567 \text{ kN}, A = 20.123 \text{ cm}^2"
+        latex = r"F = 100.567 \text{ kN}, A_{load} = 20.123 \text{ cm}^2"
         formatted = format_decimal_numbers(latex, ".1f")
         print(formatted)
         ```
 
         ```{python}
         # Different format specifications
-        latex = r"\alpha = 3.14159"
+        latex = r"\alpha_{max} = 3.14159"
 
         # Standard precision
         print(format_decimal_numbers(latex, ".3f"))
@@ -687,7 +687,7 @@ def format_decimal_numbers(
         from sympy import latex
 
         # tip: use for custom post-processing of LaTeX strings
-        sigma = symbols(r"\sigma")
+        sigma_Rd = symbols(r"\sigma_{Rd}")
         value_latex = latex(5.123456 * u.MPa)
 
         # Format specific parts before display
@@ -755,11 +755,11 @@ def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> s
 
     Examples:
         >>> from sympy import symbols
-        >>> x = symbols('x')
-        >>> latex_inline_dict(x, {x: 5})
-        'x = 5'
-        >>> latex_inline_dict(x, {x: 5}, mode="inline")
-        '$x = 5$'
+        >>> sigma_Sd = symbols(r'\\sigma_{Sd}')
+        >>> latex_inline_dict(sigma_Sd, {sigma_Sd: 5})
+        '\\sigma_{Sd} = 5'
+        >>> latex_inline_dict(sigma_Sd, {sigma_Sd: 5}, mode="inline")
+        '$\\sigma_{Sd} = 5$'
 
     See Also:
         - `~~display.show_eqn`: Main display function for multiple equations

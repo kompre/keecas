@@ -17,15 +17,15 @@ Example:
     >>> from keecas import format_value
     >>> from sympy import symbols
     >>>
-    >>> x = symbols('x')
-    >>> format_value(x, col_index=0)
-    'x'
+    >>> sigma_Sd = symbols(r'\\sigma_{Sd}')
+    >>> format_value(sigma_Sd, col_index=0)
+    '\\sigma_{Sd}'
     >>>
     >>> format_value(3.14159, col_index=1)
     '= 3.14159'
     >>>
-    >>> format_value("hello", col_index=0)
-    '\\\\text{hello}'
+    >>> format_value("applied force", col_index=0)
+    '\\\\text{applied force}'
 
     Custom type registration:
 
@@ -101,15 +101,15 @@ def format_value(value: Any, col_index: int = 0, **kwargs) -> str:
     Examples
     --------
     >>> from sympy import symbols
-    >>> x = symbols('x')
-    >>> format_value(x)
-    'x'
+    >>> sigma_Rd = symbols(r'\\sigma_{Rd}')
+    >>> format_value(sigma_Rd)
+    '\\sigma_{Rd}'
     >>>
     >>> format_value(42, col_index=1)
     '= 42'
     >>>
-    >>> format_value("text", col_index=0)
-    '\\\\text{text}'
+    >>> format_value("capacity check", col_index=0)
+    '\\\\text{capacity check}'
 
     Notes
     -----
