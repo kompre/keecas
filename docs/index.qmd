@@ -31,7 +31,6 @@ This combination provides a streamlined interface for mathematical computations 
 ## Quick Example
 
 ```{python}
-#| eval: false
 from keecas import symbols, u, pc, show_eqn
 
 # Define symbols with LaTeX notation
