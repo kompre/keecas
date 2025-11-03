@@ -359,6 +359,8 @@ For each document, we'll verify:
 - Technical accuracy important (stress vs pressure terminology)
 - Examples should show complete patterns when possible
 - Label workflow integration valued for Quarto users
+- **NO EMOJIS** - seen as "AI slop"
+- **Always link packages** - when mentioning packages (SymPy, Pint, etc.), link to their website or repo
 
 **Ready to proceed to Phase 1.2**: Getting Started Overview
 
