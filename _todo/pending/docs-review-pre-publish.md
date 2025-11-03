@@ -563,7 +563,28 @@ For each document, we'll verify:
 - Is the quick start too verbose? Should we condense sections?
 - Keep the multi-step calculations section or move to examples?
 
-**Ready for User Review**: Awaiting approval to apply fixes
+**User Refinements Applied** ✓:
+- Added footnote for label clarification
+- Restored `#| eval: false` for placeholder examples
+- Multi-line dict formatting with trailing commas
+- Split multi-step into separate code blocks for clarity
+- Realistic Eurocode engineering notation (sigma_Rk, sigma_Rd, gamma_M0)
+- Explicit float formatting per display (:.2f, :.3f)
+- Proper verification workflow pattern
+- Config: katex = False (enable labels)
+
+**Phase 1.4 Status**: COMPLETE ✓ (CLI verification pending for future session)
+
+**Style Patterns Learned**:
+- Use footnotes for inline clarifications without cluttering text
+- Don't execute placeholder examples with undefined variables
+- Multi-line dict formatting with trailing commas
+- Separate code blocks for multi-step calculations
+- Use realistic engineering notation (Eurocode style)
+- Explicit float formatting control per equation display
+- Complete verification workflow: Calculate → Check → Display
+
+**Session Complete** - Phase 1.5 (Configuration Guide) pending for next session
 
 ---
 
