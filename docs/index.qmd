@@ -5,19 +5,11 @@ subtitle: "Symbolic and units-aware calculations for Jupyter notebooks"
 
 Welcome to Keecas, a Python package for symbolic and units-aware calculations in Jupyter notebooks, specifically designed for Quarto rendered PDF documents.
 
-## What is Keecas? 
+## What is Keecas?
 
-Keecas goal is to provide the user with a way to write symbolic mathematical expressions with as minimal boiler-plate code as possible, and then display them as nicely formatted latex amsmath block, that will be rendered by Jupyter/Quarto. 
+Keecas minimizes boilerplate for symbolic calculations in Jupyter notebooks by using Python dicts as its core container - keys represent left-hand side symbols, values represent right-hand side expressions. This natural mapping enables clean, readable code with dict comprehensions.
 
-Since an equation is essentially a mapping between the left hand side (lhs) and the right hand side (rhs) , keecas uses the dict as its main container, where the key is the lhs and the value is the rhs. This way the user can write easy to read dict and dict comprehension, resulting in quite clean notebook's cell. 
-
-Keecas combines three powerful Python libraries:
-
-- **SymPy** - Symbolic mathematics
-- **Pint** - Physical units and quantities
-- **Pipe** - Functional programming patterns
-
-This combination provides a streamlined interface for mathematical computations with beautiful LaTeX output, perfect for engineering documentation and calculations.
+Built on **SymPy** (symbolic math), **Pint** (units), and **Pipe** (functional programming), Keecas provides a streamlined interface for unit-aware calculations with automatic LaTeX rendering.
 
 ## Key Features
 
@@ -31,7 +23,7 @@ This combination provides a streamlined interface for mathematical computations 
 ## Quick Example
 
 ```{python}
-from keecas import symbols, u, pc, show_eqn
+from keecas import symbols, u, pc, show_eqn, generate_unique_label
 
 # Define symbols with LaTeX notation
 F_d, A_load, sigma = symbols(r"F_{d}, A_{load}, \sigma")
@@ -57,13 +49,30 @@ _v = {
 _d = {
 				F_d: "design force",
     A_load: "loaded area",
-    sigma: "applied pressure",
+    sigma: "normal stress",
 }
 
+# Label (Quarto only)
+_l = generate_unique_label(_d)
 
 # Display
-show_eqn([_p | _e, _v, _d])
+show_eqn(
+    [_p | _e, _v, _d], # list of dict as main input
+    label=_l # a dict of labels (key matching)
+)
 ```
+
+```{python}
+#| echo: false
+from IPython.display import Markdown
+```
+
+
+::: {.callout title="Labels works!"}
+
+The normal stress is shown in `{python} Markdown(fr'\eqref{{{_l[sigma]}}}')` is the result of the design force `{python} Markdown(fr'\eqref{{{_l[F_d]}}}')` divided by the loaded area `{python} Markdown(fr'\eqref{{{_l[A_load]}}}')`.
+
+:::
 
 ## Getting Started
 
