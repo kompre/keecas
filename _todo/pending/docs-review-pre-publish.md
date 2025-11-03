@@ -275,3 +275,5 @@ For each document, we'll verify:
 ---
 
 **Status**: Awaiting user approval to begin Phase 0 and Phase 1.
+
+<!-- update this document during editing whenever I give you new instructions or new insight on how to document the repo. I may also do direct editing to file: check the edits and annotate notable trend in my style. At the end you should be abel to have a comprehensive style guide for future content -->

@@ -5,6 +5,11 @@ website:
   title: "Keecas Documentation"
   description: "Symbolic and units-aware calculations for Jupyter notebooks"
 
+  sidebar: 
+    tools:
+      - icon: github
+        href: https://github.com/kompre/keecas
+
   navbar:
     title: "Keecas"
     left:
@@ -18,10 +23,15 @@ website:
         text: API Reference
       - href: cli-reference/index.qmd
         text: CLI Reference
+    right:
+      - href: https://github.com/kompre/keecas
+        text: GitHub
+        aria-label: GitHub
+        icon: github
 
 format:
   html:
-    theme: cosmo
+    theme: journal
     toc: true
     code-copy: true
     include-in-header:

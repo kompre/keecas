@@ -7,13 +7,12 @@
 <!-- Tasks moved to proposal phase -->
 
 **Tasks awaiting approval in `proposal/`**:
-- [docs-review-pre-publish.md](proposal/docs-review-pre-publish.md) - Comprehensive pre-publication documentation review and correction (awaiting review)
 - [refactor-formatters-singledispatch.md](proposal/refactor-formatters-singledispatch.md) - Refactor formatter system to use singledispatch pattern (awaiting review)
 - [refactor-docstring-see-also-interlinks.md](proposal/refactor-docstring-see-also-interlinks.md) - Standardize "See Also" sections with quartodoc interlinks (awaiting review)
 - [configurable-label-generation.md](proposal/configurable-label-generation.md) - Add config option for stable label generation strategies in show_eqn (awaiting review)
 
 **Tasks in development (`pending/`)**:
-<!-- No tasks currently in development -->
+- [docs-review-pre-publish.md](pending/docs-review-pre-publish.md) - Comprehensive pre-publication documentation review and correction (in progress)
 
 **Completed tasks**:
 - [branch-protection-and-ci.md](completed/2025-10-24/branch-protection-and-ci.md) - Complete CI/CD pipeline with test and release workflows, branch protection guide, and comprehensive documentation (completed 2025-10-24)
