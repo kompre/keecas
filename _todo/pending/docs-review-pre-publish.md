@@ -462,11 +462,34 @@ For each document, we'll verify:
 4. Line 36: Remove redundant `uv pip install -e ".[dev]"` command
 5. Add links to Jupyter, IPython where mentioned
 
-**Questions for User**:
-- Should we keep the "Optional Dependencies" section at all?
-- If yes, what should it actually contain (Quarto as external tool)?
+**User Changes Applied** ✓:
+- Added PyPI link
+- Changed pip section title from "Recommended" to "classic"
+- Added new "Install as executable" section with pipx and uv tool
 
-**Ready for User Review**: Awaiting approval to apply fixes
+**Claude Fixes Applied** ✓:
+1. Fixed typo: "reccomend" → "recommend"
+2. Removed redundant `uv pip install -e ".[dev]"` command
+3. Completely rewrote dependency sections:
+   - Removed incorrect "Jupyter support" and "CLI dependencies" lines
+   - Removed misleading "Optional Dependencies" section
+   - Created accurate "Requirements" section with package links
+   - Created "External Tools" section for Quarto
+4. Added links to all packages: SymPy, Pint, Pipe, IPython, Jupyter, Quarto
+5. Fixed troubleshooting to remove ipywidgets suggestion
+
+**Final Verification**:
+- All dependencies now match pyproject.toml ✓
+- Package links added per style guideline ✓
+- No factual errors remaining ✓
+
+**Phase 1.3 Status**: COMPLETE ✓
+
+**Style Notes**:
+- User added pipx/uv tool for CLI installation (good practice)
+- User prefers "classic" terminology over "recommended"
+
+**Ready to proceed to Phase 1.4**: Quick Start Tutorial
 
 ---
 
