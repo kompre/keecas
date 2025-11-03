@@ -52,21 +52,11 @@ pip install -e ".[dev]"
 
 ## Verification
 
-After installation, verify that Keecas is working correctly:
+Verify the installation:
 
-```python
-# In a Python shell or Jupyter notebook
-from keecas import symbols, u, show_eqn
-
-# Define symbols
-F, A = symbols(r"F, A")
-
-# Create a simple calculation
-equations = {F: 100 * u.kN, A: F / (10 * u.MPa)}
-show_eqn(equations)
+```bash
+keecas --version
 ```
-
-If you see a LaTeX-formatted equation output, Keecas is installed correctly!
 
 ## External Tools
 
