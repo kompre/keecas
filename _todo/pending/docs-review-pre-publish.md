@@ -402,7 +402,71 @@ For each document, we'll verify:
 
 **Phase 1.2 Status**: COMPLETE ✓ - No changes needed
 
+**Phase 1.2 Status**: COMPLETE ✓ - Emojis removed
+
 **Ready to proceed to Phase 1.3**: Installation Guide
+
+---
+
+#### Phase 1.3: Installation Guide (`docs/getting-started/installation.qmd`)
+
+**Code Verification**: ✓ Verification example executes successfully
+
+**Findings**:
+
+1. **❌ ISSUE - Incorrect Dependencies** (Line 64)
+   - **Problem**: Claims "ipywidgets" as Jupyter support dependency
+   - **Reality**: NOT in pyproject.toml dependencies
+   - **Actual**: Only IPython is in core dependencies
+   - **Severity**: Factual error
+
+2. **❌ ISSUE - Incorrect CLI Dependencies** (Line 65)
+   - **Problem**: Claims "click, toml" as CLI dependencies
+   - **Reality**: CLI uses argparse (built-in) + toml
+   - **Actual**: "click" is NOT used or required
+   - **Verified**: Checked src/keecas/cli.py - uses argparse
+   - **Severity**: Factual error
+
+3. **❌ ISSUE - Incorrect Optional Dependencies** (Lines 67-73)
+   - **Problem**: Lists jupyter, quarto, mkdocs as "optional"
+   - **Reality**:
+     - jupyter: CORE dependency (in pyproject.toml line 13), not optional
+     - quarto: External tool, not a Python package dependency
+     - mkdocs: Not related to keecas at all
+   - **Severity**: Section is misleading/incorrect
+
+4. **❌ ISSUE - Development Installation Command** (Line 36)
+   - **Problem**: Shows `uv pip install -e ".[dev]"`
+   - **Reality**: With uv, just `uv sync` installs everything including dev dependencies
+   - **Correct**: The `uv pip install -e` command is redundant
+   - **Severity**: Minor - command works but unnecessary
+
+5. **⚠️ MISSING - Package Links**
+   - uv has link ✓
+   - Should add links to: Jupyter, IPython when mentioned
+
+6. **✓ VERIFIED - Correct Elements**:
+   - pip installation command correct ✓
+   - uv add command correct ✓
+   - Git clone URL correct ✓
+   - Python version requirement (>=3.12, <4.0) matches pyproject.toml ✓
+   - Core dependencies sympy, pint, pipe correct ✓
+   - Verification code executes successfully ✓
+   - Troubleshooting sections helpful ✓
+   - Link to uv documentation present ✓
+
+**Proposed Changes**:
+1. Line 64: Remove "ipywidgets" or clarify it's only for certain notebook features
+2. Line 65: Remove "click" - just say "toml" or remove line entirely (most are built-in)
+3. Lines 67-73: Remove or completely rewrite "Optional Dependencies" section
+4. Line 36: Remove redundant `uv pip install -e ".[dev]"` command
+5. Add links to Jupyter, IPython where mentioned
+
+**Questions for User**:
+- Should we keep the "Optional Dependencies" section at all?
+- If yes, what should it actually contain (Quarto as external tool)?
+
+**Ready for User Review**: Awaiting approval to apply fixes
 
 ---
 
