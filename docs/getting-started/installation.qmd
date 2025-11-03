@@ -68,11 +68,6 @@ show_eqn(equations)
 
 If you see a LaTeX-formatted equation output, Keecas is installed correctly!
 
-## Requirements
-
-- **Python**: >=3.12, <4.0
-- **Core dependencies**: [SymPy](https://www.sympy.org/), [Pint](https://pint.readthedocs.io/), [Pipe](https://github.com/JulienPalard/Pipe), [IPython](https://ipython.org/), [Jupyter](https://jupyter.org/)
-
 ## External Tools
 
 For generating scientific documents from your calculations:

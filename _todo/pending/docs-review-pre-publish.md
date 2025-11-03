@@ -489,6 +489,14 @@ For each document, we'll verify:
 - User added pipx/uv tool for CLI installation (good practice)
 - User prefers "classic" terminology over "recommended"
 
+**Additional Fix - Requirements Section Removed**:
+- User questioned why some dependencies were listed and others omitted
+- Research showed standard practice: NumPy, pandas, Django, Flask, etc. don't list dependencies
+- Rationale: Package managers handle dependencies automatically; listing is non-standard
+- Decision: Removed entire "Requirements" section
+- Dependencies already mentioned conceptually on home page ("Built on SymPy, Pint, Pipe")
+- Keeps docs cleaner and follows industry standard practice
+
 **Ready to proceed to Phase 1.4**: Quick Start Tutorial
 
 ---
