@@ -79,8 +79,8 @@ quartodoc:
           children: linked
         - show_eqn
         - check
-        - format_decimal_numbers
         - latex_inline_dict
+        - display.format_decimal_numbers
     - title: Label Module
       desc: Label generation
       contents:
@@ -94,7 +94,7 @@ quartodoc:
         - name: dataframe
           children: linked
         - Dataframe
-        - create_dataframe
+        - dataframe.create_dataframe
     - title: Pipe Commands Module
       desc: Wraps common SymPy functions as decorators for functional composition
       contents:
@@ -107,9 +107,9 @@ quartodoc:
       desc: Configuration management
       contents:
         - name: config
-        - name: manager
-        - name: migration
-        - name: schema
+        - name: config.manager
+        - name: config.migration
+        - name: config.schema
     - title: Localization Module
       desc: Localization settings
       contents:

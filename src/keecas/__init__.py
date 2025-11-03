@@ -14,6 +14,7 @@ from .dataframe import Dataframe
 from .display import (
     check,
     config,
+    latex_inline_dict,
     show_eqn,
 )
 
@@ -77,6 +78,7 @@ __all__ = [
     "show_eqn",
     "config",
     "check",
+    "latex_inline_dict",
     "dict_to_eq",
     "eq_to_dict",
     "generate_label",
