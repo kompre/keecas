@@ -3,7 +3,7 @@ title: "Keecas Documentation"
 subtitle: "Symbolic and units-aware calculations for Jupyter notebooks"
 ---
 
-Welcome to Keecas, a Python package for symbolic and units-aware calculations in Jupyter notebooks, specifically designed for Quarto rendered documents (LaTeX PDF, HTML).
+Welcome to Keecas, a Python package for symbolic and units-aware calculations in Jupyter notebooks, specifically designed for [Quarto](https://quarto.org/) rendered documents (LaTeX PDF, HTML).
 
 ## What is Keecas?
 
@@ -15,7 +15,7 @@ Built on [SymPy](https://www.sympy.org/) (symbolic math), [Pint](https://pint.re
 
 - **Symbolic Mathematics**: Work with symbolic expressions and equations
 - **Unit-Aware Calculations**: Automatic unit conversion and dimensional analysis
-- **LaTeX Output**: Beautiful equation rendering for documents (amsmath)
+- **LaTeX Output**: Beautiful equation rendering for documents ([amsmath](https://ctan.org/pkg/amsmath))
 - **Jupyter Integration**: Seamless notebook workflow
 - **Internationalization**: Support for multiple languages and locales
 - **Configurable**: Flexible configuration system
