@@ -35,6 +35,52 @@ For guidelines on writing API documentation with Google-style docstrings for qua
 - All API reference functions must follow these standards
 - Examples should be tutorial-quality and demonstrate idiomatic usage
 
+#### Docstring Formatting Standards
+
+**Style**: Google-style docstrings (enforced by quartodoc and Ruff)
+
+**Automatic Formatting**:
+- Code examples in docstrings are automatically formatted by Ruff
+- Use `{python}` fenced code blocks for Examples sections
+- Ruff respects the 100-character line length for code examples
+
+**Line Length Guidelines**:
+- **Prose descriptions**: Aim for ~88 characters per line for readability
+- **Code examples**: Automatically formatted (max 100 chars)
+- **Long parameter descriptions**: Use multi-line format with continuation indent
+
+**Code Examples in Docstrings**:
+- Each example should demonstrate one clear concept
+- Inline comments indicate expected output: `function_call()  # Returns: output`
+- Type hints NOT required in docstring examples (lighter linting)
+- Trailing commas optional in examples (focus on clarity over style)
+
+**Example Format**:
+```python
+"""Function description.
+
+Args:
+    param: Short description that fits on one line.
+    long_param: Longer description that needs wrapping.
+
+        Continue with proper 4-space indent. Can use multiple paragraphs
+        for complex parameters. Break at logical points (clauses, lists).
+
+Returns:
+    Description of return value.
+
+Examples:
+    ```{python}
+    from keecas import symbols
+
+    # Simple example
+    result = function(arg)  # Returns: expected_output
+    ```
+"""
+```
+
+**Important**: Always follow ASCII-only rule (see "Important: Unicode in Code and Documentation").
+
 ### Testing
 ```bash
 pytest

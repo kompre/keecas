@@ -56,14 +56,19 @@ def show_eqn(
     layouts, custom formatting, labeling, and various LaTeX environments.
 
     Args:
-        eqns: Equation data as dict or list of dicts or Dataframe object (the passed argument will be converted to a Dataframe object). When a list of dicts is passed, the keys of the first dict will be used as the keys of the resulting Dataframe, while subsequent dicts will be added as new columns, if the keys match, otherwise None (see Dataframe.__init__ for more details).
+        eqns: Equation data as dict, list of dicts, or Dataframe object.
+            Automatically converted to Dataframe internally. For list of dicts: first
+            dict's keys become Dataframe keys, subsequent dicts add columns where keys
+            match (None for mismatches). See Dataframe.__init__ for details.
         environment: LaTeX environment name or custom definition. Built-in environments include
             "align", "equation", "cases", "gather", "split", "alignat", "rcases". Can also be
             a dict or EnvironmentDefinition object for custom environments.
             Defaults to config.latex.default_environment.
-        sep: Separator(s) between cells in the amsmath block (e.g. `LHS & RHS & ...`). Can be string or list of strings
-            for finer customization (separator goes in between each column, so first separator is between first and second column, etc). Defaults to environment's default separator
-            (None uses environment default: "&" for align, "" for equation/gather).
+        sep: Separator(s) between cells in the amsmath block (e.g. `LHS & RHS & ...`).
+            Can be string or list of strings for finer customization (separator goes
+            between columns: first separator between columns 1-2, etc). Defaults to
+            environment's default separator (None uses environment default: "&" for
+            align, "" for equation/gather).
         label: Label(s) for cross-referencing equations. Can be:
             - str: Single label string (pre-formatted with generate_label)
             - dict: Mapping symbols to label strings or callables
@@ -72,18 +77,25 @@ def show_eqn(
             Callable labels receive a single list argument: [key, value1, value2, ...].
             Omitted in KaTeX mode for notebook compatibility.
         label_command: LaTeX label command (e.g., r"\label"). Defaults to config.latex.default_label_command.
-        col_wrap: Column wrapping specifications for LaTeX formatting. Can be str, dict, list, Dataframe, or 2 element tuple.
-            When a 2 element tuple is given `(seed, filler)`, `seed` will be used to create a Dataframe with `filler` as default value.
-            List elements can be None (no wrapping), str (prefix only), tuple (prefix, suffix), or Callable.
-            Defaults to config.col_wrap.
-        float_format: Format specification for float values (it will not affect int). Can be str (applied to all floats), list of str (per column formatting), dict (per row formatting), dict of list or Dataframe (per cell formatting).
-            When a 2 element tuple is given `(seed, filler)`, `seed` will be used to create a Dataframe with `filler` as default value.
-            Supports format specs with or without braces (e.g., ".3f" or "{:.3f}").
-            Defaults to config.display.default_float_format.
-        cell_formatter: Custom cell value formatter function(s). Can be single Callable[(value, col_index) -> str] (applied to all cells),
-            list of Callable (applied to each cell in a column), dict of Callable (applied to each cell in a row if key matches), dict of list of Callable or Dataframe for cell specific formatting, or tuple (formatters, default). Defaults to config.display.cell_formatter.
-        row_formatter: Custom row-level formatter function(s). Can be single Callable[(row_latex_str) -> str]
-            or dict mapping symbol keys to formatters. It applies to the composed entire row (str). Defaults to config.display.row_formatter.
+        col_wrap: Column wrapping specifications for LaTeX formatting.
+            Can be str, dict, list, Dataframe, or 2-element tuple. When given
+            `(seed, filler)`, creates Dataframe using `seed` with `filler` as default.
+            List elements: None (no wrapping), str (prefix only), tuple (prefix, suffix),
+            or Callable. Defaults to config.col_wrap.
+        float_format: Format specification for float values (does not affect int).
+            Can be str (all floats), list of str (per column), dict (per row), dict of
+            list or Dataframe (per cell). When given `(seed, filler)`, creates Dataframe
+            using `seed` with `filler` as default. Supports format specs with or without
+            braces (e.g., ".3f" or "{:.3f}"). Defaults to config.display.default_float_format.
+        cell_formatter: Custom cell value formatter function(s).
+            Can be single Callable[(value, col_index) -> str] (all cells), list of
+            Callable (per column), dict of Callable (per row if key matches), dict of
+            list of Callable or Dataframe (per cell), or tuple (formatters, default).
+            Defaults to config.display.cell_formatter.
+        row_formatter: Custom row-level formatter function(s).
+            Can be single Callable[(row_latex_str) -> str] or dict mapping symbol keys
+            to formatters. Applies to the composed entire row (str). Defaults to
+            config.display.row_formatter.
         debug: Enable debug mode to print generated LaTeX source code. Defaults to config.display.debug.
         env_arg: Optional environment argument (e.g., "{2}" for alignat{2}). User provides complete
             argument string including braces.
