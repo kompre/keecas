@@ -64,43 +64,6 @@ For generating scientific documents from your calculations:
 
 - **[Quarto](https://quarto.org/)**: Render notebooks to PDF, HTML, and other formats
 
-## Troubleshooting
-
-### Import Errors
-
-If you get import errors:
-
-```bash
-# Ensure you're using the correct Python environment
-which python
-pip list | grep keecas
-
-# Reinstall if needed
-pip uninstall keecas
-pip install keecas
-```
-
-### Missing Dependencies
-
-If calculations don't display properly in notebooks:
-
-```bash
-# Ensure IPython is installed
-pip install ipython jupyter
-```
-
-### CLI Not Available
-
-If the `keecas` command isn't found:
-
-```bash
-# Check if it's in your PATH
-which keecas
-
-# If not, ensure site-packages/bin is in PATH
-# Or use: python -m keecas
-```
-
 ## Next Steps
 
 Once installed, continue to the [Quick Start](quickstart.qmd) guide to create your first calculations.
