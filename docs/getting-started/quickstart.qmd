@@ -48,7 +48,7 @@ _e = {
 
 ### 5. Create Descriptions and Labels
 
-Add descriptions for documentation and generate labels for cross-references:
+Add descriptions for documentation and generate labels^[labels can be automatically generated, or manually specified] for cross-references:
 
 ```{python}
 # Descriptions
@@ -98,6 +98,7 @@ Keecas follows a consistent pattern:
 Keecas uses pipe operators (`|`) for functional composition:
 
 ```{python}
+#| eval: false
 # Chain operations together
 result = expression | pc.subs(parameters) | pc.convert_to(units) | pc.N
 ```
@@ -115,7 +116,7 @@ Set up basic configuration for your document:
 
 ```{python}
 # Configuration for LaTeX output
-config.display.katex = True              # KaTeX compatibility
+config.display.katex = False              # KaTeX compatibility
 config.latex.eq_prefix = "eq-"           # Equation label prefix
 config.language = 'en'                   # Language/locale
 ```
@@ -132,26 +133,43 @@ eqn = {}     # Global expressions
 # First calculation cell
 F_d, A_load, sigma_d = symbols(r"F_{d}, A_{load}, \sigma_{d}")
 
-_p = {F_d: 10 * u.kN, A_load: 50 * u.cm**2}
+_p = {
+    F_d: 10 * u.kN,
+    A_load: 5 * u.cm**2,
+}
 params.update(_p)  # Save to global
 
-_e = {sigma_d: "F_d / A_load" | pc.parse_expr}
+_e = {
+    sigma_d: "F_d / A_load" | pc.parse_expr, 
+}
 eqn.update(_e)     # Save to global
 
-_v = {k: v | pc.subs(eqn | params) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
+_v = {
+    k: v | pc.subs(eqn | params) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()
+}
 show_eqn([_p | _e, _v])
+```
 
+
+```{python}
 # Second calculation cell (uses previous results)
-tau_Rd, gamma_M = symbols(r"\tau_{Rd}, \gamma_{M}")
+sigma_Rk, sigma_Rd, gamma_M0 = symbols(r"\sigma_{Rk}, \sigma_{Rd}, \gamma_{M0}")
 
-_p = {gamma_M: 1.5}  # Safety factor
+_p = {
+    sigma_Rk: 275 * u.MPa,
+    gamma_M0: 1.05, # Safety factor
+}  
 params.update(_p)
 
-_e = {tau_Rd: "sigma_d / gamma_M" | pc.parse_expr}
+_e = {
+    sigma_Rd: "sigma_Rk / gamma_M0" | pc.parse_expr,
+}
 eqn.update(_e)
 
-_v = {k: v | pc.subs(eqn | params) | pc.N for k, v in _e.items()}
-show_eqn([_p | _e, _v])
+_v = {
+    k: v | pc.subs(eqn | params) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()
+}
+show_eqn([_p | _e, _v], float_format=":.2f")
 ```
 
 ## Verification and Checks
@@ -162,12 +180,18 @@ Check if calculated values meet criteria:
 from keecas import check
 
 # Check if stress is within allowable limits
-sigma_Rd, sigma_Ed = symbols(r"\sigma_{Rd}, \sigma_{Ed}")
-_p = {sigma_Rd: 250 * u.MPa, sigma_Ed: 2 * u.MPa}  # Resistance and design stress
 
-# Expression to check: sigma_Ed / sigma_Rd <= 1.0
-_c = {sigma_Ed / sigma_Rd: check(sigma_Ed / sigma_Rd | pc.subs(_p) | pc.N, 1.0)}
-show_eqn([_p, _c])
+# calculate the value
+_v = {
+    k: k | pc.subs(eqn|params) | pc.convert_to([u.N, u.mm]) | pc.N for k in [sigma_d/sigma_Rd]
+}
+
+# check is the expression is less than 1 (default)
+_c = {
+    k: check(v, 1) for k, v in _v.items()
+}
+
+show_eqn([_v, _c], float_format=":.3f")
 ```
 
 ## CLI Quick Start
@@ -175,6 +199,9 @@ show_eqn([_p, _c])
 Use the Keecas CLI for quick setup:
 
 ```bash
+# Create a temporary session 
+keecas edit --temp
+
 # Create a new notebook with template
 keecas edit my_calculation.ipynb --template quickstart
 
