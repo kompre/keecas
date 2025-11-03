@@ -123,12 +123,12 @@ def dict_to_eq(result: dict[Basic, Any]) -> Eq | list[Eq]:
         sigma_Sd, tau_Sd = symbols(r"\\sigma_{Sd}, \tau_{Sd}")
 
         # Single equation
-        dict_to_eq({sigma_Sd: 5})
-        # Returns: Eq(\\sigma_{Sd}, 5)
+        dict_to_eq({sigma_Sd: 5})  # Returns: Eq(\\sigma_{Sd}, 5)
+        ```
 
+        ```{python}
         # Multiple equations
-        dict_to_eq({sigma_Sd: 5, tau_Sd: 10})
-        # Returns: [Eq(\\sigma_{Sd}, 5), Eq(\tau_{Sd}, 10)]
+        dict_to_eq({sigma_Sd: 5, tau_Sd: 10})  # Returns: [Eq(\\sigma_{Sd}, 5), Eq(\tau_{Sd}, 10)]
         ```
 
     See Also:
@@ -162,12 +162,12 @@ def eq_to_dict(result: Eq | list[Eq] | tuple[Eq, ...]) -> dict[Basic, Any]:
         sigma_Sd, tau_Sd = symbols(r"\\sigma_{Sd}, \tau_{Sd}")
 
         # Single equation
-        eq_to_dict(Eq(sigma_Sd, 5))
-        # Returns: {\\sigma_{Sd}: 5}
+        eq_to_dict(Eq(sigma_Sd, 5))  # Returns: {\\sigma_{Sd}: 5}
+        ```
 
+        ```{python}
         # Multiple equations
-        eq_to_dict([Eq(sigma_Sd, 5), Eq(tau_Sd, 10)])
-        # Returns: {\\sigma_{Sd}: 5, \tau_{Sd}: 10}
+        eq_to_dict([Eq(sigma_Sd, 5), Eq(tau_Sd, 10)])  # Returns: {\\sigma_{Sd}: 5, \tau_{Sd}: 10}
         ```
 
     See Also:

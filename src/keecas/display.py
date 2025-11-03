@@ -762,12 +762,12 @@ def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> s
         sigma_Sd = symbols(r"\\sigma_{Sd}")
 
         # Basic usage
-        latex_inline_dict(sigma_Sd, {sigma_Sd: 5})
-        # Returns: '\\sigma_{Sd} = 5'
+        latex_inline_dict(sigma_Sd, {sigma_Sd: 5})  # Returns: '\\sigma_{Sd} = 5'
+        ```
 
+        ```{python}
         # Inline mode with $ delimiters
-        latex_inline_dict(sigma_Sd, {sigma_Sd: 5}, mode="inline")
-        # Returns: '$\\sigma_{Sd} = 5$'
+        latex_inline_dict(sigma_Sd, {sigma_Sd: 5}, mode="inline")  # Returns: '$\\sigma_{Sd} = 5$'
         ```
 
     See Also:
