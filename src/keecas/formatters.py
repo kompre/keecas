@@ -19,16 +19,17 @@ Example:
     sigma_Rd = symbols(r"\\sigma_{Rd}")
 
     # Format symbol (column 0 - LHS)
-    format_value(sigma_Rd, col_index=0)
-    # Returns: '\\sigma_{Rd}'
+    format_value(sigma_Rd, col_index=0)  # Returns: '\\sigma_{Rd}'
+    ```
 
+    ```{python}
     # Format float (column 1+ - RHS with equals)
-    format_value(3.14159, col_index=1)
-    # Returns: '= 3.14159'
+    format_value(3.14159, col_index=1)  # Returns: '= 3.14159'
+    ```
 
+    ```{python}
     # Format string
-    format_value("hello", col_index=0)
-    # Returns: '\\text{hello}'
+    format_value("hello", col_index=0)  # Returns: '\\text{hello}'
     ```
 
     Custom type registration:
@@ -113,16 +114,17 @@ def format_value(value: Any, col_index: int = 0, **kwargs) -> str:
     sigma_Rd = symbols(r"\\sigma_{Rd}")
 
     # Format symbol (LHS)
-    format_value(sigma_Rd)
-    # Returns: '\\sigma_{Rd}'
+    format_value(sigma_Rd)  # Returns: '\\sigma_{Rd}'
+    ```
 
+    ```{python}
     # Format integer (RHS)
-    format_value(42, col_index=1)
-    # Returns: '= 42'
+    format_value(42, col_index=1)  # Returns: '= 42'
+    ```
 
+    ```{python}
     # Format string
-    format_value("text", col_index=0)
-    # Returns: '\\text{text}'
+    format_value("text", col_index=0)  # Returns: '\\text{text}'
     ```
 
     Notes
