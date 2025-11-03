@@ -24,6 +24,20 @@ format:
     theme: cosmo
     toc: true
     code-copy: true
+    include-in-header:
+        # this is needed for equation numbering and labeling in HTML output             
+        - text: | 
+            <script>
+            MathJax = { tex: { tags: 'ams' } };
+            </script>
+        # this get rid of unnecessary vertical scrollbars
+        - text: |
+            <style>
+            .math.display {
+              max-width: 100%;
+              padding-right: 3em;
+            }
+            </style>
 
 execute:
   freeze: auto
