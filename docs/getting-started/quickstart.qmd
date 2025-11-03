@@ -11,7 +11,6 @@ Let's start with a simple engineering calculation - computing stress from force 
 ### 1. Import Keecas
 
 ```{python}
-#| eval: false
 from keecas import symbols, u, pc, show_eqn, config
 ```
 
@@ -20,7 +19,6 @@ from keecas import symbols, u, pc, show_eqn, config
 Use LaTeX notation for beautiful symbol display:
 
 ```{python}
-#| eval: false
 # Define symbols with LaTeX notation
 F, A, sigma = symbols(r"F, A, \sigma")
 ```
@@ -30,7 +28,6 @@ F, A, sigma = symbols(r"F, A, \sigma")
 Define your parameters with units:
 
 ```{python}
-#| eval: false
 # Cell-local parameters
 _p = {
     F: 10 * u.kN,      # Force in kilonewtons
@@ -43,7 +40,6 @@ _p = {
 Create symbolic expressions:
 
 ```{python}
-#| eval: false
 # Cell-local expressions
 _e = {
     sigma: "F / A" | pc.parse_expr
@@ -55,7 +51,6 @@ _e = {
 Compute values and display the results:
 
 ```{python}
-#| eval: false
 # Evaluate expressions
 _v = {
     k: v | pc.subs(_e | _p) | pc.convert_to([u.MPa]) | pc.N
@@ -85,7 +80,6 @@ Keecas follows a consistent pattern:
 Keecas uses pipe operators (`|`) for functional composition:
 
 ```{python}
-#| eval: false
 # Chain operations together
 result = expression | pc.subs(parameters) | pc.convert_to(units) | pc.N
 ```
@@ -102,11 +96,10 @@ Common pipe commands:
 Set up basic configuration for your document:
 
 ```{python}
-#| eval: false
 # Configuration for LaTeX output
-config.katex = True              # KaTeX compatibility
-config.eq_prefix = "eq-"         # Equation label prefix
-config.language = 'en'           # Language/locale
+config.display.katex = True              # KaTeX compatibility
+config.latex.eq_prefix = "eq-"           # Equation label prefix
+config.language = 'en'                   # Language/locale
 ```
 
 ## Multi-Step Calculations
@@ -114,7 +107,6 @@ config.language = 'en'           # Language/locale
 For complex calculations spanning multiple cells:
 
 ```{python}
-#| eval: false
 # Setup cell (run once)
 params = {}  # Global parameters
 eqn = {}     # Global expressions
@@ -149,7 +141,6 @@ show_eqn([_p | _e, _v])
 Check if calculated values meet criteria:
 
 ```{python}
-#| eval: false
 from keecas import check
 
 # Check if stress is within allowable limits
