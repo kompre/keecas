@@ -11,16 +11,16 @@ Let's start with a simple engineering calculation - computing stress from force 
 ### 1. Import Keecas
 
 ```{python}
-from keecas import symbols, u, pc, show_eqn, config
+from keecas import symbols, u, pc, show_eqn, config, generate_unique_label
 ```
 
 ### 2. Define Symbols
 
-Use LaTeX notation for beautiful symbol display:
+Use LaTeX notation with subscripts for comprehensive display:
 
 ```{python}
 # Define symbols with LaTeX notation
-F, A, sigma = symbols(r"F, A, \sigma")
+F_d, A_load, sigma = symbols(r"F_{d}, A_{load}, \sigma")
 ```
 
 ### 3. Set Up Parameters
@@ -30,8 +30,8 @@ Define your parameters with units:
 ```{python}
 # Cell-local parameters
 _p = {
-    F: 10 * u.kN,      # Force in kilonewtons
-    A: 50 * u.cm**2,   # Area in square centimeters
+    F_d: 10 * u.kN,      # Force in kilonewtons
+    A_load: 50 * u.cm**2,   # Area in square centimeters
 }
 ```
 
@@ -42,11 +42,27 @@ Create symbolic expressions:
 ```{python}
 # Cell-local expressions
 _e = {
-    sigma: "F / A" | pc.parse_expr
+    sigma: "F_d / A_load" | pc.parse_expr
 }
 ```
 
-### 5. Evaluate and Display
+### 5. Create Descriptions and Labels
+
+Add descriptions for documentation and generate labels for cross-references:
+
+```{python}
+# Descriptions
+_d = {
+    F_d: "design force",
+    A_load: "loaded area",
+    sigma: "normal stress",
+}
+
+# Labels (for Quarto cross-references)
+_l = generate_unique_label(_d)
+```
+
+### 6. Evaluate and Display
 
 Compute values and display the results:
 
@@ -58,7 +74,7 @@ _v = {
 }
 
 # Display equations
-show_eqn([_p | _e, _v])
+show_eqn([_p | _e, _v, _d], label=_l)
 ```
 
 This will produce beautiful LaTeX output showing both the symbolic equation and numerical result.
@@ -71,9 +87,11 @@ Keecas follows a consistent pattern:
 
 | Dict | Purpose | Example |
 |------|---------|---------|
-| `_p` | Cell-local parameters | `_p = {F: 10*u.kN}` |
-| `_e` | Cell-local expressions | `_e = {sigma: "F/A" \| pc.parse_expr}` |
+| `_p` | Cell-local parameters | `_p = {F_d: 10*u.kN}` |
+| `_e` | Cell-local expressions | `_e = {sigma: "F_d/A_load" \| pc.parse_expr}` |
 | `_v` | Cell-local values | Evaluated results |
+| `_d` | Cell-local descriptions | `_d = {F_d: "design force"}` |
+| `_l` | Cell-local labels | `_l = generate_unique_label(_d)` |
 
 ### Pipe Operations
 
@@ -112,24 +130,24 @@ params = {}  # Global parameters
 eqn = {}     # Global expressions
 
 # First calculation cell
-F, A, sigma = symbols(r"F, A, \sigma")
+F_d, A_load, sigma_d = symbols(r"F_{d}, A_{load}, \sigma_{d}")
 
-_p = {F: 10 * u.kN, A: 50 * u.cm**2}
+_p = {F_d: 10 * u.kN, A_load: 50 * u.cm**2}
 params.update(_p)  # Save to global
 
-_e = {sigma: "F / A" | pc.parse_expr}
+_e = {sigma_d: "F_d / A_load" | pc.parse_expr}
 eqn.update(_e)     # Save to global
 
 _v = {k: v | pc.subs(eqn | params) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
 show_eqn([_p | _e, _v])
 
 # Second calculation cell (uses previous results)
-tau, gamma = symbols(r"\tau, \gamma")
+tau_Rd, gamma_M = symbols(r"\tau_{Rd}, \gamma_{M}")
 
-_p = {gamma: 1.5}  # Safety factor
+_p = {gamma_M: 1.5}  # Safety factor
 params.update(_p)
 
-_e = {tau: "sigma / gamma" | pc.parse_expr}
+_e = {tau_Rd: "sigma_d / gamma_M" | pc.parse_expr}
 eqn.update(_e)
 
 _v = {k: v | pc.subs(eqn | params) | pc.N for k, v in _e.items()}
@@ -144,8 +162,12 @@ Check if calculated values meet criteria:
 from keecas import check
 
 # Check if stress is within allowable limits
-sigma_max = 250 * u.MPa
-result = check(sigma, sigma_max)  # Will show verification result
+sigma_Rd, sigma_Ed = symbols(r"\sigma_{Rd}, \sigma_{Ed}")
+_p = {sigma_Rd: 250 * u.MPa, sigma_Ed: 2 * u.MPa}  # Resistance and design stress
+
+# Expression to check: sigma_Ed / sigma_Rd <= 1.0
+_c = {sigma_Ed / sigma_Rd: check(sigma_Ed / sigma_Rd | pc.subs(_p) | pc.N, 1.0)}
+show_eqn([_p, _c])
 ```
 
 ## CLI Quick Start
