@@ -4,9 +4,9 @@ title: "Installation"
 
 # Installation
 
-Keecas supports multiple installation methods. Choose the one that best fits your workflow.
+Keecas is available on [PyPI](https://pypi.org/project/keecas/), install with the package manager of your choice.
 
-## Using pip (Recommended)
+## Using pip (classic)
 
 The simplest way to install Keecas:
 
@@ -22,6 +22,18 @@ If you're using the modern [uv](https://docs.astral.sh/uv/) package manager:
 uv add keecas
 ```
 
+## Install as executable
+
+keecas also has a limited cli interface, so if you want to be available system wide I recommend using `pipx` or `uv tool`:
+
+```bash
+pipx install keecas
+```
+
+```bash
+uv tool add keecas
+```
+
 ## Development Installation
 
 For development or to access the latest features:
@@ -33,7 +45,6 @@ cd keecas
 
 # Install in development mode with uv
 uv sync
-uv pip install -e ".[dev]"
 
 # Or with pip
 pip install -e ".[dev]"
@@ -60,17 +71,13 @@ If you see a LaTeX-formatted equation output, Keecas is installed correctly!
 ## Requirements
 
 - **Python**: >=3.12, <4.0
-- **Core dependencies**: sympy, pint, pipe
-- **Jupyter support**: IPython, ipywidgets
-- **CLI dependencies**: click, toml
+- **Core dependencies**: [SymPy](https://www.sympy.org/), [Pint](https://pint.readthedocs.io/), [Pipe](https://github.com/JulienPalard/Pipe), [IPython](https://ipython.org/), [Jupyter](https://jupyter.org/)
 
-## Optional Dependencies
+## External Tools
 
-For enhanced functionality:
+For generating scientific documents from your calculations:
 
-- **quarto**: For generating scientific documents
-- **jupyter**: For interactive notebooks
-- **mkdocs**: For documentation building
+- **[Quarto](https://quarto.org/)**: Render notebooks to PDF, HTML, and other formats
 
 ## Troubleshooting
 
@@ -90,11 +97,11 @@ pip install keecas
 
 ### Missing Dependencies
 
-If calculations don't display properly:
+If calculations don't display properly in notebooks:
 
 ```bash
-# Install Jupyter display dependencies
-pip install ipython ipywidgets
+# Ensure IPython is installed
+pip install ipython jupyter
 ```
 
 ### CLI Not Available
