@@ -489,13 +489,33 @@ For each document, we'll verify:
 - User added pipx/uv tool for CLI installation (good practice)
 - User prefers "classic" terminology over "recommended"
 
-**Additional Fix - Requirements Section Removed**:
-- User questioned why some dependencies were listed and others omitted
-- Research showed standard practice: NumPy, pandas, Django, Flask, etc. don't list dependencies
-- Rationale: Package managers handle dependencies automatically; listing is non-standard
-- Decision: Removed entire "Requirements" section
-- Dependencies already mentioned conceptually on home page ("Built on SymPy, Pint, Pipe")
-- Keeps docs cleaner and follows industry standard practice
+**Additional Simplifications**:
+1. **Requirements Section Removed**:
+   - User questioned why some dependencies listed and others omitted
+   - Research: NumPy, pandas, Django, Flask don't list dependencies
+   - Package managers handle dependencies automatically
+   - Dependencies already on home page ("Built on SymPy, Pint, Pipe")
+
+2. **Verification Simplified**:
+   - Replaced 13-line code example with `keecas --version`
+   - User preference: "seems too long"
+   - Follows standard practice
+
+3. **Troubleshooting Section Removed**:
+   - User: "seems overkill"
+   - Only contained generic Python package advice
+   - Nothing keecas-specific
+   - Removed entirely
+
+**Final Installation Guide Structure**:
+- Installation methods (pip, uv, pipx/uv tool, dev)
+- Verification (version check)
+- External Tools (Quarto)
+- Next Steps
+
+**Phase 1.3 Final Status**: COMPLETE ✓ - Clean, focused, concise
+
+**Key Style Insight**: User strongly prefers minimal, essential content only. Remove anything generic or overly verbose.
 
 **Ready to proceed to Phase 1.4**: Quick Start Tutorial
 
