@@ -837,8 +837,8 @@ def test_last_element_filler_exact_width():
     # 3 value columns + 1 key = 4 total, so provide 4 format specs
     result = show_eqn(eqns, float_format=[None, ".1f", ".1f", ".2f"], debug=True)
 
-    assert "1.1" in result.data   # Col 1: .1f
-    assert "2.2" in result.data   # Col 2: .1f
+    assert "1.1" in result.data  # Col 1: .1f
+    assert "2.2" in result.data  # Col 2: .1f
     assert "3.30" in result.data  # Col 3: .2f
 
 
@@ -874,20 +874,16 @@ def test_col_wrap_tuple_values():
 def test_col_wrap_different_tuples():
     """Test col_wrap with different tuples per column."""
     eqns = [{x: 1}, {x: 2}, {x: 3}]
-    result = show_eqn(
-        eqns,
-        col_wrap=[None, ("=", ""), (r"\quad(", ")")],
-        debug=True
-    )
+    result = show_eqn(eqns, col_wrap=[None, ("=", ""), (r"\quad(", ")")], debug=True)
 
     # Col 0 (key): no wrap → "x"
     # Col 1 (value 1): "=" prefix → "=1" or "= 1"
     # Col 2 (value 2): "\quad(" prefix, ")" suffix → "\quad(...2...)"
     # Col 3 (value 3): "\quad(" prefix, ")" suffix (last element fills) → "\quad(...3...)"
     assert "x" in result.data
-    assert ("=1" in result.data or "= 1" in result.data)
-    assert (r"\quad(" in result.data and "2" in result.data and ")" in result.data)
-    assert (r"\quad(" in result.data and "3" in result.data and ")" in result.data)
+    assert "=1" in result.data or "= 1" in result.data
+    assert r"\quad(" in result.data and "2" in result.data and ")" in result.data
+    assert r"\quad(" in result.data and "3" in result.data and ")" in result.data
 
 
 def test_dict_with_list_values():
@@ -896,7 +892,7 @@ def test_dict_with_list_values():
 
     float_format = {
         x: [".1f", ".2f"],  # x: col 0 .1f, col 1 .2f, col 2+ .2f (last fills)
-        y: ".3f",           # y: all cols .3f
+        y: ".3f",  # y: all cols .3f
     }
 
     result = show_eqn(eqns, float_format=float_format, debug=True)
@@ -920,11 +916,7 @@ def test_cell_formatter_list():
     eqns = [{x: "a"}, {x: "b"}]
 
     # Use custom for col 0 (key), default for rest (last element fills)
-    result = show_eqn(
-        eqns,
-        cell_formatter=[custom_fmt, format_value],
-        debug=True
-    )
+    result = show_eqn(eqns, cell_formatter=[custom_fmt, format_value], debug=True)
 
     # Col 0 uses custom_fmt (but might not apply to key)
     # Col 1+ uses format_value (should have \text{})
