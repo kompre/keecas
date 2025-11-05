@@ -46,6 +46,8 @@ def show_eqn(
     cell_formatter: Callable | dict | list | Dataframe | tuple | None = None,
     row_formatter: Callable | dict | None = None,
     debug: bool | None = None,
+    print_label: bool | None = None,
+    katex: bool | None = None,
     env_arg: str | None = None,
     **kwargs: Any,
 ) -> Latex:
@@ -85,6 +87,8 @@ def show_eqn(
         row_formatter: Custom row-level formatter function(s). Can be single Callable[(row_latex_str) -> str]
             or dict mapping symbol keys to formatters. It applies to the composed entire row (str). Defaults to config.display.row_formatter.
         debug: Enable debug mode to print generated LaTeX source code. Defaults to config.display.debug.
+        print_label: Print labels to console for easy copy-paste reference. Defaults to config.display.print_label.
+        katex: Enable KaTeX compatibility mode (disables label commands). Defaults to config.display.katex.
         env_arg: Optional environment argument (e.g., "{2}" for alignat{2}). User provides complete
             argument string including braces.
         **kwargs: Additional keyword arguments:
@@ -221,8 +225,14 @@ def show_eqn(
     """
 
     # set default values
-    if not debug:
+    if debug is None:
         debug = config.display.debug
+
+    if print_label is None:
+        print_label = config.display.print_label
+
+    if katex is None:
+        katex = config.display.katex
 
     # Use config default_float_format if not explicitly provided
     if float_format is None:
@@ -346,6 +356,8 @@ def show_eqn(
         first_key,
         label_command,
         env_arg,
+        print_label,
+        katex,
     )
 
     # generate the rows
@@ -376,7 +388,7 @@ def show_eqn(
             cells.append(cell_content)
 
         # Join cells to form row
-        body_lines[key] = " ".join(cells) + _attach_label(label, key, label_command, list_values)
+        body_lines[key] = " ".join(cells) + _attach_label(label, key, label_command, list_values, print_label, katex)
 
     # Apply row-level formatters
     if row_formatter is not None:
@@ -898,6 +910,8 @@ def _attach_label(
     key: str | None = None,
     label_command: str | None = None,
     values: list[Any] | None = None,
+    print_label: bool = False,
+    katex: bool = False,
 ) -> str:
     r"""Attach a label to a given key.
 
@@ -909,13 +923,15 @@ def _attach_label(
         key: The key to attach the label to, or None for single labels
         label_command: LaTeX label command (e.g., r"\label")
         values: List of values for this row (used with callable labels)
+        print_label: Whether to print labels to console for debugging
+        katex: Whether to omit labels for KaTeX compatibility
 
     Returns:
         LaTeX label command string, or empty string if no label or KaTeX mode
 
     Notes:
         - Labels should be pre-formatted using generate_label() before passing to show_eqn
-        - If config.display.print_label is True, the key and label are printed for debugging
+        - If print_label is True, the key and label are printed for debugging
         - Labels are omitted in KaTeX mode for Jupyter notebook compatibility
         - Callable labels receive a single list argument: [key] + values
     """
@@ -925,11 +941,11 @@ def _attach_label(
     # Handle callable label (single callable for all keys)
     if callable(label) and key is not None:
         text_label = label([key] + values)
-        if config.display.print_label:
+        if print_label:
             print(f"{key}: {text_label}") if text_label else None
 
         return (
-            rf" {label_command}{{{text_label}}} " if text_label and not config.display.katex else ""
+            rf" {label_command}{{{text_label}}} " if text_label and not katex else ""
         )
 
     if isinstance(label, dict):
@@ -943,20 +959,20 @@ def _attach_label(
         else:
             text_label = ""
 
-        if config.display.print_label:
+        if print_label:
             print(f"{key}: {text_label}") if text_label else None
 
         return (
-            rf" {label_command}{{{text_label}}} " if text_label and not config.display.katex else ""
+            rf" {label_command}{{{text_label}}} " if text_label and not katex else ""
         )
 
     if isinstance(label, str) and not key:
         text_label = label
 
-        if config.display.print_label:
+        if print_label:
             print(f"label: {text_label}" if text_label else None)
 
-        return rf" {label_command}{{{text_label}}} " if not config.display.katex else ""
+        return rf" {label_command}{{{text_label}}} " if not katex else ""
 
     return ""
 
@@ -968,6 +984,8 @@ def _generate_environment_template(
     first_key: str | None = None,
     label_command: str | None = None,
     env_arg: str | None = None,
+    print_label: bool = False,
+    katex: bool = False,
 ) -> str:
     """Generate complete LaTeX template with ___body___ placeholder.
 
@@ -979,6 +997,8 @@ def _generate_environment_template(
         label_command: LaTeX label command
         env_arg: Optional argument string for environment (e.g., "{2}" for alignat{2}).
                  User provides complete argument including braces.
+        print_label: Whether to print labels to console for debugging
+        katex: Whether to omit labels for KaTeX compatibility
 
     Returns:
         LaTeX template string with ___body___ placeholder
@@ -1000,7 +1020,7 @@ def _generate_environment_template(
 
         # Single label environments attach label to begin statement
         label_str = (
-            _attach_label(label, first_key, label_command)
+            _attach_label(label, first_key, label_command, None, print_label, katex)
             if not env_config.supports_multiple_labels
             else ""
         )
@@ -1019,7 +1039,7 @@ def _generate_environment_template(
         outer_suffix = env_config.outer_suffix
 
         # Label goes on outer environment for nested structures
-        label_str = _attach_label(label, None, label_command)
+        label_str = _attach_label(label, None, label_command, None, print_label, katex)
 
         template = rf"""{outer_prefix}\begin{{{outer_env}}}{label_str}
 	{inner_prefix}\begin{{{inner_env}}}{arg_str}
