@@ -12,9 +12,10 @@
 - [configurable-label-generation.md](proposal/configurable-label-generation.md) - Add config option for stable label generation strategies in show_eqn (awaiting review)
 
 **Tasks in development (`pending/`)**:
-- [last-element-filler-pattern.md](pending/last-element-filler-pattern.md) - Replace ambiguous (seed, filler) tuple pattern with universal last-element-as-filler pattern (in progress)
+<!-- No tasks currently in development -->
 
 **Completed tasks**:
+- [last-element-filler-pattern.md](completed/2025-01-05/last-element-filler-pattern.md) - Replace ambiguous (seed, filler) tuple pattern with universal last-element-as-filler pattern (completed 2025-01-05)
 - [branch-protection-and-ci.md](completed/2025-10-24/branch-protection-and-ci.md) - Complete CI/CD pipeline with test and release workflows, branch protection guide, and comprehensive documentation (completed 2025-10-24)
 - [programmatic-api-documentation.md](completed/2025-10-23/programmatic-api-documentation.md) - Automated API docs with quartodoc (completed 2025-10-23)
 - [docstring-guidelines.md](completed/2025-10-23/docstring-guidelines.md) - Google-style docstring guidelines and validation (completed 2025-10-23)
