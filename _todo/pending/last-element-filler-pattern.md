@@ -492,3 +492,54 @@ def test_list_longer_than_width():
 2. Should the filler element be removed from the sequence or kept?
    - **Decision:** Kept in sequence (last element appears at its position AND fills remaining)
    - **Rationale:** Simpler mental model and allows exact width matching
+---
+
+## Implementation Progress
+
+### Completed (2025-01-05)
+
+**Core Implementation:**
+- ✅ Added `_extract_seed_and_filler()` helper function in `display.py`
+- ✅ Refactored `show_eqn` to use new pattern for `float_format`, `col_wrap`, and `cell_formatter`
+- ✅ Removed tuple pattern support from type hints
+- ✅ Updated parameter docstrings to reflect new last-element-as-filler behavior
+
+**Testing:**
+- ✅ Added 11 comprehensive unit tests covering:
+  - Scalar vs single-element list equivalence
+  - Multi-element lists with last-element filling
+  - Exact width matching
+  - Explicit None filler
+  - col_wrap with tuple values (solving the ambiguity!)
+  - Different tuples per column
+  - Dict with list values (per-row formatting)
+  - Cell formatter lists
+  - Empty lists
+  - List truncation when longer than width
+- ✅ All 58 tests in test_display.py passing
+
+**Key Changes:**
+1. `display.py:910-939` - New `_extract_seed_and_filler()` helper
+2. `display.py:322-328` - float_format using new pattern
+3. `display.py:332-338` - col_wrap using new pattern  
+4. `display.py:349-359` - cell_formatter using new pattern
+5. `display.py:44-46` - Updated type hints (removed tuple support)
+6. `display.py:82-99` - Updated parameter docstrings
+7. `tests/test_display.py:785-949` - 11 new tests + 1 updated test
+
+### Remaining Work
+
+- [ ] Update examples in notebooks (hello_world.ipynb, quarto_example.ipynb)
+- [ ] Update user guide documentation
+- [ ] Update CLAUDE.md with new pattern
+- [ ] Add CHANGELOG entry for breaking change
+
+### Executive Summary
+
+Successfully implemented the universal last-element-as-filler pattern, replacing the ambiguous `(seed, filler)` tuple pattern. The implementation is clean, well-tested, and solves the critical col_wrap ambiguity where tuple data values conflicted with the meta-pattern.
+
+**Breaking Change:** The tuple pattern `({x: ".3f"}, ".4f")` is no longer supported. Users should use list pattern `[{x: ".3f"}, ".4f"]` or dict pattern instead.
+
+**Benefit:** col_wrap can now accept tuple values without ambiguity: `[None, ("=", ""), (r"\quad(", ")")]` works correctly!
+
+All tests pass (58/58), implementation is complete and ready for review.
