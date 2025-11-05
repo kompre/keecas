@@ -24,6 +24,20 @@ format:
     theme: cosmo
     toc: true
     code-copy: true
+    include-in-header:
+        # this is needed for equation numbering and labeling in HTML output             
+        - text: | 
+            <script>
+            MathJax = { tex: { tags: 'ams' } };
+            </script>
+        # this get rid of unnecessary vertical scrollbars
+        - text: |
+            <style>
+            .math.display {
+              max-width: 100%;
+              padding-right: 3em;
+            }
+            </style>
 
 execute:
   freeze: auto
@@ -77,8 +91,9 @@ quartodoc:
       contents:
         - name: display
           children: linked
-        - display.show_eqn
-        - display.check
+        - show_eqn
+        - check
+        - latex_inline_dict
         - display.format_decimal_numbers
     - title: Label Module
       desc: Label generation
@@ -92,7 +107,7 @@ quartodoc:
       contents:
         - name: dataframe
           children: linked
-        - dataframe.Dataframe
+        - Dataframe
         - dataframe.create_dataframe
     - title: Pipe Commands Module
       desc: Wraps common SymPy functions as decorators for functional composition

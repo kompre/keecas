@@ -19,7 +19,7 @@ dependencies = [
     "tomlkit>=0.13.3",
 ]
 name = "keecas"
-version = "1.0.0a7"
+version = "1.0.0b1"
 description = "A set of tools for symbolic math computation done in a jupyter notebook, aimed specifically for Quarto. It is based mostly on sympy."
 readme = "README.md"
 
@@ -63,11 +63,16 @@ ignore = [
 [tool.ruff.lint.isort]
 known-first-party = ["keecas"]
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"  # Use Google-style docstrings
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false  # Respect trailing commas
 line-ending = "auto"
+docstring-code-format = true  # Format code examples in docstrings
+docstring-code-line-length = "dynamic"  # Respects line-length setting (100)
 
 [build-system]
 requires = ["uv_build>=0.8.14,<0.9.0"]

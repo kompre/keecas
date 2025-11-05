@@ -36,12 +36,12 @@ TemplateChoice = Literal["default", "boxed", "minimal"]
 
 
 def show_eqn(
-    eqns: dict[Basic, Any] | list[dict[Basic, Any]] | Dataframe,
+    eqns: dict[Any, Any] | list[dict[Any, Any]] | Dataframe,
     environment: str | dict[str, Any] | None = None,
     sep: str | list[str] | None = None,
     label: str | dict[str, str | Callable] | Callable | None = None,
     label_command: str | None = None,
-    col_wrap: str | dict | list[dict] | Dataframe | tuple | None = None,
+    col_wrap: str | dict | list[dict] | Dataframe | tuple | Callable | None = None,
     float_format: str | dict | list[dict] | Dataframe | tuple | None = None,
     cell_formatter: Callable | dict | list | Dataframe | tuple | None = None,
     row_formatter: Callable | dict | None = None,
@@ -58,14 +58,19 @@ def show_eqn(
     layouts, custom formatting, labeling, and various LaTeX environments.
 
     Args:
-        eqns: Equation data as dict or list of dicts or Dataframe object (the passed argument will be converted to a Dataframe object). When a list of dicts is passed, the keys of the first dict will be used as the keys of the resulting Dataframe, while subsequent dicts will be added as new columns, if the keys match, otherwise None (see Dataframe.__init__ for more details).
+        eqns: Equation data as dict, list of dicts, or Dataframe object.
+            Automatically converted to Dataframe internally. For list of dicts: first
+            dict's keys become Dataframe keys, subsequent dicts add columns where keys
+            match (None for mismatches). See Dataframe.__init__ for details.
         environment: LaTeX environment name or custom definition. Built-in environments include
             "align", "equation", "cases", "gather", "split", "alignat", "rcases". Can also be
             a dict or EnvironmentDefinition object for custom environments.
             Defaults to config.latex.default_environment.
-        sep: Separator(s) between cells in the amsmath block (e.g. `LHS & RHS & ...`). Can be string or list of strings
-            for finer customization (separator goes in between each column, so first separator is between first and second column, etc). Defaults to environment's default separator
-            (None uses environment default: "&" for align, "" for equation/gather).
+        sep: Separator(s) between cells in the amsmath block (e.g. `LHS & RHS & ...`).
+            Can be string or list of strings for finer customization (separator goes
+            between columns: first separator between columns 1-2, etc). Defaults to
+            environment's default separator (None uses environment default: "&" for
+            align, "" for equation/gather).
         label: Label(s) for cross-referencing equations. Can be:
             - str: Single label string (pre-formatted with generate_label)
             - dict: Mapping symbols to label strings or callables
@@ -74,18 +79,25 @@ def show_eqn(
             Callable labels receive a single list argument: [key, value1, value2, ...].
             Omitted in KaTeX mode for notebook compatibility.
         label_command: LaTeX label command (e.g., r"\label"). Defaults to config.latex.default_label_command.
-        col_wrap: Column wrapping specifications for LaTeX formatting. Can be str, dict, list, Dataframe, or 2 element tuple.
-            When a 2 element tuple is given `(seed, filler)`, `seed` will be used to create a Dataframe with `filler` as default value.
-            List elements can be None (no wrapping), str (prefix only), tuple (prefix, suffix), or Callable.
-            Defaults to config.col_wrap.
-        float_format: Format specification for float values (it will not affect int). Can be str (applied to all floats), list of str (per column formatting), dict (per row formatting), dict of list or Dataframe (per cell formatting).
-            When a 2 element tuple is given `(seed, filler)`, `seed` will be used to create a Dataframe with `filler` as default value.
-            Supports format specs with or without braces (e.g., ".3f" or "{:.3f}").
-            Defaults to config.display.default_float_format.
-        cell_formatter: Custom cell value formatter function(s). Can be single Callable[(value, col_index) -> str] (applied to all cells),
-            list of Callable (applied to each cell in a column), dict of Callable (applied to each cell in a row if key matches), dict of list of Callable or Dataframe for cell specific formatting, or tuple (formatters, default). Defaults to config.display.cell_formatter.
-        row_formatter: Custom row-level formatter function(s). Can be single Callable[(row_latex_str) -> str]
-            or dict mapping symbol keys to formatters. It applies to the composed entire row (str). Defaults to config.display.row_formatter.
+        col_wrap: Column wrapping specifications for LaTeX formatting.
+            Can be str, dict, list, Dataframe, or 2-element tuple. When given
+            `(seed, filler)`, creates Dataframe using `seed` with `filler` as default.
+            List elements: None (no wrapping), str (prefix only), tuple (prefix, suffix),
+            or Callable. Defaults to config.col_wrap.
+        float_format: Format specification for float values (does not affect int).
+            Can be str (all floats), list of str (per column), dict (per row), dict of
+            list or Dataframe (per cell). When given `(seed, filler)`, creates Dataframe
+            using `seed` with `filler` as default. Supports format specs with or without
+            braces (e.g., ".3f" or "{:.3f}"). Defaults to config.display.default_float_format.
+        cell_formatter: Custom cell value formatter function(s).
+            Can be single Callable[(value, col_index) -> str] (all cells), list of
+            Callable (per column), dict of Callable (per row if key matches), dict of
+            list of Callable or Dataframe (per cell), or tuple (formatters, default).
+            Defaults to config.display.cell_formatter.
+        row_formatter: Custom row-level formatter function(s).
+            Can be single Callable[(row_latex_str) -> str] or dict mapping symbol keys
+            to formatters. Applies to the composed entire row (str). Defaults to
+            config.display.row_formatter.
         debug: Enable debug mode to print generated LaTeX source code. Defaults to config.display.debug.
         print_label: Print labels to console for easy copy-paste reference. Defaults to config.display.print_label.
         katex: Enable KaTeX compatibility mode (disables label commands). Defaults to config.display.katex.
@@ -103,7 +115,7 @@ def show_eqn(
         ```{python}
         from keecas import symbols, u, pc, show_eqn
 
-        # Basic parameter display
+        # Basic parameter display with subscripted symbols
         F, A_load = symbols(r"F, A_{load}")
 
         _p = {
@@ -116,10 +128,10 @@ def show_eqn(
 
         ```{python}
         # Multi-column with expressions and values
-        sigma = symbols(r"\sigma")
+        sigma_Sd = symbols(r"\sigma_{Sd}")
 
         _e = {
-            sigma: "F/A_load" | pc.parse_expr
+            sigma_Sd: "F/A_load" | pc.parse_expr
         }
 
         _v = {k: v | pc.subs(_p | _e) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
@@ -138,14 +150,14 @@ def show_eqn(
         _l = {
             F: 'force',
             A_load: 'area',
-            sigma: 'stress-calc',
+            sigma_Sd: 'stress-calc',
         }
 
         # specific float formatting
         _f = {
             F: '{:.1f}', # applied to all element in the row
             A_load: '{:.2f}', # applied to all element in the row
-            sigma: [None, None, '.3f'], # per cell formatting
+            sigma_Sd: [None, None, '.3f'], # per cell formatting
         }
 
         show_eqn([_p|_e, _v], float_format=_f, label=_l)
@@ -162,7 +174,7 @@ def show_eqn(
         _d = {
             F: 'applied force',
             A_load: 'area of application',
-            sigma: 'stress',
+            sigma_Sd: 'stress',
         }
 
         # use hash function to create unique labels
@@ -667,21 +679,21 @@ def format_decimal_numbers(
         from keecas.display import format_decimal_numbers
 
         # Basic usage with shorthand notation
-        latex = r"\sigma = 1.23456 \text{ MPa}"
+        latex = r"\sigma_{Sd} = 1.23456 \text{ MPa}"
         formatted = format_decimal_numbers(latex, ".2f")
         print(formatted)
         ```
 
         ```{python}
         # Multiple decimal numbers in one string
-        latex = r"F = 100.567 \text{ kN}, A = 20.123 \text{ cm}^2"
+        latex = r"F = 100.567 \text{ kN}, A_{load} = 20.123 \text{ cm}^2"
         formatted = format_decimal_numbers(latex, ".1f")
         print(formatted)
         ```
 
         ```{python}
         # Different format specifications
-        latex = r"\alpha = 3.14159"
+        latex = r"\alpha_{max} = 3.14159"
 
         # Standard precision
         print(format_decimal_numbers(latex, ".3f"))
@@ -699,7 +711,7 @@ def format_decimal_numbers(
         from sympy import latex
 
         # tip: use for custom post-processing of LaTeX strings
-        sigma = symbols(r"\sigma")
+        sigma_Rd = symbols(r"\sigma_{Rd}")
         value_latex = latex(5.123456 * u.MPa)
 
         # Format specific parts before display
@@ -766,12 +778,21 @@ def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> s
         Formatted LaTeX string with localization applied
 
     Examples:
-        >>> from sympy import symbols
-        >>> x = symbols('x')
-        >>> latex_inline_dict(x, {x: 5})
-        'x = 5'
-        >>> latex_inline_dict(x, {x: 5}, mode="inline")
-        '$x = 5$'
+        ```{python}
+        from keecas import symbols
+        from keecas.display import latex_inline_dict
+
+        # Define symbol with subscript
+        sigma_Sd = symbols(r"\\sigma_{Sd}")
+
+        # Basic usage
+        latex_inline_dict(sigma_Sd, {sigma_Sd: 5})  # Returns: '\\sigma_{Sd} = 5'
+        ```
+
+        ```{python}
+        # Inline mode with $ delimiters
+        latex_inline_dict(sigma_Sd, {sigma_Sd: 5}, mode="inline")  # Returns: '$\\sigma_{Sd} = 5$'
+        ```
 
     See Also:
         - `~~display.show_eqn`: Main display function for multiple equations

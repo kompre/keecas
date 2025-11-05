@@ -12,26 +12,33 @@ Formatter Architecture:
     - Fallback to sympy.latex() for unhandled types
 
 Example:
-    Basic usage with type dispatch:
+    ```{python}
+    from keecas import format_value, symbols
 
-    >>> from keecas import format_value
-    >>> from sympy import symbols
-    >>>
-    >>> x = symbols('x')
-    >>> format_value(x, col_index=0)
-    'x'
-    >>>
-    >>> format_value(3.14159, col_index=1)
-    '= 3.14159'
-    >>>
-    >>> format_value("hello", col_index=0)
-    '\\\\text{hello}'
+    # Define symbol with subscript
+    sigma_Rd = symbols(r"\\sigma_{Rd}")
+
+    # Format symbol (column 0 - LHS)
+    format_value(sigma_Rd, col_index=0)  # Returns: '\\sigma_{Rd}'
+    ```
+
+    ```{python}
+    # Format float (column 1+ - RHS with equals)
+    format_value(3.14159, col_index=1)  # Returns: '= 3.14159'
+    ```
+
+    ```{python}
+    # Format string
+    format_value("hello", col_index=0)  # Returns: '\\text{hello}'
+    ```
 
     Custom type registration:
 
-    >>> @format_value.register(MyCustomType)
-    ... def format_custom(value, col_index=0, **kwargs):
-    ...     return r"\\text{Custom: " + str(value) + "}"
+    ```{python}
+    @format_value.register(MyCustomType)
+    def format_custom(value, col_index=0, **kwargs):
+        return r"\\text{Custom: " + str(value) + "}"
+    ```
 """
 
 import inspect
@@ -100,24 +107,35 @@ def format_value(value: Any, col_index: int = 0, **kwargs) -> str:
 
     Examples
     --------
-    >>> from sympy import symbols
-    >>> x = symbols('x')
-    >>> format_value(x)
-    'x'
-    >>>
-    >>> format_value(42, col_index=1)
-    '= 42'
-    >>>
-    >>> format_value("text", col_index=0)
-    '\\\\text{text}'
+    ```{python}
+    from keecas import format_value, symbols
+
+    # Define symbol with subscript
+    sigma_Rd = symbols(r"\\sigma_{Rd}")
+
+    # Format symbol (LHS)
+    format_value(sigma_Rd)  # Returns: '\\sigma_{Rd}'
+    ```
+
+    ```{python}
+    # Format integer (RHS)
+    format_value(42, col_index=1)  # Returns: '= 42'
+    ```
+
+    ```{python}
+    # Format string
+    format_value("text", col_index=0)  # Returns: '\\text{text}'
+    ```
 
     Notes
     -----
     To register custom type formatters:
 
-    >>> @format_value.register(MyType)
-    ... def format_mytype(value, col_index=0, **kwargs):
-    ...     return r"\\text{My custom format}"
+    ```{python}
+    @format_value.register(MyType)
+    def format_mytype(value, col_index=0, **kwargs):
+        return r"\\text{My custom format}"
+    ```
 
     Supported types (built-in registrations):
     - str: Plain text wrapped in \\text{}
