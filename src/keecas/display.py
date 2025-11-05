@@ -400,7 +400,9 @@ def show_eqn(
             cells.append(cell_content)
 
         # Join cells to form row
-        body_lines[key] = " ".join(cells) + _attach_label(label, key, label_command, list_values, print_label, katex)
+        body_lines[key] = " ".join(cells) + _attach_label(
+            label, key, label_command, list_values, print_label, katex
+        )
 
     # Apply row-level formatters
     if row_formatter is not None:
@@ -965,9 +967,7 @@ def _attach_label(
         if print_label:
             print(f"{key}: {text_label}") if text_label else None
 
-        return (
-            rf" {label_command}{{{text_label}}} " if text_label and not katex else ""
-        )
+        return rf" {label_command}{{{text_label}}} " if text_label and not katex else ""
 
     if isinstance(label, dict):
         label_value = label.get(key)
@@ -983,9 +983,7 @@ def _attach_label(
         if print_label:
             print(f"{key}: {text_label}") if text_label else None
 
-        return (
-            rf" {label_command}{{{text_label}}} " if text_label and not katex else ""
-        )
+        return rf" {label_command}{{{text_label}}} " if text_label and not katex else ""
 
     if isinstance(label, str) and not key:
         text_label = label
