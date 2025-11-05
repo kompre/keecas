@@ -58,6 +58,7 @@ select = [
 ]
 ignore = [
     "E501",   # line too long (handled by formatter)
+    "COM812", # trailing comma conflicts with formatter
 ]
 
 [tool.ruff.lint.isort]
