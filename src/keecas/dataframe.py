@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Hashable
+from functools import singledispatch
 from itertools import chain
 from typing import Any
 
@@ -435,10 +436,32 @@ class Dataframe(dict[Hashable, list[Any]]):
         print(self.dict_repr())
 
 
+def _pad_or_repeat(value: Any, width: int, default_value: Any) -> list[Any]:
+    """Convert value to list of specified width.
+
+    Args:
+        value: Value to convert (list or scalar)
+        width: Target list length
+        default_value: Value to use for padding
+
+    Returns:
+        List of exactly width elements
+
+    Notes:
+        - If value is list: pad/truncate to exactly width
+        - Otherwise: repeat value exactly width times
+    """
+    if isinstance(value, list):
+        return value[:width] + [default_value] * max(0, width - len(value))
+    else:
+        return [value] * width
+
+
+@singledispatch
 def create_dataframe(
+    seed: Any,
     keys: list[Hashable],
     width: int,
-    seed: Any | list[Any] | dict[Hashable, Any] | Dataframe | None = None,
     default_value: Any = None,
 ) -> Dataframe:
     r"""Create a pre-sized Dataframe with specified shape and initial values.
@@ -448,15 +471,15 @@ def create_dataframe(
     specific patterns or values.
 
     Args:
-        keys: List of keys (row labels) for the Dataframe. These become the symbol
-            keys in LaTeX output when used with show_eqn().
-        width: Number of columns in the Dataframe (number of cells per row).
         seed: Initial values to populate the Dataframe. Can be:
             - Scalar (Any): Same value repeated across all cells
             - list: Values applied to all rows, padded with default_value if shorter
             - dict: Per-row initialization (supports mixed list/scalar values per key)
             - Dataframe: Copy values from existing Dataframe
             - None: Fill all cells with default_value
+        keys: List of keys (row labels) for the Dataframe. These become the symbol
+            keys in LaTeX output when used with show_eqn().
+        width: Number of columns in the Dataframe (number of cells per row).
         default_value: Value used to fill missing entries when seed doesn't cover
             all cells. Defaults to None.
 
@@ -470,28 +493,28 @@ def create_dataframe(
 
         # Create empty structure
         x, y = symbols(r"x, y")
-        df = create_dataframe([x, y], width=3, seed=None)
+        df = create_dataframe(None, [x, y], width=3)
         df
         ```
 
         ```{python}
         # Initialize with scalar seed
-        df = create_dataframe([x, y], width=3, seed=0)
+        df = create_dataframe(0, [x, y], width=3)
         df
         ```
 
         ```{python}
         # Initialize with list seed (same for all rows)
-        df = create_dataframe([x, y], width=2, seed=[1, 2])
+        df = create_dataframe([1, 2], [x, y], width=2)
         df
         ```
 
         ```{python}
         # Per-row initialization with dict
         df = create_dataframe(
+            {x: [10, 20], y: 99},  # x gets list, y gets scalar
             [x, y],
             width=2,
-            seed={x: [10, 20], y: 99},  # x gets list, y gets scalar
             default_value=-1
         )
         df
@@ -505,46 +528,67 @@ def create_dataframe(
         - All rows guaranteed to have exactly 'width' columns
         - List seed applies same list to all rows
         - Dict seed allows per-row customization
+        - Dataframe seed handled automatically (dict subclass)
         - Useful for pre-allocating structure before filling with computed values
+        - No filler parameter needed - all data constructed at correct width
     """
-    df: Dataframe = Dataframe()
+    # Scalar case - repeat same value for all cells
+    return Dataframe({k: [seed] * width for k in keys})
 
-    if not isinstance(seed, (list, dict, Dataframe)):
-        # Single value seed (can be of any type)
-        for key in keys:
-            df[key] = [seed] * width
 
-    elif isinstance(seed, list):
-        # List seed (applies to all rows)
-        seed_list = seed[:width] + [default_value] * (width - len(seed))
-        for key in keys:
-            df[key] = seed_list.copy()
+@create_dataframe.register(list)
+def _from_list(
+    seed: list[Any],
+    keys: list[Hashable],
+    width: int,
+    default_value: Any = None,
+) -> Dataframe:
+    """Create Dataframe from list seed - same list for all rows.
 
-    elif isinstance(seed, Dataframe):
-        for key in keys:
-            if key in seed:
-                df[key] = seed[key][:width] + [default_value] * (width - len(seed[key]))
-            else:
-                df[key] = [default_value] * width
+    Args:
+        seed: List of values to use for all rows
+        keys: Row labels
+        width: Number of columns
+        default_value: Filler for missing values
 
-    elif isinstance(seed, dict):
-        for key in keys:
-            if key in seed:
-                if isinstance(seed[key], list):
-                    # List value for this row
-                    df[key] = seed[key][:width] + [default_value] * (width - len(seed[key]))
-                else:
-                    # Single value for this row
-                    df[key] = [seed[key]] * width
-            else:
-                df[key] = [default_value] * width
+    Returns:
+        New Dataframe with list applied to all rows
 
-    # Fill any missing rows with default_value
-    for key in keys:
-        if key not in df:
-            df[key] = [default_value] * width
+    Notes:
+        - .copy() is REQUIRED to avoid aliasing - each row gets independent list
+        - Without .copy(), all rows would share same list object
+    """
+    padded_list = seed[:width] + [default_value] * max(0, width - len(seed))
+    return Dataframe({k: padded_list.copy() for k in keys})
 
-    # Set the width correctly
-    df._width = width
 
-    return df
+@create_dataframe.register(dict)
+def _from_dict(
+    seed: dict[Hashable, Any],
+    keys: list[Hashable],
+    width: int,
+    default_value: Any = None,
+) -> Dataframe:
+    """Create Dataframe from dict seed - per-row customization.
+
+    Handles three cases per key:
+    1. Key missing: Fill with default_value
+    2. Dict[key, list]: Use specific list for that row (key-specific list)
+    3. Dict[key, scalar]: Repeat scalar across that row
+
+    Args:
+        seed: Dict mapping keys to values (scalar or list)
+        keys: Row labels
+        width: Number of columns
+        default_value: Filler for missing keys/values
+
+    Returns:
+        New Dataframe with per-row initialization
+
+    Notes:
+        - Also handles Dataframe seed (dict subclass) via inheritance
+        - No separate Dataframe handler needed
+        - _pad_or_repeat ensures all rows have exactly width elements
+    """
+    data = {key: _pad_or_repeat(seed.get(key, default_value), width, default_value) for key in keys}
+    return Dataframe(data)

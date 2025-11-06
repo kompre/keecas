@@ -103,7 +103,7 @@ def test_create_dataframe():
     """Test create_dataframe utility function with scalar seed"""
     keys = ["a", "b"]
     width = 3
-    df = create_dataframe(keys, width, seed=0, default_value=-1)
+    df = create_dataframe(0, keys, width, default_value=-1)
     assert df["a"] == [0, 0, 0]
     assert df["b"] == [0, 0, 0]
     assert df.width == 3
@@ -116,7 +116,7 @@ def test_create_dataframe_with_list_seed():
     keys = ["a", "b"]
     width = 3
     seed = [1, 2]
-    df = create_dataframe(keys, width, seed=seed, default_value=-1)
+    df = create_dataframe(seed, keys, width, default_value=-1)
     assert df["a"] == [1, 2, -1]
     assert df["b"] == [1, 2, -1]
     assert df.width == 3
@@ -129,7 +129,7 @@ def test_create_dataframe_with_dataframe_seed():
     keys = ["a", "b"]
     width = 3
     seed_df = Dataframe({"a": [1, 2], "b": [3, 4]})
-    df = create_dataframe(keys, width, seed=seed_df, default_value=-1)
+    df = create_dataframe(seed_df, keys, width, default_value=-1)
     assert df["a"] == [1, 2, -1]
     assert df["b"] == [3, 4, -1]
     assert df.width == 3
@@ -142,7 +142,7 @@ def test_create_dataframe_with_dict_seed():
     keys = ["a", "b"]
     width = 3
     seed = {"a": [1, 2], "b": 3}
-    df = create_dataframe(keys, width, seed=seed, default_value=-1)
+    df = create_dataframe(seed, keys, width, default_value=-1)
     assert df["a"] == [1, 2, -1]
     assert df["b"] == [3, 3, 3]
     assert df.width == 3
