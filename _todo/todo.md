@@ -7,6 +7,7 @@
 <!-- Tasks moved to proposal phase -->
 
 **Tasks awaiting approval in `proposal/`**:
+- [refactor-create-dataframe-singledispatch.md](proposal/refactor-create-dataframe-singledispatch.md) - Refactor create_dataframe using singledispatch pattern for cleaner type handling (awaiting review)
 - [refactor-formatters-singledispatch.md](proposal/refactor-formatters-singledispatch.md) - Refactor formatter system to use singledispatch pattern (awaiting review)
 - [refactor-docstring-see-also-interlinks.md](proposal/refactor-docstring-see-also-interlinks.md) - Standardize "See Also" sections with quartodoc interlinks (awaiting review)
 - [configurable-label-generation.md](proposal/configurable-label-generation.md) - Add config option for stable label generation strategies in show_eqn (awaiting review)
