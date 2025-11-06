@@ -324,20 +324,20 @@ def show_eqn(
     # Extract seed and filler using last-element pattern
     float_format_seed, float_format_filler = _extract_seed_and_filler(float_format)
     float_format = create_dataframe(
-        seed=float_format_seed,
+        float_format_seed,
+        keys,
+        num_cols,
         default_value=float_format_filler,
-        keys=keys,
-        width=num_cols,
     )
 
     ### col_wrap
     # Extract seed and filler using last-element pattern
     col_wrap_seed, col_wrap_filler = _extract_seed_and_filler(col_wrap)
     col_wrap = create_dataframe(
-        seed=col_wrap_seed,
+        col_wrap_seed,
+        keys,
+        num_cols,
         default_value=col_wrap_filler,
-        keys=keys,
-        width=num_cols,
     )
 
     ### cell_formatter
@@ -355,10 +355,10 @@ def show_eqn(
         cell_formatter_filler = format_value
 
     cell_formatters = create_dataframe(
-        seed=cell_formatter_seed,
+        cell_formatter_seed,
+        keys,
+        num_cols,
         default_value=cell_formatter_filler,
-        keys=keys,
-        width=num_cols,
     )
 
     # get the config default label (it could be None), or generate label dict if none is passed
