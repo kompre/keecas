@@ -16,9 +16,9 @@ Start every notebook with this configuration cell:
 from keecas import symbols, u, pc, show_eqn, config, check
 
 # Configure for your environment
-config.katex = True               # Enable for VS Code/KaTeX compatibility
-config.language = 'en'            # Set localization
-config.eq_prefix = 'eq-project-'  # Unique prefix for this notebook
+config.display.katex = True               # Enable for VS Code/KaTeX compatibility
+config.language.language = 'en'           # Set localization
+config.latex.eq_prefix = 'eq-project-'    # Unique prefix for this notebook
 
 # Set unit formatting
 u.formatter.default_format = ".3f~P"
@@ -34,16 +34,16 @@ eqn = {}     # Expressions that persist across cells
 
 ```python
 # VS Code uses KaTeX for LaTeX rendering
-config.katex = True
-config.print_label = False  # Labels don't work well in VS Code
+config.display.katex = True
+config.display.print_label = False  # Labels don't work well in VS Code
 ```
 
 #### JupyterLab/Notebook
 
 ```python
 # Full LaTeX support with MathJax
-config.katex = False
-config.print_label = True   # Enable equation labeling
+config.display.katex = False
+config.display.print_label = True   # Enable equation labeling
 ```
 
 ## Interactive Workflow Patterns
@@ -351,8 +351,8 @@ from IPython.display import display, Markdown
 display(Markdown("$$E = mc^2$$"))  # Test basic LaTeX
 
 # Check config
-print(f"KaTeX mode: {config.katex}")
-print(f"Language: {config.language}")
+print(f"KaTeX mode: {config.display.katex}")
+print(f"Language: {config.language.language}")
 ```
 
 ### Unit Issues

@@ -16,7 +16,7 @@ Let's calculate the maximum bending moment for a simply supported beam with unif
 from keecas import symbols, u, pc, show_eqn, config
 
 # Configure for your environment
-config.katex = True  # Enable for VS Code/KaTeX compatibility
+config.display.katex = True  # Enable for VS Code/KaTeX compatibility
 
 # Set unit formatting
 u.formatter.default_format = ".4f~P"
@@ -254,7 +254,7 @@ Keecas includes built-in verification functions for engineering checks:
 from keecas import check
 
 # Configure language for localized verification terms
-config.language = "en"  # or "it", "de", "es", "fr", "pt"
+config.language.language = "en"  # or "it", "de", "es", "fr", "pt"
 
 # Simple verification
 verification = {

@@ -51,10 +51,10 @@ execute:
 from keecas import symbols, u, pc, show_eqn, config, check
 
 # Quarto-optimized settings
-config.katex = False             # Full LaTeX support in PDF
-config.eq_prefix = 'eq-beam-'    # Unique prefix for this document
-config.language = 'en'           # Set your language
-config.print_label = False       # Labels handled by Quarto
+config.display.katex = False             # Full LaTeX support in PDF
+config.latex.eq_prefix = 'eq-beam-'      # Unique prefix for this document
+config.language.language = 'en'          # Set your language
+config.display.print_label = False       # Labels handled by Quarto
 
 # Initialize global containers
 params = {}
@@ -74,8 +74,8 @@ Create professional reports with clear sections:
 from keecas import *
 
 # Project configuration
-config.katex = False
-config.eq_prefix = 'eq-analysis-'
+config.display.katex = False
+config.latex.eq_prefix = 'eq-analysis-'
 params = {}
 eqn = {}
 ```
@@ -192,7 +192,7 @@ Show different content based on output format:
 #| echo: false
 
 # Different precision for different outputs
-if config.katex:  # HTML output
+if config.display.katex:  # HTML output
     precision = '{:.1f}'
 else:  # PDF output
     precision = '{:.3f}'
@@ -313,7 +313,7 @@ For international projects:
 
 ```python
 # Switch language for verification terms
-config.language = 'it'  # Italian verification terms
+config.language.language = 'it'  # Italian verification terms
 
 verification_results = {
     'verifica_resistenza': check(0.85, 1.0),
@@ -458,9 +458,9 @@ format:
 from keecas import *
 
 # Project-specific configuration
-config.katex = False
-config.eq_prefix = f'eq-{project_code}-'
-config.language = 'en'
+config.display.katex = False
+config.latex.eq_prefix = f'eq-{project_code}-'
+config.language.language = 'en'
 
 # Load project parameters
 with open('project_params.json') as f:
@@ -482,8 +482,8 @@ params = {
 import os
 if 'QUARTO_PROJECT_DIR' in os.environ:
     # Running in Quarto - adjust settings
-    config.katex = False
-    config.print_label = False
+    config.display.katex = False
+    config.display.print_label = False
 ```
 
 ### LaTeX Compilation Issues
@@ -503,7 +503,7 @@ format:
 
 ```python
 # Ensure unique equation labels
-config.eq_prefix = f'eq-{document_id}-'
+config.latex.eq_prefix = f'eq-{document_id}-'
 
 # Check label generation
 show_eqn(_e, label=_l, debug=True)

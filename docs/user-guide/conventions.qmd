@@ -152,12 +152,12 @@ Standard setup for any Keecas notebook:
 from keecas import symbols, u, pc, show_eqn, config, check
 
 # Configuration for Quarto/KaTeX
-config.katex = True              # Disable \\label{} for KaTeX compatibility
-config.print_label = True        # Print labels in dev mode
-config.eq_prefix = r"eq-PREFIX-" # Label prefixing
+config.display.katex = True              # Disable \\label{} for KaTeX compatibility
+config.display.print_label = True        # Print labels in dev mode
+config.latex.eq_prefix = r"eq-PREFIX-"   # Label prefixing
 
 # Language and localization (automatic Pint sync)
-config.language = 'it'           # Sets both keecas and Pint locales
+config.language.language = 'it'          # Sets both keecas and Pint locales
 # Supported: 'de', 'es', 'fr', 'it', 'pt' (full)
 # Fallback: 'da', 'nl', 'no', 'sv', 'en' (English units)
 
@@ -249,8 +249,8 @@ A properly structured calculation following all conventions:
 # Setup (once per notebook)
 from keecas import *
 
-config.katex = True
-config.language = 'en'
+config.display.katex = True
+config.language.language = 'en'
 params = {}
 eqn = {}
 
