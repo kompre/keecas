@@ -286,20 +286,20 @@ def test_language_runtime_propagation(tmp_path, monkeypatch):
     config = manager.options
 
     # Initially no language set
-    assert config.language is None
+    assert config.language.language is None
     assert get_language() == "en"  # Default
 
     # Set language at runtime
-    config.language = "it"
+    config.language.language = "it"
 
     # Verify propagation
-    assert config.language == "it"
+    assert config.language.language == "it"
     assert get_language() == "it"
     assert translate("VERIFIED") == "VERIFICATO"
     assert translate("NOT_VERIFIED") == "NON VERIFICATO"
 
     # Test changing to another language
-    config.language = "de"
+    config.language.language = "de"
     assert get_language() == "de"
     assert translate("VERIFIED") == "BESTÄTIGT"
     assert translate("NOT_VERIFIED") == "NICHT BESTÄTIGT"
