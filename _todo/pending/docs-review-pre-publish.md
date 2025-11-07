@@ -693,4 +693,159 @@ For each document, we'll verify:
 
 ---
 
+### Session 2 Continued: Phase 2 User Guide - Config Shortcuts Elimination
+
+**Context**: During Phase 1.5 review, user identified critical inconsistency in config API:
+- Found only 3 property shortcuts existed while docs showed shortcuts everywhere
+- Approved task proposal to eliminate all shortcuts
+- Created feature/eliminate-config-shortcuts branch
+- Implemented core config changes (all tests passing)
+- Merged back into feature/docs-review-proposal
+
+**Phase 2 Documentation Updates** (Config Path Fixes):
+
+#### Document 2.2: Conventions (`docs/user-guide/conventions.qmd`) - COMPLETE
+- **Issues Found**: 6 config path errors
+- **Fixed** (Lines 155-160, 252-253):
+  - `config.language = 'it'` → `config.language.language = 'it'`
+  - Config setup example updated to nested paths
+  - Complete example updated to new pattern
+- **Status**: All config examples now use correct nested structure
+
+#### Document 2.3: Examples (`docs/user-guide/examples.qmd`) - COMPLETE
+- **Issues Found**: 2 config path errors
+- **Fixed** (Lines 19, 257):
+  - `config.katex` → `config.display.katex`
+  - Quick start and verification examples updated
+- **Status**: All examples demonstrate consistent pattern
+
+#### Document 2.4: Jupyter Integration (`docs/user-guide/jupyter-integration.qmd`) - COMPLETE
+- **Issues Found**: 8 config path errors across multiple sections
+- **Fixed**:
+  - Standard setup cell (lines 19, 21)
+  - VS Code configuration (line 37)
+  - JupyterLab configuration (line 45)
+  - Troubleshooting section (lines 353-354)
+  - All instances of config shortcuts replaced with nested paths
+- **Status**: Complete Jupyter workflow now uses consistent pattern
+
+#### Document 2.5: Quarto Integration (`docs/user-guide/quarto-integration.qmd`) - COMPLETE
+- **Issues Found**: 12 config path errors including conditionals
+- **Fixed using replace_all**:
+  - All `config.katex` → `config.display.katex` (7 instances)
+  - All `config.eq_prefix` → `config.latex.eq_prefix` (4 instances)
+  - All `config.language` → `config.language.language` (3 instances)
+- **Manual fixes**:
+  - Line 195: Conditional `if config.display.katex:`
+  - Line 486: `config.display.print_label = False`
+- **Verified**: All config paths correct, including in troubleshooting sections
+- **Status**: Complete Quarto workflow documentation updated
+
+**Commit**: `f35caa6` - "docs: Fix config paths in User Guide (Phase 2)"
+- 4 files changed, 31 insertions(+), 31 deletions(-)
+- All pre-commit hooks passing
+
+**Phase 2 Status**: COMPLETE
+- All User Guide files reviewed and updated
+- All config shortcuts eliminated from examples
+- Consistent dot-notation pattern throughout
+- All code examples verified
+
+**Ready to proceed to Phase 3**: CLI Reference
+
+---
+
+### Session 2 Continued: Phase 3 CLI Reference - TOML Structure Fixes
+
+**Context**: Systematically fixing all configuration examples to use nested TOML structure
+
+#### Document 3.1: CLI Reference (`docs/cli-reference/index.qmd`) - COMPLETE
+
+**Issues Found**:
+1. **TOML Examples Used Flat Structure** (Lines 147-169)
+   - Global and local config examples showed flat key=value format
+   - Should use nested sections: [language], [display], [latex]
+   - Inconsistent with actual config structure and Phase 1.5 documentation
+
+2. **Non-Existent Feature Documented** (Lines 178-191)
+   - Environment Variables section documented KEECAS_* variables
+   - Testing confirmed: Environment variable loading not implemented
+   - Code review: No getenv("KEECAS_") calls in config module
+   - Same issue as found in configuration.qmd during Phase 1.5
+
+3. **Bash Script Examples** (Lines 279-283, 384, 393-397)
+   - Batch configuration, VS Code, and Quarto integration examples
+   - All used flat TOML structure
+   - Would fail when users copy-paste into actual config files
+
+**Changes Applied**:
+1. **Global Configuration Example** (Lines 144-164):
+   - Restructured to use [language], [display], [latex] sections
+   - Added default_float_format setting
+   - Corrected disable_pint_locale default (true)
+   - Added structural comments for clarity
+
+2. **Local Configuration Example** (Lines 166-182):
+   - Restructured to use proper nested sections
+   - Maintained Italian project example
+   - Clear section organization
+
+3. **Removed Environment Variables Section** (Lines 178-191):
+   - Entire section deleted
+   - Feature doesn't exist in codebase
+   - Prevents user confusion and failed usage attempts
+
+4. **Batch Configuration Script** (Lines 268-288):
+   - Fixed heredoc to use proper TOML structure
+   - Added [language], [display], [latex] sections
+   - Script now generates valid config files
+
+5. **VS Code Integration** (Lines 381-388):
+   - Changed from `echo 'katex = true'` (flat)
+   - To `echo -e '\n[display]\nkatex = true'` (nested)
+   - Now appends to correct section
+
+6. **Quarto Integration** (Lines 390-405):
+   - Fixed heredoc TOML structure
+   - Uses proper nested sections
+   - Matches Quarto integration guide
+
+**Verification**:
+- All TOML examples use nested structure
+- No flat key=value patterns remain
+- Structure matches configuration.qmd
+- All shell scripts generate valid TOML
+
+**Commit**: `ebedcd8` - "docs: Fix TOML structure and remove env vars in CLI Reference"
+- 1 file changed, 27 insertions(+), 20 deletions(-)
+- All pre-commit hooks passing
+
+**Phase 3 Status**: COMPLETE
+- CLI Reference fully updated
+- All TOML examples correct
+- Non-existent features removed
+- Shell scripts generate valid configs
+
+**Documentation Review Summary** (Phases 1-3):
+- **Phase 1** (Getting Started): 5 files - COMPLETE
+  - Home, Installation, Quickstart, Configuration - all verified
+- **Phase 2** (User Guide): 5 files - COMPLETE
+  - Conventions, Examples, Jupyter, Quarto - all config paths fixed
+- **Phase 3** (CLI Reference): 1 file - COMPLETE
+  - TOML structure corrected, env vars removed
+
+**Remaining**:
+- Phase 4: API Reference (quartodoc config + spot check)
+- Phase 5: Final checks (full site validation)
+
+**Key Pattern**: All configuration examples now demonstrate:
+1. Nested TOML sections ([language], [display], [latex])
+2. Python dot-notation access (config.display.katex)
+3. No shortcuts (eliminated in core implementation)
+4. Consistent structure across all documentation
+
+**Ready to proceed to Phase 4**: API Reference Review
+
+---
+
 <!-- update this document during editing whenever I give you new instructions or new insight on how to document the repo. I may also do direct editing to file: check the edits and annotate notable trend in my style. At the end you should be abel to have a comprehensive style guide for future content -->

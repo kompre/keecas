@@ -324,3 +324,31 @@ None - approach is straightforward.
   - Configuration guide documentation fixes
   - Config shortcuts elimination
 - Pushed to origin
+
+**Documentation Update Complete** ✓
+- Phase 2: User Guide (4 files)
+  - conventions.qmd, examples.qmd, jupyter-integration.qmd, quarto-integration.qmd
+  - Fixed 28 config path instances
+- Phase 3: CLI Reference (1 file)
+  - Fixed all TOML examples to use nested structure
+  - Removed non-existent environment variables section
+  - Fixed 5 shell script examples
+- CLAUDE.md
+  - Added "Configuration Access Pattern" section
+  - Fixed TOML example structure
+  - Documented core rule: "Python path always matches TOML section path"
+- Example Notebooks (2 files)
+  - hello_world.ipynb, quarto_example.ipynb
+  - Fixed config.language usage
+- Commit: f35caa6 (User Guide), ebedcd8 (CLI Ref), 6b0d9fc (CLAUDE.md), 08ac567 (notebooks)
+
+**All Tests Passing** ✓
+- Full test suite: 181/181 tests passing
+- No regressions introduced
+- All functionality verified
+
+**Task Complete** ✓
+- All config shortcuts eliminated from codebase
+- All documentation updated to new pattern
+- Consistent dot-notation throughout
+- Single predictable API: Python = TOML structure
