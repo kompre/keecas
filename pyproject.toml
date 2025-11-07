@@ -19,7 +19,7 @@ dependencies = [
     "tomlkit>=0.13.3",
 ]
 name = "keecas"
-version = "1.0.0b1"
+version = "1.0.0b2"
 description = "A set of tools for symbolic math computation done in a jupyter notebook, aimed specifically for Quarto. It is based mostly on sympy."
 readme = "README.md"
 
@@ -58,6 +58,7 @@ select = [
 ]
 ignore = [
     "E501",   # line too long (handled by formatter)
+    "COM812", # trailing comma conflicts with formatter
 ]
 
 [tool.ruff.lint.isort]

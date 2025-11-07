@@ -187,7 +187,7 @@ Note
 <h2 class="anchored" data-anchor-id="basic-symbolic-math-with-units">Basic Symbolic Math with Units</h2>
 <p>Define symbols and calculate basic engineering quantities:</p>
 <div id="cell-8" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:39.912122Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:39.911947Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:39.996778Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:39.996443Z&quot;}" data-execution_count="5">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="84">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="20">
 <p><span class="math display">\[\begin{align}
 F &amp; = 10{\,}\text{kN} &amp;   &amp; \quad\text{applied force}  \label{F}  \\[8pt]
 A &amp; = 50{\,}\text{cm}^{2} &amp;   &amp; \quad\text{cross-sectional area}  \label{A}  \\[8pt]
@@ -200,7 +200,7 @@ A &amp; = 50{\,}\text{cm}^{2} &amp;   &amp; \quad\text{cross-sectional area}  \l
 <h2 class="anchored" data-anchor-id="sec-pipe">Pipe Commands Demonstration</h2>
 <p>Using pipe operators for functional composition:</p>
 <div id="cell-10" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.014161Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.014021Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.021129Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.020684Z&quot;}" data-execution_count="6">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="85">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="21">
 <p><span class="math display">\[\begin{align}
 x &amp; = 3{\,}\text{m} &amp;    \\[8pt]
 y &amp; = 4{\,}\text{m} &amp;    \\[8pt]
@@ -214,7 +214,7 @@ d &amp; = x^{2} + y^{2} &amp; = 25.0{\,}\text{m}^{2}
 <section id="cases-environment" class="level3">
 <h3 class="anchored" data-anchor-id="cases-environment">Cases Environment</h3>
 <div id="cell-12" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.022370Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.022195Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.025950Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.025685Z&quot;}" data-execution_count="7">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="86">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="22">
 <p><span class="math display">\[\begin{align}
 E_{steel} &amp; = 200{\,}\text{GPa} &amp; &amp;\quad\text{steel elastic modulus}  \\[8pt]
 E_{concrete} &amp; = 30{\,}\text{GPa} &amp; &amp;\quad\text{concrete elastic modulus}
@@ -226,7 +226,7 @@ E_{concrete} &amp; = 30{\,}\text{GPa} &amp; &amp;\quad\text{concrete elastic mod
 <h3 class="anchored" data-anchor-id="sec-beam-calc">Equation Environment with Labels</h3>
 <p>Calculate beam deflection with cross-references:</p>
 <div id="cell-14" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.027154Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.027043Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.037536Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.037204Z&quot;}" data-execution_count="8">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="87">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="23">
 <p><span class="math display">\[\begin{align}
 \delta &amp; = \dfrac{5{\,}q{\,}L^{4}}{384{\,}E{\,}I} &amp; = 15.95{\,}\text{mm}  \label{delta}
 \end{align}\]</span></p>
@@ -253,7 +253,7 @@ Note
 <h2 class="anchored" data-anchor-id="verification-function">Verification Function</h2>
 <p>Using the <code>check</code> function for design checks:</p>
 <div id="cell-18" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.038659Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.038548Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.046279Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.046017Z&quot;}" data-execution_count="9">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="88">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="24">
 <p><span class="math display">\[\begin{align}
 \sigma_{Sd} &amp; = 20{\,}\text{MPa} &amp;    \\[8pt]
 \tau_{Sd} &amp; = 15{\,}\text{MPa} &amp;    \\[8pt]
@@ -266,7 +266,7 @@ Note
 </div>
 <p>The type of comparison in the <code>check</code> function can be specified, as well the value to be specified against.</p>
 <div id="cell-20" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.047280Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.047133Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.050781Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.050531Z&quot;}" data-execution_count="10">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="89">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="25">
 <p><span class="math display">\[\begin{align}
 a &amp; = 3 &amp; \quad\text{$\textcolor{red}{\left[&gt;1\quad \textbf{NOT VERIFIED}\right]}$}  \\[8pt]
 b &amp; = 4 &amp; \quad\text{$\textcolor{green}{\left[&gt;2\quad \textbf{VERIFIED}\right]}$}  \\[8pt]
@@ -291,7 +291,7 @@ f &amp; = 7 &amp; \quad\text{$\textcolor{red}{\left[\neq5\quad \textbf{NOT VERIF
 </div>
 <p>If we use the default behavior of sympy’s <code>subs</code> method (unsorted substitutions) we get:</p>
 <div id="cell-24" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.055654Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.055542Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.058669Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.058419Z&quot;}" data-execution_count="12">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="91">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="27">
 <p><span class="math display">\[\begin{align}
     \left\{\begin{aligned}
 x &amp; = \left(1 + a\right)^{2} &amp; \quad\text{partially evaluated}  \\[8pt]
@@ -303,7 +303,7 @@ a &amp; = 3 &amp;
 </div>
 <p>While the default behavior of <code>pc.subs</code> is to sort the substitutions:</p>
 <div id="cell-26" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.059651Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.059500Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.062235Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.061990Z&quot;}" data-execution_count="13">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="92">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="28">
 <p><span class="math display">\[\begin{align}
     \left\{\begin{aligned}
 x &amp; = 16 &amp; \quad\text{fully evaluated}  \\[8pt]
@@ -331,7 +331,7 @@ Note
 <h2 class="anchored" data-anchor-id="check-function-templates">Check Function Templates</h2>
 <p>The <code>check</code> function supports customizable templates for different visual styles:</p>
 <div id="cell-29" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.063186Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.063083Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.066505Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.066241Z&quot;}" data-execution_count="14">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="93">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="29">
 <p><span class="math display">\[\begin{align}
 \text{Default} &amp; :\quad\text{$\textcolor{green}{\left[\le1.0\quad \textbf{VERIFIED}\right]}$}  \\[8pt]
 \text{Boxed} &amp; :\quad\text{\colorbox{green}{$\le1.0 \; \checkmark \; \textbf{VERIFIED}$}}  \\[8pt]
@@ -340,7 +340,7 @@ Note
 </div>
 </div>
 <div id="cell-30" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.067460Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.067357Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.077980Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.077685Z&quot;}" data-execution_count="15">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="94">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="30">
 <p><span class="math display">\[\begin{align}
 a &amp; = 3 &amp;    \\[8pt]
 b &amp; = 4 &amp;    \\[8pt]
@@ -353,7 +353,7 @@ c &amp; = a{\,}b &amp; = 12.000
 <h3 class="anchored" data-anchor-id="custom-templates">Custom Templates</h3>
 <p>You can also use completely custom templates:</p>
 <div id="cell-32" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.078975Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.078864Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.081940Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.081691Z&quot;}" data-execution_count="16">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="95">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="31">
 <p><span class="math display">\[\begin{align}
 \text{Pass} &amp; :\quad\text{✅ $\le1.0$ \textbf{PASS}}  \\[8pt]
 \text{Fail} &amp; :\quad\text{❌ $&gt;1.0$ \textbf{FAIL}}
@@ -396,7 +396,7 @@ c  &amp;  = a + b  &amp;  \quad\text{total length c}
 \end{align}
 ```</code></pre>
 </div>
-<div class="cell-output cell-output-display" data-execution_count="96">
+<div class="cell-output cell-output-display" data-execution_count="32">
 <pre><code>&lt;IPython.core.display.Latex object&gt;</code></pre>
 </div>
 </div>
