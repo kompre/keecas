@@ -434,7 +434,7 @@ config.latex.eq_prefix = r"eq-PREFIX-"     # Label prefixing
 config.display.default_float_format = ".3f"  # Default float formatting
 
 # Language and localization (automatic Pint sync)
-config.language = 'it'           # Sets both keecas and Pint locales
+config.language.language = 'it'           # Sets both keecas and Pint locales
 # Supported: 'de', 'es', 'fr', 'it', 'pt' (full)
 # Fallback: 'da', 'nl', 'no', 'sv', 'en' (English units)
 
@@ -477,18 +477,44 @@ keecas config show --global    # Show only global
 keecas config path             # Show file locations
 ```
 
-**Example Configuration:**
+**Configuration Access Pattern:**
+
+**IMPORTANT**: All configuration uses dot-notation matching TOML structure. Python access paths directly mirror the TOML section hierarchy.
+
+```python
+# Language settings
+config.language.language = 'it'
+config.language.disable_pint_locale = True
+
+# Display settings
+config.display.katex = True
+config.display.print_label = False
+config.display.default_float_format = '.3f'
+config.display.pint_default_format = '.2f~P'
+
+# LaTeX settings
+config.latex.eq_prefix = 'eq-'
+config.latex.eq_suffix = ''
+config.latex.default_environment = 'align'
+```
+
+**Rule**: Python path always matches TOML section path. If a setting is under `[display]` in TOML, access it via `config.display.setting_name` in Python.
+
+**Example TOML Configuration:**
 ```toml
 # .keecas/config.toml
+
+[language]
 language = "it"                    # Italian units and localization
-katex = true                       # KaTeX compatibility mode
-eq_prefix = "eq-"                  # Equation label prefix
-disable_pint_locale = true        # Default: True (preserves compact unit symbols like "kN")
-                                  # Set to false to enable locale (shows "kilonewton" instead)
+disable_pint_locale = true         # Default: True (preserves compact unit symbols like "kN")
 
 [display]
+katex = true                       # KaTeX compatibility mode
 default_float_format = ".3f"       # Default format for floats in equations
 pint_default_format = ".3f~P"      # Pint quantity formatting
+
+[latex]
+eq_prefix = "eq-"                  # Equation label prefix
 
 [custom_translations]
 "VERIFIED" = "VERIFICATO"          # Custom term translations
