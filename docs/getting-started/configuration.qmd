@@ -144,13 +144,13 @@ Keecas supports multiple languages with automatic Pint unit locale synchronizati
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `language` | `"en"` | Language for UI and units (access: `config.language`) |
+| `language.language` | `"en"` | Language for UI and units |
 | `display.katex` | `false` | Enable KaTeX compatibility |
 | `latex.eq_prefix` | `"eq-"` | Prefix for equation labels |
-| `display.pint_default_format` | `".2f~P"` | Number formatting for units (shortcut: `config.pint_default_format`) |
+| `display.pint_default_format` | `".2f~P"` | Number formatting for units |
 | `display.print_label` | `false` | Show labels during development |
 | `display.default_float_format` | `None` | Default format for float values (e.g., ".3f") |
-| `disable_pint_locale` | `true` | Disable automatic locale changes (access: `config.disable_pint_locale`) |
+| `language.disable_pint_locale` | `true` | Disable automatic locale changes |
 
 ## In-Code Configuration
 
@@ -160,7 +160,7 @@ You can also modify configuration directly in your notebooks:
 from keecas import config
 
 # Change language (automatically updates Pint locale)
-config.language = 'it'
+config.language.language = 'it'
 
 # Enable KaTeX mode for VS Code compatibility
 config.display.katex = True
@@ -184,9 +184,9 @@ For optimal Jupyter integration, add this to your notebook setup cell:
 from keecas import symbols, u, pc, show_eqn, config, check
 
 # Configure for your environment
-config.display.katex = True              # Enable for VS Code/KaTeX
-config.language = 'en'                   # Set your language
-config.latex.eq_prefix = 'eq-example-'   # Project-specific prefix
+config.display.katex = True                  # Enable for VS Code/KaTeX
+config.language.language = 'en'              # Set your language
+config.latex.eq_prefix = 'eq-example-'       # Project-specific prefix
 
 # Initialize global containers
 params = {}  # Global parameters
@@ -215,9 +215,9 @@ Then in your first code cell:
 from keecas import *
 
 # Quarto-optimized settings
-config.display.katex = False     # Full LaTeX support in PDF
+config.display.katex = False         # Full LaTeX support in PDF
 config.latex.eq_prefix = 'eq-'
-config.language = 'en'
+config.language.language = 'en'
 ```
 
 ## Custom LaTeX Environments
@@ -266,7 +266,7 @@ Language changes should automatically update Pint locales:
 
 ```python
 from keecas import config
-print(f"Language: {config.language}")
+print(f"Language: {config.language.language}")
 
 # Manual update if needed
 from keecas import update_pint_locale
