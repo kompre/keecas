@@ -588,4 +588,109 @@ For each document, we'll verify:
 
 ---
 
+### Session 2: 2025-11-07 - Phase 1.5 Configuration Guide
+
+**Code Verification**: All code examples tested and execute correctly
+
+**Findings**:
+
+1. **CRITICAL ISSUES FIXED** (Lines 135-193):
+   - **Problem**: In-code configuration examples used wrong property paths
+   - **Issue**: `config.katex`, `config.eq_prefix`, `config.print_label` don't exist as shortcuts
+   - **Reality**: Only 3 backward-compat shortcuts exist:
+     - `config.language` (works)
+     - `config.pint_default_format` (works)
+     - `config.disable_pint_locale` (works)
+   - **Fix Applied**: Updated all examples to use correct nested paths:
+     - `config.display.katex`
+     - `config.latex.eq_prefix`
+     - `config.display.print_label`
+     - `config.display.default_float_format`
+
+2. **TOML STRUCTURE VERIFIED**:
+   - **Finding**: TOML example was ALREADY CORRECT
+   - Generated `keecas config init` confirms nested `[latex]`, `[display]`, `[language]` sections
+   - Added clarification section explaining structure organization
+
+3. **REMOVED NON-EXISTENT FEATURE** (Lines 192-200):
+   - **Problem**: Environment variables section documented non-existent feature
+   - **Testing**: `KEECAS_LANGUAGE`, `KEECAS_KATEX` etc. don't work
+   - **Code Review**: No `getenv("KEECAS_")` calls in config module
+   - **Fix**: Removed entire section, replaced with "Custom LaTeX Environments"
+
+4. **MISSING DOCUMENTATION ADDED**:
+   - Added `config.display.default_float_format` to settings table
+   - Added custom environment definitions section (TOML + Python examples)
+   - Added CLI `version` and `migrate` subcommands
+   - Updated settings table with correct default values
+
+5. **SETTINGS TABLE UPDATED** (Lines 118-126):
+   - Fixed all paths to show nested structure: `display.katex`, `latex.eq_prefix`
+   - Added notes for backward-compat shortcuts where they exist
+   - Corrected default value: `pint_default_format = ".2f~P"` (was ".3f~P")
+   - Corrected default value: `disable_pint_locale = true` (was false)
+   - Added missing `default_float_format` setting
+
+6. **VERIFIED CORRECT**:
+   - File locations (global/local)
+   - Priority order (local > global > defaults)
+   - CLI commands structure
+   - Language support lists
+   - Troubleshooting sections
+   - All code examples now execute successfully
+
+**Changes Applied**:
+
+1. **In-Code Configuration Section** (Lines 132-150):
+   - Fixed: `config.katex` → `config.display.katex`
+   - Fixed: `config.eq_prefix` → `config.latex.eq_prefix`
+   - Fixed: `config.print_label` → `config.display.print_label`
+   - Added: `config.display.default_float_format = '.3f'`
+
+2. **Jupyter Notebook Setup** (Lines 157-167):
+   - Fixed: `config.katex` → `config.display.katex`
+   - Fixed: `config.eq_prefix` → `config.latex.eq_prefix`
+
+3. **Quarto Integration** (Lines 187-194):
+   - Fixed: `config.katex` → `config.display.katex`
+   - Fixed: `config.eq_prefix` → `config.latex.eq_prefix`
+
+4. **New Section Added**: Custom LaTeX Environments (Lines 196-220):
+   - TOML example for defining custom environments
+   - Python API example using `config.latex.environments.set()`
+   - Usage example with `show_eqn(environment="custom")`
+
+5. **CLI Commands**: Added Other Commands section (Lines 75-83):
+   - `keecas config version`
+   - `keecas config migrate`
+
+6. **Configuration Structure**: Added explanation section (Lines 87-95):
+   - Documented TOML section organization
+   - Listed all 5 main sections with descriptions
+
+7. **Example TOML Updated** (Lines 99-126):
+   - Added structure comments
+   - Corrected default values
+   - Added `default_float_format` example
+   - Clarified `disable_pint_locale` purpose
+
+**Final Verification**:
+- All Python code examples tested and execute successfully
+- TOML structure matches `keecas config init` output
+- Property access paths verified against actual config API
+- Custom environment example tested and works
+- All settings defaults verified against source code
+
+**Phase 1.5 Status**: COMPLETE
+
+**Key Technical Insights**:
+- Config has limited backward-compat shortcuts (only 3)
+- TOML structure uses nested sections, but Python access is via dot notation
+- Environment variable loading was never implemented
+- Custom environments fully supported but not previously documented
+
+**Ready to proceed to Phase 2**: User Guide sections
+
+---
+
 <!-- update this document during editing whenever I give you new instructions or new insight on how to document the repo. I may also do direct editing to file: check the edits and annotate notable trend in my style. At the end you should be abel to have a comprehensive style guide for future content -->

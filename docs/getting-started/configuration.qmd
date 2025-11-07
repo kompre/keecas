@@ -72,30 +72,57 @@ keecas config reset --global
 keecas config reset --local --force
 ```
 
+### Other Commands
+
+```bash
+# Show configuration version information
+keecas config version
+
+# Manually trigger configuration migration (when upgrading keecas)
+keecas config migrate
+```
+
 ## Configuration Options
+
+### Configuration File Structure
+
+Configuration uses nested TOML sections. Settings are organized by category:
+
+- `[latex]`: LaTeX equation formatting (eq_prefix, environments, etc.)
+- `[display]`: Display behavior (katex, debug, float formats, etc.)
+- `[language]`: Language and localization settings
+- `[translations]`: Custom term translations
+- `[check_templates]`: Verification function templates
 
 ### Example Configuration File
 
 ```toml
 # .keecas/config.toml
 
-# Language and Localization
-language = "en"                    # Language for units and terms
-                                   # Supported: de, es, fr, it, pt, en
+# Top-level language setting
+language = "en"                    # Supported: de, es, fr, it, pt, en
 
-# LaTeX Rendering
-katex = false                      # KaTeX compatibility mode
+[latex]
+# LaTeX equation generation
 eq_prefix = "eq-"                  # Equation label prefix
+eq_suffix = ""
+default_environment = "align"
+
+[display]
+# Display and formatting
+katex = false                      # KaTeX compatibility mode
 print_label = false                # Print labels in development
+default_float_format = ".3f"       # Default format for float values
+pint_default_format = ".2f~P"      # Pint quantity formatting
 
-# Unit Formatting
-pint_default_format = ".3f~P"      # Pint number formatting
-disable_pint_locale = false       # Disable automatic locale setting
+[language]
+# Language settings
+disable_pint_locale = true         # Preserve compact unit symbols (kN vs kilonewton)
 
-# Custom Translations
-[custom_translations]
-"VERIFIED" = "VERIFIED"            # Override default translations
-"Domain" = "Domain"                # Mathematical terms
+[translations]
+# Custom term translations
+"VERIFIED" = "VERIFIED"
+"Domain" = "Domain"
 ```
 
 ### Language Support
@@ -117,12 +144,13 @@ Keecas supports multiple languages with automatic Pint unit locale synchronizati
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `language` | `"en"` | Language for UI and units |
-| `katex` | `false` | Enable KaTeX compatibility |
-| `eq_prefix` | `"eq-"` | Prefix for equation labels |
-| `pint_default_format` | `".3f~P"` | Number formatting for units |
-| `print_label` | `false` | Show labels during development |
-| `disable_pint_locale` | `false` | Disable automatic locale changes |
+| `language` | `"en"` | Language for UI and units (access: `config.language`) |
+| `display.katex` | `false` | Enable KaTeX compatibility |
+| `latex.eq_prefix` | `"eq-"` | Prefix for equation labels |
+| `display.pint_default_format` | `".2f~P"` | Number formatting for units (shortcut: `config.pint_default_format`) |
+| `display.print_label` | `false` | Show labels during development |
+| `display.default_float_format` | `None` | Default format for float values (e.g., ".3f") |
+| `disable_pint_locale` | `true` | Disable automatic locale changes (access: `config.disable_pint_locale`) |
 
 ## In-Code Configuration
 
@@ -135,11 +163,14 @@ from keecas import config
 config.language = 'it'
 
 # Enable KaTeX mode for VS Code compatibility
-config.katex = True
+config.display.katex = True
 
 # Customize equation labeling
-config.eq_prefix = 'eq-custom-'
-config.print_label = True
+config.latex.eq_prefix = 'eq-custom-'
+config.display.print_label = True
+
+# Float formatting
+config.display.default_float_format = '.3f'
 
 # View current settings
 print(config.to_dict())
@@ -153,9 +184,9 @@ For optimal Jupyter integration, add this to your notebook setup cell:
 from keecas import symbols, u, pc, show_eqn, config, check
 
 # Configure for your environment
-config.katex = True              # Enable for VS Code/KaTeX
-config.language = 'en'           # Set your language
-config.eq_prefix = 'eq-example-' # Project-specific prefix
+config.display.katex = True              # Enable for VS Code/KaTeX
+config.language = 'en'                   # Set your language
+config.latex.eq_prefix = 'eq-example-'   # Project-specific prefix
 
 # Initialize global containers
 params = {}  # Global parameters
@@ -184,19 +215,35 @@ Then in your first code cell:
 from keecas import *
 
 # Quarto-optimized settings
-config.katex = False  # Full LaTeX support in PDF
-config.eq_prefix = 'eq-'
+config.display.katex = False     # Full LaTeX support in PDF
+config.latex.eq_prefix = 'eq-'
 config.language = 'en'
 ```
 
-## Environment Variables
+## Custom LaTeX Environments
 
-You can also use environment variables for global defaults:
+Define custom environments in your config file or code:
 
-```bash
-export KEECAS_LANGUAGE="it"
-export KEECAS_KATEX="true"
-export KEECAS_EQ_PREFIX="eq-project-"
+```toml
+# In .keecas/config.toml
+[latex.environments.spaced_align]
+separator = "&"
+line_separator = " \\\\[0.5em]\n "
+supports_multiple_labels = true
+outer_environment = "align"
+```
+
+```python
+# In Python
+config.latex.environments.set("custom", {
+    "separator": "&",
+    "line_separator": " \\\\\n ",
+    "supports_multiple_labels": True,
+    "outer_environment": "align"
+})
+
+# Use in show_eqn
+show_eqn(equations, environment="custom")
 ```
 
 ## Troubleshooting
