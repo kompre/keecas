@@ -316,3 +316,11 @@ None - approach is straightforward.
 - Committed to feature branch
 
 **Next**: Update documentation and examples
+
+**Merged into feature/docs-review-proposal** ✓
+- Fast-forward merge completed
+- All tests (39/39) passing after merge
+- Both branches now have:
+  - Configuration guide documentation fixes
+  - Config shortcuts elimination
+- Pushed to origin
