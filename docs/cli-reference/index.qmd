@@ -145,11 +145,18 @@ Configuration files use TOML format with hierarchical settings:
 
 ```toml
 # Global defaults for all projects
+
+[language]
 language = "en"
+disable_pint_locale = true
+
+[display]
 katex = false
-eq_prefix = "eq-"
 pint_default_format = ".3f~P"
-disable_pint_locale = false
+default_float_format = ".3f"
+
+[latex]
+eq_prefix = "eq-"
 
 [custom_translations]
 "VERIFIED" = "VERIFIED"
@@ -160,8 +167,14 @@ disable_pint_locale = false
 
 ```toml
 # Project-specific overrides
+
+[language]
 language = "it"                    # Italian for this project
+
+[display]
 katex = true                       # VS Code compatibility
+
+[latex]
 eq_prefix = "eq-bridge-analysis-"  # Project-specific prefix
 
 [custom_translations]
@@ -173,22 +186,6 @@ eq_prefix = "eq-bridge-analysis-"  # Project-specific prefix
 1. **Local** (`.keecas/config.toml`)
 2. **Global** (`~/.keecas/config.toml`)
 3. **Defaults** (built-in)
-
-## Environment Variables
-
-Override configuration with environment variables:
-
-```bash
-# Set global defaults
-export KEECAS_LANGUAGE="it"
-export KEECAS_KATEX="true"
-export KEECAS_EQ_PREFIX="eq-project-"
-
-# Launch with environment settings
-keecas edit
-```
-
-Variable naming: `KEECAS_` + `UPPERCASE_SETTING_NAME`
 
 ## Cross-Platform Support
 
@@ -277,8 +274,13 @@ keecas config init --local
 
 # Set project-specific settings
 cat > .keecas/config.toml << EOF
+[language]
 language = "en"
+
+[display]
 katex = true
+
+[latex]
 eq_prefix = "eq-${PROJECT_NAME}-"
 EOF
 
@@ -381,7 +383,7 @@ keecas config init --local
 ```bash
 # Launch with VS Code optimized settings
 keecas config init --local
-echo 'katex = true' >> .keecas/config.toml
+echo -e '\n[display]\nkatex = true' >> .keecas/config.toml
 keecas edit notebook.ipynb
 ```
 
@@ -391,9 +393,14 @@ keecas edit notebook.ipynb
 # Configure for Quarto document generation
 keecas config init --local
 cat > .keecas/config.toml << EOF
-katex = false
-eq_prefix = "eq-doc-"
+[language]
 language = "en"
+
+[display]
+katex = false
+
+[latex]
+eq_prefix = "eq-doc-"
 EOF
 ```
 
