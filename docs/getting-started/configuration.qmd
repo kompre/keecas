@@ -142,15 +142,15 @@ Keecas supports multiple languages with automatic Pint unit locale synchronizati
 
 ### Key Settings
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `language.language` | `"en"` | Language for UI and units |
-| `display.katex` | `false` | Enable KaTeX compatibility |
-| `latex.eq_prefix` | `"eq-"` | Prefix for equation labels |
-| `display.pint_default_format` | `".2f~P"` | Number formatting for units |
-| `display.print_label` | `false` | Show labels during development |
-| `display.default_float_format` | `None` | Default format for float values (e.g., ".3f") |
-| `language.disable_pint_locale` | `true` | Disable automatic locale changes |
+| Setting                        | Default   | Description                                   |
+| ------------------------------ | --------- | --------------------------------------------- |
+| `language.language`            | `"en"`    | Language for UI and units                     |
+| `display.katex`                | `false`   | Enable KaTeX compatibility                    |
+| `latex.eq_prefix`              | `"eq-"`   | Prefix for equation labels                    |
+| `display.print_label`          | `false`   | Show labels during development                |
+| `display.default_float_format` | `None`    | Default format for float values (e.g., ".3f") |
+| `display.pint_default_format`  | `".2f~P"` | Number formatting for units                   |
+| `language.disable_pint_locale` | `true`    | Disable automatic locale changes              |
 
 ## In-Code Configuration
 
@@ -178,34 +178,47 @@ print(config.to_dict())
 
 ## Jupyter Notebook Setup
 
-For optimal Jupyter integration, add this to your notebook setup cell:
+If you plan to use only jupyter notebooks without rendering with Quarto, no special configuration is required^[`config.display.katex` is only relevant is you're using labels, but labels only make sense when rendering with Quarto]
+
 
 ```python
 from keecas import symbols, u, pc, show_eqn, config, check
 
-# Configure for your environment
-config.display.katex = True                  # Enable for VS Code/KaTeX
-config.language.language = 'en'              # Set your language
-config.latex.eq_prefix = 'eq-example-'       # Project-specific prefix
+# Configure for your environment only if different from the global/local config.toml
+config.language.language = 'es'              # Set your language
 
-# Initialize global containers
+# Initialize global containers (in needed)
 params = {}  # Global parameters
 eqn = {}     # Global expressions
 ```
 
+
 ## Quarto Integration
 
-For Quarto documents, add configuration to your YAML header:
+Quarto automatically includes `amsmath` and `amssymb` packages in PDF output through its default LaTeX template, so no additional configuration is needed for PDF rendering.
+
+For HTML output with equation numbering and cross-references, add MathJax configuration to your YAML header:
 
 ```yaml
 ---
 title: "My Engineering Calculation"
 format:
-  pdf:
+  html:
     include-in-header:
+      # Enable equation numbering and labeling
       - text: |
-          \usepackage{amsmath}
-          \usepackage{amssymb}
+          <script>
+          MathJax = { tex: { tags: 'ams' } };
+          </script>
+      # Prevent horizontal scrollbars on equations
+      - text: |
+          <style>
+          .math.display {
+            max-width: 100%;
+            padding-right: 3em;
+          }
+          </style>
+  pdf: default
 ---
 ```
 
@@ -214,10 +227,23 @@ Then in your first code cell:
 ```python
 from keecas import *
 
-# Quarto-optimized settings
-config.display.katex = False         # Full LaTeX support in PDF
-config.latex.eq_prefix = 'eq-'
-config.language.language = 'en'
+# set a namespace for the expression in the following section. Update this as needed
+config.latex.eq_prefix = 'eq-<namespace>-'
+```
+
+Add a code cell with `#| eval: false` to set specific configuration you may want when developing your notebook, but don't want to run when rendered by Quarto.
+
+```python
+#| eval: false
+
+# disable `\label command` when KaTeX is the rendering engine to avoid ParseError
+config.display.katex = True
+
+# print interpolated labels for easy reference (e.g. copy and paste) 
+config.display.print_label = True 
+
+# print the latex interpolated source for all show_eqn calls
+config.display.debug = True
 ```
 
 ## Custom LaTeX Environments
@@ -258,20 +284,16 @@ keecas config path
 
 # Verify file exists and is readable
 cat ~/.keecas/config.toml
+
+# open the file in your editor
+keecas config open [--global/--local]
 ```
 
 ### Language Changes Not Applied
 
-Language changes should automatically update Pint locales:
+Translations are simply match/replace operations using a limited dictionary where the key is the english term (default) and value is the translated term.
 
-```python
-from keecas import config
-print(f"Language: {config.language.language}")
-
-# Manual update if needed
-from keecas import update_pint_locale
-update_pint_locale()
-```
+If a term does not get translated in one of the supported languages, then is not present in the dict. Please open an [issue](https://github.com/kompre/keecas/issues) with the term you want to translate.
 
 ### Invalid TOML Syntax
 

@@ -487,7 +487,6 @@ For each document, we'll verify:
 
 **Style Notes**:
 - User added pipx/uv tool for CLI installation (good practice)
-- User prefers "classic" terminology over "recommended"
 
 **Additional Simplifications**:
 1. **Requirements Section Removed**:
@@ -844,7 +843,177 @@ For each document, we'll verify:
 3. No shortcuts (eliminated in core implementation)
 4. Consistent structure across all documentation
 
-**Ready to proceed to Phase 4**: API Reference Review
+---
+
+### Session 3: 2025-11-08 - Phase 1 Completion & Status Correction
+
+**Context**: Previous session notes incorrectly marked Phase 2 and 3 as complete. This session corrects the status and completes Phase 1.
+
+#### Phase 1 Completion
+
+**Document 1.5: Configuration Guide - Additional Fix**
+
+**Finding**:
+- **Issue**: Quarto Integration section (lines 206-218) incorrectly suggested users need to manually add `\usepackage{amsmath}` and `\usepackage{amssymb}` for PDF output
+- **Reality**: Quarto automatically includes these packages via default LaTeX template (inherited from Pandoc)
+- **User feedback**: "I don't think this is strictly true. Quarto by default add amsmath in the partials."
+
+**Changes Applied**:
+1. **Removed incorrect PDF configuration** (old lines 206-218)
+2. **Added clarification**: "Quarto automatically includes `amsmath` and `amssymb` packages in PDF output through its default LaTeX template, so no additional configuration is needed for PDF rendering."
+3. **Focused on HTML requirements**: MathJax configuration for equation numbering/cross-references
+4. **Updated YAML example**: Shows HTML-specific configuration matching `quarto_example.ipynb`
+
+**Document 1.4: Quickstart Tutorial - Final Fix**
+
+**Finding**:
+- **Issue**: Line 121 still had config shortcut: `config.language = 'en'`
+- **Discovery**: Grep search found this was the LAST remaining config shortcut in entire docs folder
+- **Fix**: Changed to `config.language.language = 'en'`
+
+**Verification**:
+- Ran grep for all config shortcuts: `config.(language|katex|eq_prefix|print_label|default_float_format|pint_default_format|disable_pint_locale)`
+- Result: Zero shortcuts remaining across all docs ✓
+
+**Phase 1 Status**: COMPLETE ✓
+- All 5 Getting Started documents reviewed and corrected
+- All config paths use nested structure
+- All code examples verified
+- All content accurate
+
+#### Status Correction
+
+**Previous Session Notes Review**:
+The Session 2 notes claimed Phase 2 and Phase 3 were "COMPLETE" based on git commits:
+- `f35caa6` - docs: Fix config paths in User Guide (Phase 2)
+- `ebedcd8` - docs: Fix TOML structure and remove env vars in CLI Reference
+
+**Reality Check**:
+While those commits DID fix config paths and TOML structure, they did NOT constitute complete document reviews per the review criteria defined in Phase 0.
+
+**Review Criteria Reminder** (from lines 33-70):
+Each document review must verify:
+1. Accuracy - code examples match API, features reflect implementation
+2. Completeness - all major features documented
+3. Code Examples - execute without errors, follow conventions
+4. Internal Consistency - terminology matches, links work
+5. Version-Specific Information - v1.0.0 features documented
+6. Formatting and Readability - clear structure, proper callouts
+
+**Actual Status**:
+
+**Phase 2 (User Guide) - NOT STARTED**
+- Config paths WERE fixed in previous session
+- BUT full review criteria NOT applied yet
+- Still need to:
+  - Execute all code examples
+  - Verify completeness
+  - Check accuracy beyond config paths
+  - Validate internal consistency
+
+**Phase 3 (CLI Reference) - INCOMPLETE**
+- TOML structure fixed ✓
+- Environment variables section removed ✓
+- BUT still missing documentation:
+  - `keecas config version` command (exists in CLI, not documented)
+  - `keecas config migrate` command (exists in CLI, not documented)
+- Verified via `keecas config --help` output
+
+**Why This Matters**:
+The review process is designed to catch ALL issues, not just config path corrections. A proper review includes:
+- Running code examples
+- Checking completeness
+- Verifying accuracy
+- Testing links
+- Ensuring consistency
+
+Simply fixing known config path issues doesn't fulfill the comprehensive review criteria.
+
+#### Summary
+
+**Completed**:
+- Phase 1 (Getting Started): 5 documents - COMPLETE ✓
+
+**Remaining**:
+- Phase 2 (User Guide): 5 documents - Awaiting full review
+- Phase 3 (CLI Reference): 1 document - Needs completion (add version/migrate docs)
+- Phase 4 (API Reference): 2 reviews - Not started
+- Phase 5 (Final Checks): Holistic review - Not started
+
+**Ready to proceed**: Phase 2.1 (User Guide Overview) OR complete Phase 3 (CLI Reference)
+
+**User Decision Point**: Would you prefer to:
+1. Complete Phase 3 (add missing CLI docs) before moving to Phase 2?
+2. Proceed with Phase 2 full reviews?
+
+---
+
+### Session 3 Continued: Phase 3 CLI Reference - Completion
+
+**Context**: User chose to complete Phase 3 first since it's "easy and isolated"
+
+#### Document 3.1: CLI Reference - Missing Commands Added
+
+**Commands Tested**:
+```bash
+$ keecas config version --global
+Config file: C:\Users\s.follador\.keecas\config.toml
+Schema version: 1.0.0
+Generated by: keecas v1.0.0b2
+Created: 2025-11-08T12:15:47.606012
+Modified: 2025-11-08T12:15:47.606012
+
+SUCCESS: Config is up to date (latest: 1.0.0)
+
+$ keecas config migrate --global --dry-run
+SUCCESS: Config is already up to date (version 1.0.0)
+```
+
+**Changes Applied** (Lines 94-124):
+
+1. **Added "Check Configuration Version" section**:
+   - Shows `keecas config version` (default: local)
+   - Shows `keecas config version --global`
+   - Description: "Shows the schema version, creation date, and modification date of the configuration file."
+
+2. **Added "Migrate Configuration" section**:
+   - Shows `keecas config migrate` (default: local)
+   - Shows `keecas config migrate --global`
+   - Shows `keecas config migrate --dry-run` (preview mode)
+   - Shows `keecas config migrate --global --dry-run`
+   - Description: "Used when upgrading Keecas to ensure configuration files are compatible with the new version."
+
+**Placement**: Added after "Reset Configuration" section, before "Jupyter Integration"
+
+**Verification**:
+- Both commands tested and working ✓
+- Help output reviewed for all flags ✓
+- Documentation matches actual CLI behavior ✓
+
+**Phase 3 Status**: COMPLETE ✓
+- CLI Reference fully documented
+- All `keecas config` subcommands covered
+- All commands tested
+
+#### Summary After Phase 3
+
+**Completed**:
+- Phase 1 (Getting Started): 5 documents - COMPLETE ✓
+- Phase 3 (CLI Reference): 1 document - COMPLETE ✓
+
+**IMPORTANT - Remaining Work**:
+- **Phase 2 (User Guide): 5 documents - NOT STARTED**
+  - conventions.qmd - Needs full review
+  - examples.qmd - Needs full review
+  - jupyter-integration.qmd - Needs full review
+  - quarto-integration.qmd - Needs full review
+  - index.qmd - Needs full review
+  - *Note: Config paths were fixed earlier, but comprehensive review criteria not applied*
+
+- Phase 4 (API Reference): 2 reviews - Not started
+- Phase 5 (Final Checks): Holistic review - Not started
+
+**Ready to proceed to Phase 2.1**: User Guide Overview (`docs/user-guide/index.qmd`)
 
 ---
 

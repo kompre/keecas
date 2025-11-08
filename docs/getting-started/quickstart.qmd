@@ -118,7 +118,7 @@ Set up basic configuration for your document:
 # Configuration for LaTeX output
 config.display.katex = False              # KaTeX compatibility
 config.latex.eq_prefix = "eq-"           # Equation label prefix
-config.language = 'en'                   # Language/locale
+config.language.language = 'en'          # Language/locale
 ```
 
 ## Multi-Step Calculations

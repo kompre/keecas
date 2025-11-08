@@ -91,6 +91,38 @@ keecas config reset --local
 keecas config reset --global --force
 ```
 
+### Check Configuration Version
+
+Display configuration file version information:
+
+```bash
+# Check local configuration version (default)
+keecas config version
+
+# Check global configuration version
+keecas config version --global
+```
+
+Shows the schema version, creation date, and modification date of the configuration file.
+
+### Migrate Configuration
+
+Migrate configuration files to the latest schema version:
+
+```bash
+# Migrate local configuration (default)
+keecas config migrate
+
+# Migrate global configuration
+keecas config migrate --global
+
+# Preview migration without applying changes
+keecas config migrate --dry-run
+keecas config migrate --global --dry-run
+```
+
+Used when upgrading Keecas to ensure configuration files are compatible with the new version.
+
 ## Jupyter Integration
 
 ### Development Environment
