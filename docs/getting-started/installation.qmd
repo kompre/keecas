@@ -4,9 +4,9 @@ title: "Installation"
 
 # Installation
 
-Keecas supports multiple installation methods. Choose the one that best fits your workflow.
+Keecas is available on [PyPI](https://pypi.org/project/keecas/), install with the package manager of your choice.
 
-## Using pip (Recommended)
+## Using pip (classic)
 
 The simplest way to install Keecas:
 
@@ -22,6 +22,18 @@ If you're using the modern [uv](https://docs.astral.sh/uv/) package manager:
 uv add keecas
 ```
 
+## Install as executable
+
+keecas also has a limited cli interface, so if you want to be available system wide I recommend using `pipx` or `uv tool`:
+
+```bash
+pipx install keecas
+```
+
+```bash
+uv tool install keecas
+```
+
 ## Development Installation
 
 For development or to access the latest features:
@@ -33,7 +45,6 @@ cd keecas
 
 # Install in development mode with uv
 uv sync
-uv pip install -e ".[dev]"
 
 # Or with pip
 pip install -e ".[dev]"
@@ -41,73 +52,17 @@ pip install -e ".[dev]"
 
 ## Verification
 
-After installation, verify that Keecas is working correctly:
-
-```python
-# In a Python shell or Jupyter notebook
-from keecas import symbols, u, show_eqn
-
-# Define symbols
-F, A = symbols(r"F, A")
-
-# Create a simple calculation
-equations = {F: 100 * u.kN, A: F / (10 * u.MPa)}
-show_eqn(equations)
-```
-
-If you see a LaTeX-formatted equation output, Keecas is installed correctly!
-
-## Requirements
-
-- **Python**: >=3.12, <4.0
-- **Core dependencies**: sympy, pint, pipe
-- **Jupyter support**: IPython, ipywidgets
-- **CLI dependencies**: click, toml
-
-## Optional Dependencies
-
-For enhanced functionality:
-
-- **quarto**: For generating scientific documents
-- **jupyter**: For interactive notebooks
-- **mkdocs**: For documentation building
-
-## Troubleshooting
-
-### Import Errors
-
-If you get import errors:
+Verify the installation:
 
 ```bash
-# Ensure you're using the correct Python environment
-which python
-pip list | grep keecas
-
-# Reinstall if needed
-pip uninstall keecas
-pip install keecas
+keecas --version
 ```
 
-### Missing Dependencies
+## External Tools
 
-If calculations don't display properly:
+For generating scientific documents from your calculations:
 
-```bash
-# Install Jupyter display dependencies
-pip install ipython ipywidgets
-```
-
-### CLI Not Available
-
-If the `keecas` command isn't found:
-
-```bash
-# Check if it's in your PATH
-which keecas
-
-# If not, ensure site-packages/bin is in PATH
-# Or use: python -m keecas
-```
+- **[Quarto](https://quarto.org/)**: Render notebooks to PDF, HTML, and other formats
 
 ## Next Steps
 

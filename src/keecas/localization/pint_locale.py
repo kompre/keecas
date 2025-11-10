@@ -202,7 +202,7 @@ def _detect_pint_mode_on_language_change(unitregistry: Any, new_language: str) -
         from ..config import get_config_manager
 
         config = get_config_manager()
-        current_keecas_lang = config.options.language_config.language or "en"
+        current_keecas_lang = config.options.language.language or "en"
         current_pint_locale = _get_current_pint_locale(unitregistry)
 
         if not current_pint_locale:
@@ -266,7 +266,7 @@ def update_pint_locale(
     config = get_config_manager()
 
     # Check if pint locale sync is disabled
-    if config.options.language_config.disable_pint_locale:
+    if config.options.language.disable_pint_locale:
         if verbose:
             print("Pint locale sync disabled by configuration")
         return
@@ -280,22 +280,22 @@ def update_pint_locale(
         language = config_lang or current_lang or "en"
 
     # Smart mode detection
-    if config.options.language_config.pint_language_mode == "auto":
+    if config.options.language.pint_language_mode == "auto":
         # Check if we should switch to manual mode
         if _was_pint_imported_before_keecas(unitregistry):
-            config.options.language_config.pint_language_mode = "manual"
+            config.options.language.pint_language_mode = "manual"
             if verbose:
                 print("Detected pint was imported before keecas - switching to manual mode")
         else:
             # Check if user has manually changed pint locale
             detected_mode = _detect_pint_mode_on_language_change(unitregistry, language)
             if detected_mode == "manual":
-                config.options.language_config.pint_language_mode = "manual"
+                config.options.language.pint_language_mode = "manual"
                 if verbose:
                     print("Detected manual pint locale change - switching to manual mode")
 
     # Only proceed if in auto mode
-    if config.options.language_config.pint_language_mode == "manual":
+    if config.options.language.pint_language_mode == "manual":
         if verbose:
             print("Pint language mode is 'manual' - skipping automatic locale sync")
         return

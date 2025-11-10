@@ -56,7 +56,7 @@ from .pint_sympy import unitregistry as u
 from .pint_sympy import update_pint_locale
 
 # Use configuration for pint format
-u.formatter.default_format = config.pint_default_format
+u.formatter.default_format = config.display.pint_default_format
 
 # initialize sympy
 import sympy  # noqa: E402

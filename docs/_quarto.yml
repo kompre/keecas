@@ -5,6 +5,12 @@ website:
   title: "Keecas Documentation"
   description: "Symbolic and units-aware calculations for Jupyter notebooks"
 
+  # sidebar: 
+  #   contents: auto
+  #   tools:
+  #     - icon: github
+  #       href: https://github.com/kompre/keecas
+
   navbar:
     title: "Keecas"
     left:
@@ -12,16 +18,19 @@ website:
         text: Home
       - href: getting-started/index.qmd
         text: Getting Started
-      - href: user-guide/index.qmd
-        text: User Guide
       - href: api-reference/
         text: API Reference
       - href: cli-reference/index.qmd
         text: CLI Reference
+    right:
+      - href: https://github.com/kompre/keecas
+        text: GitHub
+        aria-label: GitHub
+        icon: github
 
 format:
   html:
-    theme: cosmo
+    theme: journal
     toc: true
     code-copy: true
     include-in-header:
@@ -73,6 +82,7 @@ quartodoc:
   # Sidebar configuration
   sidebar: api-reference/_sidebar.yml
 
+
   # Rendering options
   renderer:
     style: markdown
@@ -95,6 +105,18 @@ quartodoc:
         - check
         - latex_inline_dict
         - display.format_decimal_numbers
+    - title: Formatters Module
+      desc: Cell and row formatters for LaTeX equation rendering
+      contents:
+        - name: formatters
+          children: linked
+        - format_value
+        - format_str
+        - format_int
+        - format_float
+        - format_sympy
+        - format_mul
+        - validate_latex_kwargs
     - title: Label Module
       desc: Label generation
       contents:

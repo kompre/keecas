@@ -9,7 +9,7 @@ The main configuration object is exposed as `config` from the keecas package:
 from keecas import config
 
 # Access nested configuration
-config.language = 'it'                          # Italian localization
+config.language.language = 'it'                 # Italian localization
 config.latex.eq_prefix = 'eq-'                  # LaTeX label prefix
 config.display.default_float_format = '.3f'    # Default float formatting
 config.display.katex = True                     # KaTeX compatibility mode
@@ -301,63 +301,14 @@ class ConfigOptions:
 
     latex: LatexConfig = field(default_factory=LatexConfig)
     display: DisplayConfig = field(default_factory=DisplayConfig)
-    language_config: LanguageConfig = field(default_factory=LanguageConfig)
+    language: LanguageConfig = field(default_factory=LanguageConfig)
     units: UnitsConfig = field(default_factory=UnitsConfig)
     translations: TranslationsConfig = field(default_factory=TranslationsConfig)
     check_templates: CheckTemplateConfig = field(default_factory=CheckTemplateConfig)
 
     def __post_init__(self):
         """Set up cross-references for language propagation."""
-        self.language_config._config_manager_ref = getattr(self, "_config_manager_ref", None)
-
-    @property
-    def language_setting(self) -> str | None:
-        return self.language_config.language
-
-    @language_setting.setter
-    def language_setting(self, value: str | None):
-        self.language_config.language = value
-
-    # Backward compatibility - delegate to language_setting
-    def get_language(self) -> str | None:
-        return self.language_setting
-
-    def set_language(self, value: str | None):
-        self.language_setting = value
-
-    # Backward compatibility property for options.language
-    # Note: This shadows the language field, but that's intentional for backward compatibility
-    @property
-    def language(self) -> str | None:
-        return self.language_setting
-
-    @language.setter
-    def language(self, value: str | None):
-        self.language_setting = value
-
-    @property
-    def pint_default_format(self) -> str:
-        return self.display.pint_default_format
-
-    @pint_default_format.setter
-    def pint_default_format(self, value: str):
-        self.display.pint_default_format = value
-
-    @property
-    def disable_pint_locale(self) -> bool:
-        return self.language_config.disable_pint_locale
-
-    @disable_pint_locale.setter
-    def disable_pint_locale(self, value: bool):
-        self.language_config.disable_pint_locale = value
-
-    @property
-    def custom_translations_dict(self) -> dict[str, str]:
-        return self.translations.translations
-
-    @custom_translations_dict.setter
-    def custom_translations_dict(self, value: dict[str, str]):
-        self.translations.translations = value
+        self.language._config_manager_ref = getattr(self, "_config_manager_ref", None)
 
     # Column wrapping - None means no wrapping (formatters handle prefixes now)
     col_wrap: list | None = None
@@ -388,8 +339,8 @@ class ConfigOptions:
                 "pint_default_format": self.display.pint_default_format,
             },
             "language": {
-                "disable_pint_locale": self.language_config.disable_pint_locale,
-                "pint_language_mode": self.language_config.pint_language_mode,
+                "disable_pint_locale": self.language.disable_pint_locale,
+                "pint_language_mode": self.language.pint_language_mode,
             },
             "check_templates": {
                 "success_template": self.check_templates.success_template,
@@ -399,8 +350,8 @@ class ConfigOptions:
         }
 
         # Add language if set
-        if self.language_config.language is not None:
-            data["language"]["language"] = self.language_config.language
+        if self.language.language is not None:
+            data["language"]["language"] = self.language.language
 
         # Add custom translations if any
         if self.translations.translations:
@@ -427,7 +378,7 @@ class ConfigOptions:
             elif section_key == "language" and isinstance(section_data, dict):
                 # Process disable_pint_locale FIRST to prevent unwanted locale changes
                 if "disable_pint_locale" in section_data:
-                    self.language_config.disable_pint_locale = section_data["disable_pint_locale"]
+                    self.language.disable_pint_locale = section_data["disable_pint_locale"]
 
                 # Then process other language settings
                 for key, value in section_data.items():
@@ -435,9 +386,9 @@ class ConfigOptions:
                         continue  # Already processed
                     elif key == "language":
                         # Use the property setter to trigger propagation
-                        self.language_config.language = value
-                    elif hasattr(self.language_config, key):
-                        setattr(self.language_config, key, value)
+                        self.language.language = value
+                    elif hasattr(self.language, key):
+                        setattr(self.language, key, value)
             elif section_key == "units" and isinstance(section_data, dict):
                 for key, value in section_data.items():
                     if hasattr(self.units, key):
@@ -475,7 +426,7 @@ class ConfigManager:
             self._options = ConfigOptions()
             # Set back-reference for language propagation
             self._options._config_manager_ref = self
-            self._options.language_config._config_manager_ref = self
+            self._options.language._config_manager_ref = self
             self.load_configs()
             self._configs_loaded = True
         except Exception as e:
@@ -484,7 +435,7 @@ class ConfigManager:
             # Create minimal options for path-only operations
             self._options = ConfigOptions()
             self._options._config_manager_ref = self
-            self._options.language_config._config_manager_ref = self
+            self._options.language._config_manager_ref = self
 
     def _ensure_loaded(self) -> None:
         """Ensure configs are loaded, raise helpful error if broken."""
@@ -896,7 +847,7 @@ class ConfigManager:
     def _update_pint_language(self, language: str) -> None:
         """Update Pint locale based on language setting."""
         # Check if Pint locale is disabled
-        if self._options.disable_pint_locale:
+        if self._options.language.disable_pint_locale:
             return
 
         try:
@@ -1072,7 +1023,7 @@ class ConfigManager:
 ## Language settings (de, es, fr, it, pt, da, nl, no, sv, en)
 ## Note: When disable_pint_locale=true, language only affects keecas term translations (not Pint units)
 {'# language = "en"' if is_global else ('# language = "en"' if not language_inherited.get("language") else format_value("language", "language", language_inherited.get("language"), None))}
-{format_value("language", "disable_pint_locale", defaults.language_config.disable_pint_locale, language_inherited.get("disable_pint_locale"))}
+{format_value("language", "disable_pint_locale", defaults.language.disable_pint_locale, language_inherited.get("disable_pint_locale"))}
 
 [translations]
 ## Custom mathematical terms (e.g., "VERIFIED" = "VERIFICATO")

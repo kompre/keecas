@@ -36,7 +36,7 @@ from keecas import check, config, pc, show_eqn, symbols, u
 
 ```{python}
 #| execution: {iopub.execute_input: '2025-10-03T07:51:39.903397Z', iopub.status.busy: '2025-10-03T07:51:39.903130Z', iopub.status.idle: '2025-10-03T07:51:39.905439Z', shell.execute_reply: '2025-10-03T07:51:39.905129Z'}
-config.language = "en"
+config.language.language = "en"
 ```
 
 ::: {.callout-note}

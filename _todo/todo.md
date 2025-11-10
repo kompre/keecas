@@ -7,13 +7,14 @@
 <!-- Tasks moved to proposal phase -->
 
 **Tasks awaiting approval in `proposal/`**:
+- [eliminate-config-shortcuts.md](proposal/eliminate-config-shortcuts.md) - Eliminate configuration property shortcuts for consistent dot-notation access pattern (awaiting review)
 - [refactor-create-dataframe-singledispatch.md](proposal/refactor-create-dataframe-singledispatch.md) - Refactor create_dataframe using singledispatch pattern for cleaner type handling (awaiting review)
 - [refactor-formatters-singledispatch.md](proposal/refactor-formatters-singledispatch.md) - Refactor formatter system to use singledispatch pattern (awaiting review)
 - [refactor-docstring-see-also-interlinks.md](proposal/refactor-docstring-see-also-interlinks.md) - Standardize "See Also" sections with quartodoc interlinks (awaiting review)
 - [configurable-label-generation.md](proposal/configurable-label-generation.md) - Add config option for stable label generation strategies in show_eqn (awaiting review)
 
 **Tasks in development (`pending/`)**:
-<!-- No tasks currently in development -->
+- [docs-review-pre-publish.md](pending/docs-review-pre-publish.md) - Comprehensive pre-publication documentation review and correction (in progress)
 
 **Completed tasks**:
 - [last-element-filler-pattern.md](completed/2025-01-05/last-element-filler-pattern.md) - Replace ambiguous (seed, filler) tuple pattern with universal last-element-as-filler pattern (completed 2025-01-05)

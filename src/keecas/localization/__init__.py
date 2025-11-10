@@ -12,7 +12,7 @@ def get_language_from_config() -> str | None:
         from ..config import get_config_manager
 
         config_manager = get_config_manager()
-        return config_manager.options.language_config.language
+        return config_manager.options.language.language
     except Exception:
         return None
 
