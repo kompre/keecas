@@ -110,14 +110,114 @@ Common pipe commands:
 - `pc.convert_to(units)` - Convert units
 - `pc.N` - Numerical evaluation
 
+### Symbol Dependency Ordering
+
+Keecas automatically handles out-of-order symbol definitions. You can define expressions before their dependencies:
+
+```{python}
+a, b, intermediate, result = symbols(r"a, b, intermediate, result")
+
+_e = {
+    result: "sqrt(a^2 + b^2) / intermediate" | pc.parse_expr,  # Uses intermediate
+    intermediate: "a * b" | pc.parse_expr,                     # Defined after result
+}
+
+_p = {a: 3, b: 4}
+
+_v = {k: v | pc.subs(_e | _p) | pc.N for k, v in _e.items()}
+
+show_eqn([_p | _e, _v])
+```
+
+Keecas resolves dependencies automatically - no manual ordering required.
+
+### Common Pitfalls
+
+::: {.callout-warning}
+## Important Patterns to Know
+
+1. **Use LaTeX notation for symbol definitions** - Prefer `symbols(r"\sigma_{Sd}")` over `symbols("sigma_Sd")`. Symbols are compared by their string representation, so these create different objects:
+
+```{python}
+# Two different symbols even though they render similarly
+display(sigma_latex := symbols(r"\sigma_{Sd}"))
+display(sigma_plain := symbols("sigma_Sd"))
+```
+
+```{python}
+# They are NOT equal
+sigma_latex == sigma_plain  # False
+```
+
+Using LaTeX notation ensures proper rendering and avoids unexpected symbol mismatches.
+
+2. **Be careful with `vals` dict in `pc.subs`** - While maintaining a global `vals` dict for evaluated results can be useful, passing it to `pc.subs` will overwrite expressions with already evaluated values, preventing recalculation when parameters change.
+
+**Example showing the problem:**
+
+```{python}
+# Initial setup
+x, y, z = symbols(r"x, y, z")
+
+params = {}
+eqn = {}
+vals = {}
+
+_p = {x: 2}
+params.update(_p)
+
+_e = {
+    y: "x + 1" | pc.parse_expr,  # y depends on x
+    z: "y^2" | pc.parse_expr,     # z depends on y (and indirectly on x)
+}
+eqn.update(_e)
+
+_v = {k: v | pc.subs(eqn|params) for k, v in _e.items()}
+vals.update(_v)
+
+show_eqn([_p | _e, _v])
+```
+
+```{python}
+# Update parameter and recalculate
+_p = {x: 3}  # Changed value
+params.update(_p)
+
+expr_to_recalc = [y, z]
+
+# INCORRECT: passing vals overwrites expressions with old evaluated values
+_v_incorrect = {
+    k: eqn[k] | pc.subs(eqn|params|vals) for k in expr_to_recalc
+}
+
+# CORRECT: don't pass vals
+_v_correct = {
+    k: eqn[k] | pc.subs(eqn|params) for k in expr_to_recalc
+}
+
+# Verify the difference using check()
+from keecas import check
+from sympy import Eq
+
+_c = {
+    k: check(_v_incorrect[k], _v_correct[k], Eq) for k in expr_to_recalc
+}
+
+show_eqn([_p | _e, _v_incorrect, _c])
+```
+
+Only pass `vals` to `pc.subs` if you're certain no dependent expressions need updating.
+
+:::
+
 ## Configuration
 
 Set up basic configuration for your document:
 
 ```{python}
 # Configuration for LaTeX output
-config.display.katex = False              # KaTeX compatibility
-config.latex.eq_prefix = "eq-"           # Equation label prefix
+config.display.katex = False             # KaTeX compatibility
+config.latex.eq_prefix = "eq-PREFIX"     # Equation label prefix
 config.language.language = 'en'          # Language/locale
 ```
 
@@ -212,9 +312,15 @@ keecas edit --dir .
 keecas edit --list-templates
 ```
 
+## Complete Examples
+
+For comprehensive real-world usage, check out the example notebooks:
+
+- **[hello_world.ipynb](https://github.com/kompre/keecas/blob/main/examples/hello_world.ipynb)** - Basic usage patterns and simple calculations
+- **[quarto_example](https://github.com/kompre/keecas/tree/main/examples/quarto_example)** - Complete engineering document with PDF/HTML rendering
+
 ## Next Steps
 
-- Learn more about [Configuration](configuration.qmd)
-- Explore [Conventions](../user-guide/conventions.qmd) for advanced patterns
-- Check out [Examples](../user-guide/examples.qmd) for real-world use cases
+- Learn more about [Configuration](configuration.qmd) for customizing Keecas behavior
 - Review the [API Reference](../api-reference/display.qmd) for complete function documentation
+- Explore the [CLI Reference](../cli-reference/index.qmd) for command-line tools

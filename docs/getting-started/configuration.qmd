@@ -306,4 +306,7 @@ keecas config show
 
 ## Next Steps
 
-With configuration set up, you're ready to explore the [User Guide](../user-guide/index.qmd) for detailed usage patterns and conventions.
+With configuration set up, you're ready to:
+
+- Explore the [API Reference](../api-reference/index.qmd) for complete function documentation
+- Check out [example notebooks](https://github.com/kompre/keecas/tree/main/examples) for real-world usage patterns

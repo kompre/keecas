@@ -17,8 +17,6 @@ website:
         text: Home
       - href: getting-started/index.qmd
         text: Getting Started
-      - href: user-guide/index.qmd
-        text: User Guide
       - href: api-reference/
         text: API Reference
       - href: cli-reference/index.qmd

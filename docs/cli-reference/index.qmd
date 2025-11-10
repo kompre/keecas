@@ -449,5 +449,5 @@ COPY config.toml /root/.keecas/config.toml
 ## Next Steps
 
 - See [Configuration](../getting-started/configuration.qmd) for detailed settings
-- Check [Examples](../user-guide/examples.qmd) for workflow patterns
+- Check the [example notebooks](https://github.com/kompre/keecas/tree/main/examples) for workflow patterns
 - Review [API Reference](../api-reference/index.qmd) for programmatic configuration

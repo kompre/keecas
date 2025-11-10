@@ -1017,4 +1017,90 @@ SUCCESS: Config is already up to date (version 1.0.0)
 
 ---
 
+### Session 4: 2025-11-10 - User Guide Removal & Quickstart Enhancement
+
+**Context**: During Phase 2 review planning, comprehensive audit revealed user-guide has significant workflow/pattern conflicts beyond just API mismatches:
+
+**Audit Findings**:
+1. **vals dict anti-pattern**: conventions.qmd teaches maintaining global `vals` dict, then spends 60+ lines warning about its dangers. Not recommended in CLAUDE.md conventions.
+2. **Pattern inconsistencies**: Mixes cell-local (_e|_p) and global (eqn|params) evaluation inappropriately
+3. **API errors**: Multiple wrong function calls, config paths already fixed in earlier sessions but other issues remain
+4. **Diverges from working examples**: Patterns don't match quarto_example.ipynb or hello_world.ipynb
+5. **Verbosity vs value**: 1,782 lines with significant content overlap with quickstart
+
+**User Decision**: "user guide is slop, there are so many hallucination" - Scrap entire user-guide section rather than fix.
+
+**Revised Task Plan**:
+
+#### Phase 2: User Guide Removal (REVISED)
+**Action**: Remove user-guide section entirely, enhance quickstart with essential patterns
+
+**Sub-tasks**:
+- [ ] Search and catalog all cross-references to user-guide pages
+- [ ] Delete docs/user-guide/ directory (5 files)
+- [ ] Update docs/_quarto.yml to remove user-guide navigation
+- [ ] Enhance quickstart.qmd with salvaged content from conventions.qmd:
+  - Symbol dependency ordering explanation
+  - Common pitfalls callout (vals dict warning, LaTeX notation emphasis)
+  - When to use _e|_p vs eqn|params
+- [ ] Add Examples section linking to working notebooks:
+  - examples/hello_world.ipynb (basic usage)
+  - examples/quarto_example/ (comprehensive document)
+- [ ] Fix broken cross-references in other docs
+- [ ] Test Quarto build for errors
+- [ ] **User Review** → Wait for approval
+
+**Files to Modify**:
+1. DELETE: user-guide/ directory (index.qmd, conventions.qmd, examples.qmd, jupyter-integration.qmd, quarto-integration.qmd)
+2. MODIFY: getting-started/quickstart.qmd (enhance with patterns)
+3. MODIFY: docs/_quarto.yml (remove nav section)
+4. MODIFY: docs/index.qmd (update link)
+5. MODIFY: cli-reference/index.qmd (fix cross-ref)
+6. MODIFY: getting-started/configuration.qmd (fix cross-ref)
+
+**Rationale**:
+- Quickstart (219 lines) sufficient for core patterns
+- Working example notebooks demonstrate real-world usage
+- Eliminates 1,782 lines of conflicting/outdated guidance
+- Single source of truth for patterns (quickstart + CLAUDE.md)
+- Faster to remove and enhance than to audit/fix all issues
+
+#### Phase 3: Already Complete ✓
+CLI Reference completed in Session 3 - all commands documented
+
+#### Phase 4: API Reference (Unchanged)
+Quartodoc configuration review and spot checks
+
+#### Phase 5: Final Checks (Unchanged)
+Full site validation after user-guide removal
+
+**Current Status After This Session**:
+- Phase 1: COMPLETE ✓ (5 files)
+- Phase 2: COMPLETE ✓ - User guide removed, quickstart enhanced
+- Phase 3: COMPLETE ✓ (1 file)
+- Phase 4: Not started
+- Phase 5: Not started
+
+**Phase 2 Completion Details**:
+- ✓ Deleted docs/user-guide/ directory (5 files: 1,782 lines removed)
+- ✓ Updated docs/_quarto.yml (removed navigation)
+- ✓ Fixed all cross-references (4 files updated)
+- ✓ Enhanced quickstart.qmd with:
+  - Symbol dependency ordering section
+  - Common pitfalls with concrete examples:
+    - LaTeX vs plain string symbol comparison
+    - vals dict usage pattern with check() verification
+  - Complete Examples section with notebook links
+- ✓ Quarto build verified (no errors)
+
+**Files Modified in Phase 2**:
+1. DELETE: docs/user-guide/ (entire directory)
+2. MODIFY: docs/_quarto.yml
+3. MODIFY: docs/index.qmd
+4. MODIFY: docs/cli-reference/index.qmd
+5. MODIFY: docs/getting-started/configuration.qmd
+6. MODIFY: docs/getting-started/quickstart.qmd
+
+---
+
 <!-- update this document during editing whenever I give you new instructions or new insight on how to document the repo. I may also do direct editing to file: check the edits and annotate notable trend in my style. At the end you should be abel to have a comprehensive style guide for future content -->

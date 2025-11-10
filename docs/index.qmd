@@ -92,11 +92,6 @@ Learn how to install and configure Keecas for your projects.
 :::
 
 ::: {.g-col-6}
-### [User Guide](user-guide/index.qmd)
-Discover conventions, patterns, and best practices for effective use.
-:::
-
-::: {.g-col-6}
 ### [API Reference](api-reference/index.qmd)
 Complete reference for all functions, classes, and modules.
 :::
