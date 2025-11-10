@@ -35,9 +35,16 @@ Example:
     Custom type registration:
 
     ```{python}
+    #| eval: false
+    # Define a custom type
+    class MyCustomType:
+        def __init__(self, data):
+            self.data = data
+
+    # Register a formatter for it
     @format_value.register(MyCustomType)
     def format_custom(value, col_index=0, **kwargs):
-        return r"\\text{Custom: " + str(value) + "}"
+        return r"\\text{Custom: " + str(value.data) + "}"
     ```
 """
 
