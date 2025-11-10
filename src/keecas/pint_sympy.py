@@ -54,7 +54,7 @@ def update_pint_locale(language: str | None = None, verbose: bool = False) -> No
     for engineering documentation in different languages. Automatically called when
     config.language changes, but can be invoked manually for custom locale control.
 
-    NOTE: Respects config.display.disable_pint_locale setting. When True (default),
+    NOTE: Respects config.language.disable_pint_locale setting. When True (default),
     preserves compact unit symbols. When False, enables locale-specific unit names.
 
     Args:
@@ -67,11 +67,10 @@ def update_pint_locale(language: str | None = None, verbose: bool = False) -> No
 
     Examples:
         ```{python}
-        from keecas import u, update_pint_locale, config
+        from keecas import u, update_pint_locale
 
-        # Enable Pint locale for Italian units
-        config.display.disable_pint_locale = False
-        config.language = 'it'  # Automatically calls update_pint_locale
+        # Manual locale control with verbose output
+        update_pint_locale('it', verbose=True)
 
         F = 100*u.kN
         print(f"{F}")  # Shows: 100 chiloNewton
@@ -86,8 +85,10 @@ def update_pint_locale(language: str | None = None, verbose: bool = False) -> No
         ```
 
         ```{python}
+        from keecas import config, u
+
         # Keep compact symbols (default behavior)
-        config.display.disable_pint_locale = True  # Default
+        config.language.disable_pint_locale = True  # Default
 
         F = 100*u.kN
         print(f"{F}")  # Shows: 100 kN (compact symbol preserved)
@@ -104,7 +105,7 @@ def update_pint_locale(language: str | None = None, verbose: bool = False) -> No
 
     Notes:
         - Automatically called when config.language changes
-        - Respects config.display.disable_pint_locale (default: True)
+        - Respects config.language.disable_pint_locale (default: True)
         - Full Pint locale support: de, es, fr, it, pt (5 languages)
         - Fallback to English units: da, nl, no, sv, en (5 languages)
         - Conservative behavior: doesn't change locale unnecessarily
