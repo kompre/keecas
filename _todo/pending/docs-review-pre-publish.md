@@ -1078,8 +1078,16 @@ Full site validation after user-guide removal
 - Phase 1: COMPLETE ✓ (5 files)
 - Phase 2: COMPLETE ✓ - User guide removed, quickstart enhanced
 - Phase 3: COMPLETE ✓ (1 file)
-- Phase 4: Not started
+- Phase 4: COMPLETE ✓ - API Reference verified, formatters module added
 - Phase 5: Not started
+
+**Phase 4 Completion Details**:
+- ✓ Reviewed quartodoc configuration in _quarto.yml
+- ✓ Added Formatters Module section (7 functions documented)
+- ✓ Spot checked generated API docs (show_eqn, check, config)
+- ✓ Ran scripts/update_docs.py to regenerate API reference
+- ✓ Verified 29 API reference pages generated successfully
+- ✓ All exported functions from __all__ now documented
 
 **Phase 2 Completion Details**:
 - ✓ Deleted docs/user-guide/ directory (5 files: 1,782 lines removed)

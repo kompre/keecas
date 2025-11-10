@@ -103,6 +103,18 @@ quartodoc:
         - check
         - latex_inline_dict
         - display.format_decimal_numbers
+    - title: Formatters Module
+      desc: Cell and row formatters for LaTeX equation rendering
+      contents:
+        - name: formatters
+          children: linked
+        - format_value
+        - format_str
+        - format_int
+        - format_float
+        - format_sympy
+        - format_mul
+        - validate_latex_kwargs
     - title: Label Module
       desc: Label generation
       contents:
