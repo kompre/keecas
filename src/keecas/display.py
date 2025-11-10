@@ -236,7 +236,7 @@ def show_eqn(
         - Float formatting supports format specs with or without braces: ".3f" or "{:.3f}"
         - Environment separator defaults to None (uses environment-specific default)
         - Labels use config.latex.eq_prefix and eq_suffix for consistent referencing
-        - use config.print_label=True to display resulting label to be used for referencing (it will display the label even in KaTeX mode)
+        - use config.display.print_label=True to display resulting label to be used for referencing (it will display the label even in KaTeX mode)
     """
 
     # set default values
@@ -544,7 +544,7 @@ def check(
         ```{python}
         # Localized verification (Italian)
         from keecas import config
-        config.language = 'it'
+        config.language.language = 'it'
 
         utilization = 0.75
         check(utilization, 1.0, test=Le)  # Shows "VERIFICATO" in Italian

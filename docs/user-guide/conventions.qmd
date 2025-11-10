@@ -4,64 +4,191 @@ title: "Conventions"
 
 # Conventions
 
-Keecas follows strict conventions to minimize boilerplate while maximizing expressiveness. **Always follow these patterns when working with keecas code.**
+Keecas follows loose conventions to minimize boilerplate while maximizing expressiveness. 
 
 ## Core Philosophy
 
 Mathematical equations are mappings between LHS and RHS expressions. Use Python `dict` containers where:
 
-- **Cell-local dicts** (prefixed with `_`): Live and die within a single cell for immediate display
+- **Cell-local dicts** (prefixed with `_`): Live and die within a single cell, they collect the expressions for immediate display
 - **Notebook-global dicts** (no prefix): Persist across cells for complex multi-step calculations
 
 ## Standard Dictionary Conventions
 
-| Dict     | Purpose                     | Example                                                        |
-|----------|----------------------------|----------------------------------------------------------------|
-| `_p`     | Cell-local parameters       | `_p = {F: 10*u.kN, A: 50*u.cm**2}`                           |
-| `_e`     | Cell-local expressions      | `_e = {sigma: "F / A" \| pc.parse_expr}`                      |
-| `_v`     | Cell-local evaluated values | `_v = {k: v \| pc.subs(_e\|_p) \| pc.N for k,v in _e.items()}` |
-| `_d`     | Cell-local descriptions     | `_d = {F: "applied force", sigma: "stress"}`                  |
-| `_l`     | Cell-local labels           | `_l = {k: str(k) for k in _e.keys()}`                        |
-| `_c`     | Cell-local checks           | `_c = {k: check(v, 1.0) for k,v in _v.items()}`              |
-| `params` | Global parameters           | `params.update(_p)` for persistence                           |
-| `eqn`    | Global expressions          | `eqn.update(_e)` for persistence                             |
+| Dict     | Purpose                      | Example                                                        |
+| -------- | ---------------------------- | -------------------------------------------------------------- |
+| `_p`     | Cell-local parameters        | `_p = {F: 10*u.kN, A: 50*u.cm**2}`                             |
+| `_e`     | Cell-local expressions       | `_e = {sigma: "F / A" \| pc.parse_expr}`                       |
+| `_v`     | Cell-local evaluated values  | `_v = {k: v \| pc.subs(_e\|_p) \| pc.N for k,v in _e.items()}` |
+| `_d`     | Cell-local descriptions      | `_d = {F: "applied force", sigma: "stress"}`                   |
+| `_l`     | Cell-local labels            | `_l = {k: generate_label(str(k)) for k in _e.keys()}`          |
+| `_c`     | Cell-local checks            | `_c = {k: check(v, 1.0) for k,v in _v.items()}`                |
+| `params` | Global parameters            | `params.update(_p)` for persistence                            |
+| `eqn`    | Global expressions           | `eqn.update(_e)` for persistence                               |
+| `vals`   | Global evaluated expressions | `vals.update(_v)` for persistence                               |
 
 ## Standard Cell Pattern
 
 The fundamental pattern for any calculation cell:
 
-```python
-# 1. Define symbols (prefer LaTeX notation)
-F, A, sigma = symbols(r"F, A, \sigma")
+```{python}
+from keecas import *
+
+# set up global dicts to act as namespace
+params = {}  # Global parameters
+eqn = {}     # Global expressions
+vals = {}
+```
+
+```{python}
+# 1. Define symbols: (prefer LaTeX notation and r-string)
+F_d, A_load, sigma_d = symbols(r"F_d, A_{load}, \sigma_d")
 
 # 2. Cell-local parameters
 _p = {
-    F: 10 * u.kN,
-    A: 50 * u.cm**2,
+    F_d: 10 * u.kN,
+    A_load: 50 * u.cm**2,
 }
+params.update(_p)
 
 # 3. Cell-local expressions
 _e = {
-    sigma: "F / A" | pc.parse_expr
+    sigma_d: "F_d / A_load" | pc.parse_expr
 }
+eqn.update(_e)
 
 # 4. Evaluation using cell-local dicts
 _v = {
-    k: v | pc.subs(_e | _p) | pc.convert_to([u.MPa]) | pc.N
+    k: v | pc.subs(eqn|params) | pc.convert_to([u.MPa]) | pc.N
     for k, v in _e.items()
 }
+vals.update(_v) # almost always optional, depends on user preference
 
 # 5. Display
-show_eqn([_p | _e, _v])
+show_eqn(
+    [
+        _p | _e, # the first dict is unione of the parameters and expression defined in this cell (first key)
+        _v # the evaluated dict is passed as secondary element of the list, it will display only its values as 3rd column for the relevant key
+    ]
+)
 ```
+
+::: {callout-note}
+
+`pc.subs` takes a `dict` as first argument, composed by the **union** of the `eqn` and `params` dicts (`eqn|params`), where **order is important**:
+
+- as per python standard implementation, each key of a dict is unique
+- if the same key is present in more than one dict to join, then the values from the latter dict overwrite the earlier ones 
+
+```{python}
+x, y = symbols(r"x y")
+
+_p = {
+    x: 2, # a value
+}
+
+_e = {
+    x: y, # an expression
+}
+
+_e | _p # will be {x:2}
+```
+
+:::
+
+
+::: {.callout-caution}
+
+Be careful when passing a dict of evaluated expression (`vals`) to `pc.subs`, since if passed after the unevaluated expression (`eqn`), the values will be overwritten and no actual calculation will be performed. Only the values from `vals` will be displayed, even if the parameters have changed.
+
+- Initial setup and calculation:
+
+```{python}
+x, y, z = symbols(r"x y z")
+
+_p = {
+    x: 2, # a value
+}
+params.update(_p)
+
+_e = {
+    y: "x + 1" | pc.parse_expr, # y depends on x
+    z: "y^2" | pc.parse_expr, # z depends on y (therefore also on x)
+}
+eqn.update(_e)
+
+_v = {
+    k: v | pc.subs(eqn|params) for k, v in _e.items()
+}
+vals.update(_v) # the values are saved to global dict
+
+show_eqn([_p| _e, _v])
+
+```
+
+- **Incorrect behavior** (pass `vals` to `pc.subs`):
+
+```{python}
+_p = {
+    x: 3, # a different value
+}
+params.update(_p) # the params dict get update with the new value
+
+# I want to recalculate the values of y and z using the new params
+expr_recalc = [y, z]
+
+# passing the `vals` to pc.subs will lead to incorrect calculation for z
+_v_incorrect = {
+    k: eqn[k] | pc.subs(eqn|params|vals) for k in expr_recalc
+}
+
+# to get the correct value, just don't pass `vals`
+_v_correct = {
+    k: eqn[k] | pc.subs(eqn|params) for k in expr_recalc
+}
+
+
+from sympy import Eq
+
+_c = {
+    k: check(_v_incorrect[k], _v_correct[k], Eq) for k in expr_recalc
+}
+
+show_eqn([_p| _e, _v_incorrect, _c])
+```
+
+Only pass `vals` to `pc.subs` if you're sure that you don't have dependant expressions in the expression to evaluate.
+
+:::
 
 ## Symbol Naming Conventions
 
-### ✅ PREFERRED: LaTeX Notation
+Equality for sympy symbols is based on str representation, therefore it's recommended to use full LaTeX notation when defining symbols, even if sympy would allow for a more permissive notation, to avoid  ambiguity: 
 
-Always use raw strings with LaTeX formatting:
+- this symbol 
 
-```python
+```{python}
+from IPython.display import display, Markdown
+
+display(Markdown('- a symbol defined with LaTeX notation:'))
+display(symbols(r"\sigma_{Sd}"))
+
+
+display(Markdown('- and a symbol defined with plain string notation:'))
+display(symbols("sigma_Sd"))
+
+display(Markdown('- are no the same symbol:'))
+
+symbols(r"\sigma_{Sd}") == symbols("sigma_Sd")
+```
+
+Preferring LaTeX notation you can have fairly complex symbols.
+
+### PREFER: LaTeX Notation
+
+<!-- split the cell to display the output for each examples -->
+
+```{python}
 # Simple symbols
 F, A, sigma = symbols(r"F, A, \sigma")
 
@@ -75,29 +202,35 @@ tau_1_Rd, gamma_M0 = symbols(r"\tau_{1\,Rd}, \gamma_{M0}")
 alpha, beta, gamma = symbols(r"\alpha, \beta, \gamma")
 ```
 
-### ❌ AVOID: Plain String Notation
+### AVOID: Plain String Notation
 
 ```python
-# Avoid - no LaTeX rendering
-sigma, tau, gamma = symbols("sigma, tau, gamma")
+sigma_Rd, tau_Sd, gamma = symbols("sigma_Rd, tau_Sd, gamma")
 ```
 
 ## Notebook Persistence Pattern
 
 For complex calculations spanning multiple cells:
 
-```python
+```{python}
 # Setup cell (run once per notebook)
 params = {}  # Global parameters
 eqn = {}     # Global expressions
 
 # Calculation cell with LaTeX symbols
-q, L, delta = symbols(r"q, L, \delta")
+q_d, L_beam, delta_max, E_s, J = symbols(r"q_d, L_{beam}, \delta_{max}, E_{s}, J")
 
-_p = {q: 5 * u.kN/u.m, L: 8 * u.m}
+_p = {
+    q_d: 5 * u.kN/u.m,
+    L_beam: 8 * u.m,
+    E_s: 210 * u.GPa,
+    J: 12345 * u.cm**4
+}
 params.update(_p)  # Save to global
 
-_e = {delta: "5 * q * L^4 / (384 * E * I)" | pc.parse_expr}
+_e = {
+    delta_max: "5 * q_d * L_beam^4 / (384 * E_s * J)" | pc.parse_expr,
+}
 eqn.update(_e)     # Save to global
 
 # For cross-cell dependencies
@@ -105,42 +238,98 @@ _v = {
     k: v | pc.subs(eqn | params) | pc.convert_to([u.mm]) | pc.N
     for k, v in _e.items()
 }
+
+show_eqn([_p | _e, _v], float_format=":.2f")
 ```
 
 ## Advanced Patterns
 
 ### Verification Checks
 
-```python
+```{python}
 # Use LaTeX notation for engineering symbols
 sigma_Sd, sigma_Rd, tau_Sd, tau_Rd = symbols(r"\sigma_{Sd}, \sigma_{Rd}, \tau_{Sd}, \tau_{Rd}")
 
-_expr = [sigma_Sd / sigma_Rd, tau_Sd / tau_Rd]  # List of expressions to check
-_v = {k: k | pc.subs(_e | _p) | pc.N for k in _expr}  # Expression as key
+# Define parameters and expressions for verification
+_p = {
+    sigma_Sd: 200 * u.MPa,
+    sigma_Rd: 355 * u.MPa,
+    tau_Sd: 300 * u.MPa,
+    tau_Rd: 205 * u.MPa,
+}
+
+# List of expressions to check
+_expr = [
+    sigma_Sd / sigma_Rd,
+    tau_Sd / tau_Rd,
+]
+
+_v = {k: k | pc.subs(_p) | pc.N for k in _expr}  # Expression as key
 _c = {k: check(v, 1.0) for k, v in _v.items()}
+
+show_eqn([_p|_v, _c], float_format=[None, ":.3f", ":.1f"])
 ```
 
 ### Labels and Cross-References
 
-```python
-_l = {k: str(k) for k in _e.keys()}  # Auto-generate labels
-show_eqn([_e, _v], label=_l)
-# Reference in text: \eqref{eq-PREFIX-symbol}
+```{python}
+from keecas import generate_unique_label, generate_label
+
+# Define symbols and expressions for labeling
+M_Ed, W_el, sigma_Ed = symbols(r"M_{Ed}, W_{el}, \sigma_{Ed}")
+
+_e = {
+    sigma_Ed: "M_Ed / W_el" | pc.parse_expr,
+}
+
+_p = {
+    M_Ed: 50 * u.kN * u.m,
+    W_el: 200 * u.cm**3,
+}
+
+_v = {
+    k: v | pc.subs(_e | _p) | pc.convert_to([u.MPa]) | pc.N
+    for k, v in _e.items()
+}
+
+# Auto-generate labels
+_l = {
+    k: generate_unique_label(str(k)) for k in (_e|_p).keys()
+}  
+show_eqn([_p | _e, _v], label=_l, print_label=True)
 ```
+
+or just pass the callable to `show_eqn`^[passing `generate_unique_label` as a callable to `show_eqn` will use all the key+values as seed for label generation]:
+
+```{python}
+show_eqn([_p | _e, _v], label=generate_unique_label, print_label=True)
+```
+
 
 ### Symbol Dependency Ordering
 
 Keecas automatically handles dependency ordering:
 
-```python
-# Complex symbols - escape commas with backslash
-tau_1_Rd, gamma_M0 = symbols(r"\tau_{1\,Rd}, \gamma_{M0}")
+```{python}
+# Define symbols
+a, b, intermediate, result = symbols(r"a, b, intermediate, result")
 
 _e = {
     result: "sqrt(a^2 + b^2) / intermediate" | pc.parse_expr,  # Uses 'intermediate'
     intermediate: "a * b" | pc.parse_expr,                     # Defined after 'result'
 }
-# Keecas handles dependency ordering automatically
+
+_p = {
+    a: 3,
+    b: 4,
+}
+
+_v = {
+    k: v | pc.subs(_e | _p) | pc.N
+    for k, v in _e.items()
+}
+
+show_eqn([_p | _e, _v])
 ```
 
 ## Configuration Setup
@@ -151,13 +340,14 @@ Standard setup for any Keecas notebook:
 # Preferred import style
 from keecas import symbols, u, pc, show_eqn, config, check
 
-# Configuration for Quarto/KaTeX
-config.display.katex = True              # Disable \\label{} for KaTeX compatibility
-config.display.print_label = True        # Print labels in dev mode
+# (optional) set label prefix
 config.latex.eq_prefix = r"eq-PREFIX-"   # Label prefixing
 
-# Language and localization (automatic Pint sync)
-config.language.language = 'it'          # Sets both keecas and Pint locales
+# (optional) set float format for the document
+config.display.float_format = "{:.5f}"
+
+# (optional) Language and localization
+config.language.language = 'it'          # 
 # Supported: 'de', 'es', 'fr', 'it', 'pt' (full)
 # Fallback: 'da', 'nl', 'no', 'sv', 'en' (English units)
 
@@ -166,64 +356,99 @@ params = {}
 eqn = {}
 ```
 
+In a separate cell set the config needed for dev mode, but that you don't want to be run when rendering by quarto:
+
+```python
+#| eval: false
+
+# Configuration for Quarto/KaTeX for dev mode
+config.display.katex = True              # Disable \\label{} for KaTeX compatibility
+config.display.print_label = True        # Print labels in dev mode
+```
+
+
 ## Pipe Operations
 
 Chain mathematical operations for readable transformations:
 
-```python
-# Basic pipe chain
-result = expr | pc.subs(params) | pc.convert_to([u.MPa]) | pc.N
+```{python}
+# Define symbols for pipe example
+P, A_load, sigma_Sd = symbols(r"P, A_{load}, \sigma_{Sd}")
 
-# Complex transformation
+_p = {
+    P: 100 * u.kN,
+    A_load: 50 * u.cm**2,
+}
+params.update(_p)
+
+_e = {
+    sigma_Sd: "P / A_load" | pc.parse_expr,
+}
+eqn.update(_e)
+
+# Basic pipe chain
 _v = {
-    k: (v
-        | pc.subs(eqn | params)        # Substitute values
-        | pc.convert_to([u.kN, u.m])   # Convert units
-        | pc.N                         # Evaluate numerically
-        | pc.as_two_terms(as_mul=True) # Format for display
-    )
+    k: v | pc.subs(eqn|params) | pc.convert_to([u.MPa]) | pc.N
     for k, v in _e.items()
 }
+
+show_eqn([_p | _e, _v])
 ```
 
 ## Display Patterns
 
 ### Basic Display
 
-```python
+```{python}
+# Define symbols for display examples
+F_Ed, A_net, sigma_Ed = symbols(r"F_{Ed}, A_{net}, \sigma_{Ed}")
+
+_p = {
+    F_Ed: 150 * u.kN,
+    A_net: 75 * u.cm**2,
+}
+
+_e = {
+    sigma_Ed: "F_Ed / A_net" | pc.parse_expr,
+}
+
+_v = {
+    k: v | pc.subs(_e | _p) | pc.convert_to([u.MPa]) | pc.N
+    for k, v in _e.items()
+}
+
+_d = {
+    F_Ed: "design force",
+    A_net: "net cross-sectional area",
+    sigma_Ed: "design normal stress",
+}
+
 # Single dictionary
 show_eqn(_p)
+```
 
+```{python}
 # Multiple dictionaries with alignment
-show_eqn([_p, _v, _d])
-
-# Custom column wrapping
-show_eqn([_e, _v], col_wrap=[None, "=", "="])
+show_eqn([_p | _e, _v, _d])
 ```
 
 ### Environment Control
 
-```python
+```{python}
 # Different LaTeX environments
-show_eqn(_p, environment="cases")    # For parameter lists
-show_eqn(_e, environment="align")    # For equations (default)
-show_eqn(_c, environment="equation") # For single expressions
+show_eqn([_p | _e, _v, _d], environment="cases")    # For parameter lists
 ```
 
 ### Formatting Control
 
-```python
+```{python}
 # Precision control
-show_eqn([_e, _v], float_format='{:.2f}')
-
-# Per-variable formatting
-_f = {sigma: '{:.3f}', tau: '{:.0f}'}
-show_eqn([_e, _v], float_format=_f)
+show_eqn([_p | _e, _v], float_format='{:.2f}')
 ```
 
 ## Do's and Don'ts
 
-### ✅ DO
+### DO
 
 - Use LaTeX notation with raw strings for symbol definitions
 - Use underscore-prefixed dicts for cell-local data (`_p`, `_e`, `_v`, `_d`)
@@ -233,7 +458,7 @@ show_eqn([_e, _v], float_format=_f)
 - Escape commas in symbol names with `\\,`
 - Let keecas handle symbol dependency ordering
 
-### ❌ DON'T
+### DON'T
 
 - Use plain string notation for symbols - always prefer LaTeX
 - Use verbose variable names like `parameters`, `equations`, `values`
@@ -245,48 +470,33 @@ show_eqn([_e, _v], float_format=_f)
 
 A properly structured calculation following all conventions:
 
-```python
-# Setup (once per notebook)
-from keecas import *
-
-config.display.katex = True
-config.language.language = 'en'
-params = {}
-eqn = {}
-
+```{python}
 # Calculation cell
-sigma_Sd, sigma_Rd, f_yd = symbols(r"\\sigma_{Sd}, \\sigma_{Rd}, f_{yd}")
+sigma_Sd, sigma_Rd, f_yd, gamma_M0 = symbols(r"\sigma_{Sd}, \sigma_{Rd}, f_{yd}, \gamma_{M0}")
 
 _p = {
     f_yd: 355 * u.MPa,
     sigma_Sd: 250 * u.MPa,
+    gamma_M0: 1.0,
 }
-params.update(_p)
 
 _e = {
     sigma_Rd: "f_yd / gamma_M0" | pc.parse_expr,
 }
-eqn.update(_e)
 
 _v = {
-    k: v | pc.subs(eqn | params) | pc.convert_to([u.MPa]) | pc.N
+    k: v | pc.subs(_e | _p) | pc.convert_to([u.MPa]) | pc.N
     for k, v in _e.items()
-}
-
-_c = {
-    sigma_Sd / sigma_Rd: check(
-        (sigma_Sd / sigma_Rd) | pc.subs(eqn | params) | pc.N,
-        1.0
-    )
 }
 
 _d = {
     sigma_Sd: "design stress",
     sigma_Rd: "resistance stress",
-    sigma_Sd / sigma_Rd: "utilization ratio",
+    f_yd: "yield strength",
+    gamma_M0: "partial safety factor",
 }
 
-show_eqn([_p | _e, _v, _c, _d], col_wrap=[None, "=", "=", "&", "&"])
+show_eqn([_p | _e, _v, _d])
 ```
 
 Following these conventions ensures consistent, maintainable, and professional-looking calculations across all your Keecas work.

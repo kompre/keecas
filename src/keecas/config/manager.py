@@ -9,7 +9,7 @@ The main configuration object is exposed as `config` from the keecas package:
 from keecas import config
 
 # Access nested configuration
-config.language = 'it'                          # Italian localization
+config.language.language = 'it'                 # Italian localization
 config.latex.eq_prefix = 'eq-'                  # LaTeX label prefix
 config.display.default_float_format = '.3f'    # Default float formatting
 config.display.katex = True                     # KaTeX compatibility mode

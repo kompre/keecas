@@ -60,12 +60,24 @@ def check_file_docstrings(filepath: Path) -> list[str]:
         print(f"⚠️  {filepath}: Failed to parse ({e})")
         return []
 
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
+    # Only check module-level definitions (not nested functions)
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef):
             # Skip private/internal API (starts with _)
             if not node.name.startswith("_"):
                 if not ast.get_docstring(node):
                     missing.append(node.name)
+        elif isinstance(node, ast.ClassDef):
+            # Check class itself
+            if not node.name.startswith("_"):
+                if not ast.get_docstring(node):
+                    missing.append(node.name)
+            # Check class methods
+            for item in node.body:
+                if isinstance(item, ast.FunctionDef):
+                    if not item.name.startswith("_"):
+                        if not ast.get_docstring(item):
+                            missing.append(f"{node.name}.{item.name}")
 
     return missing
 

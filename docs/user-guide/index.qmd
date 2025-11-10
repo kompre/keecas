@@ -34,12 +34,12 @@ Creating beautiful documents with Quarto and Keecas.
 
 This section covers:
 
-- ✅ **Naming conventions** for symbols and variables
-- ✅ **Dictionary patterns** for organizing calculations
-- ✅ **Pipe operations** for functional composition
-- ✅ **Multi-cell workflows** for complex calculations
-- ✅ **Verification patterns** for engineering checks
-- ✅ **Best practices** for maintainable code
+- **Naming conventions** for symbols and variables
+- **Dictionary patterns** for organizing calculations
+- **Pipe operations** for functional composition
+- **Multi-cell workflows** for complex calculations
+- **Verification patterns** for engineering checks
+- **Best practices** for maintainable code
 
 ## Philosophy
 
