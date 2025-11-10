@@ -23,6 +23,7 @@ website:
       - href: cli-reference/index.qmd
         text: CLI Reference
     right:
+      - text: "{{< meta version >}}"
       - href: https://github.com/kompre/keecas
         text: GitHub
         aria-label: GitHub

@@ -1,4 +1,4 @@
 # Main deployment profile
 # Deploys to root path on GitHub Pages
-site:
+website:
   site-path: "/"
