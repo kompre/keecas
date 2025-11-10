@@ -5,10 +5,11 @@ website:
   title: "Keecas Documentation"
   description: "Symbolic and units-aware calculations for Jupyter notebooks"
 
-  sidebar: 
-    tools:
-      - icon: github
-        href: https://github.com/kompre/keecas
+  # sidebar: 
+  #   contents: auto
+  #   tools:
+  #     - icon: github
+  #       href: https://github.com/kompre/keecas
 
   navbar:
     title: "Keecas"
@@ -80,6 +81,7 @@ quartodoc:
 
   # Sidebar configuration
   sidebar: api-reference/_sidebar.yml
+
 
   # Rendering options
   renderer:

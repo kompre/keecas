@@ -11,7 +11,19 @@ Let's start with a simple engineering calculation - computing stress from force 
 ### 1. Import Keecas
 
 ```{python}
-from keecas import symbols, u, pc, show_eqn, config, generate_unique_label
+from keecas import (
+        show_eqn, # main function to generate expression block
+        check, # main function for verification
+        symbols, # to create symbols (from sympy)
+        u, # unit registry (from pint)
+        pc, # pipe commands
+        generate_unique_label, # label generator
+        config, # configuration options
+    )
+
+# Init the global dict
+params = {}
+eqn = {}
 ```
 
 ### 2. Define Symbols
@@ -33,6 +45,7 @@ _p = {
     F_d: 10 * u.kN,      # Force in kilonewtons
     A_load: 50 * u.cm**2,   # Area in square centimeters
 }
+params.update(_p)
 ```
 
 ### 4. Define Expressions
@@ -44,6 +57,7 @@ Create symbolic expressions:
 _e = {
     sigma: "F_d / A_load" | pc.parse_expr
 }
+eqn.update(_e)
 ```
 
 ### 5. Create Descriptions and Labels
@@ -69,7 +83,7 @@ Compute values and display the results:
 ```{python}
 # Evaluate expressions
 _v = {
-    k: v | pc.subs(_e | _p) | pc.convert_to([u.MPa]) | pc.N
+    k: v | pc.subs(eqn|params) | pc.convert_to([u.MPa]) | pc.N
     for k, v in _e.items()
 }
 
@@ -81,7 +95,10 @@ This will produce beautiful LaTeX output showing both the symbolic equation and 
 
 ## Understanding the Pattern
 
-Keecas follows a consistent pattern:
+As convention Keecas uses dict prepended by `_` as cell-local containers (e.g. `_p`), while not prepended as global containers (e.g. `params`) that carry across cells. 
+
+Using `pc.subs` is recommended to pass a dict as union of the global dicts (e.g. `eqn|params`), because it contains all the necessary values and expression defined in the notebook.
+
 
 ### Dictionary Conventions
 
@@ -322,5 +339,5 @@ For comprehensive real-world usage, check out the example notebooks:
 ## Next Steps
 
 - Learn more about [Configuration](configuration.qmd) for customizing Keecas behavior
-- Review the [API Reference](../api-reference/display.qmd) for complete function documentation
+- Review the [API Reference](../api-reference/) for complete function documentation
 - Explore the [CLI Reference](../cli-reference/index.qmd) for command-line tools
