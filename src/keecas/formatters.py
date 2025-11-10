@@ -139,6 +139,12 @@ def format_value(value: Any, col_index: int = 0, **kwargs) -> str:
     To register custom type formatters:
 
     ```{python}
+    #| eval: false
+    # Define your custom type first
+    class MyType:
+        pass
+
+    # Then register a formatter for it
     @format_value.register(MyType)
     def format_mytype(value, col_index=0, **kwargs):
         return r"\\text{My custom format}"
