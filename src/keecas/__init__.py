@@ -8,6 +8,9 @@ specifically designed for Quarto rendered PDF documents.
 # dataframe
 # pipe_command
 from . import pipe_command as pc
+
+# col_wrappers
+from .col_wrappers import wrap_column
 from .dataframe import Dataframe
 
 # display
@@ -83,6 +86,8 @@ __all__ = [
     "eq_to_dict",
     "generate_label",
     "generate_unique_label",
+    # Column wrapper (singledispatch-based)
+    "wrap_column",
     # Formatter exports (singledispatch-based)
     "format_value",
     "validate_latex_kwargs",

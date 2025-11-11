@@ -23,8 +23,8 @@ Example:
     ```
 
     ```{python}
-    # Format float (column 1+ - RHS with equals)
-    format_value(3.14159, col_index=1)  # Returns: '= 3.14159'
+    # Format float (pure conversion, no decoration)
+    format_value(3.14159, col_index=1)  # Returns: '3.14159'
     ```
 
     ```{python}
@@ -102,7 +102,7 @@ def format_value(value: Any, col_index: int = 0, **kwargs) -> str:
         Value to format (any type)
     col_index : int, optional
         Column index - 0 for LHS, 1+ for RHS (default: 0)
-        Affects formatting (e.g., "= " prefix for RHS in numeric types)
+        Kept for API consistency but not used by default formatters
     **kwargs
         Additional arguments passed to latex() function
         (e.g., mul_symbol, mode, fold_frac_powers)
@@ -125,8 +125,8 @@ def format_value(value: Any, col_index: int = 0, **kwargs) -> str:
     ```
 
     ```{python}
-    # Format integer (RHS)
-    format_value(42, col_index=1)  # Returns: '= 42'
+    # Format integer (pure conversion)
+    format_value(42, col_index=1)  # Returns: '42'
     ```
 
     ```{python}
@@ -152,8 +152,8 @@ def format_value(value: Any, col_index: int = 0, **kwargs) -> str:
 
     Supported types (built-in registrations):
     - str: Plain text wrapped in \\text{}
-    - int: Integers with optional "= " prefix
-    - float: Floats with optional "= " prefix
+    - int: Integer to LaTeX string
+    - float: Float to LaTeX string
     - IPython.display.Markdown: Wrapped in \\text{}
     - pint.Quantity: Converted to SymPy, then formatted
     - sympy.Mul: Numeric/unit separation, then formatted as Basic
@@ -177,12 +177,15 @@ def format_value(value: Any, col_index: int = 0, **kwargs) -> str:
 def format_str(value: str, col_index: int = 0, **kwargs) -> str:
     """Format Python strings to LaTeX text.
 
+    Pure conversion: wraps string in \\text{} without additional decoration.
+    Column wrapping (e.g., \\quad prefix) is handled by wrap_column().
+
     Parameters
     ----------
     value : str
         String value to format
     col_index : int, optional
-        Column index (0 = LHS, 1+ = RHS)
+        Column index (kept for API consistency, not used)
     **kwargs
         Ignored
 
@@ -191,22 +194,22 @@ def format_str(value: str, col_index: int = 0, **kwargs) -> str:
     str
         LaTeX string with \\text{} wrapper
     """
-    if col_index == 0:
-        return rf"\text{{{value}}}"
-    else:
-        return rf"\quad\text{{{value}}}"
+    return rf"\text{{{value}}}"
 
 
 @format_value.register(int)
 def format_int(value: int, col_index: int = 0, **kwargs) -> str:
     """Format Python integers to LaTeX.
 
+    Pure conversion: converts int to string without additional decoration.
+    Column wrapping (e.g., '= ' prefix) is handled by wrap_column().
+
     Parameters
     ----------
     value : int
         Integer value to format
     col_index : int, optional
-        Column index (0 = LHS, 1+ = RHS)
+        Column index (kept for API consistency, not used)
     **kwargs
         Ignored
 
@@ -215,17 +218,16 @@ def format_int(value: int, col_index: int = 0, **kwargs) -> str:
     str
         LaTeX string representation of integer
     """
-    if col_index == 0:
-        return str(value)
-    else:
-        return f"= {value}"
+    return str(value)
 
 
 @format_value.register(float)
 def format_float(value: float, col_index: int = 0, **kwargs) -> str:
     """Format Python floats to LaTeX.
 
-    Note: Float precision formatting is handled by format_decimal_numbers()
+    Pure conversion: converts float to string without additional decoration.
+    Column wrapping (e.g., '= ' prefix) is handled by wrap_column().
+    Float precision formatting is handled by format_decimal_numbers()
     in display.py after this formatter returns the string.
 
     Parameters
@@ -233,7 +235,7 @@ def format_float(value: float, col_index: int = 0, **kwargs) -> str:
     value : float
         Float value to format
     col_index : int, optional
-        Column index (0 = LHS, 1+ = RHS)
+        Column index (kept for API consistency, not used)
     **kwargs
         Ignored
 
@@ -242,10 +244,7 @@ def format_float(value: float, col_index: int = 0, **kwargs) -> str:
     str
         LaTeX string representation of float
     """
-    if col_index == 0:
-        return str(value)
-    else:
-        return f"= {value}"
+    return str(value)
 
 
 # Optional dependency: IPython Markdown
@@ -256,12 +255,15 @@ try:
     def format_markdown(value: Markdown, col_index: int = 0, **kwargs) -> str:
         """Format IPython Markdown objects to LaTeX text.
 
+        Pure conversion: wraps Markdown data in \\text{} without additional decoration.
+        Column wrapping (e.g., \\quad prefix) is handled by wrap_column().
+
         Parameters
         ----------
         value : Markdown
             Markdown object to format
         col_index : int, optional
-            Column index (0 = LHS, 1+ = RHS)
+            Column index (kept for API consistency, not used)
         **kwargs
             Ignored
 
@@ -270,21 +272,21 @@ try:
         str
             LaTeX string with \\text{} wrapper
         """
-        if col_index == 0:
-            return rf"\text{{{value.data}}}"
-        else:
-            return rf"\quad\text{{{value.data}}}"
+        return rf"\text{{{value.data}}}"
 
     @format_value.register(Latex)
     def format_latex(value: Latex, col_index: int = 0, **kwargs) -> str:
         """Format IPython Latex objects to LaTeX text.
+
+        Pure conversion: wraps Latex data in \\text{} without additional decoration.
+        Column wrapping (e.g., \\quad prefix) is handled by wrap_column().
 
         Parameters
         ----------
         value : Latex
             Latex object to format
         col_index : int, optional
-            Column index (0 = LHS, 1+ = RHS)
+            Column index (kept for API consistency, not used)
         **kwargs
             Ignored
 
@@ -293,10 +295,7 @@ try:
         str
             LaTeX string with \\text{} wrapper
         """
-        if col_index == 0:
-            return rf"\text{{{value.data}}}"
-        else:
-            return rf"\quad\text{{{value.data}}}"
+        return rf"\text{{{value.data}}}"
 
 except ImportError:
     pass
@@ -330,7 +329,7 @@ try:
             LaTeX string from SymPy formatting
         """
         sympy_expr = S(value)  # Convert to SymPy
-        return format_sympy(sympy_expr, col_index, **kwargs)
+        return format_value(sympy_expr, col_index, **kwargs)
 
 except ImportError:
     pass
@@ -378,13 +377,15 @@ def format_sympy(value: Basic, col_index: int = 0, **kwargs) -> str:
     """Format SymPy expressions to LaTeX.
 
     This is the main formatter for all SymPy objects (Basic subclasses).
+    Pure conversion: converts SymPy to LaTeX without additional decoration.
+    Column wrapping (e.g., '= ' prefix) is handled by wrap_column().
 
     Parameters
     ----------
     value : Basic
         SymPy expression to format
     col_index : int, optional
-        Column index (0 = LHS, 1+ = RHS)
+        Column index (kept for API consistency, not used)
     **kwargs
         Passed to sympy.latex() function (e.g., mul_symbol, mode)
 
@@ -393,8 +394,4 @@ def format_sympy(value: Basic, col_index: int = 0, **kwargs) -> str:
     str
         LaTeX string representation
     """
-    latex_str = latex(value, **kwargs)
-    if col_index == 0:
-        return latex_str
-    else:
-        return f"= {latex_str}"
+    return latex(value, **kwargs)

@@ -46,12 +46,23 @@ def test_import_star():
     # Verify format_value is actually usable
     format_value = namespace["format_value"]
 
-    # Test basic functionality
+    # Test basic functionality - formatters now do pure conversion (no decoration)
     result = format_value(42, col_index=0)
     assert result == "42"
 
     result = format_value(42, col_index=1)
-    assert result == "= 42"
+    assert result == "42"  # No "= " prefix (handled by wrap_column now)
+
+    # Verify wrap_column is available
+    assert "wrap_column" in namespace
+    wrap_column = namespace["wrap_column"]
+
+    # Test wrap_column functionality
+    prefix, suffix = wrap_column(42, col_index=0)
+    assert prefix == "" and suffix == ""
+
+    prefix, suffix = wrap_column(42, col_index=1)
+    assert prefix == "= " and suffix == ""
 
 
 def test_check():

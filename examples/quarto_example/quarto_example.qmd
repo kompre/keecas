@@ -101,7 +101,6 @@ _l = {k: str(k) for k in _d.keys()}
 
 show_eqn(
     [_p | _e, _v, _d],
-    col_wrap=[''],
     float_format="{:.2f}",
     label=_l,
     # debug=True,
@@ -140,7 +139,6 @@ show_eqn([_p | _e, _v])
 
 ```{python}
 #| execution: {iopub.execute_input: '2025-10-03T07:51:40.022370Z', iopub.status.busy: '2025-10-03T07:51:40.022195Z', iopub.status.idle: '2025-10-03T07:51:40.025950Z', shell.execute_reply: '2025-10-03T07:51:40.025685Z'}
-
 # Material properties
 E_steel, E_concrete = symbols("E_{steel}, E_{concrete}")
 
@@ -152,7 +150,6 @@ _p = {
 
 _d = {E_steel: "steel elastic modulus", E_concrete: "concrete elastic modulus"}
 
-show_eqn([_p, _d], environment="align", col_wrap=[None, None, "&"])
 ```
 
 ### Equation Environment with Labels {#sec-beam-calc}

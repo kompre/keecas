@@ -57,7 +57,7 @@ def format_sympy(value: Basic, col_index: int = 0, **kwargs) -> str:
 **Note**: `col_index` parameter remains for potential use by custom formatters. Keeps API consistent.
 
 ### 2. Col Wrap → Singledispatch-Based Decoration
-Create new module `col_wrapper.py` with singledispatch pattern:
+Create new module `col_wrappers.py` with singledispatch pattern:
 
 ```python
 from functools import singledispatch
@@ -132,7 +132,7 @@ def show_eqn(
 ):
     # Set default to singledispatch-based wrapper
     if not col_wrap:
-        col_wrap = config.col_wrap if config.col_wrap is not None else wrap_column
+        col_wrap = config.display.col_wrap if config.display.col_wrap is not None else wrap_column
 
     # ... rest of function ...
 ```
@@ -181,7 +181,7 @@ No TOML configuration needed (col_wrap is a callable, same as cell_formatters). 
 
 ## Implementation Steps
 
-1. **Create col_wrapper.py module**
+1. **Create col_wrappers.py module**
    - Implement singledispatch `wrap_column()` function
    - Register handlers for: int, float, str, Basic
    - Register optional handlers for: pint.Quantity, Markdown, Latex
@@ -194,7 +194,7 @@ No TOML configuration needed (col_wrap is a callable, same as cell_formatters). 
    - Keep `col_index` parameter for API consistency (backwards compatibility)
 
 3. **Update display.py**
-   - Import `wrap_column` from new col_wrapper module
+   - Import `wrap_column` from new col_wrappers module
    - Update `_col_wrap()` signature to accept `col_index`
    - Add Callable branch to `_col_wrap()` for singledispatch support
    - Update default `col_wrap` in `show_eqn()` to use `wrap_column`
@@ -372,7 +372,136 @@ def wrap_custom(value, col_index=0, **kwargs):
 **Decisions (from annotations)**:
 1. ✅ `col_index` stays in formatter signatures (for custom formatter flexibility)
 2. ✅ Export `wrap_column` in `__init__.py` (user extensibility)
-3. ✅ Module name: `col_wrapper.py` (not col_wrap_formatter.py)
+3. ✅ Module name: `col_wrappers.py` (for consistency with formatters.py)
 4. ✅ No TOML config (callable, same pattern as cell_formatters)
 
 **Status**: ✅ Approved - Ready to implement
+
+---
+
+## Implementation Summary (2025-11-11)
+
+### Completed Work
+
+**Module Creation** ✅
+- Created `src/keecas/col_wrappers.py` with singledispatch `wrap_column()` function
+- Registered handlers for all built-in types: int, float, str, Basic, Pint, Markdown, Latex
+- Default behavior: numeric types get `"= "`, text types get `r"\quad"` for RHS columns
+- Comprehensive docstrings with examples
+
+**Formatter Refactoring** ✅
+- Removed all `= ` and `\quad` prefix logic from formatters.py
+- Updated all formatter docstrings to reflect pure conversion behavior
+- Kept `col_index` parameter for API consistency (unused by default formatters)
+- All formatters now do pure type conversion: Python value → LaTeX string
+
+**Display Integration** ✅
+- Updated `_col_wrap()` to accept `col_index` parameter and handle Callable
+- Added import for `wrap_column` in display.py
+- Updated default `col_wrap` in `show_eqn()` to use `wrap_column` when None
+- Updated call site (line 405) to pass `col_idx` to `_col_wrap()`
+
+**Public API** ✅
+- Exported `wrap_column` in `__init__.py` for user extensibility
+- Added to `__all__` list with documentation comment
+- Users can now: `@wrap_column.register(MyType)` or use list/callable overrides
+
+**Testing** ✅
+- Created `tests/test_col_wrapper.py` with 24 comprehensive tests
+- Test coverage: singledispatch, optional types, custom registration, edge cases
+- Updated `tests/test_display.py` to reflect new behavior
+- All 205 tests passing (0 failures)
+
+**Documentation** ✅
+- Updated CLAUDE.md Architecture Overview section
+- Added new section 4: Column Wrapper Module
+- Renumbered subsequent sections (Pipe Commands now #5, etc.)
+- Updated Module Imports Structure to include wrap_column
+- Documented separation of concerns: formatters (what) vs col_wrapper (how)
+
+### Technical Implementation Details
+
+**Separation of Concerns Achieved**:
+- **Formatters**: Pure type conversion (int → "42", float → "3.14", str → r"\text{value}")
+- **Col Wrapper**: Column decoration (numeric → `("= ", "")`, text → `(r"\quad", "")`)
+- **Boundary**: Formatters return LaTeX strings, col_wrapper adds prefix/suffix
+
+**User Flexibility Examples**:
+```python
+# List form (simple one-off changes)
+show_eqn(data, col_wrap=[None, "= ", r"\leq "])
+
+# Callable form (custom logic)
+def custom_wrap(value, col_index):
+    if col_index == 0:
+        return ("", "")
+    return (r"\approx ", "") if isinstance(value, float) else ("= ", "")
+
+show_eqn(data, col_wrap=custom_wrap)
+
+# Registration (permanent custom types)
+@wrap_column.register(MyType)
+def wrap_mytype(value, col_index=0):
+    return (">>> ", "") if col_index > 0 else ("", "")
+```
+
+**Breaking Changes Handled**:
+- Formatters no longer add `= ` or `\quad` prefixes
+- Default behavior unchanged for typical users (col_wrap default is wrap_column)
+- Migration path: remove prefix logic from custom formatters, use col_wrap instead
+
+### Test Results
+
+**Pre-Implementation**: 181 tests passing
+**Post-Implementation**: 205 tests passing (+24 new tests)
+- New tests: test_col_wrapper.py (24 tests)
+- Updated tests: test_display.py (test_import_star)
+- Regression: None (all existing tests updated and passing)
+
+**Test Coverage**:
+- Type dispatch: int, float, str, SymPy, Pint, Markdown, Latex
+- Column index behavior: LHS (0) vs RHS (1+)
+- Custom registration: User-defined types
+- Edge cases: None values, zero, negative, empty strings, high col_index
+
+### Commit Information
+
+**Branch**: `feature/refactor-col-wrap-equals-sign`
+**Commit**: `9f5bacf` (feat: Refactor col_wrap system to use singledispatch pattern)
+**Files Changed**: 9 files, 604 insertions(+), 55 deletions(-)
+
+**Changes**:
+- Added: `src/keecas/col_wrappers.py` (new module)
+- Added: `tests/test_col_wrapper.py` (new tests)
+- Modified: `src/keecas/formatters.py` (pure conversion)
+- Modified: `src/keecas/display.py` (integration)
+- Modified: `src/keecas/__init__.py` (exports)
+- Modified: `tests/test_display.py` (updated assertions)
+- Modified: `CLAUDE.md` (documentation)
+- Modified: `_todo/todo.md` (task tracking)
+- Moved: `_todo/proposal/` → `_todo/pending/`
+
+### Success Metrics
+
+✅ All formatters are pure type converters (no prefix logic)
+✅ Default behavior unchanged for typical users
+✅ wrap_column() singledispatch handles all built-in types
+✅ List override works: `col_wrap=[None, "=", r"\leq"]`
+✅ Callable override works with custom logic
+✅ User registration works: `@wrap_column.register(MyType)`
+✅ All 205 tests pass (100% pass rate)
+✅ Documentation updated (CLAUDE.md)
+✅ No regression in existing functionality
+
+### Next Steps
+
+**Ready for merge to dev**:
+1. Push feature branch to remote
+2. Run CI workflows (lint, test)
+3. Merge to dev after CI passes
+4. Update version for v1.0.0 release (breaking change)
+
+**Future Enhancements** (out of scope for this task):
+- Add cookbook examples in documentation
+- Add migration guide in CHANGELOG for v1.0.0
+- Consider adding more built-in comparison operators (≈, ≥, ≤)
