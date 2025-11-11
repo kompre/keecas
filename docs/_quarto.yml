@@ -112,15 +112,15 @@ quartodoc:
         - name: formatters
           children: linked
         - format_value
-        - format_str
-        - format_int
-        - format_float
-        - format_markdown
-        - format_latex
-        - format_pint
-        - format_sympy
-        - format_mul
-        - validate_latex_kwargs
+        - formatters.format_str
+        - formatters.format_int
+        - formatters.format_float
+        - formatters.format_markdown
+        - formatters.format_latex
+        - formatters.format_pint
+        - formatters.format_sympy
+        - formatters.format_mul
+        - formatters.validate_latex_kwargs
     - title: Columns Wrapper Module
       desc: Column wrappers for LaTeX equation rendering
       contents:
@@ -175,8 +175,8 @@ quartodoc:
       contents:
         - name: utils
           children: linked
-        - escape_name
-        - escape_var
+        - utils.escape_name
+        - utils.escape_var
         - dict_to_eq
         - eq_to_dict
 

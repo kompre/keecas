@@ -22,41 +22,16 @@ from .display import (
 )
 
 # formatters
-from .formatters import (
-    format_float,
-    format_int,
-    format_mul,
-    format_str,
-    format_sympy,
-    format_value,
-    validate_latex_kwargs,
-)
-
-# utils
-from .utils import dict_to_eq, eq_to_dict
-
-# Import optional formatters if available (for type registration)
-try:
-    from .formatters import format_latex  # noqa: F401
-except ImportError:
-    pass
-
-try:
-    from .formatters import format_markdown  # noqa: F401
-except ImportError:
-    pass
-
-try:
-    from .formatters import format_pint  # noqa: F401
-except ImportError:
-    pass
+from .formatters import format_value
 
 # label
 from .label import generate_label, generate_unique_label
 
 # initialize pint
 from .pint_sympy import unitregistry as u
-from .pint_sympy import update_pint_locale
+
+# utils
+from .utils import dict_to_eq, eq_to_dict
 
 # Use configuration for pint format
 u.formatter.default_format = config.display.pint_default_format
@@ -68,11 +43,6 @@ from sympy import ImmutableDenseMatrix as Matrix  # noqa: E402
 
 ## latex printing settings
 sympy.init_printing(mul_symbol=config.latex.default_mul_symbol, order="none")
-
-
-def platex(x):
-    """Print LaTeX in inline mode with configured multiplication symbol."""
-    return latex(x, mode="inline", mul_symbol=config.latex.default_mul_symbol)
 
 
 ## common sympy functions
@@ -90,15 +60,8 @@ __all__ = [
     "wrap_column",
     # Formatter exports (singledispatch-based)
     "format_value",
-    "validate_latex_kwargs",
-    "format_mul",
-    "format_sympy",
-    "format_float",
-    "format_int",
-    "format_str",
     "pc",
     "u",
-    "update_pint_locale",  # Pint localization control
     "sympy",
     "latex",
     "Eq",
@@ -108,7 +71,6 @@ __all__ = [
     "Dict",
     "S",
     "Matrix",
-    "platex",
     "__version__",
 ]
 
