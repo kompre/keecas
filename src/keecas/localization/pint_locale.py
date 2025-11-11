@@ -244,12 +244,15 @@ def _was_pint_imported_before_keecas(unitregistry: Any) -> bool:
         return False
 
 
-def update_pint_locale(
+def _update_pint_locale_impl(
     unitregistry: Any,
     language: str | None = None,
     verbose: bool = False,
 ) -> None:
-    """Update pint locale based on keecas language setting with smart mode detection.
+    """Internal implementation of pint locale update with smart mode detection.
+
+    This is the internal implementation. Users should call the public wrapper
+    update_pint_locale() from keecas.pint_sympy instead.
 
     Args:
         unitregistry: The Pint UnitRegistry instance

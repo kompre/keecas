@@ -68,7 +68,7 @@ def update_pint_locale(language: str | None = None, verbose: bool = False) -> No
     Examples:
         ```{python}
         from keecas import u
-        from keecas.localization.pint_locale import update_pint_locale
+        from keecas.pint_sympy import update_pint_locale
 
         # Manual locale control with verbose output
         update_pint_locale('it', verbose=True)
@@ -112,9 +112,9 @@ def update_pint_locale(language: str | None = None, verbose: bool = False) -> No
         - Conservative behavior: doesn't change locale unnecessarily
         - Manual mode activated if user directly modifies unitregistry.formatter
     """
-    from .localization.pint_locale import update_pint_locale as _update_pint_locale
+    from .localization.pint_locale import _update_pint_locale_impl
 
-    _update_pint_locale(unitregistry, language, verbose)
+    _update_pint_locale_impl(unitregistry, language, verbose)
 
 
 class SymPyUnitCache:
