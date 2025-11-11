@@ -115,9 +115,23 @@ quartodoc:
         - format_str
         - format_int
         - format_float
+        - format_markdown
+        - format_latex
+        - format_pint
         - format_sympy
         - format_mul
         - validate_latex_kwargs
+    - title: Columns Wrapper Module
+      desc: Column wrappers for LaTeX equation rendering
+      contents:
+        - name: col_wrappers
+          children: linked
+        - wrap_column
+        - col_wrappers.wrap_numeric
+        - col_wrappers.wrap_str
+        - col_wrappers.wrap_sympy
+        - col_wrappers.wrap_pint
+        - col_wrappers.wrap_markdown
     - title: Label Module
       desc: Label generation
       contents:

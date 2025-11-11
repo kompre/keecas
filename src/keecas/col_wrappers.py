@@ -130,7 +130,7 @@ def wrap_column(value: Any, col_index: int = 0, **kwargs) -> tuple[str, str]:
 
     See Also
     --------
-    format_value : Cell formatter for type-based LaTeX conversion
+    formatters.format_value : Cell formatter for type-based LaTeX conversion
     """
     # Default fallback for unhandled types - no wrapping
     return ("", "")

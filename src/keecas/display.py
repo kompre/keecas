@@ -228,8 +228,8 @@ def show_eqn(
 
     See Also:
         - `~~display.check`: Engineering verification with localization
-        - `~~display.dict_to_eq`: Convert dict to SymPy Eq objects
-        - `~~display.eq_to_dict`: Convert SymPy Eq objects to dict
+        - `~~utils.dict_to_eq`: Convert dict to SymPy Eq objects
+        - `~~utils.eq_to_dict`: Convert SymPy Eq objects to dict
         - `~~config.manager.ConfigManager`: Global configuration object
 
     Notes:
@@ -734,7 +734,7 @@ def format_decimal_numbers(
 
     See Also:
         - `~~display.show_eqn`: Main display function with built-in float formatting
-        - `~~config.schema.DisplayConfig`: Display configuration (see `default_float_format` attribute)
+        - `~~config.manager.DisplayConfig`: Display configuration (see `default_float_format` attribute)
 
     Notes:
         - Only matches decimal numbers (requires decimal point)
@@ -809,7 +809,7 @@ def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> s
 
     See Also:
         - `~~display.show_eqn`: Main display function for multiple equations
-        - `~~display.dict_to_eq`: Convert dictionary to SymPy Eq objects
+        - `~~utils.dict_to_eq`: Convert dictionary to SymPy Eq objects
     """
     if "mul_symbol" not in kwargs:
         kwargs["mul_symbol"] = r"\,"
