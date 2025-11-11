@@ -290,7 +290,7 @@ def show_eqn(
             environment = "align"
 
     if col_wrap is None:
-        col_wrap = config.col_wrap if config.col_wrap is not None else wrap_column
+        col_wrap = config.display.col_wrap if config.display.col_wrap is not None else wrap_column
 
     # warning message in case of too many labels provided
     if not env_config.supports_multiple_labels and isinstance(label, dict):

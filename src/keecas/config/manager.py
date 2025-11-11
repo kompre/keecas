@@ -100,6 +100,7 @@ class DisplayConfig:
     pint_default_format: str = ".2f~P"
     cell_formatter: "Callable[[Any, int], str] | None" = None  # Custom cell formatter
     row_formatter: "Callable[[str], str] | None" = None  # Custom row formatter
+    col_wrap: "list | Callable | None" = None  # Column wrapping specification
 
 
 @dataclass
@@ -309,9 +310,6 @@ class ConfigOptions:
     def __post_init__(self):
         """Set up cross-references for language propagation."""
         self.language._config_manager_ref = getattr(self, "_config_manager_ref", None)
-
-    # Column wrapping - None means no wrapping (formatters handle prefixes now)
-    col_wrap: list | None = None
 
     def to_toml_dict(self) -> dict[str, Any]:
         """Convert to dictionary suitable for TOML serialization.
