@@ -67,7 +67,8 @@ def update_pint_locale(language: str | None = None, verbose: bool = False) -> No
 
     Examples:
         ```{python}
-        from keecas import u, update_pint_locale
+        from keecas import u
+        from keecase.localization.pint_locale import update_pint_locale
 
         # Manual locale control with verbose output
         update_pint_locale('it', verbose=True)
