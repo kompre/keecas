@@ -33,7 +33,10 @@ jobs:
           echo "📦 Version in PR: $VERSION"
           echo "🏷️  Tag to create: $TAG"
 
-      - name: Check if tag already exists
+      - name: Check if tag already exists (for production releases only)
+        if: |
+          github.event.pull_request.base.ref == 'main' &&
+          contains(github.event.pull_request.labels.*.name, 'release')
         run: |
           TAG="${{ steps.version.outputs.tag }}"
 
@@ -76,8 +79,9 @@ jobs:
             echo "✅ Version follows semantic versioning: $VERSION"
           fi
 
-      - name: Check label matches version type
+      - name: Enforce version format rules
         env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
           HAS_RELEASE_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'release') }}
           HAS_TEST_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'test-release') }}
         run: |
@@ -92,30 +96,72 @@ jobs:
             echo "📋 Detected stable version: $VERSION"
           fi
 
-          # Warn if labels don't match version type
-          if [ "$IS_PRERELEASE" = "true" ] && [ "$HAS_RELEASE_LABEL" = "true" ]; then
-            echo ""
-            echo "⚠️  Warning: PR has 'release' label but version contains pre-release identifier"
-            echo "   Version: $VERSION"
-            echo "   Recommendation: Use 'test-release' label for pre-release versions"
-            echo ""
-            echo "   Pre-release versions automatically go to TestPyPI even with 'release' label."
-          fi
-
-          if [ "$IS_PRERELEASE" = "false" ] && [ "$HAS_TEST_LABEL" = "true" ]; then
-            echo ""
-            echo "ℹ️  Info: PR has 'test-release' label for stable version $VERSION"
-            echo "   This will publish to TestPyPI (good for testing before production)"
-          fi
-
           echo ""
-          echo "🎯 Release target:"
-          if [ "$HAS_TEST_LABEL" = "true" ]; then
-            echo "   → TestPyPI (test-release label)"
-          elif [ "$IS_PRERELEASE" = "true" ]; then
-            echo "   → TestPyPI (pre-release version)"
-          else
-            echo "   → Production PyPI (stable release)"
+          echo "🔍 Validation Rules:"
+          echo "   Branch: $BASE_REF"
+          echo "   Labels: release=$HAS_RELEASE_LABEL, test-release=$HAS_TEST_LABEL"
+          echo "   Version type: $([ "$IS_PRERELEASE" = "true" ] && echo "pre-release" || echo "stable")"
+          echo ""
+
+          # RULE 1: main + release label → MUST be stable version
+          if [ "$BASE_REF" == "main" ] && [ "$HAS_RELEASE_LABEL" == "true" ]; then
+            if [ "$IS_PRERELEASE" = "true" ]; then
+              echo "❌ ERROR: Production release on main requires stable version"
+              echo ""
+              echo "   Branch: main"
+              echo "   Label: release"
+              echo "   Version: $VERSION (pre-release)"
+              echo ""
+              echo "   main branch with 'release' label can only have stable versions."
+              echo ""
+              echo "   ✅ Valid:   1.0.0, 1.2.3, 2.0.0"
+              echo "   ❌ Invalid: 1.0.0rc1, 1.0.0b3, 1.0.0a1"
+              echo ""
+              echo "   To fix: uv version --bump-to X.Y.Z"
+              exit 1
+            fi
+            echo "✅ Valid: main + release + stable version"
+            echo "🎯 Target: Production PyPI"
+            echo "🏷️  Will create tag: v$VERSION"
+          fi
+
+          # RULE 2: dev + test-release label → MUST be pre-release version
+          if [ "$BASE_REF" == "dev" ] && [ "$HAS_TEST_LABEL" == "true" ]; then
+            if [ "$IS_PRERELEASE" = "false" ]; then
+              echo "❌ ERROR: Test release on dev requires pre-release version"
+              echo ""
+              echo "   Branch: dev"
+              echo "   Label: test-release"
+              echo "   Version: $VERSION (stable)"
+              echo ""
+              echo "   dev branch with 'test-release' label must have pre-release versions."
+              echo ""
+              echo "   ✅ Valid:   1.0.0rc1, 1.0.0b3, 1.0.0a1"
+              echo "   ❌ Invalid: 1.0.0, 1.2.3, 2.0.0"
+              echo ""
+              echo "   To fix: uv version --bump-to X.Y.ZrcN"
+              exit 1
+            fi
+            echo "✅ Valid: dev + test-release + pre-release version"
+            echo "🎯 Target: TestPyPI"
+            echo "🏷️  Will NOT create tag (test release)"
+          fi
+
+          # RULE 3: Catch invalid branch/label combinations
+          if [ "$BASE_REF" == "main" ] && [ "$HAS_TEST_LABEL" == "true" ]; then
+            echo "❌ ERROR: Invalid combination - 'test-release' label on main branch"
+            echo ""
+            echo "   Use 'release' label for main branch"
+            echo "   Use 'test-release' label for dev branch"
+            exit 1
+          fi
+
+          if [ "$BASE_REF" == "dev" ] && [ "$HAS_RELEASE_LABEL" == "true" ]; then
+            echo "❌ ERROR: Invalid combination - 'release' label on dev branch"
+            echo ""
+            echo "   Use 'test-release' label for dev branch"
+            echo "   Use 'release' label for main branch"
+            exit 1
           fi
 
       - name: Summary
