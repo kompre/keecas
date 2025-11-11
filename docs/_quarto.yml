@@ -139,13 +139,6 @@ quartodoc:
           children: linked
         - generate_label
         - generate_unique_label
-    - title: Utils Module
-      desc: Utility functions for equation conversion
-      contents:
-        - name: utils
-          children: linked
-        - dict_to_eq
-        - eq_to_dict
     - title: Dataframe Module
       desc: Custom dictionary-like container for tabular equation data
       contents:
@@ -177,6 +170,15 @@ quartodoc:
       desc: function of the cli interface
       contents:
         - name: cli
+    - title: Utils Module
+      desc: Utility functions for equation conversion and symbol name escaping
+      contents:
+        - name: utils
+          children: linked
+        - escape_name
+        - escape_var
+        - dict_to_eq
+        - eq_to_dict
 
 metadata-files: 
   - "api-reference/_sidebar.yml"
