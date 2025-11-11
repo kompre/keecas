@@ -132,7 +132,7 @@ def show_eqn(
 ):
     # Set default to singledispatch-based wrapper
     if not col_wrap:
-        col_wrap = config.col_wrap if config.col_wrap is not None else wrap_column
+        col_wrap = config.display.col_wrap if config.display.col_wrap is not None else wrap_column
 
     # ... rest of function ...
 ```

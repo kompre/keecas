@@ -85,7 +85,7 @@ def show_eqn(
             automatically fills remaining columns. Supports tuple values for prefix/suffix:
             [None, ("=", ""), (r"\\quad(", ")")] works correctly.
             List elements: None (no wrapping), str (prefix only), tuple (prefix, suffix),
-            or Callable. Defaults to config.col_wrap.
+            or Callable. Defaults to config.display.col_wrap.
         float_format: Format specification for float values (does not affect int).
             Can be str (all floats), list of str (per column), dict (per row), dict of
             list or Dataframe (per cell). For lists, the last element automatically fills
