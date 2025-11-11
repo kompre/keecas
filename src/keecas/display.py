@@ -20,6 +20,7 @@ from sympy import (
     latex,
 )
 
+from .col_wrapper import wrap_column
 from .config.manager import get_config_manager
 from .dataframe import Dataframe, create_dataframe
 from .localization import translate
@@ -288,8 +289,8 @@ def show_eqn(
             env_config = config.latex.environments.align
             environment = "align"
 
-    if not col_wrap:
-        col_wrap = config.col_wrap
+    if col_wrap is None:
+        col_wrap = config.col_wrap if config.col_wrap is not None else wrap_column
 
     # warning message in case of too many labels provided
     if not env_config.supports_multiple_labels and isinstance(label, dict):
@@ -401,7 +402,7 @@ def show_eqn(
             if v is not None:
                 formatted_value = cf(v, col_idx, **latex_kwargs)  # Pass latex kwargs to formatter
                 # Note: formatted_value is never None - registry ensures fallback
-                cell_content = f"{_col_wrap(cw, v)[0]}{formatted_value}{_col_wrap(cw, v)[-1]}"
+                cell_content = f"{_col_wrap(cw, v, col_idx)[0]}{formatted_value}{_col_wrap(cw, v, col_idx)[-1]}"
             else:
                 cell_content = " "
 
@@ -950,11 +951,31 @@ def _extract_seed_and_filler(value: Any) -> tuple[Any, Any]:
 
 
 def _col_wrap(
-    cw: None | str | tuple[str, str] | dict[type, tuple[str, str]],
+    cw: None | str | tuple[str, str] | dict[type, tuple[str, str]] | Callable,
     value: Any,
+    col_index: int = 0,
 ) -> tuple[str, str]:
+    """Apply column wrapping based on wrapper specification.
+
+    Parameters
+    ----------
+    cw : None | str | tuple | dict | Callable
+        Column wrapper specification
+    value : Any
+        Value being wrapped
+    col_index : int, optional
+        Column index (0 = LHS, 1+ = RHS)
+
+    Returns
+    -------
+    tuple[str, str]
+        (prefix, suffix) for wrapping
+    """
     if not cw:
         return ("", "")
+
+    if callable(cw):
+        return cw(value, col_index)
 
     if isinstance(cw, str):
         return cw, ""
