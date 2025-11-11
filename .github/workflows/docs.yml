@@ -19,7 +19,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: "pages-${{ github.ref }}"  # Separate concurrency per branch
   cancel-in-progress: false
 
 jobs:
@@ -116,9 +116,25 @@ jobs:
             echo "✅ Backed up /dev directory"
           fi
 
-          # Clear root and copy new main docs
-          rm -rf /tmp/gh-pages-staged/*
+          # Backup hidden files (.nojekyll, etc.)
+          shopt -s dotglob  # Enable dotglob to match hidden files
+          mkdir -p /tmp/hidden-backup
+          for file in /tmp/gh-pages-staged/.*; do
+            if [ -f "$file" ]; then
+              cp "$file" /tmp/hidden-backup/
+            fi
+          done
+
+          # Clear root (visible files only, preserve hidden)
+          find /tmp/gh-pages-staged -mindepth 1 -maxdepth 1 ! -name '.*' -exec rm -rf {} +
+
+          # Copy new main docs
           cp -r docs/_site/* /tmp/gh-pages-staged/
+
+          # Restore hidden files
+          if [ -d "/tmp/hidden-backup" ]; then
+            cp /tmp/hidden-backup/.* /tmp/gh-pages-staged/ 2>/dev/null || true
+          fi
 
           # Restore dev directory
           if [ -d "/tmp/dev-backup" ]; then
@@ -140,6 +156,10 @@ jobs:
         echo "✅ Staged docs for deployment"
         echo "📊 Contents:"
         ls -la /tmp/gh-pages-staged/
+        if [ -d "/tmp/gh-pages-staged/dev" ]; then
+          echo "📊 Dev directory contents:"
+          ls -la /tmp/gh-pages-staged/dev/ | head -n 10
+        fi
 
     - name: Upload merged artifact
       uses: actions/upload-pages-artifact@v3
