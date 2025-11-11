@@ -19,7 +19,7 @@ x, y = symbols("x y")
 
 def test_import_star():
     """Test that 'from keecas import *' works without AttributeError."""
-    # This test ensures __all__ is properly updated with chain-based exports
+    # This test ensures __all__ is properly updated with main exports
 
     # Create a fresh namespace
     namespace = {}
@@ -27,13 +27,15 @@ def test_import_star():
     # Execute import *
     exec("from keecas import *", namespace)
 
-    # Verify singledispatch-based exports are available
+    # Verify main singledispatch export is available
     assert "format_value" in namespace
-    assert "format_mul" in namespace
-    assert "format_sympy" in namespace
-    assert "format_int" in namespace
-    assert "format_float" in namespace
-    assert "format_str" in namespace
+
+    # Individual formatter functions are not exported (use format_value singledispatch)
+    assert "format_mul" not in namespace
+    assert "format_sympy" not in namespace
+    assert "format_int" not in namespace
+    assert "format_float" not in namespace
+    assert "format_str" not in namespace
 
     # Verify old chain-based exports are NOT present
     assert "EarlyExit" not in namespace
