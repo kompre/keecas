@@ -271,7 +271,7 @@ gh pr create --base dev
    - **Transformers**: format_pint and format_mul transform values then call format_sympy directly
    - **Separation of Concerns**: Formatters handle "what" (type conversion), col_wrapper handles "how" (presentation)
 
-4. **Column Wrapper Module** (`src/keecas/col_wrapper.py`)
+4. **Column Wrappers Module** (`src/keecas/col_wrappers.py`)
    - **Singledispatch-based** wrapper system for decorating columns with prefix/suffix
    - **Main Entry Point**: `wrap_column(value, col_index)` - returns `(prefix, suffix)` tuple
    - **Default Behavior**:

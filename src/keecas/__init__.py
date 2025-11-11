@@ -9,8 +9,8 @@ specifically designed for Quarto rendered PDF documents.
 # pipe_command
 from . import pipe_command as pc
 
-# col_wrapper
-from .col_wrapper import wrap_column
+# col_wrappers
+from .col_wrappers import wrap_column
 from .dataframe import Dataframe
 
 # display

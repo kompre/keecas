@@ -20,7 +20,7 @@ from sympy import (
     latex,
 )
 
-from .col_wrapper import wrap_column
+from .col_wrappers import wrap_column
 from .config.manager import get_config_manager
 from .dataframe import Dataframe, create_dataframe
 from .localization import translate

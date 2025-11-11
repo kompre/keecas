@@ -57,7 +57,7 @@ def format_sympy(value: Basic, col_index: int = 0, **kwargs) -> str:
 **Note**: `col_index` parameter remains for potential use by custom formatters. Keeps API consistent.
 
 ### 2. Col Wrap → Singledispatch-Based Decoration
-Create new module `col_wrapper.py` with singledispatch pattern:
+Create new module `col_wrappers.py` with singledispatch pattern:
 
 ```python
 from functools import singledispatch
@@ -181,7 +181,7 @@ No TOML configuration needed (col_wrap is a callable, same as cell_formatters). 
 
 ## Implementation Steps
 
-1. **Create col_wrapper.py module**
+1. **Create col_wrappers.py module**
    - Implement singledispatch `wrap_column()` function
    - Register handlers for: int, float, str, Basic
    - Register optional handlers for: pint.Quantity, Markdown, Latex
@@ -194,7 +194,7 @@ No TOML configuration needed (col_wrap is a callable, same as cell_formatters). 
    - Keep `col_index` parameter for API consistency (backwards compatibility)
 
 3. **Update display.py**
-   - Import `wrap_column` from new col_wrapper module
+   - Import `wrap_column` from new col_wrappers module
    - Update `_col_wrap()` signature to accept `col_index`
    - Add Callable branch to `_col_wrap()` for singledispatch support
    - Update default `col_wrap` in `show_eqn()` to use `wrap_column`
@@ -372,7 +372,7 @@ def wrap_custom(value, col_index=0, **kwargs):
 **Decisions (from annotations)**:
 1. ✅ `col_index` stays in formatter signatures (for custom formatter flexibility)
 2. ✅ Export `wrap_column` in `__init__.py` (user extensibility)
-3. ✅ Module name: `col_wrapper.py` (not col_wrap_formatter.py)
+3. ✅ Module name: `col_wrappers.py` (for consistency with formatters.py)
 4. ✅ No TOML config (callable, same pattern as cell_formatters)
 
 **Status**: ✅ Approved - Ready to implement
@@ -384,7 +384,7 @@ def wrap_custom(value, col_index=0, **kwargs):
 ### Completed Work
 
 **Module Creation** ✅
-- Created `src/keecas/col_wrapper.py` with singledispatch `wrap_column()` function
+- Created `src/keecas/col_wrappers.py` with singledispatch `wrap_column()` function
 - Registered handlers for all built-in types: int, float, str, Basic, Pint, Markdown, Latex
 - Default behavior: numeric types get `"= "`, text types get `r"\quad"` for RHS columns
 - Comprehensive docstrings with examples
@@ -471,7 +471,7 @@ def wrap_mytype(value, col_index=0):
 **Files Changed**: 9 files, 604 insertions(+), 55 deletions(-)
 
 **Changes**:
-- Added: `src/keecas/col_wrapper.py` (new module)
+- Added: `src/keecas/col_wrappers.py` (new module)
 - Added: `tests/test_col_wrapper.py` (new tests)
 - Modified: `src/keecas/formatters.py` (pure conversion)
 - Modified: `src/keecas/display.py` (integration)
