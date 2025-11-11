@@ -12,6 +12,7 @@
 - [refactor-formatters-singledispatch.md](proposal/refactor-formatters-singledispatch.md) - Refactor formatter system to use singledispatch pattern (awaiting review)
 - [refactor-docstring-see-also-interlinks.md](proposal/refactor-docstring-see-also-interlinks.md) - Standardize "See Also" sections with quartodoc interlinks (awaiting review)
 - [configurable-label-generation.md](proposal/configurable-label-generation.md) - Add config option for stable label generation strategies in show_eqn (awaiting review)
+- [refactor-col-wrap-equals-sign.md](proposal/refactor-col-wrap-equals-sign.md) - Move `=` sign handling from cell formatters to col_wrap system using singledispatch pattern (awaiting review)
 
 **Tasks in development (`pending/`)**:
 - [docs-review-pre-publish.md](pending/docs-review-pre-publish.md) - Comprehensive pre-publication documentation review and correction (in progress)
