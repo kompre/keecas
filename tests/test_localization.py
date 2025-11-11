@@ -629,7 +629,7 @@ def test_pint_locale_initialization():
         # Test: when disable_pint_locale=True, update_pint_locale does nothing
         config.language.disable_pint_locale = True
         unitregistry.formatter.set_locale(None)
-        update_pint_locale("en")
+        update_pint_locale(unitregistry, "en")
         assert unitregistry.formatter.locale is None  # Should remain None
 
         # Test: when disable_pint_locale=False and mode='auto', locale is set
@@ -637,7 +637,7 @@ def test_pint_locale_initialization():
         config.language.pint_language_mode = "auto"
         # Use 'it' instead of 'en' because 'en' has conservative behavior
         # that skips setting locale if not explicitly configured
-        update_pint_locale("it")
+        update_pint_locale(unitregistry, "it")
         assert unitregistry.formatter.locale is not None  # Should be set
         assert unitregistry.formatter.locale.startswith("it_")  # Should be Italian
 
@@ -668,7 +668,7 @@ def test_manual_pint_locale_update():
         }
 
         for lang_code, expected_locale_prefix in test_locales.items():
-            update_pint_locale(lang_code)
+            update_pint_locale(u, lang_code)
             # Verify the locale was set (accept UTF-8 variants)
             actual_locale = u.formatter.locale
             assert actual_locale.startswith(expected_locale_prefix), (
@@ -676,12 +676,12 @@ def test_manual_pint_locale_update():
             )
 
         # Test with 'en' - should use conservative behavior (may not change locale)
-        update_pint_locale("en")
+        update_pint_locale(u, "en")
         # 'en' might not change locale due to conservative behavior, so we don't assert a specific change
 
         # Test with None (should use current keecas language if explicitly set)
         set_language("it")
-        update_pint_locale(None)
+        update_pint_locale(u, None)
         # This should set Italian locale since it's explicitly configured
         assert u.formatter.locale.startswith("it_IT"), (
             f"Expected Italian locale, got {u.formatter.locale}"
@@ -760,12 +760,12 @@ def test_pint_locale_with_real_formatting():
     # Note: This test might be system-dependent based on available locales
     try:
         # Test English formatting
-        update_pint_locale("en")
+        update_pint_locale(u, "en")
         en_format = f"{test_quantity:.2f}"
         assert isinstance(en_format, str)
 
         # Test other locales (may not work on all systems)
-        update_pint_locale("it")
+        update_pint_locale(u, "it")
         it_format = f"{test_quantity:.2f}"
         assert isinstance(it_format, str)
 
@@ -778,7 +778,7 @@ def test_pint_locale_with_real_formatting():
         pass
 
     # Reset
-    update_pint_locale("en")
+    update_pint_locale(u, "en")
 
 
 def test_pint_locale_edge_cases():
@@ -788,16 +788,16 @@ def test_pint_locale_edge_cases():
     # Store current locale
 
     # Test invalid language code - should gracefully do nothing
-    update_pint_locale("invalid_lang")
+    update_pint_locale(u, "invalid_lang")
     # Should remain unchanged (no fallback to hardcoded locale)
     # Either stays the same or falls back to a safe locale
 
     # Test empty string - should gracefully do nothing
-    update_pint_locale("")
+    update_pint_locale(u, "")
     # Should remain unchanged or use safe fallback
 
     # Reset
-    update_pint_locale("en")
+    update_pint_locale(u, "en")
 
 
 def test_pint_locale_fallback_behavior(enable_pint_locale):
@@ -811,7 +811,7 @@ def test_pint_locale_fallback_behavior(enable_pint_locale):
 
     # Test 1: Unsupported language should fallback to English
     set_language("da")  # Danish - unsupported
-    update_pint_locale("da")
+    update_pint_locale(u, "da")
 
     quantity = 1 * u("cm**2")
     result = f"{quantity:.3f}"
@@ -820,14 +820,14 @@ def test_pint_locale_fallback_behavior(enable_pint_locale):
 
     # Test 2: Set supported language, then unsupported - should reset to English
     set_language("it")
-    update_pint_locale("it")
+    update_pint_locale(u, "it")
     quantity = 1 * u("cm**2")
     italian_result = f"{quantity:.3f}"
     assert "centimetro" in italian_result.lower(), "Italian should work"
 
     # Now switch to unsupported - should reset to English, not keep Italian
     set_language("sv")  # Swedish - unsupported
-    update_pint_locale("sv")
+    update_pint_locale(u, "sv")
     quantity = 1 * u("cm**2")
     swedish_result = f"{quantity:.3f}"
     assert "centimeter" in swedish_result.lower(), (
@@ -839,7 +839,7 @@ def test_pint_locale_fallback_behavior(enable_pint_locale):
     unsupported_langs = ["da", "nl", "no", "sv"]
     for lang in unsupported_langs:
         set_language(lang)
-        update_pint_locale(lang)
+        update_pint_locale(u, lang)
         quantity = 1 * u("cm**2")
         result = f"{quantity:.3f}"
         assert "centimeter" in result.lower(), (
@@ -864,7 +864,7 @@ def test_pint_locale_supported_languages(enable_pint_locale):
 
     for lang, expected_unit in expected_translations.items():
         set_language(lang)
-        update_pint_locale(lang)
+        update_pint_locale(u, lang)
         quantity = 1 * u("cm**2")
         result = f"{quantity:.3f}".lower()
 
@@ -884,13 +884,13 @@ def test_pint_locale_persistence_fix(enable_pint_locale):
 
     # Scenario that previously failed: Italian -> English -> Danish
     set_language("it")
-    update_pint_locale("it")
+    update_pint_locale(u, "it")
     quantity = 1 * u("cm**2")
     assert "centimetro" in f"{quantity:.3f}".lower(), "Italian should work"
 
     # Switch to English - should now reset to English (key fix!)
     set_language("en")
-    update_pint_locale("en")
+    update_pint_locale(u, "en")
     quantity = 1 * u("cm**2")
     result = f"{quantity:.3f}".lower()
     assert "centimeter" in result, f"English should reset to English from Italian. Got: {result}"
@@ -898,7 +898,7 @@ def test_pint_locale_persistence_fix(enable_pint_locale):
 
     # Switch to Danish - should fallback to English
     set_language("da")
-    update_pint_locale("da")
+    update_pint_locale(u, "da")
     quantity = 1 * u("cm**2")
     result = f"{quantity:.3f}".lower()
 
@@ -918,20 +918,20 @@ def test_pint_locale_english_reset_behavior(enable_pint_locale):
 
     # Test 1: Fresh English should be conservative (skip)
     set_language("en")
-    update_pint_locale("en")
+    update_pint_locale(u, "en")
     quantity = 1 * u("cm**2")
     fresh_result = f"{quantity:.3f}".lower()
     assert "centimeter" in fresh_result, "Fresh English should work"
 
     # Test 2: English after non-English should reset
     set_language("fr")
-    update_pint_locale("fr")
+    update_pint_locale(u, "fr")
     quantity = 1 * u("cm**2")
     assert "centimètre" in f"{quantity:.3f}".lower(), "French should work"
 
     # Now switch to English - should reset to English
     set_language("en")
-    update_pint_locale("en")
+    update_pint_locale(u, "en")
     quantity = 1 * u("cm**2")
     reset_result = f"{quantity:.3f}".lower()
     assert "centimeter" in reset_result, f"English should reset from French. Got: {reset_result}"
@@ -939,7 +939,7 @@ def test_pint_locale_english_reset_behavior(enable_pint_locale):
 
     # Test 3: English after English should be conservative (skip)
     set_language("en")
-    update_pint_locale("en")
+    update_pint_locale(u, "en")
     quantity = 1 * u("cm**2")
     conservative_result = f"{quantity:.3f}".lower()
     assert "centimeter" in conservative_result, "Repeated English should remain English"

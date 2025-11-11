@@ -73,13 +73,13 @@ jobs:
       if: github.ref == 'refs/heads/main'
       run: |
         cd docs
-        uv run quarto render --profile main -M version:"${{ steps.version.outputs.version }}"
+        uv run quarto render --profile main -M version:"${{ steps.version.outputs.version }}" -M publish_url:"https://pypi.org/project/keecas"
 
     - name: Render Quarto Documentation (dev)
       if: github.ref == 'refs/heads/dev'
       run: |
         cd docs
-        uv run quarto render --profile dev -M version:"${{ steps.version.outputs.version }}-dev"
+        uv run quarto render --profile dev -M version:"${{ steps.version.outputs.version }}" -M publish_url:"https://test.pypi.org/project/keecas"
 
     - name: Merge with existing gh-pages
       if: github.event_name != 'pull_request'
