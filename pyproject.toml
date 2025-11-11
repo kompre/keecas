@@ -27,6 +27,7 @@ readme = "README.md"
 Homepage = "https://github.com/kompre/keecas"
 Repository = "https://github.com/kompre/keecas"
 Issues = "https://github.com/kompre/keecas/issues"
+Documentation = "https://kompre.github.io/keecas"
 
 [project.scripts]
 keecas = "keecas.cli:main"
