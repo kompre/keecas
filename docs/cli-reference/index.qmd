@@ -1,8 +1,7 @@
 ---
 title: "CLI Reference"
+order: 2
 ---
-
-# CLI Reference
 
 Keecas provides a comprehensive command-line interface for configuration management and Jupyter integration.
 

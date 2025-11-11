@@ -5,25 +5,37 @@ website:
   title: "Keecas Documentation"
   description: "Symbolic and units-aware calculations for Jupyter notebooks"
 
-  # sidebar: 
-  #   contents: auto
-  #   tools:
-  #     - icon: github
-  #       href: https://github.com/kompre/keecas
+  sidebar:
+    - contents: getting-started
+      title: Getting Started
+      style: docked
+    - contents: cli-reference 
+      title: CLI Reference
+      style: docked
+    - contents: examples
+      title: Examples
+      style: docked
+    #   style: docked
+    # tools:
+    #   - icon: github
+    #     href: https://github.com/kompre/keecas
+    #   - text: 1.0.2
 
   navbar:
     title: "Keecas"
     left:
-      - href: index.qmd
-        text: Home
-      - href: getting-started/index.qmd
-        text: Getting Started
-      - href: api-reference/
-        text: API Reference
+      - text: Getting Started
+        href: getting-started/index.qmd
+      - text: Examples
+        href: examples/index.qmd
       - href: cli-reference/index.qmd
         text: CLI Reference
+      - text: API Reference
+        href: api-reference/index.qmd
     right:
-      - text: "{{< meta version >}}"
+      - href: "https://pypi.org/project/keecas/{{< meta version >}}/"
+        text: "version {{< meta version >}}"
+        icon: box-fill
       - href: https://github.com/kompre/keecas
         text: GitHub
         aria-label: GitHub
@@ -73,6 +85,7 @@ quartodoc:
   package: keecas
   style: pkgdown
   render_interlinks: true
+  title: API Reference
 
   # Docstring parser
   parser: google
@@ -81,8 +94,10 @@ quartodoc:
   dir: api-reference
 
   # Sidebar configuration
-  sidebar: api-reference/_sidebar.yml
-
+  sidebar: 
+    file: api-reference/_sidebar.yml
+    title: API Reference
+    style: docked
 
   # Rendering options
   renderer:
@@ -175,8 +190,8 @@ quartodoc:
       contents:
         - name: utils
           children: linked
-        - utils.escape_name
-        - utils.escape_var
+        # - utils.escape_name
+        # - utils.escape_var
         - dict_to_eq
         - eq_to_dict
 

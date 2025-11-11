@@ -1,0 +1,14 @@
+---
+title: Examples
+order: 3
+---
+
+Full examples can be found at [examples](https://github.com/kompre/keecas/tree/main/examples)
+
+## A simple notebook
+
+A simple [hello_world.ipynb](https://github.com/kompre/keecas/blob/main/examples/hello_world.ipynb) without quarto specific features.
+
+## A quarto document
+
+A more complete example can be found at [quarto_example](https://github.com/kompre/keecas/tree/main/examples/quarto_example) with source `ipynb`, converted `qmd`, and rendered `pdf` and `html`.

@@ -1,5 +1,6 @@
 ---
 title: "Quick Start"
+order: 2
 ---
 
 This guide will get you up and running with Keecas in just a few minutes.

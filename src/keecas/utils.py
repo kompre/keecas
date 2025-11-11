@@ -66,7 +66,7 @@ def load_data(main: str, updated_value: str) -> dict[str, Any]:
 
 # %% SYMPY
 def escape_name(symbol_name: Any, dict_of_subs: dict[str, str] | None = None) -> str:
-    """Transform symbol name by applying character substitutions.
+    r"""Transform symbol name by applying character substitutions.
 
     Converts a symbol name (typically LaTeX notation) to a valid Python identifier
     by replacing specified characters according to a substitution dictionary.
@@ -91,7 +91,7 @@ def escape_name(symbol_name: Any, dict_of_subs: dict[str, str] | None = None) ->
     from keecas.utils import escape_name
 
     # Transform LaTeX symbol name to valid Python identifier
-    name = escape_name(r"\\sigma_{Rd}", {"\\": "", "{": "_", "}": ""})
+    name = escape_name(r"\sigma_{Rd}", {"\\": "", "{": "_", "}": ""})
     print(name)  # Returns: 'sigma_Rd'
     ```
 
@@ -120,7 +120,7 @@ def escape_name(symbol_name: Any, dict_of_subs: dict[str, str] | None = None) ->
 
 
 def escape_var(names: str | Any, dict_of_subs: dict[str, str] | None = None, **args: Any) -> Any:
-    """Create and inject SymPy symbols into global namespace with escaped names.
+    r"""Create and inject SymPy symbols into global namespace with escaped names.
 
     Extension of sympy.var() that allows symbol name substitutions for escaping
     special characters. Useful when symbol names contain characters that are not
@@ -152,7 +152,7 @@ def escape_var(names: str | Any, dict_of_subs: dict[str, str] | None = None, **a
 
     # Create symbols with special characters in LaTeX names
     # but valid Python variable names
-    escape_var(r"\\sigma_{Rd}, \\tau_{Rd}", {"\\": "", "{": "_", "}": ""})
+    escape_var(r"\sigma_{Rd}, \tau_{Rd}", {"\\": "", "{": "_", "}": ""})
 
     # Now sigma_Rd and tau_Rd are available as Python variables
     print(sigma_Rd)  # Displays: \\sigma_{Rd}

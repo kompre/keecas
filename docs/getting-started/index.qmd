@@ -1,5 +1,6 @@
 ---
 title: "Getting Started"
+order: 1
 ---
 
 Welcome to Keecas! This section will help you get up and running quickly with symbolic and units-aware calculations in Jupyter notebooks.
