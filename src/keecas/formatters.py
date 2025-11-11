@@ -329,7 +329,7 @@ try:
             LaTeX string from SymPy formatting
         """
         sympy_expr = S(value)  # Convert to SymPy
-        return format_sympy(sympy_expr, col_index, **kwargs)
+        return format_value(sympy_expr, col_index, **kwargs)
 
 except ImportError:
     pass
