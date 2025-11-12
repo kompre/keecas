@@ -8,6 +8,10 @@ on:
       - 'src/keecas/**/*.py'          # Only source files (API docs)
       - 'scripts/update_docs.py'      # Doc generation script
       - '.github/workflows/docs.yml'  # This workflow
+      - '*.md'                        # Root markdown files
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'examples/**'                 # Example notebooks linked in docs
   workflow_run:
     workflows: ["Release"]
     types: [completed]                # Auto-rebuild after releases

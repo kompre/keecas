@@ -3,6 +3,15 @@ name: Run Tests
 on:
   pull_request:
     branches: [ main, dev]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.python-version'
+      - '.github/workflows/test.yml'
+      - '.github/workflows/lint-fix.yml'
+      - 'scripts/**'
 
 concurrency:
   group: test-${{ github.event.pull_request.number }}
