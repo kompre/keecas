@@ -557,6 +557,7 @@ def eqref(label):
 
 For example $J$ is defined at `{python} eqref(labels[J])`, while $E$ is defined at `{python} eqref(labels[E])`
 
+
 :::
 
 ## Summary
