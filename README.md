@@ -18,36 +18,36 @@ keecas minimizes boilerplate for symbolic calculations using **Python dicts** as
 ```python
 from keecas import symbols, u, pc, show_eqn
 
-# Define symbols with LaTeX notation
+# 1. Define symbols with LaTeX notation
 F, A, sigma = symbols(r"F, A, \sigma")
 
-# Parameters with units
+# 2. Cell-local parameters
 _p = {
     F: 10 * u.kN,
     A: 50 * u.cm**2,
 }
 
-# Expression as string
+# 3. Cell-local expressions
 _e = {
     sigma: "F / A" | pc.parse_expr
 }
 
-# Evaluate with pipe operations
+# 4. Evaluation with pipe operations
 _v = {
     k: v | pc.subs(_e | _p) | pc.convert_to([u.MPa]) | pc.N
     for k, v in _e.items()
 }
 
-# Display as LaTeX amsmath
+# 5. Display as LaTeX amsmath
 show_eqn([_p | _e, _v])
 ```
 
 **Output:**
 ```latex
 \begin{align}
-F &= 10\,\text{kN} \\
-A &= 50\,\text{cm}^{2} \\
-\sigma &= \frac{F}{A} &= 2.000\,\text{MPa}
+    F & = 10{\,}\text{kN} &    \\[8pt]
+    A & = 50{\,}\text{cm}^{2} &    \\[8pt]
+    \sigma & = \dfrac{F}{A} & = 2.0{\,}\text{MPa}
 \end{align}
 ```
 
@@ -66,10 +66,27 @@ uv add keecas
 Launch JupyterLab with keecas template:
 
 ```bash
-keecas edit                    # Minimal template
+keecas edit                        # Minimal template
 keecas edit --template quickstart  # Comprehensive examples
-keecas edit analysis.ipynb     # Open specific notebook
-keecas edit --temp             # Open temporary session
+keecas edit analysis.ipynb         # Open specific notebook
+keecas edit --temp                 # Temporary session
+```
+
+## Configuration
+
+Manage global and local settings via TOML files:
+
+```bash
+# Initialize configuration
+keecas config init --global
+
+# Edit configuration
+keecas config edit --global    # Terminal editor
+keecas config open --local     # System editor (GUI)
+
+# View configuration
+keecas config show             # Merged settings
+keecas config path             # File locations
 ```
 
 ## Key Features
