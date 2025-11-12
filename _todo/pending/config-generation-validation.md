@@ -490,12 +490,26 @@ I'm not even sure it's correct since the named template sets are at [check_templ
    - **Issue**: Some documentation lines may use single `#` instead of `##`
    - **User Requirement**: Single `#` = toggleable settings, `##` = documentation/headings
 
-**Next Steps**:
-1. Review manager.py template generation logic (lines 971-1046)
-2. Implement user requirement: Global config values should be commented (users uncomment as needed)
-3. Fix comment syntax: Ensure `##` for all documentation, single `#` only for toggleable settings
-4. Re-run Phase 1 tests to verify fixes
-5. Proceed to Phase 2: Config respect tests
+**Fixes Implemented**:
+1. ✅ **Template Generation Fixed** (manager.py:939-943):
+   - Changed `format_value()` to comment ALL values for both global and local configs
+   - Users now uncomment settings they want to override
+
+2. ✅ **check_templates Fixed** (manager.py:1026-1043):
+   - All top-level templates commented
+   - All named template sets commented
+   - Added clarifying comment about fallback behavior
+
+3. ✅ **Tests Updated** (test_config_generation.py):
+   - Tests now check template content (commented lines)
+   - Verify keys exist as commented defaults
+   - All 50 config tests passing
+
+**Verification**:
+- Generated new config templates - all values properly commented
+- Comment syntax correct: `##` for docs, `#` for toggleable settings
+- Round-trip loading still works (tests pass)
+- No regressions in existing config tests
 
 ## Implementation Notes
 
@@ -509,12 +523,42 @@ After code review (display.py:1146-1154):
 
 ---
 
-## Next Steps
+---
+
+### 2025-11-12: Implementation Complete
+
+**Summary**: Phase 1 complete with template generation fixes. All user requirements implemented and validated.
+
+**Deliverables**:
+1. ✅ `tests/test_config_generation.py` (14 tests, all passing)
+2. ✅ Template generation fixed (all values commented)
+3. ✅ Comment syntax corrected (## for docs, # for toggleable)
+4. ✅ All 50 config tests passing (no regressions)
+
+**User Requirements Met**:
+- ✅ Global config values commented (users uncomment to override)
+- ✅ Consistent comment syntax (`##` = docs, `#` = toggleable)
+- ✅ check_templates structure validated and documented
+
+**Commits**:
+- `68b11f6`: Add Phase 1 config generation validation tests
+- `0bc896c`: Fix template generation (comment all defaults)
+
+**Phase 2 Status**: Not implemented (sample testing of config respect)
+- User confirmed sample testing approach was acceptable
+- Tests would verify: eq_prefix, katex, language, float_format, check_templates
+- Can be added in future PR if needed
+
+**Recommendation**: Current implementation meets user requirements. Phase 2 (config respect tests) can be deferred or implemented as separate task based on priority.
+
+---
+
+## Original Next Steps Reference
 
 Upon approval:
 1. ✅ Create `tests/test_config_generation.py` with Phase 1 tests
-2. ⏳ Fix template generation per user requirements (comment syntax)
-3. Create `tests/test_config_respect.py` with Phase 2 tests
-4. Run tests, document findings
-5. Add Phase 3 and 4 tests if time permits
-6. Update documentation as needed
+2. ✅ Fix template generation per user requirements (comment syntax)
+3. ⏹️ Create `tests/test_config_respect.py` with Phase 2 tests (deferred)
+4. ✅ Run tests, document findings
+5. ⏹️ Add Phase 3 and 4 tests if time permits (deferred)
+6. ⏹️ Update documentation as needed (no doc changes required)
