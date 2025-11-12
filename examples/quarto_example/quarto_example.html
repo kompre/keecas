@@ -281,7 +281,7 @@ Note
 <span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a><span class="co"># Labels will be printed for easy reference, only in dev-mode (not rendered by quarto)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="497">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="555">
 <p><span class="math display">\[\begin{align}
 F_{d} &amp; = 93{\,}\text{kN} &amp;   &amp; \quad\text{applied force}  \label{eq-QUARTO_EXAMPLE-41g2kkvl}  \\[8pt]
 A_{load} &amp; = 50{\,}\text{cm}^{2} &amp;   &amp; \quad\text{cross-sectional area}  \label{eq-QUARTO_EXAMPLE-3rad1giw}  \\[8pt]
@@ -315,7 +315,7 @@ A_{load} &amp; = 50{\,}\text{cm}^{2} &amp;   &amp; \quad\text{cross-sectional ar
 <span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>show_eqn([_p <span class="op">|</span> _e, _v])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="498">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="556">
 <p><span class="math display">\[\begin{align}
 x &amp; = 3{\,}\text{m} &amp;    \\[8pt]
 y &amp; = 4{\,}\text{m} &amp;    \\[8pt]
@@ -342,7 +342,7 @@ d &amp; = x^{2} + y^{2} &amp; = 25.0{\,}\text{m}^{2}
 <span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>show_eqn([_p, _d])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="499">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="557">
 <p><span class="math display">\[\begin{align}
 E_{steel} &amp; = 200{\,}\text{GPa} &amp; \quad\text{steel elastic modulus}  \\[8pt]
 E_{concrete} &amp; = 30{\,}\text{GPa} &amp; \quad\text{concrete elastic modulus}
@@ -353,7 +353,7 @@ E_{concrete} &amp; = 30{\,}\text{GPa} &amp; \quad\text{concrete elastic modulus}
 <h3 class="anchored" data-anchor-id="cases-environment">Cases Environment</h3>
 <div id="cell-12" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>show_eqn([_p, _d], environment<span class="op">=</span><span class="st">"cases"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="500">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="558">
 <p><span class="math display">\[\begin{align}
     \left\{\begin{aligned}
 E_{steel} &amp; = 200{\,}\text{GPa} &amp; \quad\text{steel elastic modulus}  \\[8pt]
@@ -367,7 +367,7 @@ E_{concrete} &amp; = 30{\,}\text{GPa} &amp; \quad\text{concrete elastic modulus}
 <h3 class="anchored" data-anchor-id="rcases-environment">Rcases Environment</h3>
 <div id="ddefb617" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>show_eqn([_p, _d], environment<span class="op">=</span><span class="st">"rcases"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="501">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="559">
 <p><span class="math display">\[\begin{align}
     \left.\begin{aligned}
 E_{steel} &amp; = 200{\,}\text{GPa} &amp; \quad\text{steel elastic modulus}  \\[8pt]
@@ -387,7 +387,7 @@ E_{concrete} &amp; = 30{\,}\text{GPa} &amp; \quad\text{concrete elastic modulus}
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    col_wrap<span class="op">=</span>[wc]<span class="op">*</span><span class="dv">2</span><span class="op">+</span> [(<span class="vs">r''</span>, <span class="vs">r'\quad'</span>)], <span class="co"># for separating the two expression</span></span>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    environment<span class="op">=</span><span class="st">"equation"</span></span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="502">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="560">
 <p><span class="math display">\[\begin{equation}
 E_{steel}  = 200{\,}\text{GPa}  \text{steel elastic modulus}\quad E_{concrete}  = 30{\,}\text{GPa}  \text{concrete elastic modulus}\quad
 \end{equation}\]</span></p>
@@ -448,7 +448,7 @@ c  &amp;  = a + b  &amp;  \quad\text{total length c}
 \end{align}
 ```</code></pre>
 </div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="503">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="561">
 <span class="math display">\[\begin{align}
 a  &amp;  = 5{\,}\text{m}  &amp;  \quad\text{length a}  \\[8pt]
 b  &amp;  = 12{\,}\text{m}  &amp;  \quad\text{length b}  \\[8pt]
@@ -459,7 +459,7 @@ c  &amp;  = a + b  &amp;  \quad\text{total length c}
 <div id="d273c7c1" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># starred version of gather</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>show_eqn([_p, _d], environment<span class="op">=</span><span class="st">"gather*"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="504">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="562">
 <p><span class="math display">\[\begin{gather*}
 a  = 5{\,}\text{m}  \quad\text{length a}  \\[8pt]
 b  = 12{\,}\text{m}  \quad\text{length b}  \\[8pt]
@@ -500,7 +500,7 @@ c  = a + b  \quad\text{total length c}
 <span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>show_eqn([_e, _v], label<span class="op">=</span>_l, float_format<span class="op">=</span><span class="st">"</span><span class="sc">{:.2f}</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="505">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="563">
 <p><span class="math display">\[\begin{align}
 \delta &amp; = \dfrac{5{\,}q{\,}L^{4}}{384{\,}E{\,}I} &amp; = 15.95{\,}\text{mm}  \label{eq-QUARTO_EXAMPLE-2kp5fgk9}
 \end{align}\]</span></p>
@@ -553,7 +553,7 @@ Note
 <span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Pass _l to show_eqn</span></span>
 <span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>show_eqn(_p, label<span class="op">=</span>_l)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="507">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="565">
 <p><span class="math display">\[\begin{align}
 J &amp; = 123{\,}\text{cm}^{4}  \label{eq-moment-of-inertia}  \\[8pt]
 E &amp; = 456{\,}\text{MPa}  \label{eq-modulus-of-elasticity}  \\[8pt]
@@ -580,7 +580,7 @@ a &amp; = b + \dfrac{c_{0}}{2}  \label{eq-an-expression}
 <span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Pass _l to show_eqn</span></span>
 <span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>show_eqn(_p, label<span class="op">=</span>_l)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="508">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="566">
 <p><span class="math display">\[\begin{align}
 J &amp; = 123{\,}\text{cm}^{4}  \label{eq-QUARTO_EXAMPLE-moment-of-inertia}  \\[8pt]
 E &amp; = 456{\,}\text{MPa}  \label{eq-QUARTO_EXAMPLE-modulus-of-elasticity}  \\[8pt]
@@ -607,7 +607,7 @@ a &amp; = b + \dfrac{c_{0}}{2}  \label{eq-QUARTO_EXAMPLE-an-expression}
 <span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Pass _l to show_eqn</span></span>
 <span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>show_eqn(_p, label<span class="op">=</span>_l)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="509">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="567">
 <p><span class="math display">\[\begin{align}
 J &amp; = 123{\,}\text{cm}^{4}  \label{eq-QUARTO_EXAMPLE-534vb10v}  \\[8pt]
 E &amp; = 456{\,}\text{MPa}  \label{eq-QUARTO_EXAMPLE-1sipf20t}  \\[8pt]
@@ -640,7 +640,7 @@ a &amp; = b + \dfrac{c_{0}}{2}  \label{eq-QUARTO_EXAMPLE-30phqdq8}
 <span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co"># to this</span></span>
 <span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>show_eqn([_p, _d], label<span class="op">=</span>generate_unique_label)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="511">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="569">
 <p><span class="math display">\[\begin{align}
 J &amp; = 123{\,}\text{cm}^{4} &amp; \quad\text{moment of inertia}  \label{eq-QUARTO_EXAMPLE-3lb6w5uv}  \\[8pt]
 E &amp; = 456{\,}\text{MPa} &amp; \quad\text{modulus of elasticity}  \label{eq-QUARTO_EXAMPLE-1mp6ez2n}  \\[8pt]
@@ -702,7 +702,7 @@ Note
 <span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a>show_eqn([_p <span class="op">|</span> _v, _c], float_format<span class="op">=</span>_ff)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="512">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="570">
 <p><span class="math display">\[\begin{align}
 \sigma_{Sd} &amp; = 20{\,}\text{MPa} &amp;    \\[8pt]
 \tau_{Sd} &amp; = 15{\,}\text{MPa} &amp;    \\[8pt]
@@ -738,7 +738,7 @@ Note
 <span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>        _c,</span>
 <span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>    ],</span>
 <span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="513">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="571">
 <p><span class="math display">\[\begin{align}
 a &amp; = 3 &amp; \quad\text{$\textcolor{red}{\left[&gt;1\quad \textbf{NON VERIFICATO}\right]}$}  \\[8pt]
 b &amp; = 4 &amp; \quad\text{$\textcolor{green}{\left[&gt;2\quad \textbf{VERIFICATO}\right]}$}  \\[8pt]
@@ -778,7 +778,7 @@ f &amp; = 7 &amp; \quad\text{$\textcolor{red}{\left[\neq5\quad \textbf{NON VERIF
 <span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a>    col_wrap<span class="op">=</span>[<span class="va">None</span>, <span class="vs">r":\quad"</span>, <span class="vs">r"&amp;\quad"</span>],</span>
 <span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a>    environment<span class="op">=</span><span class="st">"align*"</span>,</span>
 <span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="514">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="572">
 <p><span class="math display">\[\begin{align*}
 \text{Default} &amp; :\quad\text{$\textcolor{green}{\left[\le1.0\quad \textbf{VERIFICATO}\right]}$} &amp; &amp;\quad\text{$\textcolor{red}{\left[&gt;1.0\quad \textbf{NON VERIFICATO}\right]}$}  \\[8pt]
 \text{Boxed} &amp; :\quad\text{\colorbox{green}{$\le1.0 \; \checkmark \; \textbf{VERIFICATO}$}} &amp; &amp;\quad\text{\colorbox{red}{$&gt;1.0 \; \times \; \textbf{NON VERIFICATO}$}}  \\[8pt]
@@ -808,7 +808,7 @@ f &amp; = 7 &amp; \quad\text{$\textcolor{red}{\left[\neq5\quad \textbf{NON VERIF
 <span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>show_eqn([_p <span class="op">|</span> _e, _v], float_format<span class="op">=</span><span class="st">"</span><span class="sc">{:.3f}</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="515">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="573">
 <p><span class="math display">\[\begin{align}
 a &amp; = 3 &amp;    \\[8pt]
 b &amp; = 4 &amp;    \\[8pt]
@@ -850,7 +850,7 @@ c &amp; = a{\,}b &amp; = 12.000
 <span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>show_eqn(custom_demo, col_wrap<span class="op">=</span>[<span class="va">None</span>, <span class="st">":"</span>, <span class="st">"&amp;"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="516">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="574">
 <p><span class="math display">\[\begin{align}
 \text{Pass} &amp; :\text{✅ $\le1.0$ \textbf{PASS}}  \\[8pt]
 \text{Fail} &amp; :\text{❌ $&gt;1.0$ \textbf{FAIL}}
@@ -878,7 +878,7 @@ c &amp; = a{\,}b &amp; = 12.000
 <span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>show_eqn(any_order_params, environment<span class="op">=</span><span class="st">"cases"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="517">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="575">
 <p><span class="math display">\[\begin{align}
     \left\{\begin{aligned}
 x &amp; = y^{2}  \\[8pt]
@@ -904,7 +904,7 @@ a &amp; = 3
 <span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>    [_v, _d],</span>
 <span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>    environment<span class="op">=</span><span class="st">"cases"</span>,</span>
 <span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="518">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="576">
 <p><span class="math display">\[\begin{align}
     \left\{\begin{aligned}
 x &amp; = \left(1 + a\right)^{2} &amp; \quad\text{partially evaluated}  \\[8pt]
@@ -929,7 +929,7 @@ a &amp; = 3 &amp;
 <span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>    [_v, _d],</span>
 <span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>    environment<span class="op">=</span><span class="st">"cases"</span>,</span>
 <span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="519">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="577">
 <p><span class="math display">\[\begin{align}
     \left\{\begin{aligned}
 x &amp; = 16 &amp; \quad\text{fully evaluated}  \\[8pt]
@@ -1023,7 +1023,7 @@ Important Patterns to Know
 <span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a>vals_pitfall.update(_v)</span>
 <span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a>show_eqn([_p <span class="op">|</span> _e, _v])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="521">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="579">
 <p><span class="math display">\[\begin{align}
 x &amp; = 2 &amp;    \\[8pt]
 y &amp; = x + 1 &amp; = 3.0  \\[8pt]
@@ -1058,7 +1058,7 @@ z &amp; = y^{2} &amp; = 9.0
 <span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb33-24"><a href="#cb33-24" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb33-25"><a href="#cb33-25" aria-hidden="true" tabindex="-1"></a>show_eqn([_p <span class="op">|</span> _v_incorrect, _c])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="522">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="580">
 <p><span class="math display">\[\begin{align}
 x &amp; = 3 &amp;    \\[8pt]
 y &amp; = 4 &amp; \quad\text{$\textcolor{green}{\left[=4\quad \textbf{VERIFICATO}\right]}$}  \\[8pt]
