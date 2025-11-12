@@ -455,12 +455,66 @@ I'm not even sure it's correct since the named template sets are at [check_templ
 
 <!-- just spot-checked -->
 
+## Progress Log
+
+### 2025-11-12: Phase 1 Complete - Template Generation Tests
+
+**Test File Created**: `tests/test_config_generation.py` (14 tests, all passing)
+
+**Test Categories**:
+1. **Template Generation** (9 tests): TOML parsing, section completeness, key presence, version metadata
+2. **Comment Syntax** (2 tests): Inheritance display, comment conventions
+3. **Round-trip Loading** (3 tests): Generated configs load correctly
+
+**Key Findings**:
+
+✅ **PASS - Valid TOML**: Both global and local configs parse correctly
+✅ **PASS - Section Completeness**: All documented sections present (latex, display, language, check_templates)
+✅ **PASS - Key Completeness**: All required keys present in each section
+✅ **PASS - check_templates Structure**: Both top-level templates AND named sets are valid (confirmed deliberate design)
+✅ **PASS - Version Metadata**: All version headers present and correct
+✅ **PASS - Default Values**: Template values match ConfigOptions defaults
+✅ **PASS - Round-trip**: Generated configs load without errors
+
+**Issues Identified**:
+
+1. **Comment Syntax Convention Violation** (User Requirement):
+   - **Current**: Global config has many values uncommented (active by default)
+   - **Expected**: According to user, global config should ALSO be commented (users uncomment what differs from defaults)
+   - **Current**: `check_templates.success_template` and `failure_template` are uncommented in both global and local
+   - **Reason**: These are "default fallback" templates, used when no named template is specified
+   - **Question**: Should these top-level fallback templates be commented or active?
+
+2. **Comment Prefix Inconsistency**:
+   - **Current**: Mix of `##` (docs) and `# ` (toggleable) is mostly correct
+   - **Issue**: Some documentation lines may use single `#` instead of `##`
+   - **User Requirement**: Single `#` = toggleable settings, `##` = documentation/headings
+
+**Next Steps**:
+1. Review manager.py template generation logic (lines 971-1046)
+2. Implement user requirement: Global config values should be commented (users uncomment as needed)
+3. Fix comment syntax: Ensure `##` for all documentation, single `#` only for toggleable settings
+4. Re-run Phase 1 tests to verify fixes
+5. Proceed to Phase 2: Config respect tests
+
+## Implementation Notes
+
+### check_templates Structure (CONFIRMED CORRECT)
+
+After code review (display.py:1146-1154):
+- **Top-level templates** (`success_template`, `failure_template`): DEFAULT fallback when no named template specified
+- **Named template sets** (`template_sets.default/boxed/minimal`): User-selectable alternatives
+- **Usage**: `check(template="boxed")` uses named set, `check()` uses top-level fallback
+- **Conclusion**: Both structures are intentional and correct
+
+---
+
 ## Next Steps
 
 Upon approval:
-1. Create `tests/test_config_generation.py` with Phase 1 tests
-2. Create `tests/test_config_respect.py` with Phase 2 tests
-3. Run tests, document findings
-4. Fix any bugs discovered
+1. ✅ Create `tests/test_config_generation.py` with Phase 1 tests
+2. ⏳ Fix template generation per user requirements (comment syntax)
+3. Create `tests/test_config_respect.py` with Phase 2 tests
+4. Run tests, document findings
 5. Add Phase 3 and 4 tests if time permits
 6. Update documentation as needed
