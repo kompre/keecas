@@ -729,8 +729,24 @@ gh pr create --base main --label release
 4. **Maintained safety**: All code changes still require passing tests
 5. **Explicit whitelist**: Path filtering uses positive logic (easier to maintain)
 
+### Change 3 Implementation (2025-11-12) - Feature Branch
+
+**Branch**: `feature/expand-docs-yml-paths`
+
+**Change 3: Expand docs.yml path filter** ✅
+- Updated `.github/workflows/docs.yml`
+- Added additional paths to trigger documentation rebuilds:
+  - `*.md` - Root markdown files (general pattern)
+  - `README.md` - Explicit entry point
+  - `CHANGELOG.md` - Release notes
+  - `examples/**` - Example notebooks that may be linked in docs
+
+**Rationale**: README and CHANGELOG changes should trigger docs rebuild since they're often the entry point to documentation. Examples may be referenced in docs and should trigger rebuilds.
+
+**Testing Strategy**: Creating PR from this branch to test the new workflow behavior with documentation changes.
+
 ### Next Steps
 
+- Test PR workflow with docs-only changes to verify path filtering works correctly
 - Monitor first few PRs to verify workflows trigger correctly
-- Consider adding Change 3 (expand docs.yml paths) if documentation rebuilds need optimization
 - Document any edge cases discovered during real-world usage
