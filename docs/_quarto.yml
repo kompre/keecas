@@ -33,7 +33,7 @@ website:
       - text: API Reference
         href: api-reference/index.qmd
     right:
-      - href: "{{< meta publish_url >}}/{{< meta version >}}/"
+      - href: "{{< meta pypi_url_full >}}"
         text: "v{{< meta version >}}"
         icon: box-fill
       - href: https://github.com/kompre/keecas

@@ -157,7 +157,12 @@ def copy_template_to_workdir(
 def check_jupyter_available() -> bool:
     """Check if Jupyter is available."""
     try:
-        subprocess.run(["jupyter", "--version"], capture_output=True, text=True, check=True)
+        subprocess.run(
+            [sys.executable, "-m", "jupyter", "--version"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
@@ -166,7 +171,12 @@ def check_jupyter_available() -> bool:
 def check_jupyterlab_available() -> bool:
     """Check if JupyterLab is available."""
     try:
-        subprocess.run(["jupyter", "lab", "--version"], capture_output=True, text=True, check=True)
+        subprocess.run(
+            [sys.executable, "-m", "jupyter", "lab", "--version"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
@@ -339,9 +349,11 @@ def cmd_edit(args: argparse.Namespace) -> None:
                     print(f"Available templates: {', '.join(templates)}")
             sys.exit(1)
 
-    # Prepare Jupyter command
+    # Prepare Jupyter command (use sys.executable to ensure same Python environment)
     if use_lab:
         jupyter_cmd = [
+            sys.executable,
+            "-m",
             "jupyter",
             "lab",
             "--port",
@@ -351,6 +363,8 @@ def cmd_edit(args: argparse.Namespace) -> None:
         ]
     else:
         jupyter_cmd = [
+            sys.executable,
+            "-m",
             "jupyter",
             "notebook",
             "--port",
