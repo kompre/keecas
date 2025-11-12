@@ -23,20 +23,27 @@ jupyter: python3
 
 # How to use keecas in a Quarto document
 
-This example demonstrates all the key features of `keecas` for symbolic and units-aware calculations in a Quarto document.
+This example demonstrates key features of `keecas` for symbolic and units-aware calculations in a Quarto document.
 
 ```{python}
-#| execution: {iopub.execute_input: '2025-10-03T07:51:39.537540Z', iopub.status.busy: '2025-10-03T07:51:39.537351Z', iopub.status.idle: '2025-10-03T07:51:39.901951Z', shell.execute_reply: '2025-10-03T07:51:39.901620Z'}
-# for quick start import *
+# For quick start use starred import
 # from keecas import *
 
-# or explicit import (this is about all you need)
-from keecas import check, config, pc, show_eqn, symbols, u
+# Or explicit import (this is about all you need)
+from keecas import (
+    check,                  # main function for verification
+    config,                 # configuration options
+    pc,                     # pipe commands
+    show_eqn,               # main function to generate expression block
+    symbols,                # to create symbols (from `sympy`)
+    u,                      # unit registry (from pint)
+    generate_unique_label,  # label generator
+)
 ```
 
 ```{python}
-#| execution: {iopub.execute_input: '2025-10-03T07:51:39.903397Z', iopub.status.busy: '2025-10-03T07:51:39.903130Z', iopub.status.idle: '2025-10-03T07:51:39.905439Z', shell.execute_reply: '2025-10-03T07:51:39.905129Z'}
-config.language.language = "en"
+# Set the language ('en' is the default)
+config.language.language = "es"
 ```
 
 ::: {.callout-note}
@@ -52,22 +59,23 @@ When rendering with `quarto` you can have two config:
 
 ```{python}
 #| eval: false
-#| execution: {iopub.execute_input: '2025-10-03T07:51:39.907025Z', iopub.status.busy: '2025-10-03T07:51:39.906864Z', iopub.status.idle: '2025-10-03T07:51:39.908518Z', shell.execute_reply: '2025-10-03T07:51:39.908275Z'}
 
-# this option will not be set at rendering time (dev-mode)
-config.display.katex = True  # disable `\label command`
-config.display.print_label = True  # print interpolated labels for easy reference (e.g. copy and paste)
+# This option will not be set at rendering time (only for dev-mode)
+config.display.katex = True         # Disable \label command for KaTeX
+config.display.print_label = True   # Print labels for easy copy-paste
 ```
 
 ```{python}
-#| execution: {iopub.execute_input: '2025-10-03T07:51:39.909441Z', iopub.status.busy: '2025-10-03T07:51:39.909338Z', iopub.status.idle: '2025-10-03T07:51:39.911046Z', shell.execute_reply: '2025-10-03T07:51:39.910718Z'}
-# set a prefix for the latex equation
+# Set a prefix for the latex equation (used as namespace)
 config.latex.eq_prefix = r"eq-QUARTO_EXAMPLE-"
-
+# config.latex.eq_suffix = ""  # default
 
 # Initialize notebook-global dictionaries for persistence across cells
-params = {}  # Global parameters that persist throughout the notebook
-eqn = {}  # Global expressions that persist throughout the notebook
+QUARTO_EXAMPLE = {                      # Main namespace dict for this notebook
+    'parameters': (params := {}),       # Global parameters
+    'expressions': (eqn := {}),         # Global expressions
+    'values': (vals := {}),             # Global evaluated results
+}
 ```
 
 ## Basic Symbolic Math with Units
@@ -75,29 +83,39 @@ eqn = {}  # Global expressions that persist throughout the notebook
 Define symbols and calculate basic engineering quantities:
 
 ```{python}
-#| execution: {iopub.execute_input: '2025-10-03T07:51:39.912122Z', iopub.status.busy: '2025-10-03T07:51:39.911947Z', iopub.status.idle: '2025-10-03T07:51:39.996778Z', shell.execute_reply: '2025-10-03T07:51:39.996443Z'}
-# Define symbols
-F, A, sigma = symbols("F, A, sigma")
+# Define symbols with LaTeX notation
+F_d, A_load, sigma_Sd = symbols(r"F_{d}, A_{load}, \sigma_{Sd}")
 
-# Parameters with units
+# Cell-local parameters with units
 _p = {
-    F: 10 * u.kN,
-    A: 50 * u.cm**2,
+    F_d: 93 * u.kN,        # Applied force
+    A_load: 50 * u.cm**2,  # Cross-sectional area
 }
 params.update(_p)  # Save to global params
 
-# Symbolic expressions
-_e = {sigma: "F / A" | pc.parse_expr}
+# Cell-local symbolic expressions
+_e = {
+    sigma_Sd: "F_d / A_load" | pc.parse_expr,
+}
 eqn.update(_e)  # Save to global expressions
 
-# Evaluated results
-_v = {k: v | pc.subs(_e | _p) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
+# Evaluate expressions
+_v = {
+    k: v | pc.subs(_e | _p) | pc.convert_to([u.MPa]) | pc.N
+    for k, v in _e.items()
+}
 
 # Descriptions
-_d = {F: "applied force", A: "cross-sectional area", sigma: "normal stress"}
+_d = {
+    F_d: "applied force",
+    A_load: "cross-sectional area",
+    sigma_Sd: "normal stress",
+}
 
-# Labels
-_l = {k: str(k) for k in _d.keys()}
+# Generate unique labels from keys and descriptions
+_l = {
+    k: generate_unique_label([k, v]) for k, v in _d.items()
+}
 
 show_eqn(
     [_p | _e, _v, _d],
@@ -106,7 +124,7 @@ show_eqn(
     # debug=True,
 )
 
-# the labels will be printed for easy reference, only in dev-mode (not rendered by quarto)
+# Labels will be printed for easy reference, only in dev-mode (not rendered by quarto)
 ```
 
 ## Pipe Commands Demonstration {#sec-pipe}
@@ -114,21 +132,25 @@ show_eqn(
 Using pipe operators for functional composition:
 
 ```{python}
-#| execution: {iopub.execute_input: '2025-10-03T07:51:40.014161Z', iopub.status.busy: '2025-10-03T07:51:40.014021Z', iopub.status.idle: '2025-10-03T07:51:40.021129Z', shell.execute_reply: '2025-10-03T07:51:40.020684Z'}
 # Chain operations using pipe commands
 x, y, d = symbols("x, y, d")
 
-# Parameters
+# Cell-local parameters
 _p = {
     x: 3 * u.m,
     y: 4 * u.m,
 }
 
 # Symbolic expressions
-_e = {d: "x^2 + y^2" | pc.parse_expr}
+_e = {
+    d: "x^2 + y^2" | pc.parse_expr,
+}
 
 # Evaluated results
-_v = {k: v | pc.subs(_e | _p) | pc.convert_to([u.m]) | pc.N for k, v in _e.items()}
+_v = {
+    k: v | pc.subs(_e | _p) | pc.convert_to([u.m]) | pc.N
+    for k, v in _e.items()
+}
 
 show_eqn([_p | _e, _v])
 ```
@@ -137,19 +159,23 @@ show_eqn([_p | _e, _v])
 
 ### Cases Environment
 
+Display related values grouped together:
+
 ```{python}
-#| execution: {iopub.execute_input: '2025-10-03T07:51:40.022370Z', iopub.status.busy: '2025-10-03T07:51:40.022195Z', iopub.status.idle: '2025-10-03T07:51:40.025950Z', shell.execute_reply: '2025-10-03T07:51:40.025685Z'}
 # Material properties
-E_steel, E_concrete = symbols("E_{steel}, E_{concrete}")
+E_steel, E_concrete = symbols(r"E_{steel}, E_{concrete}")
 
 _p = {
     E_steel: 200 * u.GPa,
     E_concrete: 30 * u.GPa,
 }
 
+_d = {
+    E_steel: "steel elastic modulus",
+    E_concrete: "concrete elastic modulus",
+}
 
-_d = {E_steel: "steel elastic modulus", E_concrete: "concrete elastic modulus"}
-
+show_eqn([_p, _d], environment="cases")
 ```
 
 ### Equation Environment with Labels {#sec-beam-calc}
@@ -157,9 +183,8 @@ _d = {E_steel: "steel elastic modulus", E_concrete: "concrete elastic modulus"}
 Calculate beam deflection with cross-references:
 
 ```{python}
-#| execution: {iopub.execute_input: '2025-10-03T07:51:40.027154Z', iopub.status.busy: '2025-10-03T07:51:40.027043Z', iopub.status.idle: '2025-10-03T07:51:40.037536Z', shell.execute_reply: '2025-10-03T07:51:40.037204Z'}
 # Beam calculation
-q, L, E, I, delta = symbols("q, L, E, I, delta")
+q, L, E, I, delta = symbols(r"q, L, E, I, \delta")
 
 _p = {
     q: 5 * u.kN / u.m,
@@ -170,12 +195,19 @@ _p = {
 params.update(_p)  # Save to global params
 
 # Deflection formula
-_e = {delta: "5 * q * L^4 / (384 * E * I)" | pc.parse_expr}
+_e = {
+    delta: "5 * q * L^4 / (384 * E * I)" | pc.parse_expr,
+}
 eqn.update(_e)  # Save to global expressions
 
-_v = {k: v | pc.subs(_e | _p) | pc.convert_to([u.mm]) | pc.N for k, v in _e.items()}
+_v = {
+    k: v | pc.subs(_e | _p) | pc.convert_to([u.mm]) | pc.N
+    for k, v in _e.items()
+}
 
-_l = {k: str(k) for k in _e.keys()}
+_l = {
+    k: generate_unique_label([k, v]) for k, v in _e.items()
+}
 
 show_eqn([_e, _v], label=_l, float_format="{:.2f}")
 ```
@@ -195,7 +227,6 @@ The deflection calculated in \ref{eq-QUARTO_EXAMPLE-delta} shows acceptable valu
 Using the `check` function for design checks:
 
 ```{python}
-#| execution: {iopub.execute_input: '2025-10-03T07:51:40.038659Z', iopub.status.busy: '2025-10-03T07:51:40.038548Z', iopub.status.idle: '2025-10-03T07:51:40.046279Z', shell.execute_reply: '2025-10-03T07:51:40.046017Z'}
 # Design checks
 sigma_Sd, tau_Sd, sigma_Rd, tau_Rd = symbols(
     r"\sigma_{Sd}, \tau_{Sd}, \sigma_{Rd}, \tau_{Rd}",
@@ -208,31 +239,36 @@ _p = {
     tau_Rd: 75 * u.MPa,
 }
 
-# expressions to check
+# Expressions to check
 _expr = [
     sigma_Sd / sigma_Rd,
     tau_Sd / tau_Rd,
 ]
 
-# evaluate expresions
-_v = {k: k | pc.subs(_e | _p) | pc.N for k in _expr}
+# Evaluate expressions
+_v = {
+    k: k | pc.subs(_e | _p) | pc.N for k in _expr
+}
 
-# check if expressions are less than 1
-_c = {k: check(v, 1.0) for k, v in _v.items()}
+# Check if expressions are less than 1
+_c = {
+    k: check(v, 1.0) for k, v in _v.items()
+}
 
-# specify float format only for the check values
-_ff = {k: [None, "{:.3f}", None] for k in _c.keys()}
+# Specify float format only for the check values
+_ff = {
+    k: [None, "{:.3f}", None] for k in _c.keys()
+}
 
 show_eqn([_p | _v, _c], float_format=_ff)
 ```
 
-The type of comparison in the `check` function can be specified, as well the value to be specified against.
+The type of comparison in the `check` function can be specified, as well as the value to be checked against:
 
 ```{python}
-#| execution: {iopub.execute_input: '2025-10-03T07:51:40.047280Z', iopub.status.busy: '2025-10-03T07:51:40.047133Z', iopub.status.idle: '2025-10-03T07:51:40.050781Z', shell.execute_reply: '2025-10-03T07:51:40.050531Z'}
-a, b, c, d, f = symbols("a, b, c, d, f")
-
 from sympy import Eq, Ge, Gt, Le, Lt
+
+a, b, c, d, f = symbols("a, b, c, d, f")
 
 _expr = {
     a: (3, Le, 1),
@@ -242,7 +278,10 @@ _expr = {
     f: (7, Eq, 5),
 }
 
-_c = {k: check(lhs=v[0], test=v[1], rhs=v[2]) for k, v in _expr.items()}
+_c = {
+    k: check(lhs=v[0], test=v[1], rhs=v[2])
+    for k, v in _expr.items()
+}
 
 show_eqn(
     [
@@ -252,29 +291,27 @@ show_eqn(
 )
 ```
 
-## Subs get ordered
+## Automatic Dependency Ordering
 
-Using `pc.subs` will automatically order the substitutions pairs topologically, so you don't have to order them yourself (default `sympy` behavior). For example let's define some mappings in any order:
+Using `pc.subs` will automatically order the substitutions pairs topologically, so you don't have to order them yourself (default ``sympy`` behavior). For example, let's define some mappings in any order:
 
 ```{python}
-#| execution: {iopub.execute_input: '2025-10-03T07:51:40.051768Z', iopub.status.busy: '2025-10-03T07:51:40.051595Z', iopub.status.idle: '2025-10-03T07:51:40.054560Z', shell.execute_reply: '2025-10-03T07:51:40.054247Z'}
 any_order_params = {
-    x: y**2,
-    y: a+1,
+    x: y**2, # it used `y` which is defined later
+    y: a + 1, # `y` is a dependent value
     a: 3,
 }
 
-
-display(show_eqn(_e, environment="cases"))
+show_eqn(any_order_params, environment="cases")
 ```
 
-If we use the default behavior of sympy's `subs` method (unsorted substitutions) we get:
+If we use the default behavior of `sympy`'s `subs` method (unsorted substitutions) we get:
 
 ```{python}
-#| execution: {iopub.execute_input: '2025-10-03T07:51:40.055654Z', iopub.status.busy: '2025-10-03T07:51:40.055542Z', iopub.status.idle: '2025-10-03T07:51:40.058669Z', shell.execute_reply: '2025-10-03T07:51:40.058419Z'}
-# `pc.subs(any_order_params, sorted=False)` it's equivalent to use the sympy subs method
+# `pc.subs(any_order_params, sorted=False)` is equivalent to `sympy`'s subs method
 _v = {
-    lhs: rhs | pc.subs(any_order_params, sorted=False) for lhs, rhs in any_order_params.items()
+    lhs: rhs | pc.subs(any_order_params, sorted=False)
+    for lhs, rhs in any_order_params.items()
 }
 
 _d = {
@@ -290,9 +327,9 @@ show_eqn(
 While the default behavior of `pc.subs` is to sort the substitutions:
 
 ```{python}
-#| execution: {iopub.execute_input: '2025-10-03T07:51:40.059651Z', iopub.status.busy: '2025-10-03T07:51:40.059500Z', iopub.status.idle: '2025-10-03T07:51:40.062235Z', shell.execute_reply: '2025-10-03T07:51:40.061990Z'}
 _v = {
-    lhs: rhs | pc.subs(any_order_params) for lhs, rhs in any_order_params.items()
+    lhs: rhs | pc.subs(any_order_params)
+    for lhs, rhs in any_order_params.items()
 }
 
 _d = {
@@ -307,7 +344,7 @@ show_eqn(
 
 ::: {.callout-note}
 
-`pc.subs` also take care of sympyfing the object before subsituting. In the above example $a$ is mapped to `3`, an `int`, therefore during dict comprehension the `int` is piped to `pc.subs`. If you would have used the `sympy` subs method directly, you would have get an error because the type `int` does not have `subs` method (the corrected dict comprehension you should look like  `S(rhs).subs(...)`).
+`pc.subs` automatically converts objects to `sympy` expressions before substitution. In the example above, $a$ maps to the Python `int` value `3`. When piping `int` through `pc.subs`, it works seamlessly. If you used `sympy`'s `subs()` method directly, you'd get an error since `int` objects don't have a `subs()` method. You'd need to write `S(rhs).subs(...)` to explicitly convert first.
 
 :::
 
@@ -316,13 +353,15 @@ show_eqn(
 The `check` function supports customizable templates for different visual styles:
 
 ```{python}
-#| execution: {iopub.execute_input: '2025-10-03T07:51:40.063186Z', iopub.status.busy: '2025-10-03T07:51:40.063083Z', iopub.status.idle: '2025-10-03T07:51:40.066505Z', shell.execute_reply: '2025-10-03T07:51:40.066241Z'}
 # Default template behavior
-result_default = check(0.8, 1.0)
+result_default = [
+    check(0.8, 1.0), # True
+    check(1.2, 1.0), # False
+]
 
 # Using named template sets
-result_boxed = check(0.8, 1.0, template="boxed")
-result_minimal = check(0.8, 1.0, template="minimal")
+result_boxed = [check(0.8, 1.0, template="boxed"), check(1.2, 1.0, template="boxed")]
+result_minimal = [check(0.8, 1.0, template="minimal"), check(1.2, 1.0, template="minimal")]
 
 # Demonstration of different template styles
 template_demo = {
@@ -331,14 +370,24 @@ template_demo = {
     "Minimal": result_minimal,
 }
 
-show_eqn(template_demo, col_wrap=[None, ":", "&"], environment="align")
+# template_demo is dict[Any, list], therefore it must converted to Dataframe before passing to show_eqn
+
+from keecas import Dataframe
+
+show_eqn(
+    Dataframe(template_demo),
+    col_wrap=[None, r":\quad", r"&\quad"],
+    environment="align*",
+)
 ```
 
-```{python}
-#| execution: {iopub.execute_input: '2025-10-03T07:51:40.067460Z', iopub.status.busy: '2025-10-03T07:51:40.067357Z', iopub.status.idle: '2025-10-03T07:51:40.077980Z', shell.execute_reply: '2025-10-03T07:51:40.077685Z'}
-# Complex expression with multiple substitutions
-a, b, c, d = symbols("a, b, c, d")
+### Complex Expressions with Dependencies
 
+Demonstrate how keecas handles expressions with dependencies:
+
+```{python}
+# Complex expression with multiple substitutions
+a, b, c, d = symbols(r"a, b, c, d")
 
 _p = {
     a: 3,
@@ -347,16 +396,17 @@ _p = {
 params.update(_p)
 
 _e = {
-    d: "sqrt(a^2 + b^2) / c" | pc.parse_expr,
-    c: "a*b" | pc.parse_expr,
+    d: "sqrt(a^2 + b^2) / c" | pc.parse_expr,  # Uses c, which is defined below
+    c: "a*b" | pc.parse_expr,                  # Defined after d, but keecas handles it
 }
 eqn.update(_e)
 
 _v = {
-    k: v | pc.subs(eqn|params) | pc.N for k, v in _e.items()
+    k: v | pc.subs(eqn | params) | pc.N
+    for k, v in _e.items()
 }
 
-show_eqn([_p|_e, _v], float_format="{:.3f}")
+show_eqn([_p | _e, _v], float_format="{:.3f}")
 ```
 
 ### Custom Templates
@@ -364,22 +414,27 @@ show_eqn([_p|_e, _v], float_format="{:.3f}")
 You can also use completely custom templates:
 
 ```{python}
-#| execution: {iopub.execute_input: '2025-10-03T07:51:40.078975Z', iopub.status.busy: '2025-10-03T07:51:40.078864Z', iopub.status.idle: '2025-10-03T07:51:40.081940Z', shell.execute_reply: '2025-10-03T07:51:40.081691Z'}
 # Custom template examples (emoji may not render in latex)
 custom_success = r"✅ ${symbol}{rhs}$ \textbf{{PASS}}"
 custom_failure = r"❌ ${symbol}{rhs}$ \textbf{{FAIL}}"
 
 # Test both success and failure cases
-ratio_ok = 0.8  # Should pass
-ratio_fail = 1.2  # Should fail
+ratio_ok = 0.8      # Should pass
+ratio_fail = 1.2    # Should fail
 
-check_ok = check(ratio_ok, 1.0,
-                success_template=custom_success,
-                failure_template=custom_failure)
+check_ok = check(
+    ratio_ok,
+    1.0,
+    success_template=custom_success,
+    failure_template=custom_failure,
+)
 
-check_fail = check(ratio_fail, 1.0,
-                  success_template=custom_success,
-                  failure_template=custom_failure)
+check_fail = check(
+    ratio_fail,
+    1.0,
+    success_template=custom_success,
+    failure_template=custom_failure,
+)
 
 custom_demo = {
     "Pass": check_ok,
@@ -389,6 +444,121 @@ custom_demo = {
 show_eqn(custom_demo, col_wrap=[None, ":", "&"])
 ```
 
+## Label Generation
+
+Various methods for generating labels for equation cross-references:
+
+```{python}
+# Setup for label examples
+from keecas import generate_label
+
+J, E, a, b, c_0 = symbols(r"J, E, a, b, c_{0}")
+
+# Dictionary to be displayed by show_eqn
+_p = {
+    J: 123 * u.cm**4,
+    E: 456 * u.MPa,
+    a: "b + c_0 / 2" | pc.parse_expr,
+}
+```
+
+### Manual Label Assignment
+
+When manually assigning labels, they should be LaTeX-safe:
+
+```{python}
+# When manually assigning labels, they should be LaTeX safe
+_l = {
+    J: "eq-moment-of-inertia",
+    E: "eq-modulus-of-elasticity",
+    a: "eq-an-expression",
+}
+
+# Pass _l to show_eqn
+show_eqn(_p, label=_l)
+```
+
+### Partial Automatic Generation
+
+Generate labels with `eq-` prefix automatically:
+
+#### Non-unique Labels
+
+```{python}
+# Provide LaTeX-safe descriptions (no spaces)
+_l = {
+    J: "moment-of-inertia",
+    E: "modulus-of-elasticity",
+    a: "an-expression",
+}
+
+# Generate the labels with eq- prefix
+_l = generate_label(_l)
+print(_l)
+
+# Pass _l to show_eqn
+show_eqn(_p, label=_l)
+```
+
+#### Unique Labels
+
+Generate hash-based unique labels:
+
+```{python}
+# Descriptions with spaces (will be converted to LaTeX-safe format)
+_d = {
+    J: "moment of inertia",
+    E: "modulus of elasticity",
+    a: "an expression",
+}
+
+# Generate unique labels from descriptions
+_l = generate_unique_label(_d)
+print(_l)
+
+# save to global dict for later retrieval
+labels = _l
+
+# Pass _l to show_eqn
+show_eqn(_p, label=_l)
+```
+
+### Full Automatic Generation
+
+A callable can be passed to `label` argument of `show_eqn`. For each key, all the key and values will be passed to the callable.
+
+```{python}
+# Pass generate_unique_label directly to show_eqn
+# Labels are generated from key + values from all the dict passed to show_eqn 
+
+# this is equivalent 
+_l = {
+    k: generate_unique_label([k, _p[k], _d[k]]) for k in _p.keys()
+}
+print(_l)
+
+# to this
+show_eqn([_p, _d], label=generate_unique_label)
+```
+
+::: {.callout-note}
+
+When using this method, the interpolated label will change if any of the values in the key-row of the Dataframe change. For a more stable approach, either pass an already interpolated dict of labels as string (recommended), or use a custom callable with a more resilient logic (e.g. use only the element of the list that are less likely to change).
+
+Passing a dict of string as labels is recommended since labels are interpolated only once and they can be store and used for reference in the text, with an helper function
+
+```{python}
+from IPython.display import Markdown
+
+# helper function for eqref
+def eqref(label):
+    return Markdown(r"\eqref{label}")
+```
+
+For example $J$ is defined at `{python} eqref(labels[J])`, while $E$ is defined at `{python} eqref(labels[E])`
+
+:::
+
 ## Summary
 
 This example demonstrated:
@@ -397,9 +567,10 @@ This example demonstrated:
 - Pipe command usage (see @sec-pipe)
 - Different LaTeX environments (align, cases, equation)
 - Label and cross-reference functionality
-- Dataframe operations
-- Verification functions
+- Verification functions with `check()`
+- Automatic dependency ordering
 - Complex symbolic manipulations
+- Template customization
 
 All calculations in @sec-beam-calc show that keecas provides a powerful interface for engineering calculations in Quarto documents.
 
@@ -415,7 +586,9 @@ failure = '${symbol}{rhs} \,\textcolor{{red}}{{\times}}$'
 
 This allows you to set project-wide or user-wide styling for all check functions.
 
-## Test using a `QuartoMarkdownBase64`
+## Advanced: Custom Environment Definition
+
+Test using a custom environment with raw LaTeX blocks:
 
 ```{python}
 a, b, c = symbols(r"a b c")
@@ -423,36 +596,34 @@ a, b, c = symbols(r"a b c")
 _p = {
     a: 5 * u.m,
     b: 12 * u.m,
-    c: a+b,
+    c: a + b,
 }
 
-import base64
-
-encode = lambda s: base64.b64encode(s.encode()).decode()
-
 _d = {
-    # a: fr"\QuartoMarkdownBase64{{{encode("length **a**")}}}",
+    a: "length a",
     b: "length b",
     c: "total length c",
 }
 
+# Custom environment definition with raw LaTeX blocks
+custom_env = {
+    'separator': ' & ',
+    'line_separator': r' \\' + '\n',
+    'supports_multiple_labels': True,
+    'outer_environment': 'align',
+    'inner_environment': None,
+    'inner_prefix': '',
+    'inner_suffix': '',
+    'outer_prefix': '```{=latex}\n',
+    'outer_suffix': '\n```',
+    'label_position': 'outer',
+}
+
 show_eqn(
     [_p, _d],
-    environment={
-        'separator': ' & ',
-        'line_separator': r' \\' + '\n',
-        'supports_multiple_labels': True,
-        'outer_environment': 'align',
-        'inner_environment': None,
-        'inner_prefix': '',
-        'inner_suffix': '',
-        'outer_prefix': '```{=latex}\n',
-        'outer_suffix': '\n```',
-        'label_position': 'outer',
-    },
+    environment=custom_env,
     debug=True,
 )
-
 ```
 
 
