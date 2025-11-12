@@ -2,11 +2,10 @@
 
 ## Current Tasks (user generated)
 
-<!-- No active tasks -->
-
 <!-- Tasks moved to proposal phase -->
 
 **Tasks awaiting approval in `proposal/`**:
+- [config-generation-validation.md](proposal/config-generation-validation.md) - Validate config file generation accuracy and test that config changes are respected by keecas (awaiting review)
 - [eliminate-config-shortcuts.md](proposal/eliminate-config-shortcuts.md) - Eliminate configuration property shortcuts for consistent dot-notation access pattern (awaiting review)
 - [refactor-create-dataframe-singledispatch.md](proposal/refactor-create-dataframe-singledispatch.md) - Refactor create_dataframe using singledispatch pattern for cleaner type handling (awaiting review)
 - [refactor-formatters-singledispatch.md](proposal/refactor-formatters-singledispatch.md) - Refactor formatter system to use singledispatch pattern (awaiting review)
