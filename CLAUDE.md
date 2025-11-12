@@ -171,16 +171,24 @@ uv sync
 
 ### CI Workflows
 
-**lint-fix.yml** - Runs on push to dev/feature branches and PRs:
+**lint-fix.yml** - Runs on push to dev/feature branches and PRs to dev:
 - Auto-fixes linting issues in `src/` and `tests/` only (Ruff check --fix + format)
 - Commits fixes automatically if any are found ([skip ci] to avoid loops)
 - Verifies linting passes after auto-fix
 - **Important**: Runs BEFORE test.yml, ensuring clean code for testing
-- **Scope**: Runs on dev, feature/** branches, and PRs to main/dev
-- **Excluded**: Does NOT run on push to main (protected branch, can't auto-commit)
+- **Scope**: Runs on dev, feature/** branches, and PRs to dev only
+- **Excluded**: Does NOT run on PRs to main (test.yml already verifies linting) or push to main (protected branch)
 - **Files**: Only lints production code (`src/`) and tests (`tests/`), not examples or templates
 
-**test.yml** - Runs on PR to main/dev:
+**test.yml** - Runs on PR to main/dev when code paths change:
+- **Path filtering**: Only runs when these paths change:
+  - `src/**` - Source code
+  - `tests/**` - Test files
+  - `pyproject.toml`, `uv.lock` - Dependencies
+  - `.python-version` - Python version
+  - `.github/workflows/**` - CI workflows
+  - `scripts/**` - Build/validation scripts
+- **Skipped**: Documentation-only changes (docs PRs can merge immediately)
 - Linting verification (Ruff check - read-only)
 - Tests (pytest)
 - Docstring validation
@@ -229,6 +237,52 @@ gh pr create --base dev
 - **Layer 2 (CI)**: `lint-fix.yml` workflow catches remaining 5% (e.g., Claude GitHub Action sessions)
 - **Result**: Zero-friction linting with no sync issues (fixes always on feature branches)
 - **When to pull**: After CI auto-commits fixes, just `git pull` the branch before continuing work
+
+### PR Workflow Examples
+
+**Documentation changes**:
+```bash
+git checkout -b docs/update-guide
+# Edit docs/guide.qmd or README.md
+git commit -am "docs: update getting started guide"
+gh pr create --base main
+```
+- No tests run (docs paths excluded)
+- Can merge immediately
+- docs.yml deploys after merge
+
+**Code changes**:
+```bash
+git checkout -b fix/bug
+# Edit src/keecas/display.py
+git commit -am "fix: resolve display bug"
+gh pr create --base main
+```
+- test.yml runs and must pass
+- Includes linting verification
+- Cannot merge until tests pass
+
+**Dependency updates**:
+```bash
+git checkout -b chore/update-deps
+uv add --dev pytest-cov
+git commit -am "chore: add pytest-cov"
+gh pr create --base main
+```
+- test.yml runs (pyproject.toml + uv.lock changed)
+- Must pass before merge (critical for dependency changes)
+
+**Releases**:
+```bash
+git checkout -b release/v1.1.0
+uv version --bump minor
+git commit -am "chore: bump version to 1.1.0"
+gh pr create --base main --label release
+```
+- test.yml runs (pyproject.toml changed)
+- check-release-version.yml runs (release label)
+- Both must pass before merge
+- After merge: release.yml tags, builds, publishes to PyPI
 
 ## Architecture Overview
 
