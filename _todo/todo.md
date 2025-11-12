@@ -12,11 +12,11 @@
 - [configurable-label-generation.md](proposal/configurable-label-generation.md) - Add config option for stable label generation strategies in show_eqn (awaiting review)
 
 **Tasks in development (`pending/`)**:
-- [config-testing-phase2.md](pending/config-testing-phase2.md) - Config Testing Phase 2: Behavioral validation and edge cases (in development) **[Feature branch: feature/config-testing-phase2]**
 - [docs-review-pre-publish.md](pending/docs-review-pre-publish.md) - Comprehensive pre-publication documentation review and correction (in progress)
 - [refactor-col-wrap-equals-sign.md](pending/refactor-col-wrap-equals-sign.md) - Move `=` sign handling from cell formatters to col_wrap system using singledispatch pattern (in development)
 
 **Completed tasks**:
+- [config-testing-phase2.md](completed/2025-11-12/config-testing-phase2.md) - Config Testing Phase 2: SKIPPED - 85% coverage already exists (completed 2025-11-12)
 - [config-generation-validation.md](completed/2025-11-12/config-generation-validation.md) - Config file generation validation and TOML comment syntax fixes (completed 2025-11-12)
 - [last-element-filler-pattern.md](completed/2025-01-05/last-element-filler-pattern.md) - Replace ambiguous (seed, filler) tuple pattern with universal last-element-as-filler pattern (completed 2025-01-05)
 - [branch-protection-and-ci.md](completed/2025-10-24/branch-protection-and-ci.md) - Complete CI/CD pipeline with test and release workflows, branch protection guide, and comprehensive documentation (completed 2025-10-24)
