@@ -19,7 +19,7 @@ dependencies = [
     "tomlkit>=0.13.3",
 ]
 name = "keecas"
-version = "1.0.0rc5"
+version = "1.0.0"
 description = "A set of tools for symbolic math computation done in a jupyter notebook, aimed specifically for Quarto. It is based mostly on sympy."
 readme = "README.md"
 
