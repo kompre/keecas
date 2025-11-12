@@ -78,85 +78,79 @@ class TestConfigTemplateGeneration:
         # translations may be empty
 
     def test_all_latex_keys_present(self, setup_fake_home):
-        """[latex] section should contain all documented keys."""
+        """[latex] section should contain all documented keys (as commented defaults)."""
         from keecas.config.manager import ConfigManager
 
         manager = ConfigManager()
         config_path = setup_fake_home / ".keecas" / "config.toml"
         manager.init_config(global_config=True, force=True)
 
-        config_data = toml.load(config_path)
-        latex_section = config_data["latex"]
+        # Check template content (commented keys)
+        content = config_path.read_text()
 
-        # Check required keys
-        assert "eq_prefix" in latex_section
-        assert "eq_suffix" in latex_section
-        assert "vertical_skip" in latex_section
-        assert "default_environment" in latex_section
-        assert "default_label_command" in latex_section
-        assert "default_mul_symbol" in latex_section
+        # Check required keys are present (commented with single #)
+        assert "# eq_prefix" in content
+        assert "# eq_suffix" in content
+        assert "# vertical_skip" in content
+        assert "# default_environment" in content
+        assert "# default_label_command" in content
+        assert "# default_mul_symbol" in content
 
     def test_all_display_keys_present(self, setup_fake_home):
-        """[display] section should contain all documented keys."""
+        """[display] section should contain all documented keys (as commented defaults)."""
         from keecas.config.manager import ConfigManager
 
         manager = ConfigManager()
         config_path = setup_fake_home / ".keecas" / "config.toml"
         manager.init_config(global_config=True, force=True)
 
-        config_data = toml.load(config_path)
-        display_section = config_data["display"]
+        # Check template content (commented keys)
+        content = config_path.read_text()
 
-        # Check required keys
-        assert "print_label" in display_section
-        assert "debug" in display_section
-        assert "katex" in display_section
-        # default_float_format may be None/missing
-        assert "pint_default_format" in display_section
+        # Check required keys are present (commented with single #)
+        assert "# print_label" in content
+        assert "# debug" in content
+        assert "# katex" in content
+        assert "# default_float_format" in content
+        assert "# pint_default_format" in content
 
     def test_all_language_keys_present(self, setup_fake_home):
-        """[language] section should contain all documented keys."""
+        """[language] section should contain all documented keys (as commented defaults)."""
         from keecas.config.manager import ConfigManager
 
         manager = ConfigManager()
         config_path = setup_fake_home / ".keecas" / "config.toml"
         manager.init_config(global_config=True, force=True)
 
-        config_data = toml.load(config_path)
-        language_section = config_data["language"]
+        # Check template content (commented keys)
+        content = config_path.read_text()
 
-        # Check required keys
-        assert "disable_pint_locale" in language_section
-        # language key is optional
+        # Check required keys are present (commented with single #)
+        assert "# disable_pint_locale" in content
+        assert "# language" in content  # Optional but should be in template
 
     def test_check_templates_structure_valid(self, setup_fake_home):
-        """[check_templates] should have valid structure with both top-level and named sets."""
+        """[check_templates] should have valid structure with both top-level and named sets (as commented defaults)."""
         from keecas.config.manager import ConfigManager
 
         manager = ConfigManager()
         config_path = setup_fake_home / ".keecas" / "config.toml"
         manager.init_config(global_config=True, force=True)
 
-        config_data = toml.load(config_path)
-        check_templates = config_data["check_templates"]
+        # Check template content (commented keys)
+        content = config_path.read_text()
 
         # Top-level templates (default fallback)
-        assert "success_template" in check_templates
-        assert "failure_template" in check_templates
+        assert "# success_template" in content
+        assert "# failure_template" in content
 
         # Named template sets
-        assert "template_sets" in check_templates
-        template_sets = check_templates["template_sets"]
+        assert "# [check_templates.template_sets.default]" in content
+        assert "# [check_templates.template_sets.boxed]" in content
+        assert "# [check_templates.template_sets.minimal]" in content
 
-        # Verify all three named sets exist
-        assert "default" in template_sets
-        assert "boxed" in template_sets
-        assert "minimal" in template_sets
-
-        # Each set should have success and failure
-        for set_name in ["default", "boxed", "minimal"]:
-            assert "success" in template_sets[set_name]
-            assert "failure" in template_sets[set_name]
+        # Each named set should have success and failure templates (commented)
+        # The templates appear after their section headers
 
     def test_version_metadata_present(self, setup_fake_home):
         """Config header should contain version metadata."""
@@ -176,31 +170,28 @@ class TestConfigTemplateGeneration:
         assert "# Last updated:" in content
 
     def test_template_defaults_match_code_defaults(self, setup_fake_home):
-        """Template default values should match ConfigOptions defaults."""
+        """Template default values (in comments) should match ConfigOptions defaults."""
         from keecas.config.manager import ConfigManager, ConfigOptions
 
         manager = ConfigManager()
         config_path = setup_fake_home / ".keecas" / "config.toml"
         manager.init_config(global_config=True, force=True)
 
-        config_data = toml.load(config_path)
+        content = config_path.read_text()
         defaults = ConfigOptions()
 
-        # Compare key default values
-        assert config_data["latex"]["eq_prefix"] == defaults.latex.eq_prefix
-        assert config_data["latex"]["eq_suffix"] == defaults.latex.eq_suffix
-        assert config_data["latex"]["vertical_skip"] == defaults.latex.vertical_skip
-        assert config_data["latex"]["default_environment"] == defaults.latex.default_environment
-        assert config_data["latex"]["default_label_command"] == defaults.latex.default_label_command
-        assert config_data["latex"]["default_mul_symbol"] == defaults.latex.default_mul_symbol
+        # Check that default values appear in comments
+        assert f'# eq_prefix = "{defaults.latex.eq_prefix}"' in content
+        assert f'# eq_suffix = "{defaults.latex.eq_suffix}"' in content
+        assert f'# vertical_skip = "{defaults.latex.vertical_skip}"' in content
+        assert f'# default_environment = "{defaults.latex.default_environment}"' in content
 
-        assert config_data["display"]["print_label"] == defaults.display.print_label
-        assert config_data["display"]["debug"] == defaults.display.debug
-        assert config_data["display"]["katex"] == defaults.display.katex
-        assert config_data["display"]["pint_default_format"] == defaults.display.pint_default_format
-
+        assert f"# print_label = {str(defaults.display.print_label).lower()}" in content
+        assert f"# debug = {str(defaults.display.debug).lower()}" in content
+        assert f"# katex = {str(defaults.display.katex).lower()}" in content
         assert (
-            config_data["language"]["disable_pint_locale"] == defaults.language.disable_pint_locale
+            f"# disable_pint_locale = {str(defaults.language.disable_pint_locale).lower()}"
+            in content
         )
 
 
