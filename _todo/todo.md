@@ -5,7 +5,6 @@
 <!-- Tasks moved to proposal phase -->
 
 **Tasks awaiting approval in `proposal/`**:
-- [config-testing-phase2.md](proposal/config-testing-phase2.md) - Config Testing Phase 2: Behavioral validation and edge cases (awaiting review) **[NEW - from PR #49 findings]**
 - [eliminate-config-shortcuts.md](proposal/eliminate-config-shortcuts.md) - Eliminate configuration property shortcuts for consistent dot-notation access pattern (awaiting review)
 - [refactor-create-dataframe-singledispatch.md](proposal/refactor-create-dataframe-singledispatch.md) - Refactor create_dataframe using singledispatch pattern for cleaner type handling (awaiting review)
 - [refactor-formatters-singledispatch.md](proposal/refactor-formatters-singledispatch.md) - Refactor formatter system to use singledispatch pattern (awaiting review)
@@ -13,6 +12,7 @@
 - [configurable-label-generation.md](proposal/configurable-label-generation.md) - Add config option for stable label generation strategies in show_eqn (awaiting review)
 
 **Tasks in development (`pending/`)**:
+- [config-testing-phase2.md](pending/config-testing-phase2.md) - Config Testing Phase 2: Behavioral validation and edge cases (in development) **[Feature branch: feature/config-testing-phase2]**
 - [docs-review-pre-publish.md](pending/docs-review-pre-publish.md) - Comprehensive pre-publication documentation review and correction (in progress)
 - [refactor-col-wrap-equals-sign.md](pending/refactor-col-wrap-equals-sign.md) - Move `=` sign handling from cell formatters to col_wrap system using singledispatch pattern (in development)
 
