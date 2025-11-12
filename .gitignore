@@ -23,6 +23,7 @@ __pycache__
 **/*.quarto_ipynb
 _freeze/
 docs/_site/
+**/*_files/
 
 # Quartodoc generated files (only commit .qmd source)
 docs/api-reference/
