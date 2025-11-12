@@ -15,11 +15,16 @@ format:
             padding-right: 3em;
           }
           </style>
-  pdf: default
-echo: false
-keep-tex: false
+  pdf:
+    echo: false
+    classoption:
+      - fleqn
+echo: true
+keep-tex: true
 jupyter: python3
 ---
+
+{{< pagebreak >}}
 
 # How to use keecas in a Quarto document
 
@@ -43,7 +48,7 @@ from keecas import (
 
 ```{python}
 # Set the language ('en' is the default)
-config.language.language = "es"
+config.language.language = "it"
 ```
 
 ::: {.callout-note}
@@ -157,12 +162,10 @@ show_eqn([_p | _e, _v])
 
 ## Different LaTeX Environments
 
-### Cases Environment
-
-Display related values grouped together:
+Different environment are available for display qith `align` being the default. `*` version of the environment are also available.
 
 ```{python}
-# Material properties
+# Initial setup
 E_steel, E_concrete = symbols(r"E_{steel}, E_{concrete}")
 
 _p = {
@@ -175,10 +178,87 @@ _d = {
     E_concrete: "concrete elastic modulus",
 }
 
+show_eqn([_p, _d])
+```
+
+
+### Cases Environment
+
+```{python}
 show_eqn([_p, _d], environment="cases")
 ```
 
-### Equation Environment with Labels {#sec-beam-calc}
+### Rcases Environment
+
+```{python}
+show_eqn([_p, _d], environment="rcases")
+```
+
+### Equation Environment
+
+```{python}
+from keecas import wrap_column as wc
+
+show_eqn(
+    [_p, _d],
+    col_wrap=[wc]*2+ [(r'', r'\quad')], # for separating the two expression
+    environment="equation"
+)
+```
+
+### Gather Environment
+
+### Custom Environment
+
+A custom environment can be defined. Here we define a custom environment with raw LaTeX blocks encapsulation:
+
+```{python}
+a, b, c = symbols(r"a b c")
+
+_p = {
+    a: 5 * u.m,
+    b: 12 * u.m,
+    c: a + b,
+}
+
+_d = {
+    a: "length a",
+    b: "length b",
+    c: "total length c",
+}
+
+# Custom environment definition with raw LaTeX blocks
+custom_env = {
+    "separator": " & ",
+    "line_separator": r" \\" + "\n",
+    "supports_multiple_labels": True,
+    "outer_environment": "align",
+    "inner_environment": None,
+    "inner_prefix": "",
+    "inner_suffix": "",
+    "outer_prefix": "```{=latex}\n",
+    "outer_suffix": "\n```",
+    "label_position": "outer",
+}
+
+# show_eqn return a Latex object. In this case it is necessary to convert it to Markdown for correct display
+from IPython.display import Markdown
+
+Markdown(
+    show_eqn(
+        [_p, _d],
+        environment=custom_env,
+        debug=True,
+    ).data
+)
+```
+
+```{python}
+# starred version of gather
+show_eqn([_p, _d], environment="gather*")
+```
+
+## Equation With Labels {#sec-beam-calc}
 
 Calculate beam deflection with cross-references:
 
@@ -214,15 +294,126 @@ show_eqn([_e, _v], label=_l, float_format="{:.2f}")
 
 ::: {.callout-note}
 
-labels emitted by `show_eqn` are latex labels, therefore they need to be referenced with `\eqref{}` or `\ref{}` latex commands.
+labels emitted by `show_eqn` are latex labels, therefore they need to be referenced with `\eqref{}` or `\ref{}` latex commands:
 
-@eq-QUARTO_EXAMPLE-delta will not work
+- `@eq-QUARTO_EXAMPLE-delta` will not work -> (@eq-QUARTO_EXAMPLE-delta)
+- `\eqref{eq-QUARTO_EXAMPLE-2kp5fgk9}` will work -> \eqref{eq-QUARTO_EXAMPLE-2kp5fgk9}
 
 :::
 
-The deflection calculated in \ref{eq-QUARTO_EXAMPLE-delta} shows acceptable values for serviceability.
+The deflection calculated in \eqref{eq-QUARTO_EXAMPLE-2kp5fgk9} shows acceptable values for serviceability.
 
-## Verification Function
+### Label Generation
+
+Various methods for generating labels for equation cross-references:
+
+```{python}
+# Setup for label examples
+from keecas import generate_label
+
+J, E, a, b, c_0 = symbols(r"J, E, a, b, c_{0}")
+
+# Dictionary to be displayed by show_eqn
+_p = {
+    J: 123 * u.cm**4,
+    E: 456 * u.MPa,
+    a: "b + c_0 / 2" | pc.parse_expr,
+}
+```
+
+#### Manual Label Assignment
+
+When manually assigning labels, they should be LaTeX-safe:
+
+```{python}
+# When manually assigning labels, they should be LaTeX safe
+_l = {
+    J: "eq-moment-of-inertia",
+    E: "eq-modulus-of-elasticity",
+    a: "eq-an-expression",
+}
+
+# Pass _l to show_eqn
+show_eqn(_p, label=_l)
+```
+
+#### Controlled Automatic Generation
+
+Generate labels with `eq-` prefix automatically:
+
+##### Non hashed Labels
+
+```{python}
+# Provide LaTeX-safe descriptions (no spaces)
+_l = {
+    J: "moment-of-inertia",
+    E: "modulus-of-elasticity",
+    a: "an-expression",
+}
+
+# Generate the labels with eq- prefix
+_l = generate_label(_l)
+
+# Pass _l to show_eqn
+show_eqn(_p, label=_l)
+```
+
+##### hashed Labels (recommended)
+
+```{python}
+# Descriptions with spaces (will be converted to LaTeX-safe format)
+_d = {
+    J: "moment of inertia",
+    E: "modulus of elasticity",
+    a: "an expression",
+}
+
+# Generate unique labels from descriptions
+_l = generate_unique_label(_d)
+
+# save to global dict for later retrieval
+labels = _l
+
+# Pass _l to show_eqn
+show_eqn(_p, label=_l)
+```
+
+With an helper function, the generated labels saved to a dict can be easily referenced in the quarto document:
+
+```{python}
+from IPython.display import Markdown
+
+# helper function for eqref
+def eqref(label):
+    return Markdown(rf"\eqref{{{label}}}")
+```
+
+For example $J$ is defined at `{python} eqref(labels[J])`, while $E$ is defined at `{python} eqref(labels[E])`
+
+#### Full Automatic Generation
+
+A callable can be passed to `label` argument of `show_eqn`. For each key, all the key and values will be passed to the callable.
+
+```{python}
+# Pass generate_unique_label directly to show_eqn
+# Labels are generated from key + values from all the dict passed to show_eqn 
+
+# this is equivalent 
+_l = {
+    k: generate_unique_label([k, _p[k], _d[k]]) for k in _p.keys()
+}
+
+# to this
+show_eqn([_p, _d], label=generate_unique_label)
+```
+
+::: {.callout-note}
+
+When using this method, the interpolated label will change if any of the values in the key-row of the Dataframe change. For a more stable approach, either pass an already interpolated dict of labels as string (recommended), or use a custom callable with a more resilient logic (e.g. use only the element of the list that are less likely to change).
+
+:::
+
+## Check Function
 
 Using the `check` function for design checks:
 
@@ -291,64 +482,7 @@ show_eqn(
 )
 ```
 
-## Automatic Dependency Ordering
-
-Using `pc.subs` will automatically order the substitutions pairs topologically, so you don't have to order them yourself (default ``sympy`` behavior). For example, let's define some mappings in any order:
-
-```{python}
-any_order_params = {
-    x: y**2, # it used `y` which is defined later
-    y: a + 1, # `y` is a dependent value
-    a: 3,
-}
-
-show_eqn(any_order_params, environment="cases")
-```
-
-If we use the default behavior of `sympy`'s `subs` method (unsorted substitutions) we get:
-
-```{python}
-# `pc.subs(any_order_params, sorted=False)` is equivalent to `sympy`'s subs method
-_v = {
-    lhs: rhs | pc.subs(any_order_params, sorted=False)
-    for lhs, rhs in any_order_params.items()
-}
-
-_d = {
-    x: "partially evaluated",
-}
-
-show_eqn(
-    [_v, _d],
-    environment="cases",
-)
-```
-
-While the default behavior of `pc.subs` is to sort the substitutions:
-
-```{python}
-_v = {
-    lhs: rhs | pc.subs(any_order_params)
-    for lhs, rhs in any_order_params.items()
-}
-
-_d = {
-    x: "fully evaluated",
-}
-
-show_eqn(
-    [_v, _d],
-    environment="cases",
-)
-```
-
-::: {.callout-note}
-
-`pc.subs` automatically converts objects to `sympy` expressions before substitution. In the example above, $a$ maps to the Python `int` value `3`. When piping `int` through `pc.subs`, it works seamlessly. If you used `sympy`'s `subs()` method directly, you'd get an error since `int` objects don't have a `subs()` method. You'd need to write `S(rhs).subs(...)` to explicitly convert first.
-
-:::
-
-## Check Function Templates
+### Check Function Templates
 
 The `check` function supports customizable templates for different visual styles:
 
@@ -380,10 +514,6 @@ show_eqn(
     environment="align*",
 )
 ```
-
-### Complex Expressions with Dependencies
-
-Demonstrate how keecas handles expressions with dependencies:
 
 ```{python}
 # Complex expression with multiple substitutions
@@ -444,137 +574,6 @@ custom_demo = {
 show_eqn(custom_demo, col_wrap=[None, ":", "&"])
 ```
 
-## Label Generation
-
-Various methods for generating labels for equation cross-references:
-
-```{python}
-# Setup for label examples
-from keecas import generate_label
-
-J, E, a, b, c_0 = symbols(r"J, E, a, b, c_{0}")
-
-# Dictionary to be displayed by show_eqn
-_p = {
-    J: 123 * u.cm**4,
-    E: 456 * u.MPa,
-    a: "b + c_0 / 2" | pc.parse_expr,
-}
-```
-
-### Manual Label Assignment
-
-When manually assigning labels, they should be LaTeX-safe:
-
-```{python}
-# When manually assigning labels, they should be LaTeX safe
-_l = {
-    J: "eq-moment-of-inertia",
-    E: "eq-modulus-of-elasticity",
-    a: "eq-an-expression",
-}
-
-# Pass _l to show_eqn
-show_eqn(_p, label=_l)
-```
-
-### Partial Automatic Generation
-
-Generate labels with `eq-` prefix automatically:
-
-#### Non-unique Labels
-
-```{python}
-# Provide LaTeX-safe descriptions (no spaces)
-_l = {
-    J: "moment-of-inertia",
-    E: "modulus-of-elasticity",
-    a: "an-expression",
-}
-
-# Generate the labels with eq- prefix
-_l = generate_label(_l)
-print(_l)
-
-# Pass _l to show_eqn
-show_eqn(_p, label=_l)
-```
-
-#### Unique Labels
-
-Generate hash-based unique labels:
-
-```{python}
-# Descriptions with spaces (will be converted to LaTeX-safe format)
-_d = {
-    J: "moment of inertia",
-    E: "modulus of elasticity",
-    a: "an expression",
-}
-
-# Generate unique labels from descriptions
-_l = generate_unique_label(_d)
-print(_l)
-
-# save to global dict for later retrieval
-labels = _l
-
-# Pass _l to show_eqn
-show_eqn(_p, label=_l)
-```
-
-### Full Automatic Generation
-
-A callable can be passed to `label` argument of `show_eqn`. For each key, all the key and values will be passed to the callable.
-
-```{python}
-# Pass generate_unique_label directly to show_eqn
-# Labels are generated from key + values from all the dict passed to show_eqn 
-
-# this is equivalent 
-_l = {
-    k: generate_unique_label([k, _p[k], _d[k]]) for k in _p.keys()
-}
-print(_l)
-
-# to this
-show_eqn([_p, _d], label=generate_unique_label)
-```
-
-::: {.callout-note}
-
-When using this method, the interpolated label will change if any of the values in the key-row of the Dataframe change. For a more stable approach, either pass an already interpolated dict of labels as string (recommended), or use a custom callable with a more resilient logic (e.g. use only the element of the list that are less likely to change).
-
-Passing a dict of string as labels is recommended since labels are interpolated only once and they can be store and used for reference in the text, with an helper function
-
-```{python}
-from IPython.display import Markdown
-
-# helper function for eqref
-def eqref(label):
-    return Markdown(r"\eqref{label}")
-```
-
-For example $J$ is defined at `{python} eqref(labels[J])`, while $E$ is defined at `{python} eqref(labels[E])`
-
-
-:::
-
-## Summary
-
-This example demonstrated:
-
-- Basic symbolic math with units
-- Pipe command usage (see @sec-pipe)
-- Different LaTeX environments (align, cases, equation)
-- Label and cross-reference functionality
-- Verification functions with `check()`
-- Automatic dependency ordering
-- Complex symbolic manipulations
-- Template customization
-
-All calculations in @sec-beam-calc show that keecas provides a powerful interface for engineering calculations in Quarto documents.
-
 ### Template Configuration
 
 Templates can also be configured globally via TOML config files:
@@ -587,44 +586,198 @@ failure = '${symbol}{rhs} \,\textcolor{{red}}{{\times}}$'
 
 This allows you to set project-wide or user-wide styling for all check functions.
 
-## Advanced: Custom Environment Definition
+## Automatic Dependency Ordering
 
-Test using a custom environment with raw LaTeX blocks:
+Using `pc.subs` will automatically order the substitutions pairs topologically, so you don't have to order them yourself (default ``sympy`` behavior). For example, let's define some mappings in any order:
 
 ```{python}
-a, b, c = symbols(r"a b c")
+any_order_params = {
+    x: y**2, # it used `y` which is defined later
+    y: a + 1, # `y` is a dependent value
+    a: 3,
+}
 
-_p = {
-    a: 5 * u.m,
-    b: 12 * u.m,
-    c: a + b,
+show_eqn(any_order_params, environment="cases")
+```
+
+If we use the default behavior of `sympy`'s `subs` method (unsorted substitutions) we get:
+
+```{python}
+# `pc.subs(any_order_params, sorted=False)` is equivalent to `sympy`'s subs method
+_v = {
+    lhs: rhs | pc.subs(any_order_params, sorted=False)
+    for lhs, rhs in any_order_params.items()
 }
 
 _d = {
-    a: "length a",
-    b: "length b",
-    c: "total length c",
-}
-
-# Custom environment definition with raw LaTeX blocks
-custom_env = {
-    'separator': ' & ',
-    'line_separator': r' \\' + '\n',
-    'supports_multiple_labels': True,
-    'outer_environment': 'align',
-    'inner_environment': None,
-    'inner_prefix': '',
-    'inner_suffix': '',
-    'outer_prefix': '```{=latex}\n',
-    'outer_suffix': '\n```',
-    'label_position': 'outer',
+    x: "partially evaluated",
 }
 
 show_eqn(
-    [_p, _d],
-    environment=custom_env,
-    debug=True,
+    [_v, _d],
+    environment="cases",
 )
 ```
 
+While the default behavior of `pc.subs` is to sort the substitutions:
+
+```{python}
+_v = {
+    lhs: rhs | pc.subs(any_order_params)
+    for lhs, rhs in any_order_params.items()
+}
+
+_d = {
+    x: "fully evaluated",
+}
+
+show_eqn(
+    [_v, _d],
+    environment="cases",
+)
+```
+
+::: {.callout-note}
+
+`pc.subs` automatically converts objects to `sympy` expressions before substitution. In the example above, $a$ maps to the Python `int` value `3`. When piping `int` through `pc.subs`, it works seamlessly. If you used `sympy`'s `subs()` method directly, you'd get an error since `int` objects don't have a `subs()` method. You'd need to write `S(rhs).subs(...)` to explicitly convert first.
+
+:::
+
+## Common Pitfalls
+
+::: {.callout-warning}
+
+### Important Patterns to Know
+
+Understanding these common pitfalls will save you debugging time and ensure correct calculations.
+
+:::
+
+### Pitfall 1: LaTeX vs Plain Symbol Notation
+
+Symbols are compared by their string representation, so LaTeX and plain notation create different objects:
+
+```{python}
+from IPython.display import display
+
+# Two different symbols even though they render similarly
+sigma_latex = symbols(r"\sigma_{Sd}")
+sigma_plain = symbols("sigma_Sd")
+
+display(sigma_latex)
+display(sigma_plain)
+
+# They are NOT equal
+print(f"Are they equal? {sigma_latex == sigma_plain}")  # False
+
+# Using LaTeX notation ensures proper rendering and avoids mismatches
+```
+
+### Pitfall 2: Using `vals` dict in `pc.subs`
+
+While maintaining a global `vals` dict for evaluated results can be useful, passing it to `pc.subs` will overwrite expressions with already evaluated values, preventing recalculation when parameters change.
+
+```{python}
+# Initial setup - create fresh global dicts for this example
+params_pitfall = {}
+eqn_pitfall = {}
+vals_pitfall = {}
+
+x, y, z = symbols(r"x, y, z")
+
+_p = {x: 2}
+params_pitfall.update(_p)
+
+_e = {
+    y: "x + 1" | pc.parse_expr,  # y depends on x
+    z: "y^2" | pc.parse_expr,     # z depends on y (and indirectly on x)
+}
+eqn_pitfall.update(_e)
+
+_v = {
+    k: v | pc.subs(eqn_pitfall | params_pitfall) | pc.N
+    for k, v in _e.items()
+}
+vals_pitfall.update(_v)
+
+show_eqn([_p | _e, _v])
+```
+
+Now update the parameter and see the problem:
+
+```{python}
+# Update parameter and recalculate
+_p = {x: 3}  # Changed value
+params_pitfall.update(_p)
+
+expr_to_recalc = [y, z]
+
+# INCORRECT: passing vals overwrites expressions with old evaluated values
+_v_incorrect = {
+    k: eqn_pitfall[k] | pc.subs(eqn_pitfall | params_pitfall | vals_pitfall)
+    for k in expr_to_recalc
+}
+
+# CORRECT: don't pass vals
+_v_correct = {
+    k: eqn_pitfall[k] | pc.subs(eqn_pitfall | params_pitfall)
+    for k in expr_to_recalc
+}
+
+# Verify the difference using check()
+_c = {
+    k: check(_v_incorrect[k], _v_correct[k], Eq)
+    for k in expr_to_recalc
+}
+
+show_eqn([_p | _v_incorrect, _c])
+```
+
+::: {.callout-tip}
+
+**Recommendation**: Only pass `vals` to `pc.subs` if you're certain no dependent expressions need updating.
+
+:::
+
+{{< pagebreak >}}
+
+# Summary
+
+This example demonstrated keecas capabilities for engineering calculations in Quarto documents.
+
+### Features Covered
+
+- **Symbolic math with units** - SymPy expressions with Pint units
+- **Pipe commands** - Functional composition (`pc.parse_expr`, `pc.subs`, `pc.convert_to`, `pc.N`)
+- **LaTeX environments** - align, cases, equation, and custom environments
+- **Label generation** - Manual, automatic, and unique hash-based labels
+- **Verification** - `check()` function with customizable templates
+- **Dependency ordering** - Automatic topological sorting with `pc.subs`
+
+### Key Patterns
+
+```python
+# Cell-local dicts (live in one cell)
+_p = {F_d: 10*u.kN}                              # Parameters
+_e = {sigma: "F_d/A_load" | pc.parse_expr}       # Expressions
+_v = {k: v | pc.subs(_e|_p) | pc.N for k,v in _e.items()}  # Values
+
+# Global persistence (across cells)
+params.update(_p)
+eqn.update(_e)
+```
+
+### Common Pitfalls
+
+::: {.callout-warning}
+1. Use LaTeX notation: `symbols(r"\sigma_{Sd}")` not `symbols("sigma_Sd")`
+2. Avoid passing `vals` to `pc.subs` - it prevents recalculation
+:::
+
+# Links
+
+- [pypi]("https://pypi.org/project/keecas/")
+- [Repository]("https://github.com/kompre/keecas")
+- [Documentation]("https://kompre.github.io/keecas")
+- [Issues]("https://github.com/kompre/keecas/issues")
 
