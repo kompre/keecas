@@ -2,8 +2,6 @@
 
 ## Current Tasks (user generated)
 
-<!-- No active tasks -->
-
 <!-- Tasks moved to proposal phase -->
 
 **Tasks awaiting approval in `proposal/`**:
@@ -14,6 +12,7 @@
 - [configurable-label-generation.md](proposal/configurable-label-generation.md) - Add config option for stable label generation strategies in show_eqn (awaiting review)
 
 **Tasks in development (`pending/`)**:
+- [config-generation-validation.md](pending/config-generation-validation.md) - Validate config file generation accuracy and test that config changes are respected by keecas (in development)
 - [docs-review-pre-publish.md](pending/docs-review-pre-publish.md) - Comprehensive pre-publication documentation review and correction (in progress)
 - [refactor-col-wrap-equals-sign.md](pending/refactor-col-wrap-equals-sign.md) - Move `=` sign handling from cell formatters to col_wrap system using singledispatch pattern (in development)
 

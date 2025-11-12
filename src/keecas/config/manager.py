@@ -936,15 +936,13 @@ class ConfigManager:
                 example = example_values.get(key, '""')
                 return f"# {key} = {example}"
 
-            if is_global:
-                # Global config: all values active
-                toml_line = toml.dumps({key: default_val}).strip()
-                return toml_line if toml_line else f'# {key} = ""'
-            else:
-                # Local config: show inherited values but commented with # for easy toggle
-                display_val = inherited_val if inherited_val is not None else default_val
-                toml_line = toml.dumps({key: display_val}).strip()
-                return f"# {toml_line}" if toml_line else f'# {key} = ""'
+            # Both global and local configs: comment all values
+            # Users uncomment what they want to change from defaults
+            display_val = (
+                inherited_val if (inherited_val is not None and not is_global) else default_val
+            )
+            toml_line = toml.dumps({key: display_val}).strip()
+            return f"# {toml_line}" if toml_line else f'# {key} = ""'
 
         # Helper function to format template strings as TOML literal strings
         def format_template(template_str, comment=False):
@@ -966,7 +964,6 @@ class ConfigManager:
         language_inherited = global_values.get("language", {})
         _units_inherited = global_values.get("units", {})  # Reserved for future use
         translations_inherited = global_values.get("translations", {})
-        check_templates_inherited = global_values.get("check_templates", {})
 
         template = f"""# Keecas {config_type} Configuration
 # {"=" * (len(config_type) + 30)}
@@ -1029,21 +1026,22 @@ class ConfigManager:
 
 [check_templates]
 ## Check function templates (use literal strings 'string' for LaTeX)
-{format_template_line("success_template", defaults.check_templates.success_template, comment=(not is_global and not check_templates_inherited.get("success_template")))}
-{format_template_line("failure_template", defaults.check_templates.failure_template, comment=(not is_global and not check_templates_inherited.get("failure_template")))}
+## Top-level templates are used as default fallback when no named template specified
+{format_template_line("success_template", defaults.check_templates.success_template, comment=True)}
+{format_template_line("failure_template", defaults.check_templates.failure_template, comment=True)}
 
-## Named template sets
-{"[check_templates.template_sets.default]" if is_global else "# [check_templates.template_sets.default]"}
-{format_template_line("success", defaults.check_templates.template_sets["default"]["success"], comment=not is_global)}
-{format_template_line("failure", defaults.check_templates.template_sets["default"]["failure"], comment=not is_global)}
+## Named template sets (alternative templates selectable via check(template="name"))
+# [check_templates.template_sets.default]
+{format_template_line("success", defaults.check_templates.template_sets["default"]["success"], comment=True)}
+{format_template_line("failure", defaults.check_templates.template_sets["default"]["failure"], comment=True)}
 
-{"[check_templates.template_sets.boxed]" if is_global else "# [check_templates.template_sets.boxed]"}
-{format_template_line("success", defaults.check_templates.template_sets["boxed"]["success"], comment=not is_global)}
-{format_template_line("failure", defaults.check_templates.template_sets["boxed"]["failure"], comment=not is_global)}
+# [check_templates.template_sets.boxed]
+{format_template_line("success", defaults.check_templates.template_sets["boxed"]["success"], comment=True)}
+{format_template_line("failure", defaults.check_templates.template_sets["boxed"]["failure"], comment=True)}
 
-{"[check_templates.template_sets.minimal]" if is_global else "# [check_templates.template_sets.minimal]"}
-{format_template_line("success", defaults.check_templates.template_sets["minimal"]["success"], comment=not is_global)}
-{format_template_line("failure", defaults.check_templates.template_sets["minimal"]["failure"], comment=not is_global)}
+# [check_templates.template_sets.minimal]
+{format_template_line("success", defaults.check_templates.template_sets["minimal"]["success"], comment=True)}
+{format_template_line("failure", defaults.check_templates.template_sets["minimal"]["failure"], comment=True)}
 """
 
         # Add inherited custom translations for local config
