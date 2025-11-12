@@ -20,7 +20,7 @@ dependencies = [
 ]
 name = "keecas"
 version = "1.0.0"
-description = "A set of tools for symbolic math computation done in a jupyter notebook, aimed specifically for Quarto. It is based mostly on sympy."
+description = "Symbolic mathematics for engineering: SymPy + Pint + LaTeX equation rendering in Jupyter notebooks, optimized for Quarto PDF documentation."
 readme = "README.md"
 
 [project.urls]
