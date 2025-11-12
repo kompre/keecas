@@ -1,5 +1,6 @@
 ---
 title: "Quick Start"
+order: 2
 ---
 
 This guide will get you up and running with Keecas in just a few minutes.
@@ -11,18 +12,28 @@ Let's start with a simple engineering calculation - computing stress from force 
 ### 1. Import Keecas
 
 ```{python}
-#| eval: false
-from keecas import symbols, u, pc, show_eqn, config
+from keecas import (
+        show_eqn, # main function to generate expression block
+        check, # main function for verification
+        symbols, # to create symbols (from sympy)
+        u, # unit registry (from pint)
+        pc, # pipe commands
+        generate_unique_label, # label generator
+        config, # configuration options
+    )
+
+# Init the global dict
+params = {}
+eqn = {}
 ```
 
 ### 2. Define Symbols
 
-Use LaTeX notation for beautiful symbol display:
+Use LaTeX notation with subscripts for comprehensive display:
 
 ```{python}
-#| eval: false
 # Define symbols with LaTeX notation
-F, A, sigma = symbols(r"F, A, \sigma")
+F_d, A_load, sigma = symbols(r"F_{d}, A_{load}, \sigma")
 ```
 
 ### 3. Set Up Parameters
@@ -30,12 +41,12 @@ F, A, sigma = symbols(r"F, A, \sigma")
 Define your parameters with units:
 
 ```{python}
-#| eval: false
 # Cell-local parameters
 _p = {
-    F: 10 * u.kN,      # Force in kilonewtons
-    A: 50 * u.cm**2,   # Area in square centimeters
+    F_d: 10 * u.kN,      # Force in kilonewtons
+    A_load: 50 * u.cm**2,   # Area in square centimeters
 }
+params.update(_p)
 ```
 
 ### 4. Define Expressions
@@ -43,42 +54,62 @@ _p = {
 Create symbolic expressions:
 
 ```{python}
-#| eval: false
 # Cell-local expressions
 _e = {
-    sigma: "F / A" | pc.parse_expr
+    sigma: "F_d / A_load" | pc.parse_expr
 }
+eqn.update(_e)
 ```
 
-### 5. Evaluate and Display
+### 5. Create Descriptions and Labels
+
+Add descriptions for documentation and generate labels^[labels can be automatically generated, or manually specified] for cross-references:
+
+```{python}
+# Descriptions
+_d = {
+    F_d: "design force",
+    A_load: "loaded area",
+    sigma: "normal stress",
+}
+
+# Labels (for Quarto cross-references)
+_l = generate_unique_label(_d)
+```
+
+### 6. Evaluate and Display
 
 Compute values and display the results:
 
 ```{python}
-#| eval: false
 # Evaluate expressions
 _v = {
-    k: v | pc.subs(_e | _p) | pc.convert_to([u.MPa]) | pc.N
+    k: v | pc.subs(eqn|params) | pc.convert_to([u.MPa]) | pc.N
     for k, v in _e.items()
 }
 
 # Display equations
-show_eqn([_p | _e, _v])
+show_eqn([_p | _e, _v, _d], label=_l)
 ```
 
 This will produce beautiful LaTeX output showing both the symbolic equation and numerical result.
 
 ## Understanding the Pattern
 
-Keecas follows a consistent pattern:
+As convention Keecas uses dict prepended by `_` as cell-local containers (e.g. `_p`), while not prepended as global containers (e.g. `params`) that carry across cells. 
+
+Using `pc.subs` is recommended to pass a dict as union of the global dicts (e.g. `eqn|params`), because it contains all the necessary values and expression defined in the notebook.
+
 
 ### Dictionary Conventions
 
 | Dict | Purpose | Example |
 |------|---------|---------|
-| `_p` | Cell-local parameters | `_p = {F: 10*u.kN}` |
-| `_e` | Cell-local expressions | `_e = {sigma: "F/A" \| pc.parse_expr}` |
+| `_p` | Cell-local parameters | `_p = {F_d: 10*u.kN}` |
+| `_e` | Cell-local expressions | `_e = {sigma: "F_d/A_load" \| pc.parse_expr}` |
 | `_v` | Cell-local values | Evaluated results |
+| `_d` | Cell-local descriptions | `_d = {F_d: "design force"}` |
+| `_l` | Cell-local labels | `_l = generate_unique_label(_d)` |
 
 ### Pipe Operations
 
@@ -97,16 +128,115 @@ Common pipe commands:
 - `pc.convert_to(units)` - Convert units
 - `pc.N` - Numerical evaluation
 
+### Symbol Dependency Ordering
+
+Keecas automatically handles out-of-order symbol definitions. You can define expressions before their dependencies:
+
+```{python}
+a, b, intermediate, result = symbols(r"a, b, intermediate, result")
+
+_e = {
+    result: "sqrt(a^2 + b^2) / intermediate" | pc.parse_expr,  # Uses intermediate
+    intermediate: "a * b" | pc.parse_expr,                     # Defined after result
+}
+
+_p = {a: 3, b: 4}
+
+_v = {k: v | pc.subs(_e | _p) | pc.N for k, v in _e.items()}
+
+show_eqn([_p | _e, _v])
+```
+
+Keecas resolves dependencies automatically - no manual ordering required.
+
+### Common Pitfalls
+
+::: {.callout-warning}
+## Important Patterns to Know
+
+1. **Use LaTeX notation for symbol definitions** - Prefer `symbols(r"\sigma_{Sd}")` over `symbols("sigma_Sd")`. Symbols are compared by their string representation, so these create different objects:
+
+```{python}
+# Two different symbols even though they render similarly
+display(sigma_latex := symbols(r"\sigma_{Sd}"))
+display(sigma_plain := symbols("sigma_Sd"))
+```
+
+```{python}
+# They are NOT equal
+sigma_latex == sigma_plain  # False
+```
+
+Using LaTeX notation ensures proper rendering and avoids unexpected symbol mismatches.
+
+2. **Be careful with `vals` dict in `pc.subs`** - While maintaining a global `vals` dict for evaluated results can be useful, passing it to `pc.subs` will overwrite expressions with already evaluated values, preventing recalculation when parameters change.
+
+**Example showing the problem:**
+
+```{python}
+# Initial setup
+x, y, z = symbols(r"x, y, z")
+
+params = {}
+eqn = {}
+vals = {}
+
+_p = {x: 2}
+params.update(_p)
+
+_e = {
+    y: "x + 1" | pc.parse_expr,  # y depends on x
+    z: "y^2" | pc.parse_expr,     # z depends on y (and indirectly on x)
+}
+eqn.update(_e)
+
+_v = {k: v | pc.subs(eqn|params) for k, v in _e.items()}
+vals.update(_v)
+
+show_eqn([_p | _e, _v])
+```
+
+```{python}
+# Update parameter and recalculate
+_p = {x: 3}  # Changed value
+params.update(_p)
+
+expr_to_recalc = [y, z]
+
+# INCORRECT: passing vals overwrites expressions with old evaluated values
+_v_incorrect = {
+    k: eqn[k] | pc.subs(eqn|params|vals) for k in expr_to_recalc
+}
+
+# CORRECT: don't pass vals
+_v_correct = {
+    k: eqn[k] | pc.subs(eqn|params) for k in expr_to_recalc
+}
+
+# Verify the difference using check()
+from keecas import check
+from sympy import Eq
+
+_c = {
+    k: check(_v_incorrect[k], _v_correct[k], Eq) for k in expr_to_recalc
+}
+
+show_eqn([_p | _e, _v_incorrect, _c])
+```
+
+Only pass `vals` to `pc.subs` if you're certain no dependent expressions need updating.
+
+:::
+
 ## Configuration
 
 Set up basic configuration for your document:
 
 ```{python}
-#| eval: false
 # Configuration for LaTeX output
-config.katex = True              # KaTeX compatibility
-config.eq_prefix = "eq-"         # Equation label prefix
-config.language = 'en'           # Language/locale
+config.display.katex = False             # KaTeX compatibility
+config.latex.eq_prefix = "eq-PREFIX"     # Equation label prefix
+config.language.language = 'en'          # Language/locale
 ```
 
 ## Multi-Step Calculations
@@ -114,34 +244,50 @@ config.language = 'en'           # Language/locale
 For complex calculations spanning multiple cells:
 
 ```{python}
-#| eval: false
 # Setup cell (run once)
 params = {}  # Global parameters
 eqn = {}     # Global expressions
 
 # First calculation cell
-F, A, sigma = symbols(r"F, A, \sigma")
+F_d, A_load, sigma_d = symbols(r"F_{d}, A_{load}, \sigma_{d}")
 
-_p = {F: 10 * u.kN, A: 50 * u.cm**2}
+_p = {
+    F_d: 10 * u.kN,
+    A_load: 5 * u.cm**2,
+}
 params.update(_p)  # Save to global
 
-_e = {sigma: "F / A" | pc.parse_expr}
+_e = {
+    sigma_d: "F_d / A_load" | pc.parse_expr, 
+}
 eqn.update(_e)     # Save to global
 
-_v = {k: v | pc.subs(eqn | params) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
+_v = {
+    k: v | pc.subs(eqn | params) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()
+}
 show_eqn([_p | _e, _v])
+```
 
+
+```{python}
 # Second calculation cell (uses previous results)
-tau, gamma = symbols(r"\tau, \gamma")
+sigma_Rk, sigma_Rd, gamma_M0 = symbols(r"\sigma_{Rk}, \sigma_{Rd}, \gamma_{M0}")
 
-_p = {gamma: 1.5}  # Safety factor
+_p = {
+    sigma_Rk: 275 * u.MPa,
+    gamma_M0: 1.05, # Safety factor
+}  
 params.update(_p)
 
-_e = {tau: "sigma / gamma" | pc.parse_expr}
+_e = {
+    sigma_Rd: "sigma_Rk / gamma_M0" | pc.parse_expr,
+}
 eqn.update(_e)
 
-_v = {k: v | pc.subs(eqn | params) | pc.N for k, v in _e.items()}
-show_eqn([_p | _e, _v])
+_v = {
+    k: v | pc.subs(eqn | params) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()
+}
+show_eqn([_p | _e, _v], float_format=":.2f")
 ```
 
 ## Verification and Checks
@@ -149,12 +295,21 @@ show_eqn([_p | _e, _v])
 Check if calculated values meet criteria:
 
 ```{python}
-#| eval: false
 from keecas import check
 
 # Check if stress is within allowable limits
-sigma_max = 250 * u.MPa
-result = check(sigma, sigma_max)  # Will show verification result
+
+# calculate the value
+_v = {
+    k: k | pc.subs(eqn|params) | pc.convert_to([u.N, u.mm]) | pc.N for k in [sigma_d/sigma_Rd]
+}
+
+# check is the expression is less than 1 (default)
+_c = {
+    k: check(v, 1) for k, v in _v.items()
+}
+
+show_eqn([_v, _c], float_format=":.3f")
 ```
 
 ## CLI Quick Start
@@ -162,6 +317,9 @@ result = check(sigma, sigma_max)  # Will show verification result
 Use the Keecas CLI for quick setup:
 
 ```bash
+# Create a temporary session 
+keecas edit --temp
+
 # Create a new notebook with template
 keecas edit my_calculation.ipynb --template quickstart
 
@@ -172,9 +330,15 @@ keecas edit --dir .
 keecas edit --list-templates
 ```
 
+## Complete Examples
+
+For comprehensive real-world usage, check out the example notebooks:
+
+- **[hello_world.ipynb](https://github.com/kompre/keecas/blob/main/examples/hello_world.ipynb)** - Basic usage patterns and simple calculations
+- **[quarto_example](https://github.com/kompre/keecas/tree/main/examples/quarto_example)** - Complete engineering document with PDF/HTML rendering
+
 ## Next Steps
 
-- Learn more about [Configuration](configuration.qmd)
-- Explore [Conventions](../user-guide/conventions.qmd) for advanced patterns
-- Check out [Examples](../user-guide/examples.qmd) for real-world use cases
-- Review the [API Reference](../api-reference/display.qmd) for complete function documentation
+- Learn more about [Configuration](configuration.qmd) for customizing Keecas behavior
+- Review the [API Reference](../api-reference/) for complete function documentation
+- Explore the [CLI Reference](../cli-reference/index.qmd) for command-line tools

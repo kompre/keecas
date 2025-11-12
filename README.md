@@ -7,108 +7,102 @@
 [![Python Version](https://img.shields.io/pypi/pyversions/keecas.svg)](https://pypi.org/project/keecas/)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://kompre.github.io/keecas)
 
-A module for performing symbolic and units-aware calculations in a jupyter notebook. 
+Symbolic and units-aware calculations for Jupyter notebooks with beautiful LaTeX output.
 
-## Introduction
+## What is keecas?
 
-keecas is a Python module designed to simplify symbolic and units-aware calculations. It leverages well-known Python modules such as `sympy`, `pint`, and `pipe` to provide a convenient and easy-to-use interface.
+keecas minimizes boilerplate for symbolic calculations using **Python dicts** as the core container - **keys** represent left-hand side symbols, **values** represent right-hand side expressions. Built on [SymPy](https://www.sympy.org/), [Pint](https://pint.readthedocs.io/), and [Pipe](https://github.com/JulienPalard/Pipe), it provides automatic unit conversion and LaTeX rendering for [Quarto](https://quarto.org) documents.
 
-It's meant to be used in a interactive environment such as jupyter notebook. It produces latex amsmath code that can be rendered by the notebook, displaying nicely formatted math expression. 
+## Quick Example
 
-It's been developed to be used for [Quarto](https://quarto.org) rendered pdf documents, and it provides some specific features such as cross-reference support for equation.
+```python
+from keecas import symbols, u, pc, show_eqn
 
+# 1. Define symbols with LaTeX notation
+F, A, sigma = symbols(r"F, A, \sigma")
 
-## Features
+# 2. Cell-local parameters
+_p = {
+    F: 10 * u.kN,
+    A: 50 * u.cm**2,
+}
 
-*   Symbolic expression and computation using `sympy`
-*   Units-aware calculations using `pint`
-*   pipe style functions with `pipe`
+# 3. Cell-local expressions
+_e = {
+    sigma: "F / A" | pc.parse_expr
+}
 
-## Examples
+# 4. Evaluation with pipe operations
+_v = {
+    k: v | pc.subs(_e | _p) | pc.convert_to([u.MPa]) | pc.N
+    for k, v in _e.items()
+}
 
-For a quick start, check out the [hello_world.ipynb](examples/hello_world.ipynb) example, which demonstrates how to use keecas to calculate the maximum bending moment for a simple beam.
+# 5. Display as LaTeX amsmath
+show_eqn([_p | _e, _v])
+```
+
+**Output:**
+```latex
+\begin{align}
+    F & = 10{\,}\text{kN} &    \\[8pt]
+    A & = 50{\,}\text{cm}^{2} &    \\[8pt]
+    \sigma & = \dfrac{F}{A} & = 2.0{\,}\text{MPa}
+\end{align}
+```
+
+See [hello_world.ipynb](examples/hello_world.ipynb) for more examples.
 
 ## Installation
 
-To install keecas, run the following command:
-
 ```bash
 pip install keecas
-```
-
-or
-
-```bash
+# or
 uv add keecas
 ```
 
-## Quick Start with CLI
+## Quick Start
 
-After installation, you can quickly start working with keecas using the built-in CLI:
+Launch JupyterLab with keecas template:
 
 ```bash
-# Launch JupyterLab with minimal keecas template
-keecas edit
-
-# Create or open a specific notebook
-keecas edit analysis.ipynb
-
-# Create temporary notebook (auto-cleanup)
-keecas edit --temp
-
-# List available templates
-keecas edit --list-templates
-
-# Use comprehensive examples template
-keecas edit --template quickstart
+keecas edit                        # Minimal template
+keecas edit --template quickstart  # Comprehensive examples
+keecas edit analysis.ipynb         # Open specific notebook
+keecas edit --temp                 # Temporary session
 ```
-
-The CLI automatically:
-- Creates notebooks from keecas templates with proper imports
-- Launches JupyterLab with the notebook already open
-- Handles temporary sessions with auto-cleanup
-- Provides smart file naming (untitled-1.ipynb, untitled-2.ipynb, etc.)
 
 ## Configuration
 
-keecas supports both global and local configuration via TOML files:
+Manage global and local settings via TOML files:
 
 ```bash
-# Initialize and edit configuration
+# Initialize configuration
 keecas config init --global
-keecas config edit --global
 
-# View current configuration
-keecas config show
+# Edit configuration
+keecas config edit --global    # Terminal editor
+keecas config open --local     # System editor (GUI)
+
+# View configuration
+keecas config show             # Merged settings
+keecas config path             # File locations
 ```
 
+## Key Features
 
+- **Dict-based equations**: Natural mapping of LHS to RHS
+- **Pipe operations**: Chain operations like `expr | pc.subs(...) | pc.N`
+- **Unit-aware**: Automatic conversion between Pint and SymPy units
+- **LaTeX output**: Renders as amsmath align blocks
+- **Cross-references**: Label generation for Quarto documents
+- **Multi-language**: 10 languages supported (5 fully localized)
+- **Configuration**: Global/local TOML-based settings
 
-## Dependencies
+## Documentation
 
-keecas depends on the following packages:
-
-*   `flatten-dict`
-*   `ipython`
-*   `pint`
-*   `pipe`
-*   `regex`
-*   `ruamel-yaml`
-*   `sympy`
-*   `toml` (for configuration management)
-
-## Testing
-
-To run the tests, use the following command:
-
-```bash
-pytest
-```
+Full documentation: [https://kompre.github.io/keecas](https://kompre.github.io/keecas)
 
 ## License
 
-keecas is licensed under the [MIT License](https://opensource.org/licenses/MIT).
-
-## Acknowledgments
-
-keecas is built on top of the excellent work of the `sympy`, `pint`, and `pipe` communities. We would like to thank the authors and maintainers of these projects for their contributions to the scientific Python ecosystem.
+MIT License - see [LICENSE](https://opensource.org/licenses/MIT)

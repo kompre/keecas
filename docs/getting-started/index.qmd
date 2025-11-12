@@ -1,5 +1,6 @@
 ---
 title: "Getting Started"
+order: 1
 ---
 
 Welcome to Keecas! This section will help you get up and running quickly with symbolic and units-aware calculations in Jupyter notebooks.
@@ -29,10 +30,10 @@ Set up your preferences and customize behavior.
 
 By the end of this section, you'll be able to:
 
-- ✅ Install Keecas and verify it's working
-- ✅ Create your first symbolic calculation with units
-- ✅ Configure Keecas for your specific needs
-- ✅ Use the CLI for quick notebook setup
+- Install Keecas and verify it's working
+- Create your first symbolic calculation with units
+- Configure Keecas for your specific needs
+- Use the CLI for quick notebook setup
 
 ## Prerequisites
 

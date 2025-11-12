@@ -124,20 +124,35 @@ window.Quarto = {
   <li><a href="#different-latex-environments" id="toc-different-latex-environments" class="nav-link" data-scroll-target="#different-latex-environments">Different LaTeX Environments</a>
   <ul class="collapse">
   <li><a href="#cases-environment" id="toc-cases-environment" class="nav-link" data-scroll-target="#cases-environment">Cases Environment</a></li>
-  <li><a href="#sec-beam-calc" id="toc-sec-beam-calc" class="nav-link" data-scroll-target="#sec-beam-calc">Equation Environment with Labels</a></li>
+  <li><a href="#rcases-environment" id="toc-rcases-environment" class="nav-link" data-scroll-target="#rcases-environment">Rcases Environment</a></li>
+  <li><a href="#equation-environment" id="toc-equation-environment" class="nav-link" data-scroll-target="#equation-environment">Equation Environment</a></li>
+  <li><a href="#gather-environment" id="toc-gather-environment" class="nav-link" data-scroll-target="#gather-environment">Gather Environment</a></li>
+  <li><a href="#custom-environment" id="toc-custom-environment" class="nav-link" data-scroll-target="#custom-environment">Custom Environment</a></li>
   </ul></li>
-  <li><a href="#verification-function" id="toc-verification-function" class="nav-link" data-scroll-target="#verification-function">Verification Function</a></li>
-  <li><a href="#subs-get-ordered" id="toc-subs-get-ordered" class="nav-link" data-scroll-target="#subs-get-ordered">Subs get ordered</a></li>
-  <li><a href="#check-function-templates" id="toc-check-function-templates" class="nav-link" data-scroll-target="#check-function-templates">Check Function Templates</a>
+  <li><a href="#sec-beam-calc" id="toc-sec-beam-calc" class="nav-link" data-scroll-target="#sec-beam-calc">Equation With Labels</a>
   <ul class="collapse">
+  <li><a href="#label-generation" id="toc-label-generation" class="nav-link" data-scroll-target="#label-generation">Label Generation</a></li>
+  </ul></li>
+  <li><a href="#check-function" id="toc-check-function" class="nav-link" data-scroll-target="#check-function">Check Function</a>
+  <ul class="collapse">
+  <li><a href="#check-function-templates" id="toc-check-function-templates" class="nav-link" data-scroll-target="#check-function-templates">Check Function Templates</a></li>
   <li><a href="#custom-templates" id="toc-custom-templates" class="nav-link" data-scroll-target="#custom-templates">Custom Templates</a></li>
+  <li><a href="#template-configuration" id="toc-template-configuration" class="nav-link" data-scroll-target="#template-configuration">Template Configuration</a></li>
+  </ul></li>
+  <li><a href="#automatic-dependency-ordering" id="toc-automatic-dependency-ordering" class="nav-link" data-scroll-target="#automatic-dependency-ordering">Automatic Dependency Ordering</a></li>
+  <li><a href="#common-pitfalls" id="toc-common-pitfalls" class="nav-link" data-scroll-target="#common-pitfalls">Common Pitfalls</a>
+  <ul class="collapse">
+  <li><a href="#pitfall-1-latex-vs-plain-symbol-notation" id="toc-pitfall-1-latex-vs-plain-symbol-notation" class="nav-link" data-scroll-target="#pitfall-1-latex-vs-plain-symbol-notation">Pitfall 1: LaTeX vs Plain Symbol Notation</a></li>
+  <li><a href="#pitfall-2-using-vals-dict-in-pc.subs" id="toc-pitfall-2-using-vals-dict-in-pc.subs" class="nav-link" data-scroll-target="#pitfall-2-using-vals-dict-in-pc.subs">Pitfall 2: Using <code>vals</code> dict in <code>pc.subs</code></a></li>
+  </ul></li>
   </ul></li>
   <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a>
   <ul class="collapse">
-  <li><a href="#template-configuration" id="toc-template-configuration" class="nav-link" data-scroll-target="#template-configuration">Template Configuration</a></li>
+  <li><a href="#features-covered" id="toc-features-covered" class="nav-link" data-scroll-target="#features-covered">Features Covered</a></li>
+  <li><a href="#key-patterns" id="toc-key-patterns" class="nav-link" data-scroll-target="#key-patterns">Key Patterns</a></li>
+  <li><a href="#common-pitfalls-1" id="toc-common-pitfalls-1" class="nav-link" data-scroll-target="#common-pitfalls-1">Common Pitfalls</a></li>
   </ul></li>
-  <li><a href="#test-using-a-quartomarkdownbase64" id="toc-test-using-a-quartomarkdownbase64" class="nav-link" data-scroll-target="#test-using-a-quartomarkdownbase64">Test using a <code>QuartoMarkdownBase64</code></a></li>
-  </ul></li>
+  <li><a href="#links" id="toc-links" class="nav-link" data-scroll-target="#links">Links</a></li>
   </ul>
 <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="..\..\quarto_example.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
 </div>
@@ -162,9 +177,29 @@ window.Quarto = {
 </header>
 
 
+<div style="page-break-after: always;"></div>
 <section id="how-to-use-keecas-in-a-quarto-document" class="level1">
 <h1>How to use keecas in a Quarto document</h1>
-<p>This example demonstrates all the key features of <code>keecas</code> for symbolic and units-aware calculations in a Quarto document.</p>
+<p>This example demonstrates key features of <code>keecas</code> for symbolic and units-aware calculations in a Quarto document.</p>
+<div id="cell-2" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For quick start use starred import</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># from keecas import *</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Or explicit import (this is about all you need)</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> keecas <span class="im">import</span> (</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    check,                  <span class="co"># main function for verification</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    config,                 <span class="co"># configuration options</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    pc,                     <span class="co"># pipe commands</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    show_eqn,               <span class="co"># main function to generate expression block</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    symbols,                <span class="co"># to create symbols (from `sympy`)</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    u,                      <span class="co"># unit registry (from pint)</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    generate_unique_label,  <span class="co"># label generator</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-3" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set the language ('en' is the default)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>config.language.language <span class="op">=</span> <span class="st">"it"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -183,15 +218,74 @@ Note
 </ul>
 </div>
 </div>
+<div id="cell-5" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># This option will not be set at rendering time (only for dev-mode)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>config.display.katex <span class="op">=</span> <span class="va">True</span>         <span class="co"># Disable \label command for KaTeX</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>config.display.print_label <span class="op">=</span> <span class="va">True</span>   <span class="co"># Print labels for easy copy-paste</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-6" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set a prefix for the latex equation (used as namespace)</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>config.latex.eq_prefix <span class="op">=</span> <span class="vs">r"eq-QUARTO_EXAMPLE-"</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co"># config.latex.eq_suffix = ""  # default</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize notebook-global dictionaries for persistence across cells</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>QUARTO_EXAMPLE <span class="op">=</span> {                      <span class="co"># Main namespace dict for this notebook</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'parameters'</span>: (params <span class="op">:=</span> {}),       <span class="co"># Global parameters</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'expressions'</span>: (eqn <span class="op">:=</span> {}),         <span class="co"># Global expressions</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'values'</span>: (vals <span class="op">:=</span> {}),             <span class="co"># Global evaluated results</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 <section id="basic-symbolic-math-with-units" class="level2">
 <h2 class="anchored" data-anchor-id="basic-symbolic-math-with-units">Basic Symbolic Math with Units</h2>
 <p>Define symbols and calculate basic engineering quantities:</p>
-<div id="cell-8" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:39.912122Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:39.911947Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:39.996778Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:39.996443Z&quot;}" data-execution_count="5">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="84">
+<div id="cell-8" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define symbols with LaTeX notation</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>F_d, A_load, sigma_Sd <span class="op">=</span> symbols(<span class="vs">r"F_</span><span class="sc">{d}</span><span class="vs">, A_</span><span class="sc">{load}</span><span class="vs">, \sigma_</span><span class="sc">{Sd}</span><span class="vs">"</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Cell-local parameters with units</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    F_d: <span class="dv">93</span> <span class="op">*</span> u.kN,        <span class="co"># Applied force</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    A_load: <span class="dv">50</span> <span class="op">*</span> u.cm<span class="op">**</span><span class="dv">2</span>,  <span class="co"># Cross-sectional area</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>params.update(_p)  <span class="co"># Save to global params</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Cell-local symbolic expressions</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>_e <span class="op">=</span> {</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    sigma_Sd: <span class="st">"F_d / A_load"</span> <span class="op">|</span> pc.parse_expr,</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>eqn.update(_e)  <span class="co"># Save to global expressions</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Evaluate expressions</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>_v <span class="op">=</span> {</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    k: v <span class="op">|</span> pc.subs(_e <span class="op">|</span> _p) <span class="op">|</span> pc.convert_to([u.MPa]) <span class="op">|</span> pc.N</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k, v <span class="kw">in</span> _e.items()</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Descriptions</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>_d <span class="op">=</span> {</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    F_d: <span class="st">"applied force"</span>,</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    A_load: <span class="st">"cross-sectional area"</span>,</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    sigma_Sd: <span class="st">"normal stress"</span>,</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate unique labels from keys and descriptions</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>_l <span class="op">=</span> {</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>    k: generate_unique_label([k, v]) <span class="cf">for</span> k, v <span class="kw">in</span> _d.items()</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>show_eqn(</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>    [_p <span class="op">|</span> _e, _v, _d],</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>    float_format<span class="op">=</span><span class="st">"</span><span class="sc">{:.2f}</span><span class="st">"</span>,</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span>_l,</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>    <span class="co"># debug=True,</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a><span class="co"># Labels will be printed for easy reference, only in dev-mode (not rendered by quarto)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="33">
 <p><span class="math display">\[\begin{align}
-F &amp; = 10{\,}\text{kN} &amp;   &amp; \quad\text{applied force}  \label{F}  \\[8pt]
-A &amp; = 50{\,}\text{cm}^{2} &amp;   &amp; \quad\text{cross-sectional area}  \label{A}  \\[8pt]
-\sigma &amp; = \dfrac{F}{A} &amp; = 2.00{\,}\text{MPa} &amp; \quad\text{normal stress}  \label{sigma}
+F_{d} &amp; = 93{\,}\text{kN} &amp;   &amp; \quad\text{applied force}  \label{eq-QUARTO_EXAMPLE-41g2kkvl}  \\[8pt]
+A_{load} &amp; = 50{\,}\text{cm}^{2} &amp;   &amp; \quad\text{cross-sectional area}  \label{eq-QUARTO_EXAMPLE-3rad1giw}  \\[8pt]
+\sigma_{Sd} &amp; = \dfrac{F_{d}}{A_{load}} &amp; = 18.60{\,}\text{MPa} &amp; \quad\text{normal stress}  \label{eq-QUARTO_EXAMPLE-41gy5jxq}
 \end{align}\]</span></p>
 </div>
 </div>
@@ -199,8 +293,29 @@ A &amp; = 50{\,}\text{cm}^{2} &amp;   &amp; \quad\text{cross-sectional area}  \l
 <section id="sec-pipe" class="level2">
 <h2 class="anchored" data-anchor-id="sec-pipe">Pipe Commands Demonstration</h2>
 <p>Using pipe operators for functional composition:</p>
-<div id="cell-10" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.014161Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.014021Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.021129Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.020684Z&quot;}" data-execution_count="6">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="85">
+<div id="cell-10" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Chain operations using pipe commands</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>x, y, d <span class="op">=</span> symbols(<span class="st">"x, y, d"</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Cell-local parameters</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    x: <span class="dv">3</span> <span class="op">*</span> u.m,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    y: <span class="dv">4</span> <span class="op">*</span> u.m,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Symbolic expressions</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>_e <span class="op">=</span> {</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    d: <span class="st">"x^2 + y^2"</span> <span class="op">|</span> pc.parse_expr,</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Evaluated results</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>_v <span class="op">=</span> {</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    k: v <span class="op">|</span> pc.subs(_e <span class="op">|</span> _p) <span class="op">|</span> pc.convert_to([u.m]) <span class="op">|</span> pc.N</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k, v <span class="kw">in</span> _e.items()</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>show_eqn([_p <span class="op">|</span> _e, _v])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="34">
 <p><span class="math display">\[\begin{align}
 x &amp; = 3{\,}\text{m} &amp;    \\[8pt]
 y &amp; = 4{\,}\text{m} &amp;    \\[8pt]
@@ -211,24 +326,183 @@ d &amp; = x^{2} + y^{2} &amp; = 25.0{\,}\text{m}^{2}
 </section>
 <section id="different-latex-environments" class="level2">
 <h2 class="anchored" data-anchor-id="different-latex-environments">Different LaTeX Environments</h2>
+<p>Different environment are available for display qith <code>align</code> being the default. <code>*</code> version of the environment are also available.</p>
+<div id="e577a683" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Initial setup</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>E_steel, E_concrete <span class="op">=</span> symbols(<span class="vs">r"E_</span><span class="sc">{steel}</span><span class="vs">, E_</span><span class="sc">{concrete}</span><span class="vs">"</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    E_steel: <span class="dv">200</span> <span class="op">*</span> u.GPa,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    E_concrete: <span class="dv">30</span> <span class="op">*</span> u.GPa,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>_d <span class="op">=</span> {</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    E_steel: <span class="st">"steel elastic modulus"</span>,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    E_concrete: <span class="st">"concrete elastic modulus"</span>,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>show_eqn([_p, _d])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="35">
+<p><span class="math display">\[\begin{align}
+E_{steel} &amp; = 200{\,}\text{GPa} &amp; \quad\text{steel elastic modulus}  \\[8pt]
+E_{concrete} &amp; = 30{\,}\text{GPa} &amp; \quad\text{concrete elastic modulus}
+\end{align}\]</span></p>
+</div>
+</div>
 <section id="cases-environment" class="level3">
 <h3 class="anchored" data-anchor-id="cases-environment">Cases Environment</h3>
-<div id="cell-12" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.022370Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.022195Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.025950Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.025685Z&quot;}" data-execution_count="7">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="86">
+<div id="cell-12" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>show_eqn([_p, _d], environment<span class="op">=</span><span class="st">"cases"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="36">
 <p><span class="math display">\[\begin{align}
-E_{steel} &amp; = 200{\,}\text{GPa} &amp; &amp;\quad\text{steel elastic modulus}  \\[8pt]
-E_{concrete} &amp; = 30{\,}\text{GPa} &amp; &amp;\quad\text{concrete elastic modulus}
+    \left\{\begin{aligned}
+E_{steel} &amp; = 200{\,}\text{GPa} &amp; \quad\text{steel elastic modulus}  \\[8pt]
+E_{concrete} &amp; = 30{\,}\text{GPa} &amp; \quad\text{concrete elastic modulus}
+    \end{aligned}\right.
 \end{align}\]</span></p>
 </div>
 </div>
 </section>
-<section id="sec-beam-calc" class="level3">
-<h3 class="anchored" data-anchor-id="sec-beam-calc">Equation Environment with Labels</h3>
-<p>Calculate beam deflection with cross-references:</p>
-<div id="cell-14" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.027154Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.027043Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.037536Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.037204Z&quot;}" data-execution_count="8">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="87">
+<section id="rcases-environment" class="level3">
+<h3 class="anchored" data-anchor-id="rcases-environment">Rcases Environment</h3>
+<div id="ddefb617" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>show_eqn([_p, _d], environment<span class="op">=</span><span class="st">"rcases"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="37">
 <p><span class="math display">\[\begin{align}
-\delta &amp; = \dfrac{5{\,}q{\,}L^{4}}{384{\,}E{\,}I} &amp; = 15.95{\,}\text{mm}  \label{delta}
+    \left.\begin{aligned}
+E_{steel} &amp; = 200{\,}\text{GPa} &amp; \quad\text{steel elastic modulus}  \\[8pt]
+E_{concrete} &amp; = 30{\,}\text{GPa} &amp; \quad\text{concrete elastic modulus}
+    \end{aligned}\right\}
+\end{align}\]</span></p>
+</div>
+</div>
+</section>
+<section id="equation-environment" class="level3">
+<h3 class="anchored" data-anchor-id="equation-environment">Equation Environment</h3>
+<div id="c9f8321b" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> keecas <span class="im">import</span> wrap_column <span class="im">as</span> wc</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>show_eqn(</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    [_p, _d],</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    col_wrap<span class="op">=</span>[wc]<span class="op">*</span><span class="dv">2</span><span class="op">+</span> [(<span class="vs">r''</span>, <span class="vs">r'\quad'</span>)], <span class="co"># for separating the two expression</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    environment<span class="op">=</span><span class="st">"equation"</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="38">
+<p><span class="math display">\[\begin{equation}
+E_{steel}  = 200{\,}\text{GPa}  \text{steel elastic modulus}\quad E_{concrete}  = 30{\,}\text{GPa}  \text{concrete elastic modulus}\quad
+\end{equation}\]</span></p>
+</div>
+</div>
+</section>
+<section id="gather-environment" class="level3">
+<h3 class="anchored" data-anchor-id="gather-environment">Gather Environment</h3>
+</section>
+<section id="custom-environment" class="level3">
+<h3 class="anchored" data-anchor-id="custom-environment">Custom Environment</h3>
+<p>A custom environment can be defined. Here we define a custom environment with raw LaTeX blocks encapsulation:</p>
+<div id="daf5d17a" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>a, b, c <span class="op">=</span> symbols(<span class="vs">r"a b c"</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    a: <span class="dv">5</span> <span class="op">*</span> u.m,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    b: <span class="dv">12</span> <span class="op">*</span> u.m,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    c: a <span class="op">+</span> b,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>_d <span class="op">=</span> {</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    a: <span class="st">"length a"</span>,</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    b: <span class="st">"length b"</span>,</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    c: <span class="st">"total length c"</span>,</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Custom environment definition with raw LaTeX blocks</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>custom_env <span class="op">=</span> {</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"separator"</span>: <span class="st">" &amp; "</span>,</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">"line_separator"</span>: <span class="vs">r" \\"</span> <span class="op">+</span> <span class="st">"</span><span class="ch">\n</span><span class="st">"</span>,</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">"supports_multiple_labels"</span>: <span class="va">True</span>,</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"outer_environment"</span>: <span class="st">"align"</span>,</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">"inner_environment"</span>: <span class="va">None</span>,</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">"inner_prefix"</span>: <span class="st">""</span>,</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">"inner_suffix"</span>: <span class="st">""</span>,</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">"outer_prefix"</span>: <span class="st">"```{=latex}</span><span class="ch">\n</span><span class="st">"</span>,</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">"outer_suffix"</span>: <span class="st">"</span><span class="ch">\n</span><span class="st">```"</span>,</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">"label_position"</span>: <span class="st">"outer"</span>,</span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a><span class="co"># show_eqn return a Latex object. In this case it is necessary to convert it to Markdown for correct display</span></span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown</span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>Markdown(</span>
+<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>    show_eqn(</span>
+<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a>        [_p, _d],</span>
+<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>        environment<span class="op">=</span>custom_env,</span>
+<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>        debug<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>    ).data</span>
+<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>```{=latex}
+\begin{align}
+a  &amp;  = 5{\,}\text{m}  &amp;  \quad\text{length a}  \\[8pt]
+b  &amp;  = 12{\,}\text{m}  &amp;  \quad\text{length b}  \\[8pt]
+c  &amp;  = a + b  &amp;  \quad\text{total length c} 
+\end{align}
+```</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="39">
+<span class="math display">\[\begin{align}
+a  &amp;  = 5{\,}\text{m}  &amp;  \quad\text{length a}  \\[8pt]
+b  &amp;  = 12{\,}\text{m}  &amp;  \quad\text{length b}  \\[8pt]
+c  &amp;  = a + b  &amp;  \quad\text{total length c}
+\end{align}\]</span>
+</div>
+</div>
+<div id="d273c7c1" class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># starred version of gather</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>show_eqn([_p, _d], environment<span class="op">=</span><span class="st">"gather*"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="40">
+<p><span class="math display">\[\begin{gather*}
+a  = 5{\,}\text{m}  \quad\text{length a}  \\[8pt]
+b  = 12{\,}\text{m}  \quad\text{length b}  \\[8pt]
+c  = a + b  \quad\text{total length c}
+\end{gather*}\]</span></p>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-beam-calc" class="level2">
+<h2 class="anchored" data-anchor-id="sec-beam-calc">Equation With Labels</h2>
+<p>Calculate beam deflection with cross-references:</p>
+<div id="cell-14" class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Beam calculation</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>q, L, E, I, delta <span class="op">=</span> symbols(<span class="vs">r"q, L, E, I, \delta"</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    q: <span class="dv">5</span> <span class="op">*</span> u.kN <span class="op">/</span> u.m,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    L: <span class="dv">8</span> <span class="op">*</span> u.m,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    E: <span class="dv">200</span> <span class="op">*</span> u.GPa,</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    I: <span class="dv">8360</span> <span class="op">*</span> u.cm<span class="op">**</span><span class="dv">4</span>,</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>params.update(_p)  <span class="co"># Save to global params</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Deflection formula</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>_e <span class="op">=</span> {</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    delta: <span class="st">"5 * q * L^4 / (384 * E * I)"</span> <span class="op">|</span> pc.parse_expr,</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>eqn.update(_e)  <span class="co"># Save to global expressions</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>_v <span class="op">=</span> {</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>    k: v <span class="op">|</span> pc.subs(_e <span class="op">|</span> _p) <span class="op">|</span> pc.convert_to([u.mm]) <span class="op">|</span> pc.N</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k, v <span class="kw">in</span> _e.items()</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>_l <span class="op">=</span> {</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>    k: generate_unique_label([k, v]) <span class="cf">for</span> k, v <span class="kw">in</span> _e.items()</span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>show_eqn([_e, _v], label<span class="op">=</span>_l, float_format<span class="op">=</span><span class="st">"</span><span class="sc">{:.2f}</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="41">
+<p><span class="math display">\[\begin{align}
+\delta &amp; = \dfrac{5{\,}q{\,}L^{4}}{384{\,}E{\,}I} &amp; = 15.95{\,}\text{mm}  \label{eq-QUARTO_EXAMPLE-2kp5fgk9}
 \end{align}\]</span></p>
 </div>
 </div>
@@ -242,56 +516,395 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>labels emitted by <code>show_eqn</code> are latex labels, therefore they need to be referenced with <code>\eqref{}</code> or <code>\ref{}</code> latex commands.</p>
-<p><strong>?@eq-QUARTO_EXAMPLE-delta</strong> will not work</p>
+<p>labels emitted by <code>show_eqn</code> are latex labels, therefore they need to be referenced with <code>\eqref{}</code> or <code>\ref{}</code> latex commands:</p>
+<ul>
+<li><code>@eq-QUARTO_EXAMPLE-delta</code> will not work -&gt; (<strong>?@eq-QUARTO_EXAMPLE-delta</strong>)</li>
+<li><code>\eqref{eq-QUARTO_EXAMPLE-2kp5fgk9}</code> will work -&gt; <span class="math inline">\(\eqref{eq-QUARTO_EXAMPLE-2kp5fgk9}\)</span></li>
+</ul>
 </div>
 </div>
-<p>The deflection calculated in <span class="math inline">\(\ref{eq-QUARTO_EXAMPLE-delta}\)</span> shows acceptable values for serviceability.</p>
+<p>The deflection calculated in <span class="math inline">\(\eqref{eq-QUARTO_EXAMPLE-2kp5fgk9}\)</span> shows acceptable values for serviceability.</p>
+<section id="label-generation" class="level3">
+<h3 class="anchored" data-anchor-id="label-generation">Label Generation</h3>
+<p>Various methods for generating labels for equation cross-references:</p>
+<div id="35262de7" class="cell" data-execution_count="14">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Setup for label examples</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> keecas <span class="im">import</span> generate_label</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>J, E, a, b, c_0 <span class="op">=</span> symbols(<span class="vs">r"J, E, a, b, c_</span><span class="sc">{0}</span><span class="vs">"</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Dictionary to be displayed by show_eqn</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    J: <span class="dv">123</span> <span class="op">*</span> u.cm<span class="op">**</span><span class="dv">4</span>,</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    E: <span class="dv">456</span> <span class="op">*</span> u.MPa,</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    a: <span class="st">"b + c_0 / 2"</span> <span class="op">|</span> pc.parse_expr,</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="manual-label-assignment" class="level4">
+<h4 class="anchored" data-anchor-id="manual-label-assignment">Manual Label Assignment</h4>
+<p>When manually assigning labels, they should be LaTeX-safe:</p>
+<div id="4caaa453" class="cell" data-execution_count="15">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># When manually assigning labels, they should be LaTeX safe</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>_l <span class="op">=</span> {</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    J: <span class="st">"eq-moment-of-inertia"</span>,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    E: <span class="st">"eq-modulus-of-elasticity"</span>,</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    a: <span class="st">"eq-an-expression"</span>,</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Pass _l to show_eqn</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>show_eqn(_p, label<span class="op">=</span>_l)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="43">
+<p><span class="math display">\[\begin{align}
+J &amp; = 123{\,}\text{cm}^{4}  \label{eq-moment-of-inertia}  \\[8pt]
+E &amp; = 456{\,}\text{MPa}  \label{eq-modulus-of-elasticity}  \\[8pt]
+a &amp; = b + \dfrac{c_{0}}{2}  \label{eq-an-expression}
+\end{align}\]</span></p>
+</div>
+</div>
+</section>
+<section id="controlled-automatic-generation" class="level4">
+<h4 class="anchored" data-anchor-id="controlled-automatic-generation">Controlled Automatic Generation</h4>
+<p>Generate labels with <code>eq-</code> prefix automatically:</p>
+<section id="non-hashed-labels" class="level5">
+<h5 class="anchored" data-anchor-id="non-hashed-labels">Non hashed Labels</h5>
+<div id="cec185b9" class="cell" data-execution_count="16">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Provide LaTeX-safe descriptions (no spaces)</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>_l <span class="op">=</span> {</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    J: <span class="st">"moment-of-inertia"</span>,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    E: <span class="st">"modulus-of-elasticity"</span>,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    a: <span class="st">"an-expression"</span>,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate the labels with eq- prefix</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>_l <span class="op">=</span> generate_label(_l)</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Pass _l to show_eqn</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>show_eqn(_p, label<span class="op">=</span>_l)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="44">
+<p><span class="math display">\[\begin{align}
+J &amp; = 123{\,}\text{cm}^{4}  \label{eq-QUARTO_EXAMPLE-moment-of-inertia}  \\[8pt]
+E &amp; = 456{\,}\text{MPa}  \label{eq-QUARTO_EXAMPLE-modulus-of-elasticity}  \\[8pt]
+a &amp; = b + \dfrac{c_{0}}{2}  \label{eq-QUARTO_EXAMPLE-an-expression}
+\end{align}\]</span></p>
+</div>
+</div>
+</section>
+<section id="hashed-labels-recommended" class="level5">
+<h5 class="anchored" data-anchor-id="hashed-labels-recommended">hashed Labels (recommended)</h5>
+<div id="b80b91b0" class="cell" data-execution_count="17">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Descriptions with spaces (will be converted to LaTeX-safe format)</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>_d <span class="op">=</span> {</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    J: <span class="st">"moment of inertia"</span>,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    E: <span class="st">"modulus of elasticity"</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    a: <span class="st">"an expression"</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate unique labels from descriptions</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>_l <span class="op">=</span> generate_unique_label(_d)</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="co"># save to global dict for later retrieval</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>labels <span class="op">=</span> _l</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Pass _l to show_eqn</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>show_eqn(_p, label<span class="op">=</span>_l)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="45">
+<p><span class="math display">\[\begin{align}
+J &amp; = 123{\,}\text{cm}^{4}  \label{eq-QUARTO_EXAMPLE-534vb10v}  \\[8pt]
+E &amp; = 456{\,}\text{MPa}  \label{eq-QUARTO_EXAMPLE-1sipf20t}  \\[8pt]
+a &amp; = b + \dfrac{c_{0}}{2}  \label{eq-QUARTO_EXAMPLE-30phqdq8}
+\end{align}\]</span></p>
+</div>
+</div>
+<p>With an helper function, the generated labels saved to a dict can be easily referenced in the quarto document:</p>
+<div id="1c3f0dab" class="cell" data-execution_count="18">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co"># helper function for eqref</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> eqref(label):</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> Markdown(<span class="vs">rf"\eqref</span><span class="ch">{{</span><span class="sc">{</span>label<span class="sc">}</span><span class="ch">}}</span><span class="vs">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>For example <span class="math inline">\(J\)</span> is defined at <span class="math inline">\(\eqref{eq-QUARTO_EXAMPLE-534vb10v}\)</span>, while <span class="math inline">\(E\)</span> is defined at <span class="math inline">\(\eqref{eq-QUARTO_EXAMPLE-1sipf20t}\)</span></p>
 </section>
 </section>
-<section id="verification-function" class="level2">
-<h2 class="anchored" data-anchor-id="verification-function">Verification Function</h2>
+<section id="full-automatic-generation" class="level4">
+<h4 class="anchored" data-anchor-id="full-automatic-generation">Full Automatic Generation</h4>
+<p>A callable can be passed to <code>label</code> argument of <code>show_eqn</code>. For each key, all the key and values will be passed to the callable.</p>
+<div id="6d5a0f74" class="cell" data-execution_count="19">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pass generate_unique_label directly to show_eqn</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Labels are generated from key + values from all the dict passed to show_eqn </span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="co"># this is equivalent </span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>_l <span class="op">=</span> {</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    k: generate_unique_label([k, _p[k], _d[k]]) <span class="cf">for</span> k <span class="kw">in</span> _p.keys()</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co"># to this</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>show_eqn([_p, _d], label<span class="op">=</span>generate_unique_label)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="47">
+<p><span class="math display">\[\begin{align}
+J &amp; = 123{\,}\text{cm}^{4} &amp; \quad\text{moment of inertia}  \label{eq-QUARTO_EXAMPLE-3lb6w5uv}  \\[8pt]
+E &amp; = 456{\,}\text{MPa} &amp; \quad\text{modulus of elasticity}  \label{eq-QUARTO_EXAMPLE-1mp6ez2n}  \\[8pt]
+a &amp; = b + \dfrac{c_{0}}{2} &amp; \quad\text{an expression}  \label{eq-QUARTO_EXAMPLE-5kh184ai}
+\end{align}\]</span></p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>When using this method, the interpolated label will change if any of the values in the key-row of the Dataframe change. For a more stable approach, either pass an already interpolated dict of labels as string (recommended), or use a custom callable with a more resilient logic (e.g.&nbsp;use only the element of the list that are less likely to change).</p>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="check-function" class="level2">
+<h2 class="anchored" data-anchor-id="check-function">Check Function</h2>
 <p>Using the <code>check</code> function for design checks:</p>
-<div id="cell-18" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.038659Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.038548Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.046279Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.046017Z&quot;}" data-execution_count="9">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="88">
+<div id="cell-18" class="cell" data-execution_count="20">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Design checks</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>sigma_Sd, tau_Sd, sigma_Rd, tau_Rd <span class="op">=</span> symbols(</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="vs">r"\sigma_</span><span class="sc">{Sd}</span><span class="vs">, \tau_</span><span class="sc">{Sd}</span><span class="vs">, \sigma_</span><span class="sc">{Rd}</span><span class="vs">, \tau_</span><span class="sc">{Rd}</span><span class="vs">"</span>,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    sigma_Sd: <span class="dv">20</span> <span class="op">*</span> u.MPa,</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    tau_Sd: <span class="dv">15</span> <span class="op">*</span> u.MPa,</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    sigma_Rd: <span class="dv">250</span> <span class="op">*</span> u.MPa,</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    tau_Rd: <span class="dv">75</span> <span class="op">*</span> u.MPa,</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Expressions to check</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>_expr <span class="op">=</span> [</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>    sigma_Sd <span class="op">/</span> sigma_Rd,</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>    tau_Sd <span class="op">/</span> tau_Rd,</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Evaluate expressions</span></span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>_v <span class="op">=</span> {</span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    k: k <span class="op">|</span> pc.subs(_e <span class="op">|</span> _p) <span class="op">|</span> pc.N <span class="cf">for</span> k <span class="kw">in</span> _expr</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if expressions are less than 1</span></span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>_c <span class="op">=</span> {</span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>    k: check(v, <span class="fl">1.0</span>) <span class="cf">for</span> k, v <span class="kw">in</span> _v.items()</span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Specify float format only for the check values</span></span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a>_ff <span class="op">=</span> {</span>
+<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a>    k: [<span class="va">None</span>, <span class="st">"</span><span class="sc">{:.3f}</span><span class="st">"</span>, <span class="va">None</span>] <span class="cf">for</span> k <span class="kw">in</span> _c.keys()</span>
+<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a>show_eqn([_p <span class="op">|</span> _v, _c], float_format<span class="op">=</span>_ff)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="48">
 <p><span class="math display">\[\begin{align}
 \sigma_{Sd} &amp; = 20{\,}\text{MPa} &amp;    \\[8pt]
 \tau_{Sd} &amp; = 15{\,}\text{MPa} &amp;    \\[8pt]
 \sigma_{Rd} &amp; = 250{\,}\text{MPa} &amp;    \\[8pt]
 \tau_{Rd} &amp; = 75{\,}\text{MPa} &amp;    \\[8pt]
-\dfrac{\sigma_{Sd}}{\sigma_{Rd}} &amp; = 0.080 &amp; \quad\text{$\textcolor{green}{\left[\le1.0\quad \textbf{VERIFIED}\right]}$}  \\[8pt]
-\dfrac{\tau_{Sd}}{\tau_{Rd}} &amp; = 0.200 &amp; \quad\text{$\textcolor{green}{\left[\le1.0\quad \textbf{VERIFIED}\right]}$}
+\dfrac{\sigma_{Sd}}{\sigma_{Rd}} &amp; = 0.080 &amp; \quad\text{$\textcolor{green}{\left[\le1.0\quad \textbf{VERIFICATO}\right]}$}  \\[8pt]
+\dfrac{\tau_{Sd}}{\tau_{Rd}} &amp; = 0.200 &amp; \quad\text{$\textcolor{green}{\left[\le1.0\quad \textbf{VERIFICATO}\right]}$}
 \end{align}\]</span></p>
 </div>
 </div>
-<p>The type of comparison in the <code>check</code> function can be specified, as well the value to be specified against.</p>
-<div id="cell-20" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.047280Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.047133Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.050781Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.050531Z&quot;}" data-execution_count="10">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="89">
+<p>The type of comparison in the <code>check</code> function can be specified, as well as the value to be checked against:</p>
+<div id="cell-20" class="cell" data-execution_count="21">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sympy <span class="im">import</span> Eq, Ge, Gt, Le, Lt</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>a, b, c, d, f <span class="op">=</span> symbols(<span class="st">"a, b, c, d, f"</span>)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>_expr <span class="op">=</span> {</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    a: (<span class="dv">3</span>, Le, <span class="dv">1</span>),</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    b: (<span class="dv">4</span>, Gt, <span class="dv">2</span>),</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    c: (<span class="dv">5</span>, Lt, <span class="dv">3</span>),</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    d: (<span class="dv">6</span>, Ge, <span class="dv">4</span>),</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>    f: (<span class="dv">7</span>, Eq, <span class="dv">5</span>),</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>_c <span class="op">=</span> {</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>    k: check(lhs<span class="op">=</span>v[<span class="dv">0</span>], test<span class="op">=</span>v[<span class="dv">1</span>], rhs<span class="op">=</span>v[<span class="dv">2</span>])</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k, v <span class="kw">in</span> _expr.items()</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>show_eqn(</span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>    [</span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>        {k: v[<span class="dv">0</span>] <span class="cf">for</span> k, v <span class="kw">in</span> _expr.items()},</span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>        _c,</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="49">
 <p><span class="math display">\[\begin{align}
-a &amp; = 3 &amp; \quad\text{$\textcolor{red}{\left[&gt;1\quad \textbf{NOT VERIFIED}\right]}$}  \\[8pt]
-b &amp; = 4 &amp; \quad\text{$\textcolor{green}{\left[&gt;2\quad \textbf{VERIFIED}\right]}$}  \\[8pt]
-c &amp; = 5 &amp; \quad\text{$\textcolor{red}{\left[\ge3\quad \textbf{NOT VERIFIED}\right]}$}  \\[8pt]
-d &amp; = 6 &amp; \quad\text{$\textcolor{green}{\left[\ge4\quad \textbf{VERIFIED}\right]}$}  \\[8pt]
-f &amp; = 7 &amp; \quad\text{$\textcolor{red}{\left[\neq5\quad \textbf{NOT VERIFIED}\right]}$}
+a &amp; = 3 &amp; \quad\text{$\textcolor{red}{\left[&gt;1\quad \textbf{NON VERIFICATO}\right]}$}  \\[8pt]
+b &amp; = 4 &amp; \quad\text{$\textcolor{green}{\left[&gt;2\quad \textbf{VERIFICATO}\right]}$}  \\[8pt]
+c &amp; = 5 &amp; \quad\text{$\textcolor{red}{\left[\ge3\quad \textbf{NON VERIFICATO}\right]}$}  \\[8pt]
+d &amp; = 6 &amp; \quad\text{$\textcolor{green}{\left[\ge4\quad \textbf{VERIFICATO}\right]}$}  \\[8pt]
+f &amp; = 7 &amp; \quad\text{$\textcolor{red}{\left[\neq5\quad \textbf{NON VERIFICATO}\right]}$}
+\end{align}\]</span></p>
+</div>
+</div>
+<section id="check-function-templates" class="level3">
+<h3 class="anchored" data-anchor-id="check-function-templates">Check Function Templates</h3>
+<p>The <code>check</code> function supports customizable templates for different visual styles:</p>
+<div id="cell-29" class="cell" data-execution_count="22">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Default template behavior</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>result_default <span class="op">=</span> [</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    check(<span class="fl">0.8</span>, <span class="fl">1.0</span>), <span class="co"># True</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    check(<span class="fl">1.2</span>, <span class="fl">1.0</span>), <span class="co"># False</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Using named template sets</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>result_boxed <span class="op">=</span> [check(<span class="fl">0.8</span>, <span class="fl">1.0</span>, template<span class="op">=</span><span class="st">"boxed"</span>), check(<span class="fl">1.2</span>, <span class="fl">1.0</span>, template<span class="op">=</span><span class="st">"boxed"</span>)]</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>result_minimal <span class="op">=</span> [check(<span class="fl">0.8</span>, <span class="fl">1.0</span>, template<span class="op">=</span><span class="st">"minimal"</span>), check(<span class="fl">1.2</span>, <span class="fl">1.0</span>, template<span class="op">=</span><span class="st">"minimal"</span>)]</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Demonstration of different template styles</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>template_demo <span class="op">=</span> {</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Default"</span>: result_default,</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Boxed"</span>: result_boxed,</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Minimal"</span>: result_minimal,</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a><span class="co"># template_demo is dict[Any, list], therefore it must converted to Dataframe before passing to show_eqn</span></span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> keecas <span class="im">import</span> Dataframe</span>
+<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a>show_eqn(</span>
+<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a>    Dataframe(template_demo),</span>
+<span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a>    col_wrap<span class="op">=</span>[<span class="va">None</span>, <span class="vs">r":\quad"</span>, <span class="vs">r"&amp;\quad"</span>],</span>
+<span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a>    environment<span class="op">=</span><span class="st">"align*"</span>,</span>
+<span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="50">
+<p><span class="math display">\[\begin{align*}
+\text{Default} &amp; :\quad\text{$\textcolor{green}{\left[\le1.0\quad \textbf{VERIFICATO}\right]}$} &amp; &amp;\quad\text{$\textcolor{red}{\left[&gt;1.0\quad \textbf{NON VERIFICATO}\right]}$}  \\[8pt]
+\text{Boxed} &amp; :\quad\text{\colorbox{green}{$\le1.0 \; \checkmark \; \textbf{VERIFICATO}$}} &amp; &amp;\quad\text{\colorbox{red}{$&gt;1.0 \; \times \; \textbf{NON VERIFICATO}$}}  \\[8pt]
+\text{Minimal} &amp; :\quad\text{$\le1.0 {\,}\textcolor{green}{\checkmark}$} &amp; &amp;\quad\text{$&gt;1.0 {\,}\textcolor{red}{\times}$}
+\end{align*}\]</span></p>
+</div>
+</div>
+<div id="cell-31" class="cell" data-execution_count="23">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Complex expression with multiple substitutions</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>a, b, c, d <span class="op">=</span> symbols(<span class="vs">r"a, b, c, d"</span>)</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    a: <span class="dv">3</span>,</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    b: <span class="dv">4</span>,</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>params.update(_p)</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>_e <span class="op">=</span> {</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>    d: <span class="st">"sqrt(a^2 + b^2) / c"</span> <span class="op">|</span> pc.parse_expr,  <span class="co"># Uses c, which is defined below</span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    c: <span class="st">"a*b"</span> <span class="op">|</span> pc.parse_expr,                  <span class="co"># Defined after d, but keecas handles it</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>eqn.update(_e)</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>_v <span class="op">=</span> {</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    k: v <span class="op">|</span> pc.subs(eqn <span class="op">|</span> params) <span class="op">|</span> pc.N</span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k, v <span class="kw">in</span> _e.items()</span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>show_eqn([_p <span class="op">|</span> _e, _v], float_format<span class="op">=</span><span class="st">"</span><span class="sc">{:.3f}</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="51">
+<p><span class="math display">\[\begin{align}
+a &amp; = 3 &amp;    \\[8pt]
+b &amp; = 4 &amp;    \\[8pt]
+d &amp; = \dfrac{\sqrt{a^{2} + b^{2}}}{c} &amp; = 0.417  \\[8pt]
+c &amp; = a{\,}b &amp; = 12.000
 \end{align}\]</span></p>
 </div>
 </div>
 </section>
-<section id="subs-get-ordered" class="level2">
-<h2 class="anchored" data-anchor-id="subs-get-ordered">Subs get ordered</h2>
-<p>Using <code>pc.subs</code> will automatically order the substitutions pairs topologically, so you don’t have to order them yourself (default <code>sympy</code> behavior). For example let’s define some mappings in any order:</p>
-<div id="cell-22" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.051768Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.051595Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.054560Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.054247Z&quot;}" data-execution_count="11">
-<div class="cell-output cell-output-display cell-output-markdown">
+<section id="custom-templates" class="level3">
+<h3 class="anchored" data-anchor-id="custom-templates">Custom Templates</h3>
+<p>You can also use completely custom templates:</p>
+<div id="cell-33" class="cell" data-execution_count="24">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Custom template examples (emoji may not render in latex)</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>custom_success <span class="op">=</span> <span class="vs">r"✅ $</span><span class="sc">{symbol}{rhs}</span><span class="vs">$ \textbf</span><span class="sc">{{</span><span class="vs">PASS</span><span class="sc">}}</span><span class="vs">"</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>custom_failure <span class="op">=</span> <span class="vs">r"❌ $</span><span class="sc">{symbol}{rhs}</span><span class="vs">$ \textbf</span><span class="sc">{{</span><span class="vs">FAIL</span><span class="sc">}}</span><span class="vs">"</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Test both success and failure cases</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>ratio_ok <span class="op">=</span> <span class="fl">0.8</span>      <span class="co"># Should pass</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>ratio_fail <span class="op">=</span> <span class="fl">1.2</span>    <span class="co"># Should fail</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>check_ok <span class="op">=</span> check(</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>    ratio_ok,</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>    <span class="fl">1.0</span>,</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>    success_template<span class="op">=</span>custom_success,</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>    failure_template<span class="op">=</span>custom_failure,</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>check_fail <span class="op">=</span> check(</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>    ratio_fail,</span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>    <span class="fl">1.0</span>,</span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>    success_template<span class="op">=</span>custom_success,</span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>    failure_template<span class="op">=</span>custom_failure,</span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>custom_demo <span class="op">=</span> {</span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Pass"</span>: check_ok,</span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Fail"</span>: check_fail,</span>
+<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>show_eqn(custom_demo, col_wrap<span class="op">=</span>[<span class="va">None</span>, <span class="st">":"</span>, <span class="st">"&amp;"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="52">
+<p><span class="math display">\[\begin{align}
+\text{Pass} &amp; :\text{✅ $\le1.0$ \textbf{PASS}}  \\[8pt]
+\text{Fail} &amp; :\text{❌ $&gt;1.0$ \textbf{FAIL}}
+\end{align}\]</span></p>
+</div>
+</div>
+</section>
+<section id="template-configuration" class="level3">
+<h3 class="anchored" data-anchor-id="template-configuration">Template Configuration</h3>
+<p>Templates can also be configured globally via TOML config files:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[check_templates.template_sets.minimal]</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="dt">success</span> <span class="op">=</span> <span class="st">'</span><span class="vs">${symbol}{rhs} \,\textcolor{{green}}{{\checkmark}}$</span><span class="st">'</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="dt">failure</span> <span class="op">=</span> <span class="st">'</span><span class="vs">${symbol}{rhs} \,\textcolor{{red}}{{\times}}$</span><span class="st">'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>This allows you to set project-wide or user-wide styling for all check functions.</p>
+</section>
+</section>
+<section id="automatic-dependency-ordering" class="level2">
+<h2 class="anchored" data-anchor-id="automatic-dependency-ordering">Automatic Dependency Ordering</h2>
+<p>Using <code>pc.subs</code> will automatically order the substitutions pairs topologically, so you don’t have to order them yourself (default <code>sympy</code> behavior). For example, let’s define some mappings in any order:</p>
+<div id="a34b1db1" class="cell" data-execution_count="25">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>any_order_params <span class="op">=</span> {</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    x: y<span class="op">**</span><span class="dv">2</span>, <span class="co"># it used `y` which is defined later</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    y: a <span class="op">+</span> <span class="dv">1</span>, <span class="co"># `y` is a dependent value</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    a: <span class="dv">3</span>,</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>show_eqn(any_order_params, environment<span class="op">=</span><span class="st">"cases"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="53">
 <p><span class="math display">\[\begin{align}
     \left\{\begin{aligned}
-\delta &amp; = \dfrac{5{\,}q{\,}L^{4}}{384{\,}E{\,}I}
+x &amp; = y^{2}  \\[8pt]
+y &amp; = 1 + a  \\[8pt]
+a &amp; = 3
     \end{aligned}\right.
 \end{align}\]</span></p>
 </div>
 </div>
-<p>If we use the default behavior of sympy’s <code>subs</code> method (unsorted substitutions) we get:</p>
-<div id="cell-24" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.055654Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.055542Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.058669Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.058419Z&quot;}" data-execution_count="12">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="91">
+<p>If we use the default behavior of <code>sympy</code>’s <code>subs</code> method (unsorted substitutions) we get:</p>
+<div id="339c3e00" class="cell" data-execution_count="26">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># `pc.subs(any_order_params, sorted=False)` is equivalent to `sympy`'s subs method</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>_v <span class="op">=</span> {</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    lhs: rhs <span class="op">|</span> pc.subs(any_order_params, <span class="bu">sorted</span><span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> lhs, rhs <span class="kw">in</span> any_order_params.items()</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>_d <span class="op">=</span> {</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>    x: <span class="st">"partially evaluated"</span>,</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>show_eqn(</span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>    [_v, _d],</span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>    environment<span class="op">=</span><span class="st">"cases"</span>,</span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="54">
 <p><span class="math display">\[\begin{align}
     \left\{\begin{aligned}
 x &amp; = \left(1 + a\right)^{2} &amp; \quad\text{partially evaluated}  \\[8pt]
@@ -302,8 +915,21 @@ a &amp; = 3 &amp;
 </div>
 </div>
 <p>While the default behavior of <code>pc.subs</code> is to sort the substitutions:</p>
-<div id="cell-26" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.059651Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.059500Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.062235Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.061990Z&quot;}" data-execution_count="13">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="92">
+<div id="1e087180" class="cell" data-execution_count="27">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>_v <span class="op">=</span> {</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>    lhs: rhs <span class="op">|</span> pc.subs(any_order_params)</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> lhs, rhs <span class="kw">in</span> any_order_params.items()</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>_d <span class="op">=</span> {</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>    x: <span class="st">"fully evaluated"</span>,</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>show_eqn(</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>    [_v, _d],</span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>    environment<span class="op">=</span><span class="st">"cases"</span>,</span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="55">
 <p><span class="math display">\[\begin{align}
     \left\{\begin{aligned}
 x &amp; = 16 &amp; \quad\text{fully evaluated}  \\[8pt]
@@ -323,84 +949,193 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><code>pc.subs</code> also take care of sympyfing the object before subsituting. In the above example <span class="math inline">\(a\)</span> is mapped to <code>3</code>, an <code>int</code>, therefore during dict comprehension the <code>int</code> is piped to <code>pc.subs</code>. If you would have used the <code>sympy</code> subs method directly, you would have get an error because the type <code>int</code> does not have <code>subs</code> method (the corrected dict comprehension you should look like <code>S(rhs).subs(...)</code>).</p>
+<p><code>pc.subs</code> automatically converts objects to <code>sympy</code> expressions before substitution. In the example above, <span class="math inline">\(a\)</span> maps to the Python <code>int</code> value <code>3</code>. When piping <code>int</code> through <code>pc.subs</code>, it works seamlessly. If you used <code>sympy</code>’s <code>subs()</code> method directly, you’d get an error since <code>int</code> objects don’t have a <code>subs()</code> method. You’d need to write <code>S(rhs).subs(...)</code> to explicitly convert first.</p>
 </div>
 </div>
 </section>
-<section id="check-function-templates" class="level2">
-<h2 class="anchored" data-anchor-id="check-function-templates">Check Function Templates</h2>
-<p>The <code>check</code> function supports customizable templates for different visual styles:</p>
-<div id="cell-29" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.063186Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.063083Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.066505Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.066241Z&quot;}" data-execution_count="14">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="93">
-<p><span class="math display">\[\begin{align}
-\text{Default} &amp; :\quad\text{$\textcolor{green}{\left[\le1.0\quad \textbf{VERIFIED}\right]}$}  \\[8pt]
-\text{Boxed} &amp; :\quad\text{\colorbox{green}{$\le1.0 \; \checkmark \; \textbf{VERIFIED}$}}  \\[8pt]
-\text{Minimal} &amp; :\quad\text{$\le1.0 {\,}\textcolor{green}{\checkmark}$}
-\end{align}\]</span></p>
+<section id="common-pitfalls" class="level2">
+<h2 class="anchored" data-anchor-id="common-pitfalls">Common Pitfalls</h2>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important Patterns to Know
 </div>
 </div>
-<div id="cell-30" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.067460Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.067357Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.077980Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.077685Z&quot;}" data-execution_count="15">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="94">
-<p><span class="math display">\[\begin{align}
-a &amp; = 3 &amp;    \\[8pt]
-b &amp; = 4 &amp;    \\[8pt]
-d &amp; = \dfrac{\sqrt{a^{2} + b^{2}}}{c} &amp; = 0.417  \\[8pt]
-c &amp; = a{\,}b &amp; = 12.000
-\end{align}\]</span></p>
+<div class="callout-body-container callout-body">
+<p>Understanding these common pitfalls will save you debugging time and ensure correct calculations.</p>
 </div>
 </div>
-<section id="custom-templates" class="level3">
-<h3 class="anchored" data-anchor-id="custom-templates">Custom Templates</h3>
-<p>You can also use completely custom templates:</p>
-<div id="cell-32" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2025-10-03T07:51:40.078975Z&quot;,&quot;iopub.status.busy&quot;:&quot;2025-10-03T07:51:40.078864Z&quot;,&quot;iopub.status.idle&quot;:&quot;2025-10-03T07:51:40.081940Z&quot;,&quot;shell.execute_reply&quot;:&quot;2025-10-03T07:51:40.081691Z&quot;}" data-execution_count="16">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="95">
-<p><span class="math display">\[\begin{align}
-\text{Pass} &amp; :\quad\text{✅ $\le1.0$ \textbf{PASS}}  \\[8pt]
-\text{Fail} &amp; :\quad\text{❌ $&gt;1.0$ \textbf{FAIL}}
-\end{align}\]</span></p>
+<section id="pitfall-1-latex-vs-plain-symbol-notation" class="level3">
+<h3 class="anchored" data-anchor-id="pitfall-1-latex-vs-plain-symbol-notation">Pitfall 1: LaTeX vs Plain Symbol Notation</h3>
+<p>Symbols are compared by their string representation, so LaTeX and plain notation create different objects:</p>
+<div id="z1soyl9sd4h" class="cell" data-execution_count="28">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> display</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Two different symbols even though they render similarly</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>sigma_latex <span class="op">=</span> symbols(<span class="vs">r"\sigma_</span><span class="sc">{Sd}</span><span class="vs">"</span>)</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>sigma_plain <span class="op">=</span> symbols(<span class="st">"sigma_Sd"</span>)</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>display(sigma_latex)</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>display(sigma_plain)</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="co"># They are NOT equal</span></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Are they equal? </span><span class="sc">{</span>sigma_latex <span class="op">==</span> sigma_plain<span class="sc">}</span><span class="ss">"</span>)  <span class="co"># False</span></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Using LaTeX notation ensures proper rendering and avoids mismatches</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \sigma_{Sd}\)</span></p>
 </div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \sigma_{Sd}\)</span></p>
 </div>
-</section>
-</section>
-<section id="summary" class="level2">
-<h2 class="anchored" data-anchor-id="summary">Summary</h2>
-<p>This example demonstrated:</p>
-<ul>
-<li>Basic symbolic math with units</li>
-<li>Pipe command usage (see <a href="#sec-pipe" class="quarto-xref">Section&nbsp;1.2</a>)</li>
-<li>Different LaTeX environments (align, cases, equation)</li>
-<li>Label and cross-reference functionality</li>
-<li>Dataframe operations</li>
-<li>Verification functions</li>
-<li>Complex symbolic manipulations</li>
-</ul>
-<p>All calculations in <a href="#sec-beam-calc" class="quarto-xref">Section&nbsp;1.3.2</a> show that keecas provides a powerful interface for engineering calculations in Quarto documents.</p>
-<section id="template-configuration" class="level3">
-<h3 class="anchored" data-anchor-id="template-configuration">Template Configuration</h3>
-<p>Templates can also be configured globally via TOML config files:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[check_templates.template_sets.minimal]</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">success</span> <span class="op">=</span> <span class="st">'</span><span class="vs">${symbol}{rhs} \,\textcolor{{green}}{{\checkmark}}$</span><span class="st">'</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="dt">failure</span> <span class="op">=</span> <span class="st">'</span><span class="vs">${symbol}{rhs} \,\textcolor{{red}}{{\times}}$</span><span class="st">'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>This allows you to set project-wide or user-wide styling for all check functions.</p>
-</section>
-</section>
-<section id="test-using-a-quartomarkdownbase64" class="level2">
-<h2 class="anchored" data-anchor-id="test-using-a-quartomarkdownbase64">Test using a <code>QuartoMarkdownBase64</code></h2>
-<div id="cell-36" class="cell" data-execution_count="17">
 <div class="cell-output cell-output-stdout">
-<pre><code>```{=latex}
-\begin{align}
-a  &amp;  = 5{\,}\text{m}  &amp;     \\[8pt]
-b  &amp;  = 12{\,}\text{m}  &amp;  \quad\text{length b}  \\[8pt]
-c  &amp;  = a + b  &amp;  \quad\text{total length c} 
-\end{align}
-```</code></pre>
-</div>
-<div class="cell-output cell-output-display" data-execution_count="96">
-<pre><code>&lt;IPython.core.display.Latex object&gt;</code></pre>
+<pre><code>Are they equal? False</code></pre>
 </div>
 </div>
 </section>
+<section id="pitfall-2-using-vals-dict-in-pc.subs" class="level3">
+<h3 class="anchored" data-anchor-id="pitfall-2-using-vals-dict-in-pc.subs">Pitfall 2: Using <code>vals</code> dict in <code>pc.subs</code></h3>
+<p>While maintaining a global <code>vals</code> dict for evaluated results can be useful, passing it to <code>pc.subs</code> will overwrite expressions with already evaluated values, preventing recalculation when parameters change.</p>
+<div id="tq4i32rru5" class="cell" data-execution_count="29">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Initial setup - create fresh global dicts for this example</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>params_pitfall <span class="op">=</span> {}</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>eqn_pitfall <span class="op">=</span> {}</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>vals_pitfall <span class="op">=</span> {}</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>x, y, z <span class="op">=</span> symbols(<span class="vs">r"x, y, z"</span>)</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {x: <span class="dv">2</span>}</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>params_pitfall.update(_p)</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>_e <span class="op">=</span> {</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>    y: <span class="st">"x + 1"</span> <span class="op">|</span> pc.parse_expr,  <span class="co"># y depends on x</span></span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>    z: <span class="st">"y^2"</span> <span class="op">|</span> pc.parse_expr,     <span class="co"># z depends on y (and indirectly on x)</span></span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>eqn_pitfall.update(_e)</span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>_v <span class="op">=</span> {</span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>    k: v <span class="op">|</span> pc.subs(eqn_pitfall <span class="op">|</span> params_pitfall) <span class="op">|</span> pc.N</span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k, v <span class="kw">in</span> _e.items()</span>
+<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a>vals_pitfall.update(_v)</span>
+<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a>show_eqn([_p <span class="op">|</span> _e, _v])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="57">
+<p><span class="math display">\[\begin{align}
+x &amp; = 2 &amp;    \\[8pt]
+y &amp; = x + 1 &amp; = 3.0  \\[8pt]
+z &amp; = y^{2} &amp; = 9.0
+\end{align}\]</span></p>
+</div>
+</div>
+<p>Now update the parameter and see the problem:</p>
+<div id="x8957ulpw8d" class="cell" data-execution_count="30">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Update parameter and recalculate</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {x: <span class="dv">3</span>}  <span class="co"># Changed value</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>params_pitfall.update(_p)</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>expr_to_recalc <span class="op">=</span> [y, z]</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a><span class="co"># INCORRECT: passing vals overwrites expressions with old evaluated values</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>_v_incorrect <span class="op">=</span> {</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>    k: eqn_pitfall[k] <span class="op">|</span> pc.subs(eqn_pitfall <span class="op">|</span> params_pitfall <span class="op">|</span> vals_pitfall)</span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> expr_to_recalc</span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a><span class="co"># CORRECT: don't pass vals</span></span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>_v_correct <span class="op">=</span> {</span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>    k: eqn_pitfall[k] <span class="op">|</span> pc.subs(eqn_pitfall <span class="op">|</span> params_pitfall)</span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> expr_to_recalc</span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify the difference using check()</span></span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>_c <span class="op">=</span> {</span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>    k: check(_v_incorrect[k], _v_correct[k], Eq)</span>
+<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> expr_to_recalc</span>
+<span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb33-24"><a href="#cb33-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-25"><a href="#cb33-25" aria-hidden="true" tabindex="-1"></a>show_eqn([_p <span class="op">|</span> _v_incorrect, _c])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="58">
+<p><span class="math display">\[\begin{align}
+x &amp; = 3 &amp;    \\[8pt]
+y &amp; = 4 &amp; \quad\text{$\textcolor{green}{\left[=4\quad \textbf{VERIFICATO}\right]}$}  \\[8pt]
+z &amp; = 9.0 &amp; \quad\text{$\textcolor{red}{\left[\neq16\quad \textbf{NON VERIFICATO}\right]}$}
+\end{align}\]</span></p>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Recommendation</strong>: Only pass <code>vals</code> to <code>pc.subs</code> if you’re certain no dependent expressions need updating.</p>
+</div>
+</div>
+<div style="page-break-after: always;"></div>
+</section>
+</section>
+</section>
+<section id="summary" class="level1">
+<h1>Summary</h1>
+<p>This example demonstrated keecas capabilities for engineering calculations in Quarto documents.</p>
+<section id="features-covered" class="level3">
+<h3 class="anchored" data-anchor-id="features-covered">Features Covered</h3>
+<ul>
+<li><strong>Symbolic math with units</strong> - SymPy expressions with Pint units</li>
+<li><strong>Pipe commands</strong> - Functional composition (<code>pc.parse_expr</code>, <code>pc.subs</code>, <code>pc.convert_to</code>, <code>pc.N</code>)</li>
+<li><strong>LaTeX environments</strong> - align, cases, equation, and custom environments</li>
+<li><strong>Label generation</strong> - Manual, automatic, and unique hash-based labels</li>
+<li><strong>Verification</strong> - <code>check()</code> function with customizable templates</li>
+<li><strong>Dependency ordering</strong> - Automatic topological sorting with <code>pc.subs</code></li>
+</ul>
+</section>
+<section id="key-patterns" class="level3">
+<h3 class="anchored" data-anchor-id="key-patterns">Key Patterns</h3>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Cell-local dicts (live in one cell)</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>_p <span class="op">=</span> {F_d: <span class="dv">10</span><span class="op">*</span>u.kN}                              <span class="co"># Parameters</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>_e <span class="op">=</span> {sigma: <span class="st">"F_d/A_load"</span> <span class="op">|</span> pc.parse_expr}       <span class="co"># Expressions</span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>_v <span class="op">=</span> {k: v <span class="op">|</span> pc.subs(_e<span class="op">|</span>_p) <span class="op">|</span> pc.N <span class="cf">for</span> k,v <span class="kw">in</span> _e.items()}  <span class="co"># Values</span></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Global persistence (across cells)</span></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>params.update(_p)</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>eqn.update(_e)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="common-pitfalls-1" class="level3">
+<h3 class="anchored" data-anchor-id="common-pitfalls-1">Common Pitfalls</h3>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li>Use LaTeX notation: <code>symbols(r"\sigma_{Sd}")</code> not <code>symbols("sigma_Sd")</code></li>
+<li>Avoid passing <code>vals</code> to <code>pc.subs</code> - it prevents recalculation</li>
+</ol>
+</div>
+</div>
+</section>
+</section>
+<section id="links" class="level1">
+<h1>Links</h1>
+<ul>
+<li><a href="%22https://pypi.org/project/keecas/%22">pypi</a></li>
+<li><a href="%22https://github.com/kompre/keecas%22">Repository</a></li>
+<li><a href="%22https://kompre.github.io/keecas%22">Documentation</a></li>
+<li><a href="%22https://github.com/kompre/keecas/issues%22">Issues</a></li>
+</ul>
 </section>
 
 </main>

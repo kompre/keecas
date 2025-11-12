@@ -19,14 +19,15 @@ dependencies = [
     "tomlkit>=0.13.3",
 ]
 name = "keecas"
-version = "1.0.0a7"
-description = "A set of tools for symbolic math computation done in a jupyter notebook, aimed specifically for Quarto. It is based mostly on sympy."
+version = "1.0.0"
+description = "Symbolic and units-aware calculations with LaTeX rendering for Jupyter notebooks, optimized for Quarto PDF documentation."
 readme = "README.md"
 
 [project.urls]
 Homepage = "https://github.com/kompre/keecas"
 Repository = "https://github.com/kompre/keecas"
 Issues = "https://github.com/kompre/keecas/issues"
+Documentation = "https://kompre.github.io/keecas"
 
 [project.scripts]
 keecas = "keecas.cli:main"
@@ -58,16 +59,22 @@ select = [
 ]
 ignore = [
     "E501",   # line too long (handled by formatter)
+    "COM812", # trailing comma conflicts with formatter
 ]
 
 [tool.ruff.lint.isort]
 known-first-party = ["keecas"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"  # Use Google-style docstrings
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false  # Respect trailing commas
 line-ending = "auto"
+docstring-code-format = true  # Format code examples in docstrings
+docstring-code-line-length = "dynamic"  # Respects line-length setting (100)
 
 [build-system]
 requires = ["uv_build>=0.8.14,<0.9.0"]

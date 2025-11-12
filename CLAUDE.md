@@ -35,6 +35,52 @@ For guidelines on writing API documentation with Google-style docstrings for qua
 - All API reference functions must follow these standards
 - Examples should be tutorial-quality and demonstrate idiomatic usage
 
+#### Docstring Formatting Standards
+
+**Style**: Google-style docstrings (enforced by quartodoc and Ruff)
+
+**Automatic Formatting**:
+- Code examples in docstrings are automatically formatted by Ruff
+- Use `{python}` fenced code blocks for Examples sections
+- Ruff respects the 100-character line length for code examples
+
+**Line Length Guidelines**:
+- **Prose descriptions**: Aim for ~88 characters per line for readability
+- **Code examples**: Automatically formatted (max 100 chars)
+- **Long parameter descriptions**: Use multi-line format with continuation indent
+
+**Code Examples in Docstrings**:
+- Each example should demonstrate one clear concept
+- Inline comments indicate expected output: `function_call()  # Returns: output`
+- Type hints NOT required in docstring examples (lighter linting)
+- Trailing commas optional in examples (focus on clarity over style)
+
+**Example Format**:
+```python
+"""Function description.
+
+Args:
+    param: Short description that fits on one line.
+    long_param: Longer description that needs wrapping.
+
+        Continue with proper 4-space indent. Can use multiple paragraphs
+        for complex parameters. Break at logical points (clauses, lists).
+
+Returns:
+    Description of return value.
+
+Examples:
+    ```{python}
+    from keecas import symbols
+
+    # Simple example
+    result = function(arg)  # Returns: expected_output
+    ```
+"""
+```
+
+**Important**: Always follow ASCII-only rule (see "Important: Unicode in Code and Documentation").
+
 ### Testing
 ```bash
 pytest
@@ -125,16 +171,24 @@ uv sync
 
 ### CI Workflows
 
-**lint-fix.yml** - Runs on push to dev/feature branches and PRs:
+**lint-fix.yml** - Runs on push to dev/feature branches and PRs to dev:
 - Auto-fixes linting issues in `src/` and `tests/` only (Ruff check --fix + format)
 - Commits fixes automatically if any are found ([skip ci] to avoid loops)
 - Verifies linting passes after auto-fix
 - **Important**: Runs BEFORE test.yml, ensuring clean code for testing
-- **Scope**: Runs on dev, feature/** branches, and PRs to main/dev
-- **Excluded**: Does NOT run on push to main (protected branch, can't auto-commit)
+- **Scope**: Runs on dev, feature/** branches, and PRs to dev only
+- **Excluded**: Does NOT run on PRs to main (test.yml already verifies linting) or push to main (protected branch)
 - **Files**: Only lints production code (`src/`) and tests (`tests/`), not examples or templates
 
-**test.yml** - Runs on PR to main/dev:
+**test.yml** - Runs on PR to main/dev when code paths change:
+- **Path filtering**: Only runs when these paths change:
+  - `src/**` - Source code
+  - `tests/**` - Test files
+  - `pyproject.toml`, `uv.lock` - Dependencies
+  - `.python-version` - Python version
+  - `.github/workflows/**` - CI workflows
+  - `scripts/**` - Build/validation scripts
+- **Skipped**: Documentation-only changes (docs PRs can merge immediately)
 - Linting verification (Ruff check - read-only)
 - Tests (pytest)
 - Docstring validation
@@ -184,6 +238,52 @@ gh pr create --base dev
 - **Result**: Zero-friction linting with no sync issues (fixes always on feature branches)
 - **When to pull**: After CI auto-commits fixes, just `git pull` the branch before continuing work
 
+### PR Workflow Examples
+
+**Documentation changes**:
+```bash
+git checkout -b docs/update-guide
+# Edit docs/guide.qmd or README.md
+git commit -am "docs: update getting started guide"
+gh pr create --base main
+```
+- No tests run (docs paths excluded)
+- Can merge immediately
+- docs.yml deploys after merge
+
+**Code changes**:
+```bash
+git checkout -b fix/bug
+# Edit src/keecas/display.py
+git commit -am "fix: resolve display bug"
+gh pr create --base main
+```
+- test.yml runs and must pass
+- Includes linting verification
+- Cannot merge until tests pass
+
+**Dependency updates**:
+```bash
+git checkout -b chore/update-deps
+uv add --dev pytest-cov
+git commit -am "chore: add pytest-cov"
+gh pr create --base main
+```
+- test.yml runs (pyproject.toml + uv.lock changed)
+- Must pass before merge (critical for dependency changes)
+
+**Releases**:
+```bash
+git checkout -b release/v1.1.0
+uv version --bump minor
+git commit -am "chore: bump version to 1.1.0"
+gh pr create --base main --label release
+```
+- test.yml runs (pyproject.toml changed)
+- check-release-version.yml runs (release label)
+- Both must pass before merge
+- After merge: release.yml tags, builds, publishes to PyPI
+
 ## Architecture Overview
 
 ### Core Components
@@ -212,24 +312,40 @@ gh pr create --base dev
 3. **Formatters Module** (`src/keecas/formatters.py`)
    - **Singledispatch-based** formatter system for converting values to LaTeX strings
    - **Main Entry Point**: `format_value(value, col_index, **kwargs)` - type-based dispatch to specialized formatters
+   - **Pure Type Conversion**: Formatters convert Python values to LaTeX strings without decoration (no `= ` or `\quad` prefixes)
    - **Built-in Formatters**:
      - `format_str`: Python strings -> `\text{...}`
-     - `format_int`: Integers with optional `= ` prefix for RHS
-     - `format_float`: Floats (precision handled by `format_decimal_numbers()` in display.py)
+     - `format_int`: Integers -> LaTeX string
+     - `format_float`: Floats -> LaTeX string (precision handled by `format_decimal_numbers()` in display.py)
      - `format_sympy`: SymPy expressions -> LaTeX via `sympy.latex()`
      - `format_mul`: Mul expressions with numeric/unit separation transformation
      - `format_pint`: Pint Quantity -> SymPy -> format_sympy (transformer)
      - `format_markdown`: IPython Markdown objects -> `\text{...}`
    - **Extensibility**: Users can register custom formatters with `@format_value.register(MyType)`
    - **Transformers**: format_pint and format_mul transform values then call format_sympy directly
-   - **No Sentinel Classes**: Returns LaTeX strings directly (no EarlyExit wrapper)
+   - **Separation of Concerns**: Formatters handle "what" (type conversion), col_wrapper handles "how" (presentation)
 
-4. **Pipe Commands** (`src/keecas/pipe_command.py`)
+4. **Column Wrappers Module** (`src/keecas/col_wrappers.py`)
+   - **Singledispatch-based** wrapper system for decorating columns with prefix/suffix
+   - **Main Entry Point**: `wrap_column(value, col_index)` - returns `(prefix, suffix)` tuple
+   - **Default Behavior**:
+     - Numeric types (int, float, SymPy, Pint): `"= "` prefix for RHS columns (col_index > 0)
+     - Text types (str, Markdown, Latex): `r"\quad"` prefix for RHS columns
+     - LHS columns (col_index == 0): No wrapping for all types
+   - **User Extensibility**:
+     - Register custom wrappers: `@wrap_column.register(MyType)`
+     - List form: `col_wrap=[None, "= ", r"\leq "]`
+     - Callable form: Custom wrapper function with logic
+     - Dict form: Type-based wrapping dictionary
+   - **Use Cases**: Comparison operators (`=`, `\leq`, `\geq`, `\approx`), custom decorations
+   - **Separation of Concerns**: Handles all "between LHS and RHS" syntax decoration
+
+5. **Pipe Commands** (`src/keecas/pipe_command.py`)
    - Wraps common SymPy functions as `@Pipe` decorators for functional composition
    - Key functions: `subs`, `N`, `convert_to`, `doit`, `parse_expr`, `quantity_simplify`
    - Enables chain operations like `expr | pc.subs(vals) | pc.convert_to(units) | pc.N`
 
-5. **Pint-SymPy Bridge** (`src/keecas/pint_sympy.py`)
+6. **Pint-SymPy Bridge** (`src/keecas/pint_sympy.py`)
    - Integrates Pint unit registry with SymPy symbolic expressions
    - Provides `unitregistry as u` for unit definitions
    - `update_pint_locale()`: Function for manual locale control
@@ -237,18 +353,18 @@ gh pr create --base dev
    - **Language Integration**: 5 fully supported languages (de, es, fr, it, pt) with English fallback for others
    - **Conservative Behavior**: Intelligent locale switching that preserves system defaults
 
-6. **Configuration System** (`src/keecas/config.py`)
+7. **Configuration System** (`src/keecas/config.py`)
    - **Unified TOML Configuration**: `.keecas/config.toml` files for global and local settings
    - **Hierarchical Priority**: Local > Global > Defaults
    - **Dynamic Propagation**: Configuration changes automatically update Pint locale and localization
    - **CLI Integration**: Full command-line interface for configuration management
 
-7. **CLI Interface** (`src/keecas/cli.py`)
+8. **CLI Interface** (`src/keecas/cli.py`)
    - **Cross-platform Configuration Management**: Edit configs with terminal or system editors
    - **Version Display**: Built-in version information and help
    - **Consistent Interface**: All commands support explicit `--global` and `--local` flags
 
-8. **Localization System** (`src/keecas/localization/`)
+9. **Localization System** (`src/keecas/localization/`)
    - **Multi-language Support**: 10 languages with domain-specific translations
    - **SymPy Integration**: Localized mathematical terms (Domain, Range, verification terms)
    - **Automatic Sync**: Language changes propagate to Pint unit formatting
@@ -265,6 +381,7 @@ gh pr create --base dev
 The main `__init__.py` exposes:
 - `Dataframe` class
 - Display functions (`show_eqn`, `config`, `check`, `dict_to_eq`, `eq_to_dict`)
+- Column wrapper (`wrap_column` - singledispatch for column decoration)
 - Formatters (`format_value`, `format_str`, `format_int`, `format_float`, `format_sympy`, `format_mul`, and optional `format_pint`, `format_markdown`)
 - Pipe commands as `pc` namespace
 - Unit registry as `u` and `update_pint_locale` function
@@ -388,7 +505,7 @@ config.latex.eq_prefix = r"eq-PREFIX-"     # Label prefixing
 config.display.default_float_format = ".3f"  # Default float formatting
 
 # Language and localization (automatic Pint sync)
-config.language = 'it'           # Sets both keecas and Pint locales
+config.language.language = 'it'           # Sets both keecas and Pint locales
 # Supported: 'de', 'es', 'fr', 'it', 'pt' (full)
 # Fallback: 'da', 'nl', 'no', 'sv', 'en' (English units)
 
@@ -431,18 +548,44 @@ keecas config show --global    # Show only global
 keecas config path             # Show file locations
 ```
 
-**Example Configuration:**
+**Configuration Access Pattern:**
+
+**IMPORTANT**: All configuration uses dot-notation matching TOML structure. Python access paths directly mirror the TOML section hierarchy.
+
+```python
+# Language settings
+config.language.language = 'it'
+config.language.disable_pint_locale = True
+
+# Display settings
+config.display.katex = True
+config.display.print_label = False
+config.display.default_float_format = '.3f'
+config.display.pint_default_format = '.2f~P'
+
+# LaTeX settings
+config.latex.eq_prefix = 'eq-'
+config.latex.eq_suffix = ''
+config.latex.default_environment = 'align'
+```
+
+**Rule**: Python path always matches TOML section path. If a setting is under `[display]` in TOML, access it via `config.display.setting_name` in Python.
+
+**Example TOML Configuration:**
 ```toml
 # .keecas/config.toml
+
+[language]
 language = "it"                    # Italian units and localization
-katex = true                       # KaTeX compatibility mode
-eq_prefix = "eq-"                  # Equation label prefix
-disable_pint_locale = true        # Default: True (preserves compact unit symbols like "kN")
-                                  # Set to false to enable locale (shows "kilonewton" instead)
+disable_pint_locale = true         # Default: True (preserves compact unit symbols like "kN")
 
 [display]
+katex = true                       # KaTeX compatibility mode
 default_float_format = ".3f"       # Default format for floats in equations
 pint_default_format = ".3f~P"      # Pint quantity formatting
+
+[latex]
+eq_prefix = "eq-"                  # Equation label prefix
 
 [custom_translations]
 "VERIFIED" = "VERIFICATO"          # Custom term translations

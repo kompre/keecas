@@ -22,20 +22,20 @@ def extract_python_blocks(file_path: Path) -> list[tuple[int, str]]:
     Returns:
         List of (line_number, code) tuples for each Python block found
     """
-    content = file_path.read_text(encoding='utf-8')
+    content = file_path.read_text(encoding="utf-8")
 
     # Match ```{python} ... ``` blocks, capturing the code
     # Pattern explanation:
     # ```{python}  - Opening fence
     # (.*?)        - Capture group for code (non-greedy)
     # ```          - Closing fence
-    pattern = r'```\{python\}\n(.*?)\n\s+```'
+    pattern = r"```\{python\}\n(.*?)\n\s+```"
 
     blocks = []
     for match in re.finditer(pattern, content, re.DOTALL | re.MULTILINE):
         code = match.group(1)
         # Calculate approximate line number
-        line_num = content[:match.start()].count('\n') + 1
+        line_num = content[: match.start()].count("\n") + 1
         blocks.append((line_num, code))
 
     return blocks
@@ -53,20 +53,20 @@ def lint_code_block(code: str, original_file: str, line_num: int) -> bool:
         True if linting passed, False if issues found
     """
     # Create temporary file with the code
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding="utf-8") as f:
         # Dedent the code (docstring examples are indented)
-        lines = code.split('\n')
-        min_indent = min((len(line) - len(line.lstrip())
-                         for line in lines if line.strip()), default=0)
-        dedented = '\n'.join(line[min_indent:] if line.strip() else line
-                            for line in lines)
+        lines = code.split("\n")
+        min_indent = min(
+            (len(line) - len(line.lstrip()) for line in lines if line.strip()), default=0,
+        )
+        dedented = "\n".join(line[min_indent:] if line.strip() else line for line in lines)
         f.write(dedented)
         temp_path = f.name
 
     try:
         # Run ruff on the temp file
         result = subprocess.run(
-            ['uv', 'run', 'ruff', 'check', temp_path, '--select', 'COM,F401,F841'],
+            ["uv", "run", "ruff", "check", temp_path, "--select", "COM,F401,F841"],
             capture_output=True,
             text=True,
         )
@@ -125,7 +125,7 @@ def main(files: list[str], fix: bool = False) -> int:
     return 0 if all_passed else 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: lint_docstring_code.py [--fix] <file1.py> [file2.py ...]")
         print("\nChecks Python code blocks in docstrings for style issues.")
@@ -134,8 +134,8 @@ if __name__ == '__main__':
         sys.exit(1)
 
     args = sys.argv[1:]
-    fix_mode = '--fix' in args
+    fix_mode = "--fix" in args
     if fix_mode:
-        args.remove('--fix')
+        args.remove("--fix")
 
     sys.exit(main(args, fix=fix_mode))

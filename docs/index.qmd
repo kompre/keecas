@@ -3,55 +3,76 @@ title: "Keecas Documentation"
 subtitle: "Symbolic and units-aware calculations for Jupyter notebooks"
 ---
 
-Welcome to Keecas, a Python package for symbolic and units-aware calculations in Jupyter notebooks, specifically designed for Quarto rendered PDF documents.
+Welcome to Keecas, a Python package for symbolic and units-aware calculations in Jupyter notebooks, specifically designed for [Quarto](https://quarto.org/) rendered documents (LaTeX PDF, HTML).
 
 ## What is Keecas?
 
-Keecas combines three powerful Python libraries:
+Keecas minimizes boilerplate for symbolic calculations in Jupyter notebooks by using Python **dicts** as its core container - **keys** represent *left-hand side* symbols, **values** represent *right-hand side* expressions. This natural mapping enables clean, readable code with dict comprehensions.
 
-- **SymPy** - Symbolic mathematics
-- **Pint** - Physical units and quantities
-- **Pipe** - Functional programming patterns
-
-This combination provides a streamlined interface for mathematical computations with beautiful LaTeX output, perfect for engineering documentation and calculations.
+Built on [SymPy](https://www.sympy.org/) (symbolic math), [Pint](https://pint.readthedocs.io/) (units), and [Pipe](https://github.com/JulienPalard/Pipe) (functional programming), Keecas provides a streamlined interface for unit-aware calculations with automatic LaTeX rendering.
 
 ## Key Features
 
-- 🔢 **Symbolic Mathematics**: Work with symbolic expressions and equations
-- 📏 **Unit-Aware Calculations**: Automatic unit conversion and dimensional analysis
-- 📝 **LaTeX Output**: Beautiful equation rendering for documents
-- 📊 **Jupyter Integration**: Seamless notebook workflow
-- 🌍 **Internationalization**: Support for multiple languages and locales
-- ⚙️ **Configurable**: Flexible configuration system
+- **Symbolic Mathematics**: Work with symbolic expressions and equations
+- **Unit-Aware Calculations**: Automatic unit conversion and dimensional analysis
+- **LaTeX Output**: Beautiful equation rendering for documents ([amsmath](https://ctan.org/pkg/amsmath))
+- **Jupyter Integration**: Seamless notebook workflow
+- **Internationalization**: Support for multiple languages and locales
+- **Configurable**: Flexible configuration system
 
 ## Quick Example
 
 ```{python}
-#| eval: false
-from keecas import symbols, u, pc, show_eqn
+from keecas import symbols, u, pc, show_eqn, generate_unique_label
 
 # Define symbols with LaTeX notation
-F, A, sigma = symbols(r"F, A, \sigma")
+F_d, A_load, sigma = symbols(r"F_{d}, A_{load}, \sigma")
 
 # Parameters with units
 _p = {
-    F: 10 * u.kN,
-    A: 50 * u.cm**2,
+    F_d: 10 * u.kN,
+    A_load: 50 * u.cm**2,
 }
 
 # Expressions
 _e = {
-    sigma: "F / A" | pc.parse_expr
+    sigma: "F_d / A_load" | pc.parse_expr
 }
 
-# Evaluate and display
+# Evaluate
 _v = {
     k: v | pc.subs(_e | _p) | pc.convert_to([u.MPa]) | pc.N
     for k, v in _e.items()
 }
 
-show_eqn([_p | _e, _v])
+# Description
+_d = {
+				F_d: "design force",
+    A_load: "loaded area",
+    sigma: "normal stress",
+}
+
+# Label (Quarto only)
+_l = generate_unique_label(_d)
+
+# Display
+show_eqn(
+    [_p | _e, _v, _d], # list of dict as main input
+    label=_l # a dict of labels (key matching)
+)
 ```
+
+```{python}
+#| echo: false
+from IPython.display import Markdown
+```
+
+
+::: {.callout title="Labels works!"}
+
+The normal stress is shown in `{python} Markdown(fr'\eqref{{{_l[sigma]}}}')` is the result of the design force `{python} Markdown(fr'\eqref{{{_l[F_d]}}}')` divided by the loaded area `{python} Markdown(fr'\eqref{{{_l[A_load]}}}')`.
+
+:::
 
 ## Getting Started
 
@@ -68,11 +89,6 @@ Start with our [Installation Guide](getting-started/installation.qmd) and [Quick
 ::: {.g-col-6}
 ### [Getting Started](getting-started/index.qmd)
 Learn how to install and configure Keecas for your projects.
-:::
-
-::: {.g-col-6}
-### [User Guide](user-guide/index.qmd)
-Discover conventions, patterns, and best practices for effective use.
 :::
 
 ::: {.g-col-6}

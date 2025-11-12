@@ -5,25 +5,61 @@ website:
   title: "Keecas Documentation"
   description: "Symbolic and units-aware calculations for Jupyter notebooks"
 
+  sidebar:
+    - contents: getting-started
+      title: Getting Started
+      style: docked
+    - contents: cli-reference 
+      title: CLI Reference
+      style: docked
+    - contents: examples
+      title: Examples
+      style: docked
+    #   style: docked
+    # tools:
+    #   - icon: github
+    #     href: https://github.com/kompre/keecas
+    #   - text: 1.0.2
+
   navbar:
     title: "Keecas"
     left:
-      - href: index.qmd
-        text: Home
-      - href: getting-started/index.qmd
-        text: Getting Started
-      - href: user-guide/index.qmd
-        text: User Guide
-      - href: api-reference/
-        text: API Reference
+      - text: Getting Started
+        href: getting-started/index.qmd
+      - text: Examples
+        href: examples/index.qmd
       - href: cli-reference/index.qmd
         text: CLI Reference
+      - text: API Reference
+        href: api-reference/index.qmd
+    right:
+      - href: "{{< meta publish_url >}}/{{< meta version >}}/"
+        text: "v{{< meta version >}}"
+        icon: box-fill
+      - href: https://github.com/kompre/keecas
+        text: GitHub
+        aria-label: GitHub
+        icon: github
 
 format:
   html:
-    theme: cosmo
+    theme: journal
     toc: true
     code-copy: true
+    include-in-header:
+        # this is needed for equation numbering and labeling in HTML output             
+        - text: | 
+            <script>
+            MathJax = { tex: { tags: 'ams' } };
+            </script>
+        # this get rid of unnecessary vertical scrollbars
+        - text: |
+            <style>
+            .math.display {
+              max-width: 100%;
+              padding-right: 3em;
+            }
+            </style>
 
 execute:
   freeze: auto
@@ -49,6 +85,7 @@ quartodoc:
   package: keecas
   style: pkgdown
   render_interlinks: true
+  title: API Reference
 
   # Docstring parser
   parser: google
@@ -57,7 +94,10 @@ quartodoc:
   dir: api-reference
 
   # Sidebar configuration
-  sidebar: api-reference/_sidebar.yml
+  sidebar: 
+    file: api-reference/_sidebar.yml
+    title: API Reference
+    style: docked
 
   # Rendering options
   renderer:
@@ -77,9 +117,36 @@ quartodoc:
       contents:
         - name: display
           children: linked
-        - display.show_eqn
-        - display.check
+        - show_eqn
+        - check
+        - latex_inline_dict
         - display.format_decimal_numbers
+    - title: Formatters Module
+      desc: Cell and row formatters for LaTeX equation rendering
+      contents:
+        - name: formatters
+          children: linked
+        - format_value
+        - formatters.format_str
+        - formatters.format_int
+        - formatters.format_float
+        - formatters.format_markdown
+        - formatters.format_latex
+        - formatters.format_pint
+        - formatters.format_sympy
+        - formatters.format_mul
+        - formatters.validate_latex_kwargs
+    - title: Columns Wrapper Module
+      desc: Column wrappers for LaTeX equation rendering
+      contents:
+        - name: col_wrappers
+          children: linked
+        - wrap_column
+        - col_wrappers.wrap_numeric
+        - col_wrappers.wrap_str
+        - col_wrappers.wrap_sympy
+        - col_wrappers.wrap_pint
+        - col_wrappers.wrap_markdown
     - title: Label Module
       desc: Label generation
       contents:
@@ -92,7 +159,7 @@ quartodoc:
       contents:
         - name: dataframe
           children: linked
-        - dataframe.Dataframe
+        - Dataframe
         - dataframe.create_dataframe
     - title: Pipe Commands Module
       desc: Wraps common SymPy functions as decorators for functional composition
@@ -118,6 +185,15 @@ quartodoc:
       desc: function of the cli interface
       contents:
         - name: cli
+    - title: Utils Module
+      desc: Utility functions for equation conversion and symbol name escaping
+      contents:
+        - name: utils
+          children: linked
+        # - utils.escape_name
+        # - utils.escape_var
+        - dict_to_eq
+        - eq_to_dict
 
 metadata-files: 
   - "api-reference/_sidebar.yml"

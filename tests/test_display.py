@@ -19,7 +19,7 @@ x, y = symbols("x y")
 
 def test_import_star():
     """Test that 'from keecas import *' works without AttributeError."""
-    # This test ensures __all__ is properly updated with chain-based exports
+    # This test ensures __all__ is properly updated with main exports
 
     # Create a fresh namespace
     namespace = {}
@@ -27,13 +27,15 @@ def test_import_star():
     # Execute import *
     exec("from keecas import *", namespace)
 
-    # Verify singledispatch-based exports are available
+    # Verify main singledispatch export is available
     assert "format_value" in namespace
-    assert "format_mul" in namespace
-    assert "format_sympy" in namespace
-    assert "format_int" in namespace
-    assert "format_float" in namespace
-    assert "format_str" in namespace
+
+    # Individual formatter functions are not exported (use format_value singledispatch)
+    assert "format_mul" not in namespace
+    assert "format_sympy" not in namespace
+    assert "format_int" not in namespace
+    assert "format_float" not in namespace
+    assert "format_str" not in namespace
 
     # Verify old chain-based exports are NOT present
     assert "EarlyExit" not in namespace
@@ -46,12 +48,23 @@ def test_import_star():
     # Verify format_value is actually usable
     format_value = namespace["format_value"]
 
-    # Test basic functionality
+    # Test basic functionality - formatters now do pure conversion (no decoration)
     result = format_value(42, col_index=0)
     assert result == "42"
 
     result = format_value(42, col_index=1)
-    assert result == "= 42"
+    assert result == "42"  # No "= " prefix (handled by wrap_column now)
+
+    # Verify wrap_column is available
+    assert "wrap_column" in namespace
+    wrap_column = namespace["wrap_column"]
+
+    # Test wrap_column functionality
+    prefix, suffix = wrap_column(42, col_index=0)
+    assert prefix == "" and suffix == ""
+
+    prefix, suffix = wrap_column(42, col_index=1)
+    assert prefix == "= " and suffix == ""
 
 
 def test_check():
@@ -782,12 +795,166 @@ def test_float_format_structure():
     assert "3.142" in result.data  # First value column with .3f
     assert "2.7" in result.data  # Second value column with .1f
 
-    # Test with tuple (seed, default) pattern - key uses one format, other keys use default
+    # Test with dict pattern - key uses one format, other keys use None
     eqns = {x: 1.5, y: 2.5}
-    float_format = ({x: ".1f"}, ".2f")  # x uses .1f, y uses default .2f
+    float_format = {x: ".1f"}  # x uses .1f, y uses None (no formatting)
     result = show_eqn(eqns, float_format=float_format, debug=True)
     assert "1.5" in result.data  # x with .1f
-    assert "2.50" in result.data  # y with .2f
+    assert "2.5" in result.data  # y with no formatting
+
+
+def test_last_element_filler_scalar():
+    """Test scalar values repeat across columns."""
+    eqns = [{x: 1.0}, {x: 2.0}, {x: 3.0}]  # 3 value columns with floats
+    result = show_eqn(eqns, float_format=".2f", debug=True)
+    assert "1.00" in result.data
+    assert "2.00" in result.data
+    assert "3.00" in result.data
+
+
+def test_last_element_filler_single_list():
+    """Test single-element list equivalent to scalar."""
+    eqns = [{x: 1.5}, {x: 2.5}]
+
+    # Scalar
+    result1 = show_eqn(eqns, float_format=".1f", debug=True)
+
+    # Single-element list
+    result2 = show_eqn(eqns, float_format=[".1f"], debug=True)
+
+    # Both should format consistently (last element fills)
+    assert "1.5" in result1.data
+    assert "1.5" in result2.data
+    assert "2.5" in result1.data
+    assert "2.5" in result2.data
+
+
+def test_last_element_filler_multi_list():
+    """Test last element fills remaining columns."""
+    eqns = [{x: 1.111}, {x: 2.222}, {x: 3.333}]  # 3 value columns + 1 key column = 4 total
+
+    # [col0, col1, col2+]
+    result = show_eqn(eqns, float_format=[None, ".2f"], debug=True)
+
+    # Col 0 (key): no formatting
+    assert "x" in result.data
+    # Col 1+: .2f formatting (last element fills)
+    assert "1.11" in result.data
+    assert "2.22" in result.data
+    assert "3.33" in result.data
+
+
+def test_last_element_filler_exact_width():
+    """Test list with exact width, no padding needed."""
+    eqns = [{x: 1.1}, {x: 2.2}, {x: 3.3}]
+    # 3 value columns + 1 key = 4 total, so provide 4 format specs
+    result = show_eqn(eqns, float_format=[None, ".1f", ".1f", ".2f"], debug=True)
+
+    assert "1.1" in result.data  # Col 1: .1f
+    assert "2.2" in result.data  # Col 2: .1f
+    assert "3.30" in result.data  # Col 3: .2f
+
+
+def test_last_element_filler_none():
+    """Test explicit None as filler."""
+    eqns = [{x: 1.5}, {x: 2.5}, {x: 3.5}]
+    result = show_eqn(eqns, float_format=[".1f", None], debug=True)
+
+    # Col 0 (key): should have "x"
+    # Col 1: formatted with .1f
+    assert "1.5" in result.data
+    # Col 2+: no format (None fills)
+    assert "2.5" in result.data
+    assert "3.5" in result.data
+
+
+def test_col_wrap_tuple_values():
+    """Test col_wrap with tuple values (solves ambiguity issue)."""
+    eqns = [{x: 1}, {x: 2}]
+
+    # Single tuple for all columns
+    result1 = show_eqn(eqns, col_wrap=("=", ""), debug=True)
+    assert result1.data.count("=") >= 2  # Both value columns should have "="
+
+    # List with tuple values - last tuple fills
+    result2 = show_eqn(eqns, col_wrap=[None, ("=", "")], debug=True)
+    # Column 0 (key): no wrap
+    # Column 1+: "=" prefix (last element fills)
+    assert "=1" in result2.data or "= 1" in result2.data
+    assert "=2" in result2.data or "= 2" in result2.data
+
+
+def test_col_wrap_different_tuples():
+    """Test col_wrap with different tuples per column."""
+    eqns = [{x: 1}, {x: 2}, {x: 3}]
+    result = show_eqn(eqns, col_wrap=[None, ("=", ""), (r"\quad(", ")")], debug=True)
+
+    # Col 0 (key): no wrap → "x"
+    # Col 1 (value 1): "=" prefix → "=1" or "= 1"
+    # Col 2 (value 2): "\quad(" prefix, ")" suffix → "\quad(...2...)"
+    # Col 3 (value 3): "\quad(" prefix, ")" suffix (last element fills) → "\quad(...3...)"
+    assert "x" in result.data
+    assert "=1" in result.data or "= 1" in result.data
+    assert r"\quad(" in result.data and "2" in result.data and ")" in result.data
+    assert r"\quad(" in result.data and "3" in result.data and ")" in result.data
+
+
+def test_dict_with_list_values():
+    """Test dict seed with list values uses filler per row."""
+    eqns = [{x: 1.11, y: 2.22}, {x: 3.33, y: 4.44}]
+
+    float_format = {
+        x: [".1f", ".2f"],  # x: col 0 .1f, col 1 .2f, col 2+ .2f (last fills)
+        y: ".3f",  # y: all cols .3f
+    }
+
+    result = show_eqn(eqns, float_format=float_format, debug=True)
+
+    # x row: 1.1, 3.33 (col 0: .1f, col 1+: .2f fills)
+    assert "1.1" in result.data
+    assert "3.33" in result.data
+
+    # y row: 2.220, 4.440 (all .3f)
+    assert "2.220" in result.data
+    assert "4.440" in result.data
+
+
+def test_cell_formatter_list():
+    """Test cell_formatter with list and last-element filler."""
+    from keecas import format_value
+
+    def custom_fmt(val, col_idx, **kwargs):
+        return f"CUSTOM[{val}]"
+
+    eqns = [{x: "a"}, {x: "b"}]
+
+    # Use custom for col 0 (key), default for rest (last element fills)
+    result = show_eqn(eqns, cell_formatter=[custom_fmt, format_value], debug=True)
+
+    # Col 0 uses custom_fmt (but might not apply to key)
+    # Col 1+ uses format_value (should have \text{})
+    assert r"\text{" in result.data
+
+
+def test_empty_list():
+    """Test empty list seed."""
+    eqns = {x: 1}
+    # Empty list should default to None for all columns
+    result = show_eqn(eqns, float_format=[], debug=True)
+    assert isinstance(result, Latex)
+    # No formatting should be applied (None filler)
+    assert "1" in result.data
+
+
+def test_list_longer_than_width():
+    """Test list truncation when longer than width."""
+    eqns = {x: 1.5}  # Only 1 value column + 1 key column = 2 total
+    # List has 5 elements but only 2 columns needed
+    result = show_eqn(eqns, float_format=[".1f", ".2f", ".3f", ".4f", ".5f"], debug=True)
+    # Should use first 2 elements, truncate the rest
+    assert isinstance(result, Latex)
+    # First value column should use .2f (index 1)
+    assert "1.50" in result.data
 
 
 if __name__ == "__main__":

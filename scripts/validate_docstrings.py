@@ -15,10 +15,11 @@ import sys
 from pathlib import Path
 
 # Ensure UTF-8 output on Windows (fixes emoji encoding issues)
-if sys.platform == 'win32':
+if sys.platform == "win32":
     import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 
 
 def get_changed_files() -> list[str]:
@@ -37,8 +38,8 @@ def get_changed_files() -> list[str]:
     if result.returncode != 0:
         return []
 
-    files = result.stdout.strip().split('\n')
-    return [f for f in files if f.startswith('src/') and f.endswith('.py')]
+    files = result.stdout.strip().split("\n")
+    return [f for f in files if f.startswith("src/") and f.endswith(".py")]
 
 
 def check_file_docstrings(filepath: Path) -> list[str]:
@@ -53,18 +54,30 @@ def check_file_docstrings(filepath: Path) -> list[str]:
     missing = []
 
     try:
-        with open(filepath, encoding='utf-8') as f:
+        with open(filepath, encoding="utf-8") as f:
             tree = ast.parse(f.read(), filename=str(filepath))
     except (SyntaxError, UnicodeDecodeError) as e:
         print(f"⚠️  {filepath}: Failed to parse ({e})")
         return []
 
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
+    # Only check module-level definitions (not nested functions)
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef):
             # Skip private/internal API (starts with _)
             if not node.name.startswith("_"):
                 if not ast.get_docstring(node):
                     missing.append(node.name)
+        elif isinstance(node, ast.ClassDef):
+            # Check class itself
+            if not node.name.startswith("_"):
+                if not ast.get_docstring(node):
+                    missing.append(node.name)
+            # Check class methods
+            for item in node.body:
+                if isinstance(item, ast.FunctionDef):
+                    if not item.name.startswith("_"):
+                        if not ast.get_docstring(item):
+                            missing.append(f"{node.name}.{item.name}")
 
     return missing
 

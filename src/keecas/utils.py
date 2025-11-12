@@ -19,6 +19,31 @@ yaml.preserve_quotes = True
 
 
 def load_data(main: str, updated_value: str) -> dict[str, Any]:
+    """Load and merge YAML configuration files with hierarchical priority.
+
+    Merges two YAML files where updated_value has priority over main.
+    Creates main file if it doesn't exist. Uses flatten_dict to merge
+    nested structures.
+
+    Parameters
+    ----------
+    main : str
+        Path to main YAML file (created if missing, lower priority)
+    updated_value : str
+        Path to update YAML file (higher priority, overrides main)
+
+    Returns
+    -------
+    dict[str, Any]
+        Merged configuration dictionary (updated_value takes precedence)
+
+    Notes
+    -----
+    - Creates empty main file if it doesn't exist
+    - Flattens both dicts before merging to handle nested structures
+    - Unflattens result to restore original structure
+    - Empty or invalid main file results in empty dict
+    """
     # Check if main file exists
     if not os.path.exists(main):
         # Create an empty file and return an empty dict
@@ -41,18 +66,109 @@ def load_data(main: str, updated_value: str) -> dict[str, Any]:
 
 # %% SYMPY
 def escape_name(symbol_name: Any, dict_of_subs: dict[str, str] | None = None) -> str:
+    r"""Transform symbol name by applying character substitutions.
+
+    Converts a symbol name (typically LaTeX notation) to a valid Python identifier
+    by replacing specified characters according to a substitution dictionary.
+
+    Parameters
+    ----------
+    symbol_name : Any
+        Symbol name to transform (converted to string).
+        Can be SymPy symbol, string, or any object with __str__.
+    dict_of_subs : dict[str, str] | None, optional
+        Dictionary of string substitutions. Keys are characters to replace,
+        values are replacement strings (default: None, returns unchanged name).
+
+    Returns
+    -------
+    str
+        Transformed symbol name with substitutions applied.
+
+    Examples
+    --------
+    ```{python}
+    from keecas.utils import escape_name
+
+    # Transform LaTeX symbol name to valid Python identifier
+    name = escape_name(r"\sigma_{Rd}", {"\\": "", "{": "_", "}": ""})
+    print(name)  # Returns: 'sigma_Rd'
+    ```
+
+    ```{python}
+    # Remove special characters
+    name = escape_name("alpha-beta", {"-": "_"})
+    print(name)  # Returns: 'alpha_beta'
+    ```
+
+    Notes
+    -----
+    - Only performs string transformation, does not inject into namespace
+    - Use escape_var() if you need both transformation and namespace injection
+    - Substitutions applied in dictionary iteration order
+    - Returns original name (as string) if dict_of_subs is None
+
+    See Also
+    --------
+    escape_var : Create and inject symbols with escaped names
+    """
     name = str(symbol_name)
-    for old, new in dict_of_subs.items():
-        name = name.replace(old, new)
+    if dict_of_subs is not None:
+        for old, new in dict_of_subs.items():
+            name = name.replace(old, new)
     return name
 
 
 def escape_var(names: str | Any, dict_of_subs: dict[str, str] | None = None, **args: Any) -> Any:
-    """estensione di sympy:var() con l'introduzione di una lista di sostituzioni per escapare i nomi dei simboli
+    r"""Create and inject SymPy symbols into global namespace with escaped names.
 
-    Args:
-        names (_type_): _description_
-        dict_of_subs (_type_, optional): _description_. Defaults to None.
+    Extension of sympy.var() that allows symbol name substitutions for escaping
+    special characters. Useful when symbol names contain characters that are not
+    valid Python identifiers.
+
+    Parameters
+    ----------
+    names : str | Any
+        Symbol names as string (comma-separated) or existing SymPy objects.
+        String format follows sympy.symbols() conventions (e.g., "x, y, z").
+    dict_of_subs : dict[str, str] | None, optional
+        Dictionary of string substitutions to escape symbol names.
+        Keys are characters to replace, values are replacement strings.
+        Applied to generate valid Python variable names (default: None).
+    **args : Any
+        Additional keyword arguments passed to sympy.symbols()
+        (e.g., real=True, positive=True).
+
+    Returns
+    -------
+    Any
+        SymPy symbol(s) created. Returns single symbol for single input,
+        tuple of symbols for multiple inputs.
+
+    Examples
+    --------
+    ```{python}
+    from keecas.utils import escape_var
+
+    # Create symbols with special characters in LaTeX names
+    # but valid Python variable names
+    escape_var(r"\sigma_{Rd}, \tau_{Rd}", {"\\": "", "{": "_", "}": ""})
+
+    # Now sigma_Rd and tau_Rd are available as Python variables
+    print(sigma_Rd)  # Displays: \\sigma_{Rd}
+    ```
+
+    Notes
+    -----
+    - Symbols are injected into the calling scope's global namespace
+    - Use escape_name() if you only need name transformation without injection
+    - Useful for creating variables from LaTeX symbol names
+    - Frame reference properly cleaned up to avoid cyclic dependencies
+
+    See Also
+    --------
+    escape_name : Transform symbol name without namespace injection
+    sympy.symbols : Create SymPy symbols (without injection)
     """
 
     def traverse(symbols, frame):
@@ -89,6 +205,44 @@ def escape_var(names: str | Any, dict_of_subs: dict[str, str] | None = None, **a
 
 
 def insert_images(source_path: str | Path, dest_path: str | Path = ".", fig_opt: str = "") -> None:
+    """Insert Markdown image links for all images in a directory tree.
+
+    Walks through directory structure and displays Markdown image links
+    for JPG, JPEG, and PNG files. Useful for bulk image insertion in
+    Jupyter notebooks.
+
+    Parameters
+    ----------
+    source_path : str | Path
+        Directory to search for images (recursive)
+    dest_path : str | Path, optional
+        Base path for computing relative image paths (default: ".")
+    fig_opt : str, optional
+        Quarto figure options to append (e.g., "#fig-label" or "width=50%")
+
+    Notes
+    -----
+    - Searches recursively for .jpg, .jpeg, .png files (case-insensitive)
+    - Uses image stem (filename without extension) as alt text
+    - Displays images immediately in Jupyter via IPython.display.Markdown
+    - Computes relative paths from dest_path for portability
+
+    Examples
+    --------
+    ```{python}
+    #| eval: false
+    from keecas.utils import insert_images
+
+    # Insert all images from figures/ directory
+    insert_images("figures/")
+    ```
+
+    ```{python}
+    #| eval: false
+    # With Quarto figure options
+    insert_images("figures/", fig_opt="#fig-diagram width=80%")
+    ```
+    """
     # filtra lista di immagini -> path object
     for root, _, files in os.walk(source_path):
         for f in files:
@@ -115,12 +269,21 @@ def dict_to_eq(result: dict[Basic, Any]) -> Eq | list[Eq]:
         Single Eq object if one item, list of Eq objects if multiple items
 
     Examples:
-        >>> from sympy import symbols
-        >>> x, y = symbols('x, y')
-        >>> dict_to_eq({x: 5})
-        Eq(x, 5)
-        >>> dict_to_eq({x: 5, y: 10})
-        [Eq(x, 5), Eq(y, 10)]
+        ```{python}
+        from keecas import symbols
+        from keecas.utils import dict_to_eq
+
+        # Define symbols with subscripts
+        sigma_Sd, tau_Sd = symbols(r"\\sigma_{Sd}, \tau_{Sd}")
+
+        # Single equation
+        dict_to_eq({sigma_Sd: 5})  # Returns: Eq(\\sigma_{Sd}, 5)
+        ```
+
+        ```{python}
+        # Multiple equations
+        dict_to_eq({sigma_Sd: 5, tau_Sd: 10})  # Returns: [Eq(\\sigma_{Sd}, 5), Eq(\tau_{Sd}, 10)]
+        ```
 
     See Also:
         - `~~utils.eq_to_dict`: Convert SymPy Eq objects to dictionary
@@ -144,12 +307,22 @@ def eq_to_dict(result: Eq | list[Eq] | tuple[Eq, ...]) -> dict[Basic, Any]:
         Dictionary mapping LHS symbols to RHS values
 
     Examples:
-        >>> from sympy import symbols, Eq
-        >>> x, y = symbols('x, y')
-        >>> eq_to_dict(Eq(x, 5))
-        {x: 5}
-        >>> eq_to_dict([Eq(x, 5), Eq(y, 10)])
-        {x: 5, y: 10}
+        ```{python}
+        from keecas import symbols
+        from keecas.utils import eq_to_dict
+        from sympy import Eq
+
+        # Define symbols with subscripts
+        sigma_Sd, tau_Sd = symbols(r"\\sigma_{Sd}, \tau_{Sd}")
+
+        # Single equation
+        eq_to_dict(Eq(sigma_Sd, 5))  # Returns: {\\sigma_{Sd}: 5}
+        ```
+
+        ```{python}
+        # Multiple equations
+        eq_to_dict([Eq(sigma_Sd, 5), Eq(tau_Sd, 10)])  # Returns: {\\sigma_{Sd}: 5, \tau_{Sd}: 10}
+        ```
 
     See Also:
         - `~~utils.dict_to_eq`: Convert dictionary to SymPy Eq objects

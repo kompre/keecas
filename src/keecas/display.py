@@ -20,6 +20,7 @@ from sympy import (
     latex,
 )
 
+from .col_wrappers import wrap_column
 from .config.manager import get_config_manager
 from .dataframe import Dataframe, create_dataframe
 from .localization import translate
@@ -36,16 +37,18 @@ TemplateChoice = Literal["default", "boxed", "minimal"]
 
 
 def show_eqn(
-    eqns: dict[Basic, Any] | list[dict[Basic, Any]] | Dataframe,
+    eqns: dict[Any, Any] | list[dict[Any, Any]] | Dataframe,
     environment: str | dict[str, Any] | None = None,
     sep: str | list[str] | None = None,
     label: str | dict[str, str | Callable] | Callable | None = None,
     label_command: str | None = None,
-    col_wrap: str | dict | list[dict] | Dataframe | tuple | None = None,
-    float_format: str | dict | list[dict] | Dataframe | tuple | None = None,
-    cell_formatter: Callable | dict | list | Dataframe | tuple | None = None,
+    col_wrap: str | dict | list | Dataframe | Callable | None = None,
+    float_format: str | dict | list | Dataframe | None = None,
+    cell_formatter: Callable | dict | list | Dataframe | None = None,
     row_formatter: Callable | dict | None = None,
     debug: bool | None = None,
+    print_label: bool | None = None,
+    katex: bool | None = None,
     env_arg: str | None = None,
     **kwargs: Any,
 ) -> Latex:
@@ -56,14 +59,19 @@ def show_eqn(
     layouts, custom formatting, labeling, and various LaTeX environments.
 
     Args:
-        eqns: Equation data as dict or list of dicts or Dataframe object (the passed argument will be converted to a Dataframe object). When a list of dicts is passed, the keys of the first dict will be used as the keys of the resulting Dataframe, while subsequent dicts will be added as new columns, if the keys match, otherwise None (see Dataframe.__init__ for more details).
+        eqns: Equation data as dict, list of dicts, or Dataframe object.
+            Automatically converted to Dataframe internally. For list of dicts: first
+            dict's keys become Dataframe keys, subsequent dicts add columns where keys
+            match (None for mismatches). See Dataframe.__init__ for details.
         environment: LaTeX environment name or custom definition. Built-in environments include
             "align", "equation", "cases", "gather", "split", "alignat", "rcases". Can also be
             a dict or EnvironmentDefinition object for custom environments.
             Defaults to config.latex.default_environment.
-        sep: Separator(s) between cells in the amsmath block (e.g. `LHS & RHS & ...`). Can be string or list of strings
-            for finer customization (separator goes in between each column, so first separator is between first and second column, etc). Defaults to environment's default separator
-            (None uses environment default: "&" for align, "" for equation/gather).
+        sep: Separator(s) between cells in the amsmath block (e.g. `LHS & RHS & ...`).
+            Can be string or list of strings for finer customization (separator goes
+            between columns: first separator between columns 1-2, etc). Defaults to
+            environment's default separator (None uses environment default: "&" for
+            align, "" for equation/gather).
         label: Label(s) for cross-referencing equations. Can be:
             - str: Single label string (pre-formatted with generate_label)
             - dict: Mapping symbols to label strings or callables
@@ -72,19 +80,31 @@ def show_eqn(
             Callable labels receive a single list argument: [key, value1, value2, ...].
             Omitted in KaTeX mode for notebook compatibility.
         label_command: LaTeX label command (e.g., r"\label"). Defaults to config.latex.default_label_command.
-        col_wrap: Column wrapping specifications for LaTeX formatting. Can be str, dict, list, Dataframe, or 2 element tuple.
-            When a 2 element tuple is given `(seed, filler)`, `seed` will be used to create a Dataframe with `filler` as default value.
-            List elements can be None (no wrapping), str (prefix only), tuple (prefix, suffix), or Callable.
-            Defaults to config.col_wrap.
-        float_format: Format specification for float values (it will not affect int). Can be str (applied to all floats), list of str (per column formatting), dict (per row formatting), dict of list or Dataframe (per cell formatting).
-            When a 2 element tuple is given `(seed, filler)`, `seed` will be used to create a Dataframe with `filler` as default value.
-            Supports format specs with or without braces (e.g., ".3f" or "{:.3f}").
-            Defaults to config.display.default_float_format.
-        cell_formatter: Custom cell value formatter function(s). Can be single Callable[(value, col_index) -> str] (applied to all cells),
-            list of Callable (applied to each cell in a column), dict of Callable (applied to each cell in a row if key matches), dict of list of Callable or Dataframe for cell specific formatting, or tuple (formatters, default). Defaults to config.display.cell_formatter.
-        row_formatter: Custom row-level formatter function(s). Can be single Callable[(row_latex_str) -> str]
-            or dict mapping symbol keys to formatters. It applies to the composed entire row (str). Defaults to config.display.row_formatter.
+        col_wrap: Column wrapping specifications for LaTeX formatting.
+            Can be str, dict, list, Dataframe, or Callable. For lists, the last element
+            automatically fills remaining columns. Supports tuple values for prefix/suffix:
+            [None, ("=", ""), (r"\\quad(", ")")] works correctly.
+            List elements: None (no wrapping), str (prefix only), tuple (prefix, suffix),
+            or Callable. Defaults to config.display.col_wrap.
+        float_format: Format specification for float values (does not affect int).
+            Can be str (all floats), list of str (per column), dict (per row), dict of
+            list or Dataframe (per cell). For lists, the last element automatically fills
+            remaining columns. Example: [None, ".3f", ".2f"] means col 0: no format,
+            col 1: ".3f", col 2+: ".2f". Supports format specs with or without braces
+            (e.g., ".3f" or "{:.3f}"). Defaults to config.display.default_float_format.
+        cell_formatter: Custom cell value formatter function(s).
+            Can be single Callable[(value, col_index) -> str] (all cells), list of
+            Callable (per column), dict of Callable (per row if key matches), dict of
+            list of Callable or Dataframe (per cell). For lists, the last element
+            automatically fills remaining columns.
+            Defaults to config.display.cell_formatter.
+        row_formatter: Custom row-level formatter function(s).
+            Can be single Callable[(row_latex_str) -> str] or dict mapping symbol keys
+            to formatters. Applies to the composed entire row (str). Defaults to
+            config.display.row_formatter.
         debug: Enable debug mode to print generated LaTeX source code. Defaults to config.display.debug.
+        print_label: Print labels to console for easy copy-paste reference. Defaults to config.display.print_label.
+        katex: Enable KaTeX compatibility mode (disables label commands). Defaults to config.display.katex.
         env_arg: Optional environment argument (e.g., "{2}" for alignat{2}). User provides complete
             argument string including braces.
         **kwargs: Additional keyword arguments:
@@ -99,7 +119,7 @@ def show_eqn(
         ```{python}
         from keecas import symbols, u, pc, show_eqn
 
-        # Basic parameter display
+        # Basic parameter display with subscripted symbols
         F, A_load = symbols(r"F, A_{load}")
 
         _p = {
@@ -112,10 +132,10 @@ def show_eqn(
 
         ```{python}
         # Multi-column with expressions and values
-        sigma = symbols(r"\sigma")
+        sigma_Sd = symbols(r"\sigma_{Sd}")
 
         _e = {
-            sigma: "F/A_load" | pc.parse_expr
+            sigma_Sd: "F/A_load" | pc.parse_expr
         }
 
         _v = {k: v | pc.subs(_p | _e) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
@@ -134,14 +154,14 @@ def show_eqn(
         _l = {
             F: 'force',
             A_load: 'area',
-            sigma: 'stress-calc',
+            sigma_Sd: 'stress-calc',
         }
 
         # specific float formatting
         _f = {
             F: '{:.1f}', # applied to all element in the row
             A_load: '{:.2f}', # applied to all element in the row
-            sigma: [None, None, '.3f'], # per cell formatting
+            sigma_Sd: [None, None, '.3f'], # per cell formatting
         }
 
         show_eqn([_p|_e, _v], float_format=_f, label=_l)
@@ -158,7 +178,7 @@ def show_eqn(
         _d = {
             F: 'applied force',
             A_load: 'area of application',
-            sigma: 'stress',
+            sigma_Sd: 'stress',
         }
 
         # use hash function to create unique labels
@@ -208,8 +228,8 @@ def show_eqn(
 
     See Also:
         - `~~display.check`: Engineering verification with localization
-        - `~~display.dict_to_eq`: Convert dict to SymPy Eq objects
-        - `~~display.eq_to_dict`: Convert SymPy Eq objects to dict
+        - `~~utils.dict_to_eq`: Convert dict to SymPy Eq objects
+        - `~~utils.eq_to_dict`: Convert SymPy Eq objects to dict
         - `~~config.manager.ConfigManager`: Global configuration object
 
     Notes:
@@ -217,12 +237,18 @@ def show_eqn(
         - Float formatting supports format specs with or without braces: ".3f" or "{:.3f}"
         - Environment separator defaults to None (uses environment-specific default)
         - Labels use config.latex.eq_prefix and eq_suffix for consistent referencing
-        - use config.print_label=True to display resulting label to be used for referencing (it will display the label even in KaTeX mode)
+        - use config.display.print_label=True to display resulting label to be used for referencing (it will display the label even in KaTeX mode)
     """
 
     # set default values
-    if not debug:
+    if debug is None:
         debug = config.display.debug
+
+    if print_label is None:
+        print_label = config.display.print_label
+
+    if katex is None:
+        katex = config.display.katex
 
     # Use config default_float_format if not explicitly provided
     if float_format is None:
@@ -263,8 +289,8 @@ def show_eqn(
             env_config = config.latex.environments.align
             environment = "align"
 
-    if not col_wrap:
-        col_wrap = config.col_wrap
+    if col_wrap is None:
+        col_wrap = config.display.col_wrap if config.display.col_wrap is not None else wrap_column
 
     # warning message in case of too many labels provided
     if not env_config.supports_multiple_labels and isinstance(label, dict):
@@ -296,21 +322,23 @@ def show_eqn(
     num_cols = eqns.width + 1
 
     ### create float_format Dataframe
-    # if float_format is a tuple, then the second value of the tuple is assumed to be the default_value
+    # Extract seed and filler using last-element pattern
+    float_format_seed, float_format_filler = _extract_seed_and_filler(float_format)
     float_format = create_dataframe(
-        seed=float_format[0] if isinstance(float_format, tuple) else float_format,
-        default_value=float_format[1] if isinstance(float_format, tuple) else None,
-        keys=keys,
-        width=num_cols,
+        float_format_seed,
+        keys,
+        num_cols,
+        default_value=float_format_filler,
     )
 
     ### col_wrap
-    # if col_wrap is a tuple, then the second value of the tuple is assumed to be the default_value
+    # Extract seed and filler using last-element pattern
+    col_wrap_seed, col_wrap_filler = _extract_seed_and_filler(col_wrap)
     col_wrap = create_dataframe(
-        seed=col_wrap[0] if isinstance(col_wrap, tuple) else col_wrap,
-        default_value=col_wrap[1] if isinstance(col_wrap, tuple) else None,
-        keys=keys,
-        width=num_cols,
+        col_wrap_seed,
+        keys,
+        num_cols,
+        default_value=col_wrap_filler,
     )
 
     ### cell_formatter
@@ -321,12 +349,17 @@ def show_eqn(
     if cell_formatter is None:
         cell_formatter = config.display.cell_formatter or format_value
 
-    # Step 2: Create Dataframe (single line, matching float_format pattern)
+    # Step 2: Extract seed and filler using last-element pattern
+    cell_formatter_seed, cell_formatter_filler = _extract_seed_and_filler(cell_formatter)
+    # Use format_value as fallback if no filler provided
+    if cell_formatter_filler is None:
+        cell_formatter_filler = format_value
+
     cell_formatters = create_dataframe(
-        seed=cell_formatter if not isinstance(cell_formatter, tuple) else cell_formatter[0],
-        default_value=format_value if not isinstance(cell_formatter, tuple) else cell_formatter[1],
-        keys=keys,
-        width=num_cols,
+        cell_formatter_seed,
+        keys,
+        num_cols,
+        default_value=cell_formatter_filler,
     )
 
     # get the config default label (it could be None), or generate label dict if none is passed
@@ -346,6 +379,8 @@ def show_eqn(
         first_key,
         label_command,
         env_arg,
+        print_label,
+        katex,
     )
 
     # generate the rows
@@ -367,7 +402,7 @@ def show_eqn(
             if v is not None:
                 formatted_value = cf(v, col_idx, **latex_kwargs)  # Pass latex kwargs to formatter
                 # Note: formatted_value is never None - registry ensures fallback
-                cell_content = f"{_col_wrap(cw, v)[0]}{formatted_value}{_col_wrap(cw, v)[-1]}"
+                cell_content = f"{_col_wrap(cw, v, col_idx)[0]}{formatted_value}{_col_wrap(cw, v, col_idx)[-1]}"
             else:
                 cell_content = " "
 
@@ -376,7 +411,9 @@ def show_eqn(
             cells.append(cell_content)
 
         # Join cells to form row
-        body_lines[key] = " ".join(cells) + _attach_label(label, key, label_command, list_values)
+        body_lines[key] = " ".join(cells) + _attach_label(
+            label, key, label_command, list_values, print_label, katex
+        )
 
     # Apply row-level formatters
     if row_formatter is not None:
@@ -508,7 +545,7 @@ def check(
         ```{python}
         # Localized verification (Italian)
         from keecas import config
-        config.language = 'it'
+        config.language.language = 'it'
 
         utilization = 0.75
         check(utilization, 1.0, test=Le)  # Shows "VERIFICATO" in Italian
@@ -655,21 +692,21 @@ def format_decimal_numbers(
         from keecas.display import format_decimal_numbers
 
         # Basic usage with shorthand notation
-        latex = r"\sigma = 1.23456 \text{ MPa}"
+        latex = r"\sigma_{Sd} = 1.23456 \text{ MPa}"
         formatted = format_decimal_numbers(latex, ".2f")
         print(formatted)
         ```
 
         ```{python}
         # Multiple decimal numbers in one string
-        latex = r"F = 100.567 \text{ kN}, A = 20.123 \text{ cm}^2"
+        latex = r"F = 100.567 \text{ kN}, A_{load} = 20.123 \text{ cm}^2"
         formatted = format_decimal_numbers(latex, ".1f")
         print(formatted)
         ```
 
         ```{python}
         # Different format specifications
-        latex = r"\alpha = 3.14159"
+        latex = r"\alpha_{max} = 3.14159"
 
         # Standard precision
         print(format_decimal_numbers(latex, ".3f"))
@@ -687,7 +724,7 @@ def format_decimal_numbers(
         from sympy import latex
 
         # tip: use for custom post-processing of LaTeX strings
-        sigma = symbols(r"\sigma")
+        sigma_Rd = symbols(r"\sigma_{Rd}")
         value_latex = latex(5.123456 * u.MPa)
 
         # Format specific parts before display
@@ -697,7 +734,7 @@ def format_decimal_numbers(
 
     See Also:
         - `~~display.show_eqn`: Main display function with built-in float formatting
-        - `~~config.schema.DisplayConfig`: Display configuration (see `default_float_format` attribute)
+        - `~~config.manager.DisplayConfig`: Display configuration (see `default_float_format` attribute)
 
     Notes:
         - Only matches decimal numbers (requires decimal point)
@@ -754,16 +791,25 @@ def latex_inline_dict(var: Basic, mapping: dict[Basic, Any], **kwargs: Any) -> s
         Formatted LaTeX string with localization applied
 
     Examples:
-        >>> from sympy import symbols
-        >>> x = symbols('x')
-        >>> latex_inline_dict(x, {x: 5})
-        'x = 5'
-        >>> latex_inline_dict(x, {x: 5}, mode="inline")
-        '$x = 5$'
+        ```{python}
+        from keecas import symbols
+        from keecas.display import latex_inline_dict
+
+        # Define symbol with subscript
+        sigma_Sd = symbols(r"\\sigma_{Sd}")
+
+        # Basic usage
+        latex_inline_dict(sigma_Sd, {sigma_Sd: 5})  # Returns: '\\sigma_{Sd} = 5'
+        ```
+
+        ```{python}
+        # Inline mode with $ delimiters
+        latex_inline_dict(sigma_Sd, {sigma_Sd: 5}, mode="inline")  # Returns: '$\\sigma_{Sd} = 5$'
+        ```
 
     See Also:
         - `~~display.show_eqn`: Main display function for multiple equations
-        - `~~display.dict_to_eq`: Convert dictionary to SymPy Eq objects
+        - `~~utils.dict_to_eq`: Convert dictionary to SymPy Eq objects
     """
     if "mul_symbol" not in kwargs:
         kwargs["mul_symbol"] = r"\,"
@@ -872,12 +918,64 @@ def _get_base_replacements() -> dict[str, str | callable]:
 # ============================================================================
 
 
+def _extract_seed_and_filler(value: Any) -> tuple[Any, Any]:
+    """Extract seed and filler from various input formats.
+
+    For list inputs, the last element serves as the filler value that will be
+    used to pad remaining columns. For non-list inputs, no filler is extracted.
+
+    Args:
+        value: Input value (scalar, list, dict, Dataframe)
+
+    Returns:
+        (seed, filler) tuple where:
+        - seed: Value to pass to create_dataframe
+        - filler: Value to use as default_value in create_dataframe
+
+    Examples:
+        >>> _extract_seed_and_filler([".1f", ".2f"])
+        ([".1f", ".2f"], ".2f")
+
+        >>> _extract_seed_and_filler(".3f")
+        (".3f", None)
+
+        >>> _extract_seed_and_filler([".3f"])
+        ([".3f"], ".3f")
+    """
+    if isinstance(value, list) and len(value) > 0:
+        # Last element is filler
+        return value, value[-1]
+    else:
+        # Scalar, empty list, dict, or Dataframe - no list filler
+        return value, None
+
+
 def _col_wrap(
-    cw: None | str | tuple[str, str] | dict[type, tuple[str, str]],
+    cw: None | str | tuple[str, str] | dict[type, tuple[str, str]] | Callable,
     value: Any,
+    col_index: int = 0,
 ) -> tuple[str, str]:
+    """Apply column wrapping based on wrapper specification.
+
+    Parameters
+    ----------
+    cw : None | str | tuple | dict | Callable
+        Column wrapper specification
+    value : Any
+        Value being wrapped
+    col_index : int, optional
+        Column index (0 = LHS, 1+ = RHS)
+
+    Returns
+    -------
+    tuple[str, str]
+        (prefix, suffix) for wrapping
+    """
     if not cw:
         return ("", "")
+
+    if callable(cw):
+        return cw(value, col_index)
 
     if isinstance(cw, str):
         return cw, ""
@@ -898,6 +996,8 @@ def _attach_label(
     key: str | None = None,
     label_command: str | None = None,
     values: list[Any] | None = None,
+    print_label: bool = False,
+    katex: bool = False,
 ) -> str:
     r"""Attach a label to a given key.
 
@@ -909,13 +1009,15 @@ def _attach_label(
         key: The key to attach the label to, or None for single labels
         label_command: LaTeX label command (e.g., r"\label")
         values: List of values for this row (used with callable labels)
+        print_label: Whether to print labels to console for debugging
+        katex: Whether to omit labels for KaTeX compatibility
 
     Returns:
         LaTeX label command string, or empty string if no label or KaTeX mode
 
     Notes:
         - Labels should be pre-formatted using generate_label() before passing to show_eqn
-        - If config.display.print_label is True, the key and label are printed for debugging
+        - If print_label is True, the key and label are printed for debugging
         - Labels are omitted in KaTeX mode for Jupyter notebook compatibility
         - Callable labels receive a single list argument: [key] + values
     """
@@ -925,12 +1027,10 @@ def _attach_label(
     # Handle callable label (single callable for all keys)
     if callable(label) and key is not None:
         text_label = label([key] + values)
-        if config.display.print_label:
+        if print_label:
             print(f"{key}: {text_label}") if text_label else None
 
-        return (
-            rf" {label_command}{{{text_label}}} " if text_label and not config.display.katex else ""
-        )
+        return rf" {label_command}{{{text_label}}} " if text_label and not katex else ""
 
     if isinstance(label, dict):
         label_value = label.get(key)
@@ -943,20 +1043,18 @@ def _attach_label(
         else:
             text_label = ""
 
-        if config.display.print_label:
+        if print_label:
             print(f"{key}: {text_label}") if text_label else None
 
-        return (
-            rf" {label_command}{{{text_label}}} " if text_label and not config.display.katex else ""
-        )
+        return rf" {label_command}{{{text_label}}} " if text_label and not katex else ""
 
     if isinstance(label, str) and not key:
         text_label = label
 
-        if config.display.print_label:
+        if print_label:
             print(f"label: {text_label}" if text_label else None)
 
-        return rf" {label_command}{{{text_label}}} " if not config.display.katex else ""
+        return rf" {label_command}{{{text_label}}} " if not katex else ""
 
     return ""
 
@@ -968,6 +1066,8 @@ def _generate_environment_template(
     first_key: str | None = None,
     label_command: str | None = None,
     env_arg: str | None = None,
+    print_label: bool = False,
+    katex: bool = False,
 ) -> str:
     """Generate complete LaTeX template with ___body___ placeholder.
 
@@ -979,6 +1079,8 @@ def _generate_environment_template(
         label_command: LaTeX label command
         env_arg: Optional argument string for environment (e.g., "{2}" for alignat{2}).
                  User provides complete argument including braces.
+        print_label: Whether to print labels to console for debugging
+        katex: Whether to omit labels for KaTeX compatibility
 
     Returns:
         LaTeX template string with ___body___ placeholder
@@ -1000,7 +1102,7 @@ def _generate_environment_template(
 
         # Single label environments attach label to begin statement
         label_str = (
-            _attach_label(label, first_key, label_command)
+            _attach_label(label, first_key, label_command, None, print_label, katex)
             if not env_config.supports_multiple_labels
             else ""
         )
@@ -1019,7 +1121,7 @@ def _generate_environment_template(
         outer_suffix = env_config.outer_suffix
 
         # Label goes on outer environment for nested structures
-        label_str = _attach_label(label, None, label_command)
+        label_str = _attach_label(label, None, label_command, None, print_label, katex)
 
         template = rf"""{outer_prefix}\begin{{{outer_env}}}{label_str}
 	{inner_prefix}\begin{{{inner_env}}}{arg_str}

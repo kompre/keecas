@@ -6,7 +6,7 @@ on:
       - dev
       - 'feature/**'
   pull_request:
-    branches: [ main, dev ]
+    branches: [ dev ]  # Excluded main - test.yml already verifies linting
 
 concurrency:
   group: lint-fix-${{ github.event.pull_request.number || github.ref }}
