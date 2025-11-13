@@ -22,6 +22,18 @@ name = "keecas"
 version = "1.0.1"
 description = "Symbolic and units-aware calculations with LaTeX rendering for Jupyter notebooks, optimized for Quarto PDF documentation."
 readme = "README.md"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 [project.urls]
 Homepage = "https://github.com/kompre/keecas"
