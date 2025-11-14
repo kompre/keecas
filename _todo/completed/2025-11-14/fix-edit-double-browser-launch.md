@@ -430,3 +430,33 @@ Press Ctrl+C to stop the server
 - Complexity: Reduced (no webbrowser dependency, simpler logic)
 
 **Status:** Implementation complete, ready for commit
+
+---
+
+## Final Summary
+
+### Completed: 2025-11-14
+
+**Task:** Fix double browser tab launch in `keecas edit` and add terminal link display
+
+**Implementation:**
+- Removed redundant `webbrowser.open()` call (8 lines deleted)
+- Added URL construction and terminal display (40 lines added)
+- Updated CLAUDE.md documentation
+- Net result: Simpler code, better UX
+
+**Testing:**
+✅ `--no-browser` mode displays URLs correctly
+✅ URL encoding works for special characters
+✅ Windows path compatibility verified
+✅ Temp directory cleanup still functions
+
+**PR:** #62 merged to dev branch
+
+**Key Insight:** The solution was simpler than initially proposed - no output parsing needed, just trust Jupyter's native browser launching and construct URLs from known configuration.
+
+**Impact:**
+- Users now get exactly ONE browser tab (not two)
+- Terminal shows session URLs for easy recovery
+- Better UX for remote/SSH scenarios
+- Reduced code complexity and dependencies
