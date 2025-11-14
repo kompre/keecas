@@ -210,10 +210,11 @@ uv sync
 - Publishes via PyPI Trusted Publishing (OIDC, no API tokens)
 - Creates GitHub Release with PR notes and changelog
 
-**docs.yml** - Runs on push to main/dev:
+**docs.yml** - Runs on push to main:
 - Generates API documentation with quartodoc
 - Renders Quarto documentation
-- Deploys to GitHub Pages (main at root, dev at /dev/)
+- Deploys to GitHub Pages (root path)
+- Only triggered on main branch (dev branch docs not deployed)
 
 ### Developer Workflow
 
@@ -254,8 +255,8 @@ git commit -am "docs: update getting started guide"
 gh pr create --base main
 ```
 - No tests run (docs paths excluded)
-- Can merge immediately
-- docs.yml deploys after merge
+- Can merge immediately to main
+- docs.yml deploys after merge to main
 
 **Code changes**:
 ```bash

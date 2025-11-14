@@ -2,7 +2,7 @@ name: Build and Deploy Documentation
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main]  # Only deploy from main branch
     paths:
       - 'docs/**'
       - 'src/keecas/**/*.py'          # Only source files (API docs)
@@ -23,7 +23,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages-${{ github.ref }}"  # Separate concurrency per branch
+  group: "pages"  # Only one deployment group needed
   cancel-in-progress: false
 
 jobs:
@@ -73,103 +73,16 @@ jobs:
       id: pages
       uses: actions/configure-pages@v4
 
-    - name: Render Quarto Documentation (main)
-      if: github.ref == 'refs/heads/main'
+    - name: Render Quarto Documentation
       run: |
         cd docs
         uv run quarto render --profile main -M version:"${{ steps.version.outputs.version }}" -M pypi_url_full:"https://pypi.org/project/keecas/${{ steps.version.outputs.version }}/"
 
-    - name: Render Quarto Documentation (dev)
-      if: github.ref == 'refs/heads/dev'
-      run: |
-        cd docs
-        uv run quarto render --profile dev -M version:"${{ steps.version.outputs.version }}" -M pypi_url_full:"https://test.pypi.org/project/keecas/${{ steps.version.outputs.version }}/"
-
-    - name: Merge with existing gh-pages
-      if: github.event_name != 'pull_request'
-      run: |
-        # Determine target directory based on branch
-        if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-          TARGET_DIR="root"
-          echo "📁 Deploying to: root (main docs)"
-        else
-          TARGET_DIR="dev"
-          echo "📁 Deploying to: dev/ subdirectory"
-        fi
-
-        # Create staging directory
-        mkdir -p /tmp/gh-pages-staged
-
-        # Fetch and extract current gh-pages if it exists
-        if git fetch origin gh-pages 2>/dev/null; then
-          echo "📥 Fetching existing gh-pages content..."
-          git archive origin/gh-pages | tar -x -C /tmp/gh-pages-staged
-          echo "✅ Preserved existing gh-pages content"
-        else
-          echo "ℹ️  No existing gh-pages found (first deployment)"
-        fi
-
-        # Update target directory with new docs
-        if [ "$TARGET_DIR" = "root" ]; then
-          # Main branch: replace root, preserve /dev subdirectory
-          echo "🔄 Updating root docs, preserving /dev..."
-
-          # Backup dev directory if it exists
-          if [ -d "/tmp/gh-pages-staged/dev" ]; then
-            mv /tmp/gh-pages-staged/dev /tmp/dev-backup
-            echo "✅ Backed up /dev directory"
-          fi
-
-          # Backup hidden files (.nojekyll, etc.)
-          shopt -s dotglob  # Enable dotglob to match hidden files
-          mkdir -p /tmp/hidden-backup
-          for file in /tmp/gh-pages-staged/.*; do
-            if [ -f "$file" ]; then
-              cp "$file" /tmp/hidden-backup/
-            fi
-          done
-
-          # Clear root (visible files only, preserve hidden)
-          find /tmp/gh-pages-staged -mindepth 1 -maxdepth 1 ! -name '.*' -exec rm -rf {} +
-
-          # Copy new main docs
-          cp -r docs/_site/* /tmp/gh-pages-staged/
-
-          # Restore hidden files
-          if [ -d "/tmp/hidden-backup" ]; then
-            cp /tmp/hidden-backup/.* /tmp/gh-pages-staged/ 2>/dev/null || true
-          fi
-
-          # Restore dev directory
-          if [ -d "/tmp/dev-backup" ]; then
-            mv /tmp/dev-backup /tmp/gh-pages-staged/dev
-            echo "✅ Restored /dev directory"
-          fi
-        else
-          # Dev branch: replace /dev subdirectory, preserve root
-          echo "🔄 Updating /dev docs, preserving root..."
-          rm -rf /tmp/gh-pages-staged/dev
-          mkdir -p /tmp/gh-pages-staged/dev
-          cp -r docs/_site/* /tmp/gh-pages-staged/dev/
-          echo "✅ Updated /dev directory"
-        fi
-
-        # Ensure .nojekyll exists at root
-        touch /tmp/gh-pages-staged/.nojekyll
-
-        echo "✅ Staged docs for deployment"
-        echo "📊 Contents:"
-        ls -la /tmp/gh-pages-staged/
-        if [ -d "/tmp/gh-pages-staged/dev" ]; then
-          echo "📊 Dev directory contents:"
-          ls -la /tmp/gh-pages-staged/dev/ | head -n 10
-        fi
-
-    - name: Upload merged artifact
+    - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
       if: github.event_name != 'pull_request'
       with:
-        path: /tmp/gh-pages-staged
+        path: docs/_site
 
     - name: Upload build results (for PR testing)
       uses: actions/upload-artifact@v4
@@ -180,7 +93,7 @@ jobs:
         retention-days: 7
 
   deploy:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
 
