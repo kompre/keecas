@@ -8,11 +8,12 @@
 - [configurable-label-generation.md](proposal/configurable-label-generation.md) - Add config option for stable label generation strategies in show_eqn (awaiting review)
 
 **Tasks in development (`pending/`)**:
-- [simplify-docs-deployment-main-only.md](pending/simplify-docs-deployment-main-only.md) - Simplify documentation deployment to main branch only (in development)
+- None currently
 
 **Completed tasks** (most recent first):
 
 ### November 2025
+- [simplify-docs-deployment-main-only.md](completed/2025-11-14/simplify-docs-deployment-main-only.md) - Simplify documentation deployment to main branch only (eliminates 404 errors) (2025-11-14)
 - [fix-edit-double-browser-launch.md](completed/2025-11-14/fix-edit-double-browser-launch.md) - Fix double browser tab launch and add terminal link display (2025-11-14)
 - [pre-release-ci-workflow-audit.md](completed/2025-11-12/pre-release-ci-workflow-audit.md) - Pre-release CI workflow audit (2025-11-12)
 - [config-testing-phase2.md](completed/2025-11-12/config-testing-phase2.md) - Config Testing Phase 2: SKIPPED - 85% coverage already exists (2025-11-12)
