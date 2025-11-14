@@ -5,6 +5,7 @@
 <!-- Tasks moved to proposal phase -->
 
 **Tasks awaiting approval in `proposal/`**:
+- [fix-edit-double-browser-launch.md](proposal/fix-edit-double-browser-launch.md) - Fix double browser tab launch and add terminal link display (awaiting review)
 - [post-publication-marketing.md](proposal/post-publication-marketing.md) - Create marketing posts for Reddit, Quarto forums, and LinkedIn (awaiting platform-specific guidelines)
 - [eliminate-config-shortcuts.md](proposal/eliminate-config-shortcuts.md) - Eliminate configuration property shortcuts for consistent dot-notation access pattern (awaiting review)
 - [refactor-create-dataframe-singledispatch.md](proposal/refactor-create-dataframe-singledispatch.md) - Refactor create_dataframe using singledispatch pattern for cleaner type handling (awaiting review)
@@ -34,8 +35,7 @@ When you see a tasks:
 1. Create a detailed proposal file in `_todo/proposal/[task-name].md`
 2. Include the original objective from this file and eliminate the entry from `todo.md`
 3. Break down the task into specific implementation steps
-4. backward compatibility / breaking changes are not an issue because we're planning a major update (check pyproject.toml for version, we're on track for 1.0.0)
-5. Wait for user review, comments, and approval 
+4. Wait for user review, comments, and approval 
 
 <!-- user comment wil be displayed here -->
 
