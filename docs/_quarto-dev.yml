@@ -1,4 +1,0 @@
-# Dev deployment profile
-# Deploys to /dev subdirectory on GitHub Pages
-website:
-  site-path: "/dev"

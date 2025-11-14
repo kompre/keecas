@@ -5,12 +5,10 @@
 <!-- Tasks moved to proposal phase -->
 
 **Tasks awaiting approval in `proposal/`**:
-- [simplify-docs-deployment-main-only.md](proposal/simplify-docs-deployment-main-only.md) - Simplify documentation deployment to main branch only (eliminates 404 errors) (awaiting review)
-- [post-publication-marketing.md](proposal/post-publication-marketing.md) - Create marketing posts for Reddit, Quarto forums, and LinkedIn (awaiting platform-specific guidelines)
 - [configurable-label-generation.md](proposal/configurable-label-generation.md) - Add config option for stable label generation strategies in show_eqn (awaiting review)
 
 **Tasks in development (`pending/`)**:
-- None currently
+- [simplify-docs-deployment-main-only.md](pending/simplify-docs-deployment-main-only.md) - Simplify documentation deployment to main branch only (in development)
 
 **Completed tasks** (most recent first):
 

@@ -330,3 +330,64 @@ git push origin gh-pages
 **Impact**: None on main branch behavior, eliminates broken dev docs
 
 **Key Insight**: The complex merging approach was fighting against Quarto's architecture. Simplifying to single-branch deployment aligns with how Quarto and GitHub Pages are designed to work.
+
+---
+
+## Implementation Progress
+
+### 2025-11-14 - Implementation Complete
+
+**Changes Made:**
+
+1. **Updated docs.yml trigger** (line 5)
+   - Changed from `branches: [main, dev]` to `branches: [main]`
+   - Docs now only build on main branch
+
+2. **Removed dev rendering step** (lines 82-86 deleted)
+   - Deleted entire "Render Quarto Documentation (dev)" step
+   - Eliminated conditional dev rendering logic
+
+3. **Simplified main rendering** (lines 76-79)
+   - Removed `if: github.ref == 'refs/heads/main'` condition
+   - Always renders with main profile since only main triggers
+
+4. **Replaced merge logic with simple upload** (lines 81-85)
+   - Deleted 80+ lines of complex gh-pages merging bash script
+   - Replaced with simple `upload-pages-artifact@v3` action
+   - Direct upload from `docs/_site` directory
+
+5. **Simplified deploy conditions** (line 96)
+   - Changed from `if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'`
+   - To `if: github.ref == 'refs/heads/main'`
+
+6. **Simplified concurrency group** (line 26)
+   - Changed from `group: "pages-${{ github.ref }}"`
+   - To `group: "pages"` (only one deployment group needed)
+
+7. **Deleted dev profile** (`docs/_quarto-dev.yml`)
+   - Removed dev Quarto configuration file
+   - No longer needed with single-branch deployment
+
+8. **Updated CLAUDE.md documentation** (lines 213-217, 259)
+   - Updated docs.yml description to reflect main-only deployment
+   - Clarified docs deploy after merge to main
+
+**Workflow Comparison:**
+
+**Before**: 195 lines with complex logic
+- Dual-branch triggers
+- Conditional rendering
+- 80+ lines of bash for gh-pages merging
+- Backup/restore directory logic
+- Error-prone
+
+**After**: ~107 lines, simple and clean
+- Single-branch trigger
+- No conditionals
+- Direct artifact upload
+- No merge logic
+- Maintainable
+
+**Lines removed**: 88 lines (45% reduction)
+
+**Status**: Implementation complete, ready for testing
