@@ -13,8 +13,8 @@ import subprocess
 import sys
 import tempfile
 import time
-import webbrowser
 from pathlib import Path
+from urllib.parse import quote
 
 import toml
 
@@ -417,22 +417,43 @@ def cmd_edit(args: argparse.Namespace) -> None:
                 print(f"Error output: {stderr}")
             sys.exit(1)
 
-        # Build server URL
-        server_url = f"http://localhost:{port}"
+        # Construct session URLs
         interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
-
-        if args.browser:
-            # Open in browser - Jupyter will automatically open the specified file
-            if notebook_path:
-                print(f"Opening notebook in {interface_name}: {notebook_path.name}")
-            else:
-                print(f"Opening {interface_name} in browser")
-            webbrowser.open(server_url)
+        if use_lab:
+            session_url = f"http://localhost:{port}/lab"
         else:
-            # No browser - just show URLs
-            print(f"{interface_name} server running at: {server_url}")
+            session_url = f"http://localhost:{port}/tree"
+
+        # Build notebook-specific URL if applicable
+        notebook_url = None
+        if notebook_path:
+            relative_path = notebook_path.relative_to(work_dir)
+            path_str = str(relative_path).replace("\\", "/")  # Windows compatibility
+            if use_lab:
+                notebook_url = f"{session_url}/tree/{quote(path_str)}"
+            else:
+                notebook_url = f"{session_url}/{quote(path_str)}"
+
+        # Display URLs prominently
+        print()  # Blank line for readability
+        if args.browser:
+            print(f"{interface_name} opening in browser...")
             if notebook_path:
-                print(f"Notebook will open automatically: {notebook_path.name}")
+                print(f"Notebook: {notebook_path.name}")
+            print()
+            print(f"Session URL: {session_url}")
+            if notebook_url:
+                print(f"Direct link: {notebook_url}")
+        else:
+            print(f"{interface_name} server started (no browser)")
+            print()
+            print("Copy this URL to your browser:")
+            print(f"  {session_url}")
+            if notebook_url:
+                print()
+                print("Direct notebook link:")
+                print(f"  {notebook_url}")
+            print()
 
         print(f"Server PID: {process.pid}")
         print("Press Ctrl+C to stop the server")
