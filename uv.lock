@@ -877,7 +877,7 @@ wheels = [
 
 [[package]]
 name = "keecas"
-version = "1.0.2b2"
+version = "1.0.2"
 source = { editable = "." }
 dependencies = [
     { name = "flatten-dict" },
