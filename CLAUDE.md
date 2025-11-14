@@ -106,6 +106,12 @@ keecas config path [--global|--local]               # Show config file paths
 keecas config reset [--global|--local] [--force]    # Reset to defaults
 ```
 
+**Terminal Output Features:**
+- Displays session URL and direct notebook links for easy access/recovery
+- Browser mode: Shows URLs after launching browser (single tab opens)
+- No-browser mode: Provides copy-pasteable URLs for manual access
+- Temporary sessions (`--temp`) include cleanup notice
+
 ### Building
 The project uses `uv` as the build backend. To build:
 ```bash

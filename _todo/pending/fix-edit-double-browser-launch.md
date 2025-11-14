@@ -367,3 +367,66 @@ This proposal provides a simple, elegant solution to two related UX issues:
 - Terminal link display critical for remote/SSH scenarios and recovery
 - Solution is simpler than initially thought - no output parsing needed
 - Works cross-platform (Windows path handling included)
+
+---
+
+## Implementation Progress
+
+### 2025-11-14 - Implementation Complete
+
+**Changes Made:**
+
+1. **Removed webbrowser import** (`cli.py:16`)
+   - Deleted `import webbrowser`
+   - Added `from urllib.parse import quote` for URL encoding
+
+2. **Deleted manual browser launch** (`cli.py:424-430`)
+   - Removed entire `webbrowser.open()` call block
+   - Eliminated redundant browser opening
+
+3. **Added URL construction and display** (`cli.py:420-459`)
+   - Construct session URLs from known configuration
+   - Build notebook-specific URLs with proper encoding
+   - Windows path compatibility (`\\` to `/` conversion)
+   - Different output for browser vs no-browser modes
+
+4. **Updated documentation** (`CLAUDE.md:109-113`)
+   - Added Terminal Output Features section
+   - Documents URL display behavior
+
+**Testing Results:**
+
+```bash
+$ uv run keecas edit --temp --no-browser
+Created temporary session directory: C:\...\keecas_session_t6lpl4gx
+Created keecas notebook: C:\...\untitled-1.ipynb
+Starting JupyterLab server on port 8888...
+
+JupyterLab server started (no browser)
+
+Copy this URL to your browser:
+  http://localhost:8888/lab
+
+Direct notebook link:
+  http://localhost:8888/lab/tree/untitled-1.ipynb
+
+Server PID: 28172
+Press Ctrl+C to stop the server
+```
+
+✅ URL display working correctly
+✅ No browser opened when `--no-browser` flag present
+✅ Direct notebook link properly constructed and encoded
+
+**Expected Behavior (Browser Mode):**
+- When running `keecas edit --temp` WITHOUT `--no-browser`:
+  - Jupyter opens exactly ONE browser tab (not two)
+  - Terminal still displays session URLs for reference
+
+**Code Changes Summary:**
+- Lines removed: 8 (import + manual open block)
+- Lines added: 40 (URL construction + display)
+- Net change: +32 lines
+- Complexity: Reduced (no webbrowser dependency, simpler logic)
+
+**Status:** Implementation complete, ready for commit
