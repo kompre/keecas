@@ -541,7 +541,10 @@ def parse_expr(
 
         # Python 3.13 compatibility: detect comprehension scope isolation (PEP 667)
         is_comprehension = frame3 and frame3.f_code.co_name in (
-            '<dictcomp>', '<listcomp>', '<setcomp>', '<genexpr>'
+            "<dictcomp>",
+            "<listcomp>",
+            "<setcomp>",
+            "<genexpr>",
         )
 
         if is_comprehension and frame3.f_back:

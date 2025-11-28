@@ -70,7 +70,7 @@ def test_parse_expr_in_dict_comprehension():
     from keecas.pint_sympy import unitregistry as u
 
     # Define symbols in function scope
-    a, b, c = symbols('a b c')
+    a, b, c = symbols("a b c")
 
     # Parameters dict with units
     _p = {
@@ -80,9 +80,7 @@ def test_parse_expr_in_dict_comprehension():
     }
 
     # Dict comprehension using parse_expr (should access both v and u)
-    _v = {
-        k: "v/u.kN" | parse_expr for k, v in _p.items()
-    }
+    _v = {k: "v/u.kN" | parse_expr for k, v in _p.items()}
 
     # Verify all expressions parsed correctly
     assert len(_v) == 3
@@ -90,7 +88,7 @@ def test_parse_expr_in_dict_comprehension():
     for k, expr in _v.items():
         assert expr is not None
         # Expression should be v / kilonewton (where v is from _p)
-        assert 'kilonewton' in str(expr) or 'kN' in str(expr)
+        assert "kilonewton" in str(expr) or "kN" in str(expr)
 
 
 def test_quantity_simplify():
