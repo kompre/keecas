@@ -537,7 +537,21 @@ def parse_expr(
     """
 
     if not local_dict:
-        local_dict = dict(currentframe().f_back.f_back.f_back.f_locals)
+        frame3 = currentframe().f_back.f_back.f_back
+
+        # Python 3.13 compatibility: detect comprehension scope isolation (PEP 667)
+        is_comprehension = frame3 and frame3.f_code.co_name in (
+            '<dictcomp>', '<listcomp>', '<setcomp>', '<genexpr>'
+        )
+
+        if is_comprehension and frame3.f_back:
+            # Merge comprehension scope with enclosing function scope
+            # Comprehension vars (k, v) override enclosing scope (correct precedence)
+            enclosing = frame3.f_back
+            local_dict = {**dict(enclosing.f_locals), **dict(frame3.f_locals)}
+        else:
+            # Non-comprehension or Python 3.12 behavior
+            local_dict = dict(frame3.f_locals) if frame3 else {}
 
     if "transformations" not in kwargs:
         kwargs["transformations"] = T[:11]
