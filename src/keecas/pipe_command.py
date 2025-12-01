@@ -537,24 +537,49 @@ def parse_expr(
     """
 
     if not local_dict:
-        frame3 = currentframe().f_back.f_back.f_back
+        frame = currentframe()
+        # Frame stack: parse_expr (0) -> __ror__ (1) -> lambda (2) -> caller (3)
+        frame3 = frame.f_back.f_back.f_back
 
-        # Python 3.13 compatibility: detect comprehension scope isolation (PEP 667)
-        is_comprehension = frame3 and frame3.f_code.co_name in (
-            "<dictcomp>",
-            "<listcomp>",
-            "<setcomp>",
-            "<genexpr>",
-        )
-
-        if is_comprehension and frame3.f_back:
-            # Merge comprehension scope with enclosing function scope
-            # Comprehension vars (k, v) override enclosing scope (correct precedence)
-            enclosing = frame3.f_back
-            local_dict = {**dict(enclosing.f_locals), **dict(frame3.f_locals)}
+        if not frame3:
+            local_dict = {}
         else:
-            # Non-comprehension or Python 3.12 behavior
-            local_dict = dict(frame3.f_locals) if frame3 else {}
+            # Python 3.13 compatibility: detect comprehension scope isolation (PEP 667)
+            # In Python 3.13+, comprehensions create isolated scopes but may report
+            # co_name as "<module>" instead of "<dictcomp>", etc.
+            # Detection strategy: check if f_locals is suspiciously small for the context
+
+            is_named_comprehension = frame3.f_code.co_name in (
+                "<dictcomp>",
+                "<listcomp>",
+                "<setcomp>",
+                "<genexpr>",
+            )
+
+            # Heuristic: if the frame claims to be module-level but only has
+            # 1-3 locals (typical for comprehension loop vars), it's likely
+            # a comprehension frame masquerading as module scope
+            is_likely_module_comprehension = (
+                frame3.f_code.co_name == "<module>"
+                and len(frame3.f_locals) <= 3
+                and not frame3.f_back  # No enclosing function frame
+            )
+
+            is_comprehension = is_named_comprehension or is_likely_module_comprehension
+
+            if is_comprehension:
+                if frame3.f_back:
+                    # Inside a function: merge enclosing function scope
+                    enclosing = frame3.f_back
+                    local_dict = {**dict(enclosing.f_locals), **dict(frame3.f_locals)}
+                else:
+                    # At module level: merge module globals with comprehension locals
+                    # This handles the Python 3.13 case where dict comps at module
+                    # level have isolated scope but no parent frame
+                    local_dict = {**dict(frame3.f_globals), **dict(frame3.f_locals)}
+            else:
+                # Non-comprehension: use frame locals directly
+                local_dict = dict(frame3.f_locals)
 
     if "transformations" not in kwargs:
         kwargs["transformations"] = T[:11]
