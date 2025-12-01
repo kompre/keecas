@@ -537,24 +537,31 @@ def parse_expr(
     """
 
     if not local_dict:
-        frame3 = currentframe().f_back.f_back.f_back
+        frame = currentframe()
+        # Frame stack: parse_expr (0) -> __ror__ (1) -> lambda (2) -> caller (3)
+        frame3 = frame.f_back.f_back.f_back
 
-        # Python 3.13 compatibility: detect comprehension scope isolation (PEP 667)
-        is_comprehension = frame3 and frame3.f_code.co_name in (
-            "<dictcomp>",
-            "<listcomp>",
-            "<setcomp>",
-            "<genexpr>",
-        )
-
-        if is_comprehension and frame3.f_back:
-            # Merge comprehension scope with enclosing function scope
-            # Comprehension vars (k, v) override enclosing scope (correct precedence)
-            enclosing = frame3.f_back
-            local_dict = {**dict(enclosing.f_locals), **dict(frame3.f_locals)}
+        if not frame3:
+            local_dict = {}
         else:
-            # Non-comprehension or Python 3.12 behavior
-            local_dict = dict(frame3.f_locals) if frame3 else {}
+            # Python 3.13 compatibility: cross-module isolation via f_globals
+            #
+            # Always merge f_globals + f_locals to match Python's scoping:
+            # - f_globals: bound to DEFINING module (not calling module)
+            #   This ensures cross-module isolation - if module_b imports module_a
+            #   and calls module_a.func(), we see module_a's globals, not module_b's
+            # - f_locals: function-local variables and loop variables
+            # - Precedence: f_locals override f_globals (locals shadow globals)
+            #
+            # This handles all common cases:
+            # 1. Functions accessing module variables: ✓ (f_globals)
+            # 2. Module-level comprehensions: ✓ (f_globals + loop vars)
+            # 3. Cross-module isolation: ✓ (f_globals is defining module)
+            #
+            # Known limitation (Python 3.13 PEP 667):
+            # - Comprehensions inside functions can't access parent function locals
+            #   due to scope isolation. Workaround: pass explicit local_dict parameter
+            local_dict = {**dict(frame3.f_globals), **dict(frame3.f_locals)}
 
     if "transformations" not in kwargs:
         kwargs["transformations"] = T[:11]

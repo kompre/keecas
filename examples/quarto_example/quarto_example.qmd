@@ -24,6 +24,7 @@ keep-tex: true
 jupyter: python3
 ---
 
+
 {{< pagebreak >}}
 
 # How to use keecas in a Quarto document

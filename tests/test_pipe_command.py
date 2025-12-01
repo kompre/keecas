@@ -91,6 +91,58 @@ def test_parse_expr_in_dict_comprehension():
         assert "kilonewton" in str(expr) or "kN" in str(expr)
 
 
+def test_parse_expr_in_module_level_comprehension():
+    """Test parse_expr in module-level dict comprehension (Python 3.13).
+
+    Module-level comprehensions in Python 3.13 have isolated scope with no
+    parent frame. This requires accessing f_globals instead of f_back.f_locals.
+    This test simulates the exact regression case from issue #66.
+    """
+    import sys
+    from io import StringIO
+    from pathlib import Path
+
+    # Create test script that mimics module-level usage
+    test_script = """
+from keecas import u, pc
+from sympy import symbols
+
+a, b, c = symbols('a b c')
+
+_p = {
+    a: 2*u.kN,
+    b: 3*u.m,
+    c: 5,
+}
+
+_v = {
+    k: "v/u.kN" | pc.parse_expr for k,v in _p.items()
+}
+
+# Verify expressions parsed correctly
+assert len(_v) == 3
+for k, expr in _v.items():
+    assert expr is not None
+    assert "kilonewton" in str(expr) or "kN" in str(expr)
+
+print("SUCCESS")
+"""
+
+    # Execute test script in subprocess
+    import subprocess
+
+    result = subprocess.run(
+        [sys.executable, "-c", test_script],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+
+    # Check execution succeeded
+    assert result.returncode == 0, f"Script failed:\n{result.stderr}"
+    assert "SUCCESS" in result.stdout
+
+
 def test_quantity_simplify():
     from sympy.physics.units import joule, meter, newton
 
