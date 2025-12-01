@@ -99,8 +99,6 @@ def test_parse_expr_in_module_level_comprehension():
     This test simulates the exact regression case from issue #66.
     """
     import sys
-    from io import StringIO
-    from pathlib import Path
 
     # Create test script that mimics module-level usage
     test_script = """
