@@ -35,7 +35,7 @@ Issues = "https://github.com/kompre/keecas/issues"
 Documentation = "https://kompre.github.io/keecas"
 
 [project.scripts]
-keecas = "keecas.cli:main"
+keecas = "keecas_cli:main"
 
 [dependency-groups]
 dev = [
