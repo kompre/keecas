@@ -398,12 +398,13 @@ def cmd_edit(args: argparse.Namespace) -> None:
 
     # Start Jupyter server
     try:
-        # Start server in background
+        # Start server with output going to terminal to avoid buffer deadlock
+        # Using stdout=None, stderr=None allows Jupyter to write directly to terminal
+        # This prevents the subprocess from hanging when pipe buffers fill up
         process = subprocess.Popen(
             jupyter_cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
+            stdout=None,
+            stderr=None,
         )
 
         # Wait a moment for server to start
@@ -411,10 +412,8 @@ def cmd_edit(args: argparse.Namespace) -> None:
 
         # Check if process is still running
         if process.poll() is not None:
-            stdout, stderr = process.communicate()
             print("Error: Jupyter server failed to start")
-            if stderr:
-                print(f"Error output: {stderr}")
+            print("Check the output above for error details")
             sys.exit(1)
 
         # Construct session URLs
