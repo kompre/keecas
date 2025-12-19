@@ -1,7 +1,14 @@
 name: Release
 
 on:
-  pull_request:
+  # SECURITY: Uses pull_request_target to safely publish releases
+  # This is secure because:
+  # - Only runs on MERGED PRs (code already reviewed and approved)
+  # - Requires explicit 'release' or 'test-release' labels (see conditions below)
+  # - Only publishes after branch protection checks pass
+  # - All sensitive operations (git tag, PyPI publish) happen on merged code in base branch
+  # - No code from PR branch is executed (checkout uses base.ref, not head.ref)
+  pull_request_target:
     types: [closed]
 
 # Prevent concurrent releases
@@ -32,6 +39,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.base.ref }}
           fetch-depth: 0  # Full history for proper tagging
+          # pull_request_target runs in base repo context, so this correctly gets merged code
 
       - name: Set up Python
         uses: actions/setup-python@v5

@@ -24,7 +24,7 @@ dependencies = [
     "tomlkit>=0.13.3",
 ]
 name = "keecas"
-version = "1.0.4"
+version = "1.1.0"
 description = "Symbolic and units-aware calculations with LaTeX rendering for Jupyter notebooks, optimized for Quarto PDF documentation."
 readme = "README.md"
 
@@ -35,7 +35,7 @@ Issues = "https://github.com/kompre/keecas/issues"
 Documentation = "https://kompre.github.io/keecas"
 
 [project.scripts]
-keecas = "keecas.cli:main"
+keecas = "keecas.__main__:main"
 
 [dependency-groups]
 dev = [
