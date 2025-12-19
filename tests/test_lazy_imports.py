@@ -10,9 +10,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
-
 # Performance thresholds
 MAX_IMPORT_TIME_MS = 100  # Maximum acceptable import time in milliseconds
 MAX_BASIC_IMPORT_TIME_MS = 50  # Maximum for basic import without heavy deps
@@ -52,20 +49,6 @@ def test_import_performance():
 
     assert result.returncode == 0, f"Import failed: {result.stderr}"
 
-    # Parse import time from stderr (Python -X importtime output)
-    # Look for lines like: "import time:      1234 |      5678 | keecas"
-    lines = result.stderr.split("\n")
-    keecas_time = None
-    for line in lines:
-        if "keecas" in line and "|" in line:
-            parts = line.split("|")
-            if len(parts) >= 3:
-                # Get cumulative time (second column)
-                time_str = parts[1].strip()
-                if time_str.isdigit():
-                    keecas_time = int(time_str) / 1000  # Convert microseconds to ms
-                    break
-
     # Also measure with time command for overall verification
     result_time = subprocess.run(
         [sys.executable, "-c", "import keecas"],
@@ -77,7 +60,7 @@ def test_import_performance():
 
     assert result_time.returncode == 0, "Basic import should succeed"
 
-    # We can't easily measure exact time cross-platform, but we verify no errors
+    # We verify no errors during import
     # The real performance test is the no-heavy-deps test below
 
 
