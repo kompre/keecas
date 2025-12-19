@@ -1,7 +1,7 @@
 name: Release
 
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
 
 # Prevent concurrent releases
@@ -32,6 +32,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.base.ref }}
           fetch-depth: 0  # Full history for proper tagging
+          # pull_request_target runs in base repo context, so this correctly gets merged code
 
       - name: Set up Python
         uses: actions/setup-python@v5
