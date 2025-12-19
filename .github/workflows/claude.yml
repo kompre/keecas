@@ -9,6 +9,8 @@ on:
     types: [opened, assigned]
   pull_request_review:
     types: [submitted]
+  pull_request_target:
+    types: [opened, synchronize]
 
 jobs:
   claude:
@@ -16,19 +18,58 @@ jobs:
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))) ||
+      (github.event_name == 'pull_request_target' && (contains(github.event.pull_request.body, '@claude') || contains(github.event.pull_request.title, '@claude')))
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: read
+      contents: write
+      pull-requests: write
       issues: read
       id-token: write
       actions: read # Required for Claude to read CI results on PRs
     steps:
+      - name: Get PR details for comment events
+        id: pr-details
+        if: github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment' || github.event_name == 'pull_request_review'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            let pr_number;
+            let pr_data;
+
+            if (context.eventName === 'issue_comment') {
+              // Check if the issue is actually a PR
+              const issue = context.payload.issue;
+              if (issue.pull_request) {
+                pr_number = issue.number;
+                const { data } = await github.rest.pulls.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr_number
+                });
+                pr_data = data;
+              }
+            } else if (context.eventName === 'pull_request_review_comment' || context.eventName === 'pull_request_review') {
+              pr_data = context.payload.pull_request;
+              pr_number = pr_data.number;
+            }
+
+            if (pr_data) {
+              core.setOutput('is_pr', 'true');
+              core.setOutput('pr_number', pr_number.toString());
+              core.setOutput('head_ref', pr_data.head.ref);
+              core.setOutput('head_sha', pr_data.head.sha);
+              core.setOutput('head_repo', pr_data.head.repo.full_name);
+            } else {
+              core.setOutput('is_pr', 'false');
+            }
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
+          ref: ${{ (github.event_name == 'pull_request_target' && github.event.pull_request.head.sha) || (steps.pr-details.outputs.is_pr == 'true' && steps.pr-details.outputs.head_sha) || github.sha }}
+          repository: ${{ (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name) || (steps.pr-details.outputs.is_pr == 'true' && steps.pr-details.outputs.head_repo) || github.repository }}
 
       - name: Run Claude Code
         id: claude
