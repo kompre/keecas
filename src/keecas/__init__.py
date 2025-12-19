@@ -160,9 +160,7 @@ def __getattr__(name):
         import sympy
 
         # Initialize sympy printing (was at module level in original __init__.py)
-        sympy.init_printing(
-            mul_symbol=globals()["config"].latex.default_mul_symbol, order="none"
-        )
+        sympy.init_printing(mul_symbol=globals()["config"].latex.default_mul_symbol, order="none")
 
         globals()["sympy"] = sympy
         return sympy
