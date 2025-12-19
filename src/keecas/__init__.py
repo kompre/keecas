@@ -42,6 +42,29 @@ __all__ = [
 ]
 
 
+def _ensure_config_loaded():
+    """Ensure the correct config object (ConfigOptions) is loaded.
+
+    Prevents namespace collision with keecas.config package module.
+
+    Keecas exposes two things named "config":
+    - keecas.config (package): src/keecas/config/ containing ConfigManager
+    - keecas.config (object): ConfigOptions instance from display.py
+
+    This function guarantees that globals()["config"] is the ConfigOptions
+    object by checking for the presence of the "display" attribute, which
+    only ConfigOptions has, not the package module.
+
+    Returns:
+        ConfigOptions: The configuration object from display.py
+    """
+    if "config" not in globals() or not hasattr(globals()["config"], "display"):
+        from .display import config
+
+        globals()["config"] = config
+    return globals()["config"]
+
+
 def __getattr__(name):
     """Lazy load dependencies.
 
@@ -53,12 +76,7 @@ def __getattr__(name):
     """
     # config is needed by other lazy loads, so load it first if requested
     if name == "config":
-        # Check if config is already loaded AND is the right type (ConfigOptions, not module)
-        if "config" not in globals() or not hasattr(globals()["config"], "display"):
-            from .display import config
-
-            globals()["config"] = config
-        return globals()["config"]
+        return _ensure_config_loaded()
 
     # Dataframe - actually lightweight, no sympy/pint
     elif name == "Dataframe":
@@ -128,11 +146,8 @@ def __getattr__(name):
 
     # Lazy load pint unit registry
     elif name == "u":
-        # Need config first (check it's the right type, not the config module)
-        if "config" not in globals() or not hasattr(globals()["config"], "display"):
-            from .display import config
-
-            globals()["config"] = config
+        # Need config first
+        _ensure_config_loaded()
 
         from .pint_sympy import unitregistry as u
 
@@ -151,11 +166,8 @@ def __getattr__(name):
 
     # Lazy load sympy module
     elif name == "sympy":
-        # Need config first (check it's the right type, not the config module)
-        if "config" not in globals() or not hasattr(globals()["config"], "display"):
-            from .display import config
-
-            globals()["config"] = config
+        # Need config first
+        _ensure_config_loaded()
 
         import sympy
 
@@ -167,11 +179,8 @@ def __getattr__(name):
 
     # Lazy load sympy exports - batch load them all together for efficiency
     elif name in ("latex", "Eq", "Le", "symbols", "Basic", "Dict", "S"):
-        # Need config first (check it's the right type, not the config module)
-        if "config" not in globals() or not hasattr(globals()["config"], "display"):
-            from .display import config
-
-            globals()["config"] = config
+        # Need config first
+        _ensure_config_loaded()
 
         import sympy
         from sympy import Basic, Dict, Eq, Le, S, latex, symbols
@@ -200,11 +209,8 @@ def __getattr__(name):
 
     # Lazy load Matrix (separate because it's imported as ImmutableDenseMatrix)
     elif name == "Matrix":
-        # Need config first (check it's the right type, not the config module)
-        if "config" not in globals() or not hasattr(globals()["config"], "display"):
-            from .display import config
-
-            globals()["config"] = config
+        # Need config first
+        _ensure_config_loaded()
 
         import sympy
         from sympy import ImmutableDenseMatrix as Matrix
