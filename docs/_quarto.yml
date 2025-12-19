@@ -117,16 +117,16 @@ quartodoc:
       contents:
         - name: display
           children: linked
-        - show_eqn
-        - check
-        - latex_inline_dict
+        - display.show_eqn
+        - display.check
+        - display.latex_inline_dict
         - display.format_decimal_numbers
     - title: Formatters Module
       desc: Cell and row formatters for LaTeX equation rendering
       contents:
         - name: formatters
           children: linked
-        - format_value
+        - formatters.format_value
         - formatters.format_str
         - formatters.format_int
         - formatters.format_float
@@ -141,7 +141,7 @@ quartodoc:
       contents:
         - name: col_wrappers
           children: linked
-        - wrap_column
+        - col_wrappers.wrap_column
         - col_wrappers.wrap_numeric
         - col_wrappers.wrap_str
         - col_wrappers.wrap_sympy
@@ -152,14 +152,14 @@ quartodoc:
       contents:
         - name: label
           children: linked
-        - generate_label
-        - generate_unique_label
+        - label.generate_label
+        - label.generate_unique_label
     - title: Dataframe Module
       desc: Custom dictionary-like container for tabular equation data
       contents:
         - name: dataframe
           children: linked
-        - Dataframe
+        - dataframe.Dataframe
         - dataframe.create_dataframe
     - title: Pipe Commands Module
       desc: Wraps common SymPy functions as decorators for functional composition
@@ -192,8 +192,8 @@ quartodoc:
           children: linked
         # - utils.escape_name
         # - utils.escape_var
-        - dict_to_eq
-        - eq_to_dict
+        - utils.dict_to_eq
+        - utils.eq_to_dict
 
 metadata-files: 
   - "api-reference/_sidebar.yml"
