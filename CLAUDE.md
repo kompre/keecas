@@ -27,6 +27,21 @@ This includes:
 
 `keecas` is a Python module for symbolic and units-aware calculations in Jupyter notebooks, specifically designed for Quarto rendered PDF documents. It combines `sympy` (symbolic math), `pint` (units), and `pipe` (functional programming) to provide a streamlined interface for mathematical computations with LaTeX output.
 
+### Performance: Lazy Import Optimization
+
+**Critical Implementation Detail:** The package uses lazy imports via `__getattr__()` in `src/keecas/__init__.py` to achieve fast CLI startup times (~45ms vs ~2000ms).
+
+- **Heavy dependencies** (sympy, pint, pipe_command) are lazy-loaded only when first accessed
+- **All exports** except `__version__` use lazy loading to avoid triggering heavy imports
+- **Import patterns supported:** `import keecas`, `from keecas import u`, `from keecas import *` all work correctly
+- **Config collision handling:** The `config` object (from display.py) must be distinguished from the `keecas.config` package module
+
+**When modifying `__init__.py`:**
+1. DO NOT add eager imports of sympy/pint-dependent modules at module level
+2. Use `hasattr(globals()["config"], "display")` to check for the correct config type
+3. Test with `python -X importtime -c "import keecas"` to verify no sympy/pint loads
+4. Verify CLI speed: `time keecas --version` should be <100ms
+
 ## Development Commands
 
 ### Documentation
