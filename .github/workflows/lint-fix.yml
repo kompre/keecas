@@ -2,9 +2,8 @@ name: Auto-fix Linting Issues
 
 on:
   push:
-    branches:
-      - dev
-      - 'feature/**'
+    branches-ignore:
+      - main  # Trigger on all branches except main
   pull_request:
     branches: [ dev ]  # Excluded main - test.yml already verifies linting
 
