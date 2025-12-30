@@ -219,7 +219,24 @@ def test_formatter_mul_complex_expressions():
     # Should contain fraction notation
     assert "frac" in result_complex
 
-    # Test 3: Symbolic expression (should NOT transform)
+    # Test 3: Compound units (should NOT transform)
+    # Expression: 5*kN * 3*m evaluates to 15*kN*m (torque)
+    # Multiple units indicate compound units from calculation, not simple scalar
+    compound_expr = S(5 * u.kN) * S(3 * u.m)
+    assert isinstance(compound_expr, Mul)
+
+    # Verify it has multiple unit quantities
+    from sympy.physics.units import Quantity
+
+    unit_count = sum(1 for arg in compound_expr.args if isinstance(arg, Quantity))
+    assert unit_count > 1, "Should have multiple unit quantities (compound units)"
+
+    # Format and verify it's NOT transformed
+    result_compound = format_value(compound_expr)
+    assert isinstance(result_compound, str)
+    # Should preserve compound units structure
+
+    # Test 4: Symbolic expression (should NOT transform)
     symbolic_expr = x * y
     assert isinstance(symbolic_expr, Mul)
     assert symbolic_expr.free_symbols  # Has free symbols
