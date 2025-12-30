@@ -186,6 +186,49 @@ def test_formatter_pint_transformation():
     assert "5" in result_direct
 
 
+def test_formatter_mul_complex_expressions():
+    """Test format_mul distinguishes simple numeric*units from complex calculations.
+
+    format_mul should only transform simple cases like 5*kN.
+    Complex calculations with division should NOT be transformed.
+    """
+    from keecas import S, format_value, u
+    from sympy import Mul, Pow
+
+    # Test 1: Simple numeric * units (transformation applies)
+    simple_expr = S(5 * u.kN)
+    assert isinstance(simple_expr, Mul)
+    result_simple = format_value(simple_expr)
+    assert isinstance(result_simple, str)
+    assert "5" in result_simple
+    # Units should be formatted (either as text or mathrm)
+    assert "kN" in result_simple or "kilonewton" in result_simple
+
+    # Test 2: Complex calculation with division (should NOT transform)
+    # Expression: 5*kN / (3*m)
+    complex_expr = S(5 * u.kN) / S(3 * u.m)
+    assert isinstance(complex_expr, Mul)
+
+    # Verify it has division (Pow with negative exponent)
+    has_division = any(isinstance(arg, Pow) and arg.exp.is_negative for arg in complex_expr.args)
+    assert has_division, "Complex expression should have division"
+
+    # Format and verify it's shown as fraction
+    result_complex = format_value(complex_expr)
+    assert isinstance(result_complex, str)
+    # Should contain fraction notation
+    assert "frac" in result_complex
+
+    # Test 3: Symbolic expression (should NOT transform)
+    symbolic_expr = x * y
+    assert isinstance(symbolic_expr, Mul)
+    assert symbolic_expr.free_symbols  # Has free symbols
+    result_symbolic = format_value(symbolic_expr)
+    assert isinstance(result_symbolic, str)
+    # Should not be transformed (no \cdot for simple xy multiplication)
+    assert "x" in result_symbolic and "y" in result_symbolic
+
+
 def test_format_decimal_numbers():
     text = "The values are 3.14159, -2.71828, and 0.57721."
     result = format_decimal_numbers(text, format_string="{:.2f}")
