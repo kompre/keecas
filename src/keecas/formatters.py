@@ -384,12 +384,13 @@ def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
     original structure to maintain clarity in mathematical notation.
     """
     # Import here to avoid circular dependency
-    from keecas import pipe_command as pc
     from sympy import Add, Pow
 
     # Check if this is a simple "numeric * units" pattern
     # Don't transform if it has any of these:
     from sympy.physics.units import Quantity
+
+    from keecas import pipe_command as pc
 
     has_symbols = bool(value.free_symbols)
     has_division = any(isinstance(arg, Pow) and arg.exp.is_negative for arg in value.args)

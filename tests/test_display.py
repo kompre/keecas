@@ -192,8 +192,9 @@ def test_formatter_mul_complex_expressions():
     format_mul should only transform simple cases like 5*kN.
     Complex calculations with division should NOT be transformed.
     """
-    from keecas import S, format_value, u
     from sympy import Mul, Pow
+
+    from keecas import S, format_value, u
 
     # Test 1: Simple numeric * units (transformation applies)
     simple_expr = S(5 * u.kN)
