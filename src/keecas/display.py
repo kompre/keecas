@@ -12,7 +12,6 @@ from itertools import zip_longest
 from typing import Any, Literal
 from warnings import warn
 
-
 from IPython.display import Latex
 from sympy import (
     Basic,
