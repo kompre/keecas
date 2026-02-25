@@ -12,7 +12,7 @@ from itertools import zip_longest
 from typing import Any, Literal
 from warnings import warn
 
-import regex
+
 from IPython.display import Latex
 from sympy import (
     Basic,
@@ -856,7 +856,13 @@ def _replace_all(
         reps = _get_replacement_dict(language=language, substitutions=substitutions)
 
     for pattern, repl in reps.items():
-        body = regex.sub(pattern, repl, body)
+        body = re.sub(pattern, repl, body)
+
+    # Replace dfrac with frac inside exponents (^{...}) with balanced braces.
+    # This requires matching nested braces which re cannot do with recursion,
+    # so we use a manual brace-balancing approach.
+    body = _replace_dfrac_in_exponents(body)
+
     return body
 
 
@@ -902,15 +908,47 @@ def _get_base_replacements() -> dict[str, str | callable]:
     """Get non-localizable replacements that are always applied."""
     return {
         r"\\frac": r"\\dfrac",  # first replace all frac with dfrac
-        r"\^\{((?:[^{}]|(?:\{(?1)\}))*)}": lambda m: regex.sub(
-            "dfrac",
-            "frac",
-            m.group(0),
-        ),  # then replace all dfrac inside ^{} with frac (small exponent)
+        # dfrac->frac inside ^{} is handled by _replace_dfrac_in_exponents()
         r"\b1 \\cdot": r"",
         r"\\\\": rf"\\\\[{config.latex.vertical_skip}]",
         r"\\,": r"{\,}",
     }
+
+
+def _replace_dfrac_in_exponents(text: str) -> str:
+    """Replace dfrac with frac inside exponent groups (^{...}).
+
+    Handles arbitrarily nested braces without requiring recursive regex.
+    This replaces the previous regex-package recursive pattern.
+    """
+    result = []
+    i = 0
+    while i < len(text):
+        # Look for ^{ pattern
+        if text[i] == "^" and i + 1 < len(text) and text[i + 1] == "{":
+            result.append("^{")
+            i += 2
+            depth = 1
+            exponent_start = len(result)
+            while i < len(text) and depth > 0:
+                if text[i] == "{":
+                    depth += 1
+                elif text[i] == "}":
+                    depth -= 1
+                    if depth == 0:
+                        # Extract the exponent content, replace dfrac->frac, append
+                        exponent = "".join(result[exponent_start:])
+                        exponent = exponent.replace("dfrac", "frac")
+                        result[exponent_start:] = [exponent]
+                        result.append("}")
+                        i += 1
+                        break
+                result.append(text[i])
+                i += 1
+        else:
+            result.append(text[i])
+            i += 1
+    return "".join(result)
 
 
 # ============================================================================
