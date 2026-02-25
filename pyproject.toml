@@ -13,7 +13,7 @@ dependencies = [
     "pint<1.0.0,>=0.24.3",
     "pipe<3.0,>=2.2",
     "sympy<2.0.0,>=1.13.1",
-    "regex<2025.0.0,>=2024.7.24",
+
     "ipython<9.0.0,>=8.26.0",
     "jupyter<2.0.0,>=1.1.1",
     "notebook<8.0.0,>=7.2.2",
@@ -24,7 +24,7 @@ dependencies = [
     "tomlkit>=0.13.3",
 ]
 name = "keecas"
-version = "1.1.0"
+version = "1.1.1rc1"
 description = "Symbolic and units-aware calculations with LaTeX rendering for Jupyter notebooks, optimized for Quarto PDF documentation."
 readme = "README.md"
 
