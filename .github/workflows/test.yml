@@ -3,9 +3,12 @@ name: Run Tests
 on:
   pull_request:
     branches: [ main, dev ]
+  push:
+    branches: [ main, dev ]
+  workflow_dispatch:
 
 concurrency:
-  group: test-${{ github.event.pull_request.number }}
+  group: test-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
 permissions:
