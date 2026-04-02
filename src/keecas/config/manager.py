@@ -828,7 +828,6 @@ class ConfigManager:
 
     def _propagate_changes(self, key: str, value: Any) -> None:
         """Propagate configuration changes to affected subsystems."""
-        self._ensure_loaded()
         # Language changes affect both Pint and LocalizationManager
         if key == "language" and value is not None:
             self._update_pint_language(value)
