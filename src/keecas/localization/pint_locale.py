@@ -153,7 +153,7 @@ def _get_safe_init_locale() -> str | None:
         # Check if Pint locale is disabled
         try:
             cm = ConfigManager()
-            if cm._options.disable_pint_locale:
+            if cm._options.language.disable_pint_locale:
                 return None  # Explicitly disable locale
         except Exception:
             pass
