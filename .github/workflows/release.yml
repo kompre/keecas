@@ -1,15 +1,12 @@
 name: Release
 
 on:
-  # SECURITY: Uses pull_request_target to safely publish releases
-  # This is secure because:
-  # - Only runs on MERGED PRs (code already reviewed and approved)
-  # - Requires explicit 'release' or 'test-release' labels (see conditions below)
-  # - Only publishes after branch protection checks pass
-  # - All sensitive operations (git tag, PyPI publish) happen on merged code in base branch
-  # - No code from PR branch is executed (checkout uses base.ref, not head.ref)
-  pull_request_target:
-    types: [closed]
+  # Triggered by push to main/dev when pyproject.toml changes.
+  # PyPI trusted publishing requires push/tag events; pull_request_target is not supported.
+  push:
+    branches: [main, dev]
+    paths:
+      - 'pyproject.toml'
 
 # Prevent concurrent releases
 concurrency:
@@ -19,27 +16,20 @@ concurrency:
 jobs:
   release:
     name: Automated Release
-    # Run if PR was merged with appropriate label:
-    # - 'release' label on main branch → Production PyPI + tag + GitHub Release
-    # - 'test-release' label on dev branch → TestPyPI only (no tag, no release)
-    if: |
-      github.event.pull_request.merged == true &&
-      (
-        (github.event.pull_request.base.ref == 'main' && contains(github.event.pull_request.labels.*.name, 'release')) ||
-        (github.event.pull_request.base.ref == 'dev' && contains(github.event.pull_request.labels.*.name, 'test-release'))
-      )
+    # Publish rules:
+    # - main branch + stable version (no pre-release marker) → Production PyPI + tag + GitHub Release
+    # - dev branch + pre-release version (a/b/rc/dev suffix)  → TestPyPI only
+    # Any other combination (e.g. stable version on dev) is skipped.
     runs-on: ubuntu-latest
     permissions:
       contents: write  # Create releases and tags
       id-token: write  # OIDC for PyPI Trusted Publishing
 
     steps:
-      - name: Checkout merged branch
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.ref }}
           fetch-depth: 0  # Full history for proper tagging
-          # pull_request_target runs in base repo context, so this correctly gets merged code
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -80,79 +70,80 @@ jobs:
           VERSION=$(grep '^version = ' pyproject.toml | cut -d'"' -f2)
           TAG="v$VERSION"
 
+          # Detect pre-release: versions containing a, b, rc, or dev marker
+          if echo "$VERSION" | grep -qE '(a|b|rc|\.dev)[0-9]'; then
+            IS_PRERELEASE=true
+          else
+            IS_PRERELEASE=false
+          fi
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
 
-          echo "📦 Version: $VERSION"
-          echo "🏷️  Tag: $TAG"
+          echo "Version: $VERSION"
+          echo "Tag: $TAG"
+          echo "Pre-release: $IS_PRERELEASE"
 
       - name: Determine publish target
         id: target
-        env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
-          HAS_RELEASE_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'release') }}
-          HAS_TEST_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'test-release') }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          IS_PRERELEASE="${{ steps.version.outputs.is_prerelease }}"
+          BRANCH="${{ github.ref_name }}"
 
-          # Determine target based on branch and label
-          # main + release → PyPI (production) + tag + GitHub Release
-          # dev + test-release → TestPyPI only (no tag, no release)
-          if [ "$BASE_REF" == "main" ] && [ "$HAS_RELEASE_LABEL" == "true" ]; then
+          if [ "$BRANCH" == "main" ] && [ "$IS_PRERELEASE" == "false" ]; then
             echo "repository_url=https://upload.pypi.org/legacy/" >> $GITHUB_OUTPUT
             echo "target_name=PyPI" >> $GITHUB_OUTPUT
             echo "is_production=true" >> $GITHUB_OUTPUT
             echo "create_tag=true" >> $GITHUB_OUTPUT
             echo "create_release=true" >> $GITHUB_OUTPUT
-            echo "🎯 Target: Production PyPI"
-            echo "🏷️  Will create tag: v$VERSION"
-            echo "📝 Will create GitHub Release"
-          elif [ "$BASE_REF" == "dev" ] && [ "$HAS_TEST_LABEL" == "true" ]; then
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+            echo "Target: Production PyPI"
+          elif [ "$BRANCH" == "dev" ] && [ "$IS_PRERELEASE" == "true" ]; then
             echo "repository_url=https://test.pypi.org/legacy/" >> $GITHUB_OUTPUT
             echo "target_name=TestPyPI" >> $GITHUB_OUTPUT
             echo "is_production=false" >> $GITHUB_OUTPUT
             echo "create_tag=false" >> $GITHUB_OUTPUT
             echo "create_release=false" >> $GITHUB_OUTPUT
-            echo "🎯 Target: TestPyPI"
-            echo "🏷️  Will NOT create tag (test release)"
-            echo "📝 Will NOT create GitHub Release (test release)"
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+            echo "Target: TestPyPI"
           else
-            echo "❌ Error: Invalid branch/label combination"
-            echo "   Branch: $BASE_REF"
-            echo "   Labels: release=$HAS_RELEASE_LABEL, test-release=$HAS_TEST_LABEL"
-            exit 1
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+            echo "Skipping publish: branch=$BRANCH version=$VERSION is_prerelease=$IS_PRERELEASE"
           fi
+
+      - name: Skip if no publish needed
+        if: steps.target.outputs.should_publish == 'false'
+        run: |
+          echo "No publish target matched. Skipping release."
+          echo "  branch=${{ github.ref_name }}"
+          echo "  version=${{ steps.version.outputs.version }}"
+          echo "  is_prerelease=${{ steps.version.outputs.is_prerelease }}"
 
       - name: Check if tag already exists
         if: steps.target.outputs.create_tag == 'true'
         run: |
           if git rev-parse "refs/tags/${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
-            echo "❌ Error: Tag ${{ steps.version.outputs.tag }} already exists!"
-            echo ""
-            echo "This version has already been released."
-            echo "Please bump the version in pyproject.toml and try again."
+            echo "Tag ${{ steps.version.outputs.tag }} already exists - skipping release."
             exit 1
           fi
-          echo "✅ Tag ${{ steps.version.outputs.tag }} is available"
+          echo "Tag ${{ steps.version.outputs.tag }} is available"
 
       - name: Create and push tag
         if: steps.target.outputs.create_tag == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git tag -a "${{ steps.version.outputs.tag }}" -m "Release version ${{ steps.version.outputs.version }}
-
-          Released from PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
-          Target: ${{ steps.target.outputs.target_name }}"
-
+          git tag -a "${{ steps.version.outputs.tag }}" -m "Release ${{ steps.version.outputs.version }}"
           git push origin "${{ steps.version.outputs.tag }}"
-          echo "✅ Created and pushed tag: ${{ steps.version.outputs.tag }}"
+          echo "Created and pushed tag: ${{ steps.version.outputs.tag }}"
 
       - name: Build package
+        if: steps.target.outputs.should_publish == 'true'
         run: |
           uv build
-          echo "📦 Build artifacts:"
+          echo "Build artifacts:"
           ls -lh dist/
 
       - name: Publish to PyPI
@@ -163,7 +154,7 @@ jobs:
           verbose: true
 
       - name: Publish to TestPyPI
-        if: steps.target.outputs.is_production == 'false'
+        if: steps.target.outputs.is_production == 'false' && steps.target.outputs.should_publish == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
@@ -178,23 +169,15 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Release ${{ steps.version.outputs.version }}
           body: |
-            # ${{ github.event.pull_request.title }}
+            **Version:** `${{ steps.version.outputs.version }}`
+            **Published To:** PyPI
 
-            ${{ github.event.pull_request.body }}
-
-            ---
-
-            **📦 Version:** `${{ steps.version.outputs.version }}`
-            **🎯 Published To:** PyPI
-
-            Install from PyPI:
+            Install:
             ```bash
             pip install keecas==${{ steps.version.outputs.version }}
             ```
 
-            **PyPI Package:** https://pypi.org/project/keecas/${{ steps.version.outputs.version }}/
-
-            **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ github.event.pull_request.base.sha }}...${{ steps.version.outputs.tag }}
+            https://pypi.org/project/keecas/${{ steps.version.outputs.version }}/
           files: dist/*
           draft: false
           prerelease: false

@@ -267,6 +267,9 @@ def test_recovery_workflow(tmp_path, monkeypatch):
 def test_language_runtime_propagation(tmp_path, monkeypatch):
     """Test that setting config.language at runtime propagates to localization system."""
     monkeypatch.chdir(tmp_path)
+    # Isolate from global config so language starts as None
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
 
     # Create minimal valid config
     config_file = tmp_path / ".keecas" / "config.toml"
@@ -279,27 +282,81 @@ def test_language_runtime_propagation(tmp_path, monkeypatch):
         toml.dump(valid_config, f)
 
     from keecas.config.manager import ConfigManager
-    from keecas.localization import get_language, translate
+    from keecas.localization import get_language, set_language, translate
 
-    # Create fresh manager
-    manager = ConfigManager()
-    config = manager.options
+    original_language = get_language()
+    set_language("en")  # Reset global state before test
+    try:
+        # Create fresh manager
+        manager = ConfigManager()
+        config = manager.options
 
-    # Initially no language set
-    assert config.language.language is None
-    assert get_language() == "en"  # Default
+        # Initially no language set
+        assert config.language.language is None
+        assert get_language() == "en"  # Default
 
-    # Set language at runtime
-    config.language.language = "it"
+        # Set language at runtime
+        config.language.language = "it"
 
-    # Verify propagation
-    assert config.language.language == "it"
-    assert get_language() == "it"
-    assert translate("VERIFIED") == "VERIFICATO"
-    assert translate("NOT_VERIFIED") == "NON VERIFICATO"
+        # Verify propagation
+        assert config.language.language == "it"
+        assert get_language() == "it"
+        assert translate("VERIFIED") == "VERIFICATO"
+        assert translate("NOT_VERIFIED") == "NON VERIFICATO"
 
-    # Test changing to another language
-    config.language.language = "de"
-    assert get_language() == "de"
-    assert translate("VERIFIED") == "BESTÄTIGT"
-    assert translate("NOT_VERIFIED") == "NICHT BESTÄTIGT"
+        # Test changing to another language
+        config.language.language = "de"
+        assert get_language() == "de"
+        assert translate("VERIFIED") == "BESTÄTIGT"
+        assert translate("NOT_VERIFIED") == "NICHT BESTÄTIGT"
+    finally:
+        set_language(original_language)
+
+
+def test_language_loaded_from_toml(tmp_path, monkeypatch):
+    """Language set in config.toml must be applied after loading (regression: recursion bug)."""
+    monkeypatch.chdir(tmp_path)
+
+    config_file = tmp_path / ".keecas" / "config.toml"
+    config_file.parent.mkdir(parents=True)
+
+    valid_config = {
+        "language": {"language": "it", "disable_pint_locale": True},
+    }
+    with open(config_file, "w") as f:
+        toml.dump(valid_config, f)
+
+    from keecas.config.manager import ConfigManager
+    from keecas.localization import get_language, set_language
+
+    original_language = get_language()
+    try:
+        manager = ConfigManager()
+
+        assert manager._load_error is None
+        assert manager._configs_loaded is True
+        assert manager.options.language.language == "it"
+    finally:
+        set_language(original_language)
+
+
+def test_get_safe_init_locale_respects_disable_pint_locale(tmp_path, monkeypatch):
+    """_get_safe_init_locale must return None when disable_pint_locale=True (regression: wrong attr path)."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+
+    config_file = tmp_path / ".keecas" / "config.toml"
+    config_file.parent.mkdir(parents=True)
+
+    # Language set but Pint locale disabled (the default)
+    valid_config = {
+        "language": {"language": "it", "disable_pint_locale": True},
+    }
+    with open(config_file, "w") as f:
+        toml.dump(valid_config, f)
+
+    from keecas.localization.pint_locale import _get_safe_init_locale
+
+    result = _get_safe_init_locale()
+    assert result is None, f"Expected None when disable_pint_locale=True, got {result!r}"
