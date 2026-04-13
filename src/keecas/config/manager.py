@@ -456,7 +456,22 @@ class ConfigManager:
         return config_dir / "config.toml"
 
     def _get_local_config_path(self) -> Path:
-        """Get path to local configuration file."""
+        """Search upward from CWD for .keecas/config.toml, falling back to CWD.
+
+        This allows config to be found when running from a subdirectory of the project.
+        The global config path is excluded to avoid treating it as a local config.
+        """
+        current = Path.cwd()
+        while True:
+            candidate = current / ".keecas" / "config.toml"
+            if candidate == self._global_config_path:
+                break
+            if candidate.exists():
+                return candidate
+            parent = current.parent
+            if parent == current:  # Reached filesystem root
+                break
+            current = parent
         return Path.cwd() / ".keecas" / "config.toml"
 
     def load_configs(self) -> None:
@@ -495,10 +510,13 @@ class ConfigManager:
         config_version = metadata.get("config_version", "0.1.0")
         current_version = get_current_schema_version()
 
-        # Load actual config data - use tomlkit to preserve structure
+        # Load actual config data - use tomlkit to preserve structure for migration,
+        # but convert to native Python types via round-trip to avoid tomlkit wrapper
+        # types (e.g. tomlkit.items.String) being stored in config, which causes
+        # toml.dumps() to iterate strings as character sequences.
         with open(config_path, encoding="utf-8") as f:
             toml_doc = tomlkit.load(f)
-            config_data = dict(toml_doc)  # Convert to dict for migration
+            config_data = toml.loads(tomlkit.dumps(toml_doc))
 
         # Check if migration needed
         if ConfigMigration.needs_migration(config_version, current_version):
@@ -828,7 +846,6 @@ class ConfigManager:
 
     def _propagate_changes(self, key: str, value: Any) -> None:
         """Propagate configuration changes to affected subsystems."""
-        self._ensure_loaded()
         # Language changes affect both Pint and LocalizationManager
         if key == "language" and value is not None:
             self._update_pint_language(value)

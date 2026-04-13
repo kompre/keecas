@@ -156,39 +156,42 @@ uv sync
 
 ### Release Process
 
-**Creating a release** (maintainers only):
+**Publish target is determined automatically by branch + version string** (no PR labels needed):
+- `dev` branch + pre-release version (`a`/`b`/`rc`/`.dev` suffix) → TestPyPI
+- `main` branch + stable version → Production PyPI + git tag + GitHub Release
 
-1. **Bump version** on dev branch:
+**Test release to TestPyPI** (from dev):
+
+1. **Bump version** to a pre-release on dev:
    ```bash
    git checkout dev
-   uv version --bump major  # or minor, patch
+   uv version --bump patch  # then manually append b1, e.g. 1.1.2b1
+   git commit -am "chore: bump version to X.Y.Zb1"
+   git push origin dev
+   ```
+   Pushing to dev with a pre-release version triggers TestPyPI publish automatically.
+
+**Production release to PyPI** (maintainers only):
+
+1. **Bump version** on dev to a stable version:
+   ```bash
+   git checkout dev
+   uv version --bump patch  # or minor, major
    git commit -am "chore: bump version to X.Y.Z"
    git push origin dev
    ```
 
 2. **Create PR from dev to main**:
    ```bash
-   gh pr create --base main --title "Release vX.Y.Z" --label release
+   gh pr create --base main --title "Release vX.Y.Z"
    ```
-   - Use `--label test-release` for TestPyPI testing
-   - Add release notes in PR description
 
-3. **Merge PR**:
-   - Tests run automatically on PR
-   - Branch protection requires passing tests
-   - Merge when approved and tests pass
-
-4. **Automated workflow handles**:
+3. **Merge PR** — automated workflow handles:
    - Runs tests on merged code
    - Creates git tag (vX.Y.Z)
    - Builds package
-   - Publishes to PyPI or TestPyPI (based on label)
-   - Creates GitHub Release with PR notes
-
-**Version targeting**:
-- `release` label → Production PyPI
-- `test-release` label → TestPyPI
-- Pre-release versions (rc, alpha, beta, dev) automatically route to TestPyPI
+   - Publishes to PyPI
+   - Creates GitHub Release
 
 ### CI Workflows
 
