@@ -337,13 +337,29 @@ except ImportError:
 
 @format_value.register(Mul)
 def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
-    """Format Mul expressions with numeric/unit separation.
+    """Format Mul expressions with numeric/unit separation for simple cases.
 
-    For Mul without free symbols (e.g., 5*meter), applies transformation
-    to separate numeric and unit parts, then formats as SymPy Basic.
+    For simple multiplication of numeric values and units (e.g., 5*meter),
+    applies transformation to separate numeric and unit parts for cleaner
+    LaTeX display. Complex calculations are formatted as-is.
 
-    Transformation: 5*meter -> UnevaluatedExpr(5) * UnevaluatedExpr(meter)
-    LaTeX output: "5 \\cdot \\mathrm{meter}" instead of "5meter"
+    **Transformation applies only when ALL conditions are met:**
+    - No free symbols (variables like x, y, sigma)
+    - No division operations (no Pow with negative exponent)
+    - No addition/subtraction (no Add terms)
+    - Single unit quantity (multiple units indicate compound units from calculation)
+
+    **Examples:**
+
+    Simple cases (transformed):
+        - 5*meter -> "5 \\cdot \\mathrm{meter}"
+        - 3.14*kilogram -> "3.14 \\cdot \\mathrm{kilogram}"
+
+    Complex cases (NOT transformed, formatted as-is):
+        - 5*kN / (3*m) -> displayed as division expression
+        - 15*kN*m -> displayed as-is (compound units from torque calculation)
+        - x * y -> displayed as symbolic multiplication
+        - (a + b) * meter -> displayed with addition
 
     Parameters
     ----------
@@ -358,17 +374,39 @@ def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
     -------
     str
         LaTeX string representation
+
+    Notes
+    -----
+    Transformation: 5*meter -> UnevaluatedExpr(5) * UnevaluatedExpr(meter)
+    This produces "5 \\cdot \\mathrm{meter}" instead of "5meter" in LaTeX.
+
+    For complex expressions with calculations, the function preserves the
+    original structure to maintain clarity in mathematical notation.
     """
     # Import here to avoid circular dependency
+    from sympy import Add, Pow
+
+    # Check if this is a simple "numeric * units" pattern
+    # Don't transform if it has any of these:
+    from sympy.physics.units import Quantity
+
     from keecas import pipe_command as pc
 
-    if not value.free_symbols:
-        # Transform to separated form: numeric * unit
+    has_symbols = bool(value.free_symbols)
+    has_division = any(isinstance(arg, Pow) and arg.exp.is_negative for arg in value.args)
+    has_addition = any(isinstance(arg, Add) for arg in value.args)
+
+    # Count unit quantities - multiple units indicate compound units from calculation
+    # (e.g., kN*m for torque, not simple kN for force)
+    unit_count = sum(1 for arg in value.args if isinstance(arg, Quantity))
+    has_multiple_units = unit_count > 1
+
+    if not has_symbols and not has_division and not has_addition and not has_multiple_units:
+        # Simple "numeric * units" pattern - transform for cleaner display
         transformed = value | pc.as_two_terms(as_mul=True)
-        # Call format_sympy directly (Mul is a Basic subclass)
         return format_sympy(transformed, col_index, **kwargs)
 
-    # Has symbols - format as regular SymPy expression
+    # Complex expression - format as-is
     return format_sympy(value, col_index, **kwargs)
 
 
