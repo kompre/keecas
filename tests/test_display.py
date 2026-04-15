@@ -246,6 +246,18 @@ def test_formatter_mul_complex_expressions():
     # Should not be transformed (no \cdot for simple xy multiplication)
     assert "x" in result_symbolic and "y" in result_symbolic
 
+    # Test 5: Negative numeric * single unit (should NOT produce parenthesized negative)
+    # Bug: "-5 kN" was rendered as "(-5) kN" due to UnevaluatedExpr wrapping
+    neg_expr = S(-5 * u.kN)
+    assert isinstance(neg_expr, Mul)
+    result_neg = format_value(neg_expr)
+    assert isinstance(result_neg, str)
+    assert "5" in result_neg
+    assert "kN" in result_neg or "kilonewton" in result_neg
+    # Must start with "-" directly, not with "(-"
+    assert result_neg.startswith("-"), f"Expected result to start with '-', got: {result_neg}"
+    assert not result_neg.startswith("(-"), f"Unexpected parenthesized negative: {result_neg}"
+
 
 def test_format_decimal_numbers():
     text = "The values are 3.14159, -2.71828, and 0.57721."

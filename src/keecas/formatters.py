@@ -354,6 +354,7 @@ def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
     Simple cases (transformed):
         - 5*meter -> "5 \\cdot \\mathrm{meter}"
         - 3.14*kilogram -> "3.14 \\cdot \\mathrm{kilogram}"
+        - -5*kN -> "-5 \\cdot \\mathrm{kilonewton}" (sign kept outside, no parens)
 
     Complex cases (NOT transformed, formatted as-is):
         - 5*kN / (3*m) -> displayed as division expression
@@ -377,8 +378,15 @@ def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
 
     Notes
     -----
-    Transformation: 5*meter -> UnevaluatedExpr(5) * UnevaluatedExpr(meter)
-    This produces "5 \\cdot \\mathrm{meter}" instead of "5meter" in LaTeX.
+    Transformation uses as_coeff_Mul() to extract the numeric coefficient, then
+    wraps coefficient and unit separately in UnevaluatedExpr to produce clean
+    LaTeX spacing: "5 \\mathrm{meter}" instead of "5meter".
+
+    Negative coefficients have their sign extracted before wrapping to avoid
+    parenthesization: UnevaluatedExpr(-5) would produce "(-5)" in LaTeX, so
+    the sign is stripped and prepended as a literal "-" after formatting.
+
+    For non-numeric leading factors (e.g., pi*meter), falls back to as_two_terms().
 
     For complex expressions with calculations, the function preserves the
     original structure to maintain clarity in mathematical notation.
@@ -403,8 +411,28 @@ def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
 
     if not has_symbols and not has_division and not has_addition and not has_multiple_units:
         # Simple "numeric * units" pattern - transform for cleaner display
-        transformed = value | pc.as_two_terms(as_mul=True)
-        return format_sympy(transformed, col_index, **kwargs)
+        from sympy import UnevaluatedExpr
+
+        coeff, unit_part = value.as_coeff_Mul()
+
+        # as_coeff_Mul returns coeff=1 when no pure numeric factor exists
+        # (e.g., pi*meter -> coeff=1, unit_part=pi*meter).
+        # Fall back to as_two_terms for correct splitting in that case.
+        if coeff == 1:
+            transformed = value | pc.as_two_terms(as_mul=True)
+            return format_sympy(transformed, col_index, **kwargs)
+
+        # For negative coefficients, strip the sign and prepend it as a literal "-".
+        # UnevaluatedExpr(-5) produces "(-5)" in LaTeX; this avoids the parentheses.
+        # NOTE: the coeff==1 guard must come BEFORE this block — negating coeff=-1
+        # would make it 1 and incorrectly trigger the fallback.
+        sign_prefix = ""
+        if coeff.is_negative:
+            sign_prefix = "-"
+            coeff = -coeff  # absolute value
+
+        transformed = UnevaluatedExpr(coeff) * UnevaluatedExpr(unit_part)
+        return sign_prefix + format_sympy(transformed, col_index, **kwargs)
 
     # Complex expression - format as-is
     return format_sympy(value, col_index, **kwargs)
