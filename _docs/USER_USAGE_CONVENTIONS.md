@@ -69,7 +69,9 @@ sigma_Sd, tau_Rd = symbols(r"\sigma_{Sd}, \tau_{Rd}")
 # Greek letters
 alpha, beta, gamma = symbols(r"\alpha, \beta, \gamma")
 
-# Symbols with commas - escape with backslash
+# Symbols with commas inside subscripts - auto-escaped since 1.2
+tau_1_Rd, gamma_M0 = symbols(r"\tau_{1, Rd}, \gamma_{M0}")
+# Manual \, still accepted for backwards compatibility
 tau_1_Rd, gamma_M0 = symbols(r"\tau_{1\,Rd}, \gamma_{M0}")
 ```
 
@@ -863,7 +865,7 @@ result = check(
 
 ### Symbol Definitions
 - ✅ Always use LaTeX notation: `symbols(r"\sigma_{Sd}")`
-- ✅ Escape commas in symbol names: `symbols(r"\tau_{1\,Rd}")`
+- ✅ Commas inside subscripts auto-escaped: `symbols(r"\tau_{1, Rd}")` (since 1.2)
 - ❌ Never use plain notation: `symbols("sigma_Sd")`
 
 ### Dictionary Conventions
