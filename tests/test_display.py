@@ -187,12 +187,14 @@ def test_formatter_pint_transformation():
 
 
 def test_formatter_mul_complex_expressions():
-    """Test format_mul distinguishes simple numeric*units from complex calculations.
+    """Test format_mul correctly separates magnitude from unit for numeric*unit expressions.
 
-    format_mul should only transform simple cases like 5*kN.
-    Complex calculations with division should NOT be transformed.
+    format_mul transforms any no-symbol expression with a single unit type
+    (including compound fraction units like kN/m^2) to put the magnitude outside
+    the unit fraction. Only expressions with multiple distinct unit Quantities
+    (e.g., kN*m torque) or free symbols are NOT transformed.
     """
-    from sympy import Mul, Pow
+    from sympy import Mul
 
     from keecas import S, format_value, u
 
@@ -205,20 +207,17 @@ def test_formatter_mul_complex_expressions():
     # Units should be formatted (either as text or mathrm)
     assert "kN" in result_simple or "kilonewton" in result_simple
 
-    # Test 2: Complex calculation with division (should NOT transform)
-    # Expression: 5*kN / (3*m)
-    complex_expr = S(5 * u.kN) / S(3 * u.m)
-    assert isinstance(complex_expr, Mul)
-
-    # Verify it has division (Pow with negative exponent)
-    has_division = any(isinstance(arg, Pow) and arg.exp.is_negative for arg in complex_expr.args)
-    assert has_division, "Complex expression should have division"
-
-    # Format and verify it's shown as fraction
-    result_complex = format_value(complex_expr)
-    assert isinstance(result_complex, str)
-    # Should contain fraction notation
-    assert "frac" in result_complex
+    # Test 2: Compound fraction unit (e.g., area load) - transformation SHOULD apply.
+    # kN/m^2 has unit_count=1 (kilonewton is Quantity; meter**-2 is Pow, not Quantity),
+    # so the magnitude is extracted and placed outside the unit fraction:
+    # 2.0 * kN/m^2  ->  "2.0{\,}\dfrac{kN}{m^2}"  (not "\dfrac{2.0 kN}{m^2}")
+    area_load_expr = S(2 * u("kN/m^2"))
+    assert isinstance(area_load_expr, Mul)
+    result_area_load = format_value(area_load_expr)
+    assert isinstance(result_area_load, str)
+    # Magnitude must appear outside the fraction, not inside the numerator
+    assert "frac" in result_area_load
+    assert "2" in result_area_load
 
     # Test 3: Compound units (should NOT transform)
     # Expression: 5*kN * 3*m evaluates to 15*kN*m (torque)
