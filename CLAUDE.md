@@ -507,8 +507,8 @@ show_eqn([_e, _v], label=_l)
 
 **Symbol dependency ordering (automatic):**
 ```python
-# Complex symbols with LaTeX notation - escape commas with backslash
-tau_1_Rd, gamma_M0 = symbols(r"\tau_{1\,Rd}, \gamma_{M0}")
+# Complex symbols with LaTeX notation - commas in subscripts are auto-escaped
+tau_1_Rd, gamma_M0 = symbols(r"\tau_{1, Rd}, \gamma_{M0}")
 
 _e = {
     result: "sqrt(a^2 + b^2) / intermediate" | pc.parse_expr,  # Uses 'intermediate'
@@ -666,8 +666,8 @@ F, A, sigma = symbols(r"F, A, \sigma")
 # Complex engineering symbols
 sigma_Sd, tau_Rd = symbols(r"\sigma_{Sd}, \tau_{Rd}")
 
-# Symbols with commas - escape with backslash
-tau_1_Rd, gamma_M0 = symbols(r"\tau_{1\,Rd}, \gamma_{M0}")
+# Symbols with commas in subscripts - auto-escaped (no manual \, needed)
+tau_1_Rd, gamma_M0 = symbols(r"\tau_{1, Rd}, \gamma_{M0}")
 
 # Greek letters
 alpha, beta, gamma = symbols(r"\alpha, \beta, \gamma")
@@ -687,7 +687,7 @@ sigma, tau, gamma = symbols("sigma, tau, gamma")
 - Use `params.update(_p)` and `eqn.update(_e)` for persistence
 - Use dict comprehensions for evaluation
 - Use pipe operators for functional composition
-- Escape commas in symbol names with `\,`
+- Commas inside subscripts `{}` are auto-escaped (no manual `\,` needed)
 - Let keecas handle symbol dependency ordering
 
 **❌ DON'T:**
@@ -769,7 +769,7 @@ For complete details, see `_docs/CONVENTIONS.md`.
   - Prefixed units (kN, daN, cm, etc.) convert automatically via SymPy's prefix system
   - Non-prefixed compound units (kgf, lbf, etc.) have scale factors automatically set from Pint definitions
   - All Pint units convert correctly in SymPy expressions via `pc.convert_to()`
-- When defining symbols prefer LaTeX notation: instead of symbols('gamma'), use symbols(r'\gamma'). This way you can have complex LaTeX symbols; if a symbol has a comma, escape it with `\`: tau_1_Rd = symbols(r'\tau_{1\,Rd}')
+- When defining symbols prefer LaTeX notation: instead of symbols('gamma'), use symbols(r'\gamma'). Commas inside subscripts `{}` are auto-escaped, so `symbols(r'\tau_{1, Rd}')` works without manual `\,`
 
 ## Language and Localization Support
 
