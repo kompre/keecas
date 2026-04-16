@@ -1,8 +1,6 @@
-import pytest
 from sympy import Symbol
 
-from keecas import symbols
-from keecas import _escape_commas_in_braces
+from keecas import _escape_commas_in_braces, symbols
 
 
 class TestEscapeCommasInBraces:
@@ -82,8 +80,6 @@ class TestSymbolsWrapper:
         assert str(y) == "y"
 
     def test_kwargs_passthrough(self):
-        from sympy import Symbol
-
         x = symbols("x", positive=True)
         assert x.is_positive
 
