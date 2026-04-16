@@ -30,3 +30,17 @@ docs/_inv
 
 
 /.luarc.json
+
+# Sandbox/environment stub files dropped into working directory
+.bash_profile
+.bashrc
+.profile
+.zprofile
+.zshrc
+.mcp.json
+.ripgreprc
+.gitconfig
+.gitmodules
+.idea
+.vscode
+pytest-of-*/
