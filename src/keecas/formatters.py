@@ -345,7 +345,6 @@ def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
 
     **Transformation applies only when ALL conditions are met:**
     - No free symbols (variables like x, y, sigma)
-    - No division operations (no Pow with negative exponent)
     - No addition/subtraction (no Add terms)
     - Single unit quantity (multiple units indicate compound units from calculation)
 
@@ -355,9 +354,9 @@ def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
         - 5*meter -> "5 \\cdot \\mathrm{meter}"
         - 3.14*kilogram -> "3.14 \\cdot \\mathrm{kilogram}"
         - -5*kN -> "-5 \\cdot \\mathrm{kilonewton}" (sign kept outside, no parens)
+        - 2.0*kN/m^2 -> "2.0 \\dfrac{\\text{kN}}{\\text{m}^2}" (compound unit, one Quantity)
 
     Complex cases (NOT transformed, formatted as-is):
-        - 5*kN / (3*m) -> displayed as division expression
         - 15*kN*m -> displayed as-is (compound units from torque calculation)
         - x * y -> displayed as symbolic multiplication
         - (a + b) * meter -> displayed with addition
@@ -392,7 +391,7 @@ def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
     original structure to maintain clarity in mathematical notation.
     """
     # Import here to avoid circular dependency
-    from sympy import Add, Pow
+    from sympy import Add
 
     # Check if this is a simple "numeric * units" pattern
     # Don't transform if it has any of these:
@@ -401,15 +400,17 @@ def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
     from keecas import pipe_command as pc
 
     has_symbols = bool(value.free_symbols)
-    has_division = any(isinstance(arg, Pow) and arg.exp.is_negative for arg in value.args)
     has_addition = any(isinstance(arg, Add) for arg in value.args)
 
     # Count unit quantities - multiple units indicate compound units from calculation
-    # (e.g., kN*m for torque, not simple kN for force)
+    # (e.g., kN*m for torque, not simple kN for force).
+    # Note: Pow(unit, -n) args (e.g., meter**-2) are NOT Quantity instances, so
+    # compound fraction units like kN/m^2 correctly have unit_count=1 and are
+    # transformed, giving "2.0{\,}\dfrac{kN}{m^2}" rather than "\dfrac{2.0 kN}{m^2}".
     unit_count = sum(1 for arg in value.args if isinstance(arg, Quantity))
     has_multiple_units = unit_count > 1
 
-    if not has_symbols and not has_division and not has_addition and not has_multiple_units:
+    if not has_symbols and not has_addition and not has_multiple_units:
         # Simple "numeric * units" pattern - transform for cleaner display
         from sympy import UnevaluatedExpr
 
