@@ -101,6 +101,7 @@ class DisplayConfig:
     cell_formatter: "Callable[[Any, int], str] | None" = None  # Custom cell formatter
     row_formatter: "Callable[[str], str] | None" = None  # Custom row formatter
     col_wrap: "list | Callable | None" = None  # Column wrapping specification
+    text_wrap: bool = False
 
 
 @dataclass
@@ -1030,6 +1031,11 @@ class ConfigManager:
 
 ## Pint quantity formatting (e.g., .2f~P, .3f~P)
 {format_value("display", "pint_default_format", defaults.display.pint_default_format, display_inherited.get("pint_default_format"))}
+
+## Auto-wrap long string values in PDF mode using varwidth environment
+## Requires \\usepackage{{varwidth}} in LaTeX preamble
+## Only applied when katex = false (PDF rendering); ignored in KaTeX mode
+{format_value("display", "text_wrap", defaults.display.text_wrap, display_inherited.get("text_wrap"))}
 
 [language]
 ## Language settings (de, es, fr, it, pt, da, nl, no, sv, en)

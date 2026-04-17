@@ -146,6 +146,47 @@ def test_formatter_custom_registration():
     assert "50" in result_small.data  # Uses default int formatter
 
 
+def test_format_str_no_wrap():
+    """Default: strings use \\text{} wrapper."""
+    from keecas.display import config
+    from keecas.formatters import format_str
+
+    config.display.text_wrap = False
+    result = format_str("long description text")
+    assert result == r"\text{long description text}"
+
+
+def test_format_str_text_wrap_katex_mode():
+    """text_wrap=True but katex=True: still use \\text{}."""
+    from keecas.display import config
+    from keecas.formatters import format_str
+
+    config.display.text_wrap = True
+    config.display.katex = True
+    try:
+        result = format_str("long description text")
+        assert result == r"\text{long description text}"
+    finally:
+        config.display.text_wrap = False
+        config.display.katex = False
+
+
+def test_format_str_text_wrap_pdf_mode():
+    """text_wrap=True and katex=False: use varwidth environment."""
+    from keecas.display import config
+    from keecas.formatters import format_str
+
+    config.display.text_wrap = True
+    config.display.katex = False
+    try:
+        result = format_str("long description text")
+        assert r"\begin{varwidth}[t]{\linewidth}" in result
+        assert r"\end{varwidth}" in result
+        assert "long description text" in result
+    finally:
+        config.display.text_wrap = False
+
+
 def test_formatter_empty_string():
     """Test that formatters can explicitly return empty string."""
     from keecas import format_value
