@@ -201,8 +201,9 @@ def format_str(value: str, col_index: int = 0, **kwargs) -> str:
     from keecas.config.manager import get_config_manager
 
     cfg = get_config_manager().options
-    if cfg.display.text_wrap and not cfg.display.katex:
-        return rf"\begin{{varwidth}}[t]{{\linewidth}}{value}\end{{varwidth}}"
+    if cfg.display.text_wrap and cfg.display.pdf_mode:
+        width = cfg.display.text_wrap_width
+        return rf"\begin{{varwidth}}[t]{{{width}}}{value}\end{{varwidth}}"
     return rf"\text{{{value}}}"
 
 
