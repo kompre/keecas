@@ -180,6 +180,10 @@ def format_str(value: str, col_index: int = 0, **kwargs) -> str:
     Pure conversion: wraps string in \\text{} without additional decoration.
     Column wrapping (e.g., \\quad prefix) is handled by wrap_column().
 
+    When config.display.text_wrap is True and katex is False, uses a varwidth
+    environment instead of \\text{} to allow dynamic line wrapping in PDF output.
+    Requires \\usepackage{varwidth} in the LaTeX preamble.
+
     Parameters
     ----------
     value : str
@@ -192,8 +196,13 @@ def format_str(value: str, col_index: int = 0, **kwargs) -> str:
     Returns
     -------
     str
-        LaTeX string with \\text{} wrapper
+        LaTeX string with \\text{} or varwidth wrapper
     """
+    from keecas.config.manager import get_config_manager
+
+    cfg = get_config_manager().options
+    if cfg.display.text_wrap and not cfg.display.katex:
+        return rf"\begin{{varwidth}}[t]{{\linewidth}}{value}\end{{varwidth}}"
     return rf"\text{{{value}}}"
 
 
