@@ -156,35 +156,52 @@ def test_format_str_no_wrap():
     assert result == r"\text{long description text}"
 
 
-def test_format_str_text_wrap_katex_mode():
-    """text_wrap=True but katex=True: still use \\text{}."""
+def test_format_str_text_wrap_no_pdf_mode():
+    """text_wrap=True but pdf_mode=False: still use \\text{}."""
     from keecas.display import config
     from keecas.formatters import format_str
 
     config.display.text_wrap = True
-    config.display.katex = True
+    config.display.pdf_mode = False
     try:
         result = format_str("long description text")
         assert result == r"\text{long description text}"
     finally:
         config.display.text_wrap = False
-        config.display.katex = False
 
 
 def test_format_str_text_wrap_pdf_mode():
-    """text_wrap=True and katex=False: use varwidth environment."""
+    """text_wrap=True and pdf_mode=True: use varwidth environment."""
     from keecas.display import config
     from keecas.formatters import format_str
 
     config.display.text_wrap = True
-    config.display.katex = False
+    config.display.pdf_mode = True
     try:
         result = format_str("long description text")
-        assert r"\begin{varwidth}[t]{\linewidth}" in result
+        assert r"\begin{varwidth}[t]{" in result
         assert r"\end{varwidth}" in result
         assert "long description text" in result
     finally:
         config.display.text_wrap = False
+        config.display.pdf_mode = False
+
+
+def test_format_str_text_wrap_custom_width():
+    """text_wrap_width config is used in varwidth output."""
+    from keecas.display import config
+    from keecas.formatters import format_str
+
+    config.display.text_wrap = True
+    config.display.pdf_mode = True
+    config.display.text_wrap_width = r"0.5\linewidth"
+    try:
+        result = format_str("long description text")
+        assert r"0.5\linewidth" in result
+    finally:
+        config.display.text_wrap = False
+        config.display.pdf_mode = False
+        config.display.text_wrap_width = r"0.8\linewidth"
 
 
 def test_formatter_empty_string():
