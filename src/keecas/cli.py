@@ -757,7 +757,9 @@ def cmd_install_skill(args: argparse.Namespace) -> None:
         # fall back to a plain copy. The copy won't auto-update on `pip install -U keecas`.
         shutil.copytree(skill_src, skill_dst)
         print(f"Installed (copy): {skill_dst}")
-        print("NOTE: run `keecas install-skill --force` after upgrading keecas to refresh the skill.")
+        print(
+            "NOTE: run `keecas install-skill --force` after upgrading keecas to refresh the skill."
+        )
 
     print("Restart Claude Code (or open a new session) to activate /keecas-notebook.")
 
