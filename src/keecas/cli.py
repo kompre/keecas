@@ -747,6 +747,7 @@ def cmd_install_skill(args: argparse.Namespace) -> None:
             skill_dst.unlink()
         else:
             import shutil
+
             shutil.rmtree(skill_dst)
 
     skill_dst.symlink_to(skill_src.resolve())
