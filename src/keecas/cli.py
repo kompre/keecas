@@ -746,12 +746,19 @@ def cmd_install_skill(args: argparse.Namespace) -> None:
         if skill_dst.is_symlink():
             skill_dst.unlink()
         else:
-            import shutil
-
             shutil.rmtree(skill_dst)
 
-    skill_dst.symlink_to(skill_src.resolve())
-    print(f"Installed: {skill_dst} -> {skill_src.resolve()}")
+    try:
+        skill_dst.symlink_to(skill_src.resolve())
+        print(f"Installed (symlink): {skill_dst} -> {skill_src.resolve()}")
+        print("The skill updates automatically when keecas is updated.")
+    except OSError:
+        # Windows without Developer Mode / admin rights cannot create symlinks;
+        # fall back to a plain copy. The copy won't auto-update on `pip install -U keecas`.
+        shutil.copytree(skill_src, skill_dst)
+        print(f"Installed (copy): {skill_dst}")
+        print("NOTE: run `keecas install-skill --force` after upgrading keecas to refresh the skill.")
+
     print("Restart Claude Code (or open a new session) to activate /keecas-notebook.")
 
 
