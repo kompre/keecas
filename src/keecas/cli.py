@@ -726,6 +726,34 @@ def cmd_migrate(args: argparse.Namespace) -> None:
             sys.exit(1)
 
 
+def cmd_install_skill(args: argparse.Namespace) -> None:
+    """Install the keecas-notebook Claude Code skill."""
+    skill_src = Path(__file__).parent.parent.parent / "claude-commands" / "keecas-notebook"
+    if not skill_src.exists():
+        print(f"ERROR: skill source not found at {skill_src}")
+        sys.exit(1)
+
+    target_dir = Path.home() / ".claude" / "commands"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    skill_dst = target_dir / "keecas-notebook"
+
+    force = getattr(args, "force", False)
+    if skill_dst.exists() or skill_dst.is_symlink():
+        if not force:
+            print(f"Already installed: {skill_dst}")
+            print("Use --force to overwrite.")
+            sys.exit(0)
+        if skill_dst.is_symlink():
+            skill_dst.unlink()
+        else:
+            import shutil
+            shutil.rmtree(skill_dst)
+
+    skill_dst.symlink_to(skill_src.resolve())
+    print(f"Installed: {skill_dst} -> {skill_src.resolve()}")
+    print("Restart Claude Code (or open a new session) to activate /keecas-notebook.")
+
+
 def create_parser() -> argparse.ArgumentParser:
     """Create and configure the argument parser."""
     keecas_version = get_version()
@@ -795,6 +823,18 @@ def create_parser() -> argparse.ArgumentParser:
         help="Create temporary notebook (auto-cleanup when server stops)",
     )
     edit_main_parser.set_defaults(func=cmd_edit)
+
+    # Install-skill subcommand
+    install_skill_parser = main_subparsers.add_parser(
+        "install-skill",
+        help="Install the keecas-notebook Claude Code skill into ~/.claude/commands/",
+    )
+    install_skill_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite an existing installation",
+    )
+    install_skill_parser.set_defaults(func=cmd_install_skill)
 
     # Config subcommand
     config_parser = main_subparsers.add_parser("config", help="Configuration management")
@@ -968,7 +1008,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # Handle main command routing
-    if args.main_command in ("config", "edit"):
+    if args.main_command in ("config", "edit", "install-skill"):
         if not hasattr(args, "func"):
             parser.print_help()
             sys.exit(1)
