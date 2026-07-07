@@ -35,7 +35,11 @@ jobs:
   publish-pypi:
     name: Publish to PyPI
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    # TEMPORARY: disabled for the first guarded rollout run (see verification
+    # plan). Re-enable by restoring the condition below once the
+    # release-please PR/tag/changelog have been confirmed working.
+    # if: needs.release-please.outputs.release_created == 'true'
+    if: false
     runs-on: ubuntu-latest
     permissions:
       contents: write  # attach build artifacts to the GitHub Release
