@@ -150,48 +150,22 @@ uv sync
 
 ### Branch Protection
 - **main**: Protected, requires PR + passing tests via GitHub Actions
-- **dev**: Unprotected, allows rapid iteration
+- **dev**: Unprotected, integration branch for staging feature work
 - **Feature branches**: Branch from dev, merge back to dev for collaboration
 - **Release flow**: dev → main (via PR) → automated release
 
 ### Release Process
 
-**Publish target is determined automatically by branch + version string** (no PR labels needed):
-- `dev` branch + pre-release version (`a`/`b`/`rc`/`.dev` suffix) → TestPyPI
-- `main` branch + stable version → Production PyPI + git tag + GitHub Release
+**Fully automated via [release-please](https://github.com/googleapis/release-please) — no manual version bumps, ever.**
 
-**Test release to TestPyPI** (from dev):
+1. Merge feature work into `dev` as normal, via PRs from feature branches.
+2. When ready to ship, open a PR from `dev` to `main` and merge it.
+3. On every push to `main`, release-please scans conventional commits (`feat:`, `fix:`, `BREAKING CHANGE`) since the last release tag and maintains a standing PR titled `chore(main): release X.Y.Z` with the computed version bump and an auto-generated `CHANGELOG.md`. The version number is derived entirely from commit history — never from whatever string happens to be sitting in `pyproject.toml`.
+4. Merging that release PR creates the git tag + GitHub Release, which triggers `publish-pypi` to build the package and publish it to PyPI via OIDC Trusted Publishing (no API tokens).
 
-1. **Bump version** to a pre-release on dev:
-   ```bash
-   git checkout dev
-   uv version --bump patch  # then manually append b1, e.g. 1.1.2b1
-   git commit -am "chore: bump version to X.Y.Zb1"
-   git push origin dev
-   ```
-   Pushing to dev with a pre-release version triggers TestPyPI publish automatically.
+There is no pre-release/TestPyPI publishing path — it was removed as unnecessary. `dev`'s committed `pyproject.toml` version field is never bumped or read by anything; ignore it.
 
-**Production release to PyPI** (maintainers only):
-
-1. **Bump version** on dev to a stable version:
-   ```bash
-   git checkout dev
-   uv version --bump patch  # or minor, major
-   git commit -am "chore: bump version to X.Y.Z"
-   git push origin dev
-   ```
-
-2. **Create PR from dev to main**:
-   ```bash
-   gh pr create --base main --title "Release vX.Y.Z"
-   ```
-
-3. **Merge PR** — automated workflow handles:
-   - Runs tests on merged code
-   - Creates git tag (vX.Y.Z)
-   - Builds package
-   - Publishes to PyPI
-   - Creates GitHub Release
+Requires a `RELEASE_PLEASE_TOKEN` repo secret (fine-grained PAT with `contents:write` + `pull-requests:write`) so release-please's own commits trigger `test.yml` on its release PR — a push authenticated with the default `GITHUB_TOKEN` would not, and `main` requires that check to merge.
 
 ### CI Workflows
 
@@ -201,7 +175,7 @@ uv sync
 - Verifies linting passes after auto-fix
 - **Important**: Runs BEFORE test.yml, ensuring clean code for testing
 - **Scope**: Runs on dev, feature/** branches, and PRs to dev only
-- **Excluded**: Does NOT run on PRs to main (test.yml already verifies linting) or push to main (protected branch)
+- **Excluded**: Does NOT run on PRs to main (test.yml already verifies linting), push to main (protected branch), or release-please's managed branch (avoids racing its auto-generated PR)
 - **Files**: Only lints production code (`src/`) and tests (`tests/`), not examples or templates
 
 **test.yml** - Runs on PR to main/dev when code paths change:
@@ -218,15 +192,11 @@ uv sync
 - Docstring validation
 - Caches uv dependencies for speed
 - Cancels stale runs on new commits
+- Also runs on release-please's release PR, same as any other PR to main
 
-**release.yml** - Runs on PR merge to main with release label:
-- Tests before building
-- Extracts version from pyproject.toml
-- Determines publish target (PyPI/TestPyPI)
-- Creates and pushes git tag
-- Builds package with uv
-- Publishes via PyPI Trusted Publishing (OIDC, no API tokens)
-- Creates GitHub Release with PR notes and changelog
+**release.yml** - Runs on push to main:
+- `release-please` job: runs release-please-action, opens/updates the release PR
+- `publish-pypi` job: gated on `release_created`; builds with `uv build`, publishes via PyPI Trusted Publishing (OIDC), attaches build artifacts to the GitHub Release release-please already created (via `gh release upload`)
 
 **docs.yml** - Runs on push to main:
 - Generates API documentation with quartodoc
@@ -298,16 +268,7 @@ gh pr create --base main
 - Must pass before merge (critical for dependency changes)
 
 **Releases**:
-```bash
-git checkout -b release/v1.1.0
-uv version --bump minor
-git commit -am "chore: bump version to 1.1.0"
-gh pr create --base main --label release
-```
-- test.yml runs (pyproject.toml changed)
-- check-release-version.yml runs (release label)
-- Both must pass before merge
-- After merge: release.yml tags, builds, publishes to PyPI
+There's no manual release step — merge release-please's auto-maintained `chore(main): release X.Y.Z` PR whenever you're ready to ship. It updates itself as more commits land on `main`; just review the version/changelog and merge it like any other PR.
 
 ## Architecture Overview
 
