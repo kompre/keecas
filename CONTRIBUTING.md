@@ -164,7 +164,7 @@ Runs on push to `main`:
 - `publish-pypi` job (gated on a new release actually being created): builds the package, publishes to PyPI via Trusted Publishing (OIDC), attaches build artifacts to the GitHub Release
 
 ### Documentation Workflow
-Runs on push to `main` or `dev`:
+Runs on push to `main` only:
 - Generates API docs with quartodoc
 - Renders Quarto documentation
 - Deploys to GitHub Pages
