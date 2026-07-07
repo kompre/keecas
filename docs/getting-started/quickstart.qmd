@@ -36,6 +36,26 @@ Use LaTeX notation with subscripts for comprehensive display:
 F_d, A_load, sigma = symbols(r"F_{d}, A_{load}, \sigma")
 ```
 
+::: {.callout-tip}
+## Commas inside subscripts are handled automatically
+
+When a symbol name contains a comma inside curly braces (e.g. a subscript
+like `\tau_{1, Rd}`), keecas escapes it automatically so the comma is treated
+as part of the name rather than a symbol separator. You no longer need to
+manually write `\,`:
+
+```python
+# Both forms produce exactly one symbol:
+tau_Rd = symbols(r"\tau_{1, Rd}")   # auto-escaped (new in 1.2)
+tau_Rd = symbols(r"\tau_{1\,Rd}")   # manual escape (still works)
+
+# Multi-symbol strings work as expected:
+tau_Rd, gamma_M0 = symbols(r"\tau_{1, Rd}, \gamma_{M0}")
+```
+
+Commas outside braces continue to act as symbol separators.
+:::
+
 ### 3. Set Up Parameters
 
 Define your parameters with units:

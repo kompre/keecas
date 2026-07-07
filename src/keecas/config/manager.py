@@ -101,6 +101,9 @@ class DisplayConfig:
     cell_formatter: "Callable[[Any, int], str] | None" = None  # Custom cell formatter
     row_formatter: "Callable[[str], str] | None" = None  # Custom row formatter
     col_wrap: "list | Callable | None" = None  # Column wrapping specification
+    text_wrap: bool = False
+    pdf_mode: bool = False
+    text_wrap_width: str = r"0.8\linewidth"
 
 
 @dataclass
@@ -1030,6 +1033,18 @@ class ConfigManager:
 
 ## Pint quantity formatting (e.g., .2f~P, .3f~P)
 {format_value("display", "pint_default_format", defaults.display.pint_default_format, display_inherited.get("pint_default_format"))}
+
+## PDF rendering mode - enables varwidth text wrapping for string values
+## Set to true when rendering to PDF/LaTeX; keeps KaTeX and HTML rendering unchanged
+{format_value("display", "pdf_mode", defaults.display.pdf_mode, display_inherited.get("pdf_mode"))}
+
+## Auto-wrap long string values in PDF mode using varwidth environment
+## Requires \\usepackage{{varwidth}} in LaTeX preamble
+## Only applied when both text_wrap = true and pdf_mode = true
+{format_value("display", "text_wrap", defaults.display.text_wrap, display_inherited.get("text_wrap"))}
+
+## Width for varwidth text wrapping (any LaTeX dimension, e.g. 0.8\\linewidth, 10cm)
+{format_value("display", "text_wrap_width", defaults.display.text_wrap_width, display_inherited.get("text_wrap_width"))}
 
 [language]
 ## Language settings (de, es, fr, it, pt, da, nl, no, sv, en)

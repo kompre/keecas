@@ -507,8 +507,8 @@ show_eqn([_e, _v], label=_l)
 
 **Symbol dependency ordering (automatic):**
 ```python
-# Complex symbols with LaTeX notation - escape commas with backslash
-tau_1_Rd, gamma_M0 = symbols(r"\tau_{1\,Rd}, \gamma_{M0}")
+# Complex symbols with LaTeX notation - commas in subscripts are auto-escaped
+tau_1_Rd, gamma_M0 = symbols(r"\tau_{1, Rd}, \gamma_{M0}")
 
 _e = {
     result: "sqrt(a^2 + b^2) / intermediate" | pc.parse_expr,  # Uses 'intermediate'
@@ -666,8 +666,8 @@ F, A, sigma = symbols(r"F, A, \sigma")
 # Complex engineering symbols
 sigma_Sd, tau_Rd = symbols(r"\sigma_{Sd}, \tau_{Rd}")
 
-# Symbols with commas - escape with backslash
-tau_1_Rd, gamma_M0 = symbols(r"\tau_{1\,Rd}, \gamma_{M0}")
+# Symbols with commas in subscripts - auto-escaped (no manual \, needed)
+tau_1_Rd, gamma_M0 = symbols(r"\tau_{1, Rd}, \gamma_{M0}")
 
 # Greek letters
 alpha, beta, gamma = symbols(r"\alpha, \beta, \gamma")
@@ -687,7 +687,7 @@ sigma, tau, gamma = symbols("sigma, tau, gamma")
 - Use `params.update(_p)` and `eqn.update(_e)` for persistence
 - Use dict comprehensions for evaluation
 - Use pipe operators for functional composition
-- Escape commas in symbol names with `\,`
+- Commas inside subscripts `{}` are auto-escaped (no manual `\,` needed)
 - Let keecas handle symbol dependency ordering
 
 **❌ DON'T:**
@@ -769,7 +769,7 @@ For complete details, see `_docs/CONVENTIONS.md`.
   - Prefixed units (kN, daN, cm, etc.) convert automatically via SymPy's prefix system
   - Non-prefixed compound units (kgf, lbf, etc.) have scale factors automatically set from Pint definitions
   - All Pint units convert correctly in SymPy expressions via `pc.convert_to()`
-- When defining symbols prefer LaTeX notation: instead of symbols('gamma'), use symbols(r'\gamma'). This way you can have complex LaTeX symbols; if a symbol has a comma, escape it with `\`: tau_1_Rd = symbols(r'\tau_{1\,Rd}')
+- When defining symbols prefer LaTeX notation: instead of symbols('gamma'), use symbols(r'\gamma'). Commas inside subscripts `{}` are auto-escaped, so `symbols(r'\tau_{1, Rd}')` works without manual `\,`
 
 ## Language and Localization Support
 
@@ -790,44 +790,10 @@ For complete details, see `_docs/CONVENTIONS.md`.
 - **Persistence Fix**: No more "sticky" locales from previous language settings
 - **Conservative English**: English locale only changes when explicitly switching from other languages
 
-## Task Planning and Management
-
-### `_todo` Directory Structure
-The project uses a structured planning system located in `_todo/`:
-
-```
-_todo/
-├── todo.md                    # Master task list written by user
-├── proposal/                  # Initial task proposals
-│   └── [task-name].md        # Claude's detailed plan awaiting user approval
-├── pending/                   # Active development files
-│   └── [task-name].md        # Approved tasks with progress updates
-└── completed/                 # Finished tasks archive
-    └── YYYY-MM-DD/           # Date-based folders for completion date
-        └── [task-name].md    # Final summary + insights
-```
-
-### Planning Workflow
-1. **Task Creation**: User writes tasks in `_todo/todo.md` with clear objectives and priorities
-2. **Proposal Phase**: Claude creates detailed proposal in `_todo/proposal/[task-name].md`
-   - Include original objective from todo.md and remove it from todo.md
-   - Break down into specific implementation steps
-   - Wait for user review, comments, and approval
-3. **Development Phase**: After user approval, move proposal to `_todo/pending/[task-name].md`
-   - Update file with implementation progress and activity summaries
-   - Use for ongoing development updates
-4. **Completion**: After task completion, move file to `_todo/completed/YYYY-MM-DD/`
-   - Update with final summary and insights
-   - Mark task as "Completed" in todo.md
+## Claude Code Session Management
 
 ### Session Startup Protocol
-**IMPORTANT**: At the start of each session, always check:
-1. `_todo/todo.md` for new or updated tasks from the user
-2. `_todo/proposal/` for user-reviewed proposals ready to approve/implement
-3. `_todo/pending/` for active tasks requiring progress updates
-4. Current git status and recent commits for context
-
-## Claude Code Session Management
+At the start of each session, check current git status and recent commits for context.
 
 ### Documentation Updates Before Commits
 IMPORTANT: Always update project documentation before making significant commits to maintain context across sessions:
@@ -835,21 +801,15 @@ IMPORTANT: Always update project documentation before making significant commits
 1. **CLAUDE.md**: Ensure architecture changes, new CLI features, and conventions are documented
 2. **README.md**: Update with user-facing features and installation instructions
 3. **Test documentation**: Update testing strategy and coverage notes
-4. **`_todo` Planning Files**: Update relevant planning files with progress and insights
 
 ### Memory Management Practices
-- Use TodoWrite tool proactively for complex multi-step tasks
+- Use the task tools (TaskCreate/TaskUpdate) proactively for complex multi-step work within a session
 - Complete todos as work finishes to maintain accurate progress tracking
 - Update documentation before major commits to preserve session context
 - Document new patterns, conventions, and architectural decisions immediately
-- Maintain DEVELOPMENT_CONTEXT.md as a session-to-session handoff document
-- Check `_todo/todo.md` at session start for user-defined tasks
 
 ### Key Files for Context Preservation
 - `CLAUDE.md`: Project architecture, conventions, CLI usage
-- `_todo/todo.md`: Current user tasks and priorities
-- `_todo/proposal/`: Proposals awaiting user review and approval
-- `_todo/pending/`: Active development files requiring progress updates
 - `pyproject.toml`: Dependencies, build configuration, CLI entry points
 - `src/keecas/__init__.py`: Module structure and main exports
 - `examples/`: Working examples and templates for reference

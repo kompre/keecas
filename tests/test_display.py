@@ -146,6 +146,64 @@ def test_formatter_custom_registration():
     assert "50" in result_small.data  # Uses default int formatter
 
 
+def test_format_str_no_wrap():
+    """Default: strings use \\text{} wrapper."""
+    from keecas.display import config
+    from keecas.formatters import format_str
+
+    config.display.text_wrap = False
+    result = format_str("long description text")
+    assert result == r"\text{long description text}"
+
+
+def test_format_str_text_wrap_no_pdf_mode():
+    """text_wrap=True but pdf_mode=False: still use \\text{}."""
+    from keecas.display import config
+    from keecas.formatters import format_str
+
+    config.display.text_wrap = True
+    config.display.pdf_mode = False
+    try:
+        result = format_str("long description text")
+        assert result == r"\text{long description text}"
+    finally:
+        config.display.text_wrap = False
+
+
+def test_format_str_text_wrap_pdf_mode():
+    """text_wrap=True and pdf_mode=True: use varwidth environment."""
+    from keecas.display import config
+    from keecas.formatters import format_str
+
+    config.display.text_wrap = True
+    config.display.pdf_mode = True
+    try:
+        result = format_str("long description text")
+        assert r"\begin{varwidth}[t]{" in result
+        assert r"\end{varwidth}" in result
+        assert "long description text" in result
+    finally:
+        config.display.text_wrap = False
+        config.display.pdf_mode = False
+
+
+def test_format_str_text_wrap_custom_width():
+    """text_wrap_width config is used in varwidth output."""
+    from keecas.display import config
+    from keecas.formatters import format_str
+
+    config.display.text_wrap = True
+    config.display.pdf_mode = True
+    config.display.text_wrap_width = r"0.5\linewidth"
+    try:
+        result = format_str("long description text")
+        assert r"0.5\linewidth" in result
+    finally:
+        config.display.text_wrap = False
+        config.display.pdf_mode = False
+        config.display.text_wrap_width = r"0.8\linewidth"
+
+
 def test_formatter_empty_string():
     """Test that formatters can explicitly return empty string."""
     from keecas import format_value
@@ -187,12 +245,14 @@ def test_formatter_pint_transformation():
 
 
 def test_formatter_mul_complex_expressions():
-    """Test format_mul distinguishes simple numeric*units from complex calculations.
+    """Test format_mul correctly separates magnitude from unit for numeric*unit expressions.
 
-    format_mul should only transform simple cases like 5*kN.
-    Complex calculations with division should NOT be transformed.
+    format_mul transforms any no-symbol expression with a single unit type
+    (including compound fraction units like kN/m^2) to put the magnitude outside
+    the unit fraction. Only expressions with multiple distinct unit Quantities
+    (e.g., kN*m torque) or free symbols are NOT transformed.
     """
-    from sympy import Mul, Pow
+    from sympy import Mul
 
     from keecas import S, format_value, u
 
@@ -205,20 +265,17 @@ def test_formatter_mul_complex_expressions():
     # Units should be formatted (either as text or mathrm)
     assert "kN" in result_simple or "kilonewton" in result_simple
 
-    # Test 2: Complex calculation with division (should NOT transform)
-    # Expression: 5*kN / (3*m)
-    complex_expr = S(5 * u.kN) / S(3 * u.m)
-    assert isinstance(complex_expr, Mul)
-
-    # Verify it has division (Pow with negative exponent)
-    has_division = any(isinstance(arg, Pow) and arg.exp.is_negative for arg in complex_expr.args)
-    assert has_division, "Complex expression should have division"
-
-    # Format and verify it's shown as fraction
-    result_complex = format_value(complex_expr)
-    assert isinstance(result_complex, str)
-    # Should contain fraction notation
-    assert "frac" in result_complex
+    # Test 2: Compound fraction unit (e.g., area load) - transformation SHOULD apply.
+    # kN/m^2 has unit_count=1 (kilonewton is Quantity; meter**-2 is Pow, not Quantity),
+    # so the magnitude is extracted and placed outside the unit fraction:
+    # 2.0 * kN/m^2  ->  "2.0{\,}\dfrac{kN}{m^2}"  (not "\dfrac{2.0 kN}{m^2}")
+    area_load_expr = S(2 * u("kN/m^2"))
+    assert isinstance(area_load_expr, Mul)
+    result_area_load = format_value(area_load_expr)
+    assert isinstance(result_area_load, str)
+    # Magnitude must appear outside the fraction, not inside the numerator
+    assert "frac" in result_area_load
+    assert "2" in result_area_load
 
     # Test 3: Compound units (should NOT transform)
     # Expression: 5*kN * 3*m evaluates to 15*kN*m (torque)
@@ -245,6 +302,18 @@ def test_formatter_mul_complex_expressions():
     assert isinstance(result_symbolic, str)
     # Should not be transformed (no \cdot for simple xy multiplication)
     assert "x" in result_symbolic and "y" in result_symbolic
+
+    # Test 5: Negative numeric * single unit (should NOT produce parenthesized negative)
+    # Bug: "-5 kN" was rendered as "(-5) kN" due to UnevaluatedExpr wrapping
+    neg_expr = S(-5 * u.kN)
+    assert isinstance(neg_expr, Mul)
+    result_neg = format_value(neg_expr)
+    assert isinstance(result_neg, str)
+    assert "5" in result_neg
+    assert "kN" in result_neg or "kilonewton" in result_neg
+    # Must start with "-" directly, not with "(-"
+    assert result_neg.startswith("-"), f"Expected result to start with '-', got: {result_neg}"
+    assert not result_neg.startswith("(-"), f"Unexpected parenthesized negative: {result_neg}"
 
 
 def test_format_decimal_numbers():

@@ -180,6 +180,10 @@ def format_str(value: str, col_index: int = 0, **kwargs) -> str:
     Pure conversion: wraps string in \\text{} without additional decoration.
     Column wrapping (e.g., \\quad prefix) is handled by wrap_column().
 
+    When config.display.text_wrap is True and katex is False, uses a varwidth
+    environment instead of \\text{} to allow dynamic line wrapping in PDF output.
+    Requires \\usepackage{varwidth} in the LaTeX preamble.
+
     Parameters
     ----------
     value : str
@@ -192,8 +196,14 @@ def format_str(value: str, col_index: int = 0, **kwargs) -> str:
     Returns
     -------
     str
-        LaTeX string with \\text{} wrapper
+        LaTeX string with \\text{} or varwidth wrapper
     """
+    from keecas.config.manager import get_config_manager
+
+    cfg = get_config_manager().options
+    if cfg.display.text_wrap and cfg.display.pdf_mode:
+        width = cfg.display.text_wrap_width
+        return rf"\begin{{varwidth}}[t]{{{width}}}{value}\end{{varwidth}}"
     return rf"\text{{{value}}}"
 
 
@@ -345,7 +355,6 @@ def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
 
     **Transformation applies only when ALL conditions are met:**
     - No free symbols (variables like x, y, sigma)
-    - No division operations (no Pow with negative exponent)
     - No addition/subtraction (no Add terms)
     - Single unit quantity (multiple units indicate compound units from calculation)
 
@@ -354,9 +363,10 @@ def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
     Simple cases (transformed):
         - 5*meter -> "5 \\cdot \\mathrm{meter}"
         - 3.14*kilogram -> "3.14 \\cdot \\mathrm{kilogram}"
+        - -5*kN -> "-5 \\cdot \\mathrm{kilonewton}" (sign kept outside, no parens)
+        - 2.0*kN/m^2 -> "2.0 \\dfrac{\\text{kN}}{\\text{m}^2}" (compound unit, one Quantity)
 
     Complex cases (NOT transformed, formatted as-is):
-        - 5*kN / (3*m) -> displayed as division expression
         - 15*kN*m -> displayed as-is (compound units from torque calculation)
         - x * y -> displayed as symbolic multiplication
         - (a + b) * meter -> displayed with addition
@@ -377,14 +387,21 @@ def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
 
     Notes
     -----
-    Transformation: 5*meter -> UnevaluatedExpr(5) * UnevaluatedExpr(meter)
-    This produces "5 \\cdot \\mathrm{meter}" instead of "5meter" in LaTeX.
+    Transformation uses as_coeff_Mul() to extract the numeric coefficient, then
+    wraps coefficient and unit separately in UnevaluatedExpr to produce clean
+    LaTeX spacing: "5 \\mathrm{meter}" instead of "5meter".
+
+    Negative coefficients have their sign extracted before wrapping to avoid
+    parenthesization: UnevaluatedExpr(-5) would produce "(-5)" in LaTeX, so
+    the sign is stripped and prepended as a literal "-" after formatting.
+
+    For non-numeric leading factors (e.g., pi*meter), falls back to as_two_terms().
 
     For complex expressions with calculations, the function preserves the
     original structure to maintain clarity in mathematical notation.
     """
     # Import here to avoid circular dependency
-    from sympy import Add, Pow
+    from sympy import Add
 
     # Check if this is a simple "numeric * units" pattern
     # Don't transform if it has any of these:
@@ -393,18 +410,40 @@ def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
     from keecas import pipe_command as pc
 
     has_symbols = bool(value.free_symbols)
-    has_division = any(isinstance(arg, Pow) and arg.exp.is_negative for arg in value.args)
     has_addition = any(isinstance(arg, Add) for arg in value.args)
 
     # Count unit quantities - multiple units indicate compound units from calculation
-    # (e.g., kN*m for torque, not simple kN for force)
+    # (e.g., kN*m for torque, not simple kN for force).
+    # Note: Pow(unit, -n) args (e.g., meter**-2) are NOT Quantity instances, so
+    # compound fraction units like kN/m^2 correctly have unit_count=1 and are
+    # transformed, giving "2.0{\,}\dfrac{kN}{m^2}" rather than "\dfrac{2.0 kN}{m^2}".
     unit_count = sum(1 for arg in value.args if isinstance(arg, Quantity))
     has_multiple_units = unit_count > 1
 
-    if not has_symbols and not has_division and not has_addition and not has_multiple_units:
+    if not has_symbols and not has_addition and not has_multiple_units:
         # Simple "numeric * units" pattern - transform for cleaner display
-        transformed = value | pc.as_two_terms(as_mul=True)
-        return format_sympy(transformed, col_index, **kwargs)
+        from sympy import UnevaluatedExpr
+
+        coeff, unit_part = value.as_coeff_Mul()
+
+        # as_coeff_Mul returns coeff=1 when no pure numeric factor exists
+        # (e.g., pi*meter -> coeff=1, unit_part=pi*meter).
+        # Fall back to as_two_terms for correct splitting in that case.
+        if coeff == 1:
+            transformed = value | pc.as_two_terms(as_mul=True)
+            return format_sympy(transformed, col_index, **kwargs)
+
+        # For negative coefficients, strip the sign and prepend it as a literal "-".
+        # UnevaluatedExpr(-5) produces "(-5)" in LaTeX; this avoids the parentheses.
+        # NOTE: the coeff==1 guard must come BEFORE this block — negating coeff=-1
+        # would make it 1 and incorrectly trigger the fallback.
+        sign_prefix = ""
+        if coeff.is_negative:
+            sign_prefix = "-"
+            coeff = -coeff  # absolute value
+
+        transformed = UnevaluatedExpr(coeff) * UnevaluatedExpr(unit_part)
+        return sign_prefix + format_sympy(transformed, col_index, **kwargs)
 
     # Complex expression - format as-is
     return format_sympy(value, col_index, **kwargs)

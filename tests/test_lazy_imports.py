@@ -161,11 +161,11 @@ assert hasattr(config, 'display'), "config should be ConfigOptions, not package 
 assert hasattr(config, 'latex'), "config should have latex section"
 assert hasattr(config, 'language'), "config should have language section"
 
-# Now access sympy - should use the already-loaded config
-symbols = keecas.symbols
+# Now call symbols - should load sympy and use the already-loaded config
+import sys
+keecas.symbols('x')
 
 # Verify sympy is now loaded but config was already there
-import sys
 assert 'sympy' in sys.modules
 """
 
@@ -216,11 +216,8 @@ from keecas import symbols
 x = symbols('x')
 assert x is not None
 
-# sympy should now be loaded (symbols requires it)
-assert 'sympy' in sys.modules, "sympy should be loaded when importing symbols"
-
-# Config should also be loaded (required by sympy initialization)
-assert 'keecas.display' in sys.modules or 'display' in dir(sys.modules.get('keecas', {}))
+# sympy should now be loaded (symbols was called above)
+assert 'sympy' in sys.modules, "sympy should be loaded after calling symbols"
 """
 
     result = subprocess.run(
@@ -390,10 +387,10 @@ _ = keecas.Dataframe
 assert 'sympy' not in sys.modules, "Dataframe should not load sympy"
 assert 'pint' not in sys.modules, "Dataframe should not load pint"
 
-# Now access a heavy dependency
-_ = keecas.symbols
+# Now call a heavy dependency (symbols wrapper loads sympy only when called)
+_ = keecas.symbols('x')
 # sympy should now be loaded
-assert 'sympy' in sys.modules, "sympy should be loaded after accessing symbols"
+assert 'sympy' in sys.modules, "sympy should be loaded after calling symbols"
 
 # Access another heavy dependency
 _ = keecas.u
@@ -513,7 +510,7 @@ from keecas import show_eqn, symbols
 # show_eqn should be accessible
 assert show_eqn is not None
 
-# sympy should be loaded (symbols was imported)
+# sympy should be loaded (show_eqn import triggers it via display.py)
 assert 'sympy' in sys.modules
 
 # Can use show_eqn (even if we can't see output in subprocess)

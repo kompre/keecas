@@ -4,6 +4,7 @@ on:
   push:
     branches-ignore:
       - main  # Trigger on all branches except main
+      - 'release-please--branches--**'  # Avoid racing release-please's managed branch
   pull_request:
     branches: [ dev ]  # Excluded main - test.yml already verifies linting
 
