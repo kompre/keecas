@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main]
 
 # Prevent concurrent releases
 concurrency:
@@ -10,11 +10,10 @@ concurrency:
   cancel-in-progress: false  # Queue releases instead of canceling
 
 jobs:
-  # main: release-please maintains a standing release PR computed from
-  # conventional commits. Merging that PR creates the tag + GitHub Release.
+  # release-please maintains a standing release PR computed from conventional
+  # commits. Merging that PR creates the tag + GitHub Release.
   release-please:
     name: Release Please
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -75,65 +74,3 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "${{ needs.release-please.outputs.tag_name }}" dist/* --repo "${{ github.repository }}"
-
-  # dev: every push builds a disposable dev-versioned artifact and publishes
-  # it to TestPyPI. The version is synthesized at build time only and is
-  # never committed back to the branch.
-  publish-testpypi:
-    name: Publish dev build to TestPyPI
-    if: github.ref == 'refs/heads/dev'
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write  # OIDC for TestPyPI Trusted Publishing
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: ".python-version"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "latest"
-          enable-cache: true
-
-      - name: Install dependencies
-        run: uv sync --group dev
-
-      - name: Synthesize disposable dev version
-        run: |
-          uv run python -c "
-          import tomlkit
-          from packaging.version import Version
-
-          path = 'pyproject.toml'
-          with open(path) as f:
-              doc = tomlkit.load(f)
-
-          base_version = Version(doc['project']['version']).base_version
-          dev_version = f'{base_version}.dev${{ github.run_number }}'
-          doc['project']['version'] = dev_version
-
-          with open(path, 'w') as f:
-              tomlkit.dump(doc, f)
-
-          print(f'Synthesized version: {dev_version}')
-          "
-
-      - name: Build package
-        run: |
-          uv build
-          echo "Build artifacts:"
-          ls -lh dist/
-
-      - name: Publish to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
-          skip-existing: true
-          print-hash: true
-          verbose: true
