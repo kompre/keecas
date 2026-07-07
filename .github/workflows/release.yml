@@ -1,12 +1,8 @@
 name: Release
 
 on:
-  # Triggered by push to main/dev when pyproject.toml changes.
-  # PyPI trusted publishing requires push/tag events; pull_request_target is not supported.
   push:
     branches: [main, dev]
-    paths:
-      - 'pyproject.toml'
 
 # Prevent concurrent releases
 concurrency:
@@ -14,22 +10,42 @@ concurrency:
   cancel-in-progress: false  # Queue releases instead of canceling
 
 jobs:
-  release:
-    name: Automated Release
-    # Publish rules:
-    # - main branch + stable version (no pre-release marker) → Production PyPI + tag + GitHub Release
-    # - dev branch + pre-release version (a/b/rc/dev suffix)  → TestPyPI only
-    # Any other combination (e.g. stable version on dev) is skipped.
+  # main: release-please maintains a standing release PR computed from
+  # conventional commits. Merging that PR creates the tag + GitHub Release.
+  release-please:
+    name: Release Please
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Create releases and tags
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # Fires only when release-please just cut a new release on main.
+  publish-pypi:
+    name: Publish to PyPI
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # attach build artifacts to the GitHub Release
       id-token: write  # OIDC for PyPI Trusted Publishing
 
     steps:
-      - name: Checkout
+      - name: Checkout release tag
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for proper tagging
+          ref: ${{ needs.release-please.outputs.tag_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -42,143 +58,82 @@ jobs:
           version: "latest"
           enable-cache: true
 
-      - name: Install Quarto
-        uses: quarto-dev/quarto-actions/setup@v2
-        with:
-          version: release
-
-      - name: Install locales for internationalization tests
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y locales
-          sudo locale-gen it_IT.UTF-8
-          sudo locale-gen de_DE.UTF-8
-          sudo locale-gen fr_FR.UTF-8
-          sudo locale-gen es_ES.UTF-8
-          sudo locale-gen pt_PT.UTF-8
-          sudo update-locale
-
-      - name: Install dependencies
-        run: uv sync --group dev
-
-      - name: Run tests
-        run: uv run pytest tests -v
-
-      - name: Extract version from pyproject.toml
-        id: version
-        run: |
-          VERSION=$(grep '^version = ' pyproject.toml | cut -d'"' -f2)
-          TAG="v$VERSION"
-
-          # Detect pre-release: versions containing a, b, rc, or dev marker
-          if echo "$VERSION" | grep -qE '(a|b|rc|\.dev)[0-9]'; then
-            IS_PRERELEASE=true
-          else
-            IS_PRERELEASE=false
-          fi
-
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
-
-          echo "Version: $VERSION"
-          echo "Tag: $TAG"
-          echo "Pre-release: $IS_PRERELEASE"
-
-      - name: Determine publish target
-        id: target
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          IS_PRERELEASE="${{ steps.version.outputs.is_prerelease }}"
-          BRANCH="${{ github.ref_name }}"
-
-          if [ "$BRANCH" == "main" ] && [ "$IS_PRERELEASE" == "false" ]; then
-            echo "repository_url=https://upload.pypi.org/legacy/" >> $GITHUB_OUTPUT
-            echo "target_name=PyPI" >> $GITHUB_OUTPUT
-            echo "is_production=true" >> $GITHUB_OUTPUT
-            echo "create_tag=true" >> $GITHUB_OUTPUT
-            echo "create_release=true" >> $GITHUB_OUTPUT
-            echo "should_publish=true" >> $GITHUB_OUTPUT
-            echo "Target: Production PyPI"
-          elif [ "$BRANCH" == "dev" ] && [ "$IS_PRERELEASE" == "true" ]; then
-            echo "repository_url=https://test.pypi.org/legacy/" >> $GITHUB_OUTPUT
-            echo "target_name=TestPyPI" >> $GITHUB_OUTPUT
-            echo "is_production=false" >> $GITHUB_OUTPUT
-            echo "create_tag=false" >> $GITHUB_OUTPUT
-            echo "create_release=false" >> $GITHUB_OUTPUT
-            echo "should_publish=true" >> $GITHUB_OUTPUT
-            echo "Target: TestPyPI"
-          else
-            echo "should_publish=false" >> $GITHUB_OUTPUT
-            echo "Skipping publish: branch=$BRANCH version=$VERSION is_prerelease=$IS_PRERELEASE"
-          fi
-
-      - name: Skip if no publish needed
-        if: steps.target.outputs.should_publish == 'false'
-        run: |
-          echo "No publish target matched. Skipping release."
-          echo "  branch=${{ github.ref_name }}"
-          echo "  version=${{ steps.version.outputs.version }}"
-          echo "  is_prerelease=${{ steps.version.outputs.is_prerelease }}"
-
-      - name: Check if tag already exists
-        if: steps.target.outputs.create_tag == 'true'
-        run: |
-          if git rev-parse "refs/tags/${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
-            echo "Tag ${{ steps.version.outputs.tag }} already exists - skipping release."
-            exit 1
-          fi
-          echo "Tag ${{ steps.version.outputs.tag }} is available"
-
-      - name: Create and push tag
-        if: steps.target.outputs.create_tag == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "${{ steps.version.outputs.tag }}" -m "Release ${{ steps.version.outputs.version }}"
-          git push origin "${{ steps.version.outputs.tag }}"
-          echo "Created and pushed tag: ${{ steps.version.outputs.tag }}"
-
       - name: Build package
-        if: steps.target.outputs.should_publish == 'true'
         run: |
           uv build
           echo "Build artifacts:"
           ls -lh dist/
 
       - name: Publish to PyPI
-        if: steps.target.outputs.is_production == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           print-hash: true
           verbose: true
 
+      - name: Attach build artifacts to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ needs.release-please.outputs.tag_name }}" dist/* --repo "${{ github.repository }}"
+
+  # dev: every push builds a disposable dev-versioned artifact and publishes
+  # it to TestPyPI. The version is synthesized at build time only and is
+  # never committed back to the branch.
+  publish-testpypi:
+    name: Publish dev build to TestPyPI
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # OIDC for TestPyPI Trusted Publishing
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "latest"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Synthesize disposable dev version
+        run: |
+          uv run python -c "
+          import tomlkit
+          from packaging.version import Version
+
+          path = 'pyproject.toml'
+          with open(path) as f:
+              doc = tomlkit.load(f)
+
+          base_version = Version(doc['project']['version']).base_version
+          dev_version = f'{base_version}.dev${{ github.run_number }}'
+          doc['project']['version'] = dev_version
+
+          with open(path, 'w') as f:
+              tomlkit.dump(doc, f)
+
+          print(f'Synthesized version: {dev_version}')
+          "
+
+      - name: Build package
+        run: |
+          uv build
+          echo "Build artifacts:"
+          ls -lh dist/
+
       - name: Publish to TestPyPI
-        if: steps.target.outputs.is_production == 'false' && steps.target.outputs.should_publish == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
           print-hash: true
           verbose: true
-
-      - name: Create GitHub Release
-        if: steps.target.outputs.create_release == 'true'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: Release ${{ steps.version.outputs.version }}
-          body: |
-            **Version:** `${{ steps.version.outputs.version }}`
-            **Published To:** PyPI
-
-            Install:
-            ```bash
-            pip install keecas==${{ steps.version.outputs.version }}
-            ```
-
-            https://pypi.org/project/keecas/${{ steps.version.outputs.version }}/
-          files: dist/*
-          draft: false
-          prerelease: false
-          generate_release_notes: true
