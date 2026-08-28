@@ -16,6 +16,17 @@ jupyter: python3
 
 No `title:` field — the title comes from the first markdown `##` heading.
 
+--- CELL --- *(optional `%run` of a shared base — only if the notebook depends on one; must be the very first cell)*
+
+```python
+#| output: false
+#| eval: false
+
+%run ../../shared/__materiali.ipynb
+```
+
+Running it first — before the notebook's own init cells — avoids clobbering both local symbol definitions and this notebook's own `config.*` settings with the base notebook's values. See the main skill file §1/§15 for the full rationale.
+
 --- CELL --- *(code, tagged init)*
 
 ```python
@@ -61,17 +72,6 @@ config.display.katex = True
 ```
 {{< include /_scripts/_KaTeX_compatibility.qmd >}}
 ```
-
---- CELL --- *(optional `%run` of a shared base — only if the notebook depends on one)*
-
-```python
-#| output: false
-#| eval: false
-
-%run ../../shared/__materiali.ipynb
-```
-
-The `%run` cell must come **before** any local symbol definitions.
 
 --- CELL --- *(markdown — first heading and prose intro)*
 
@@ -201,6 +201,7 @@ show_eqn(
 ## What this skeleton illustrates
 
 - Init cells in fixed order; `generate_unique_label`, `display`, `Markdown` imported once at the top.
+- An optional `%run` of a shared base, when present, comes *before* the init cells — never after — so it can't clobber local symbols or this notebook's own `config.*` settings.
 - KaTeX include between init and content.
 - Each subsequent block follows the same shape: *symbols* → `_p` or `_e` → `_l` → `_v` (computed via the pipeline) → `show_eqn([..., _v, _l], label=generate_unique_label(_l), float_format=[None, None, "{:.2f}"])`.
 - Markdown cells carry prose; they do not duplicate formulas as `$$...$$`.

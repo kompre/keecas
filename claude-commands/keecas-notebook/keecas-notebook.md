@@ -83,13 +83,18 @@ The first three code cells are always:
    {{< include /_scripts/_KaTeX_compatibility.qmd >}}
    ```
 
-If the notebook depends on a shared base (e.g. materials, snow base), the `%run` cell goes **between the init cells and any variable definitions** — never after, or it will clobber locals:
+If the notebook depends on a shared base (e.g. materials, snow base), the `%run` cell goes **before the init cells — as the very first cell in the notebook**, never after:
 
 ```python
 #| output: false
 #| eval: false
 %run ../../shared/__materiali.ipynb
 ```
+
+Putting it first avoids two independent clobbering failures:
+
+- **Local symbols/params** — if `%run` fires after locals are already defined, the base notebook's `symbols(...)` calls overwrite them.
+- **Global `config.*` settings** — the base notebook's own init cell sets `config.latex.eq_prefix`, `config.display.katex`, etc. If `%run` fires *after* the current notebook's own config cell, those settings get silently overwritten by the base notebook's values (e.g. `eq-SOVRACCARICHI-` reverting to `eq-NEVE-`), and every `show_eqn` call from that point on renders under the wrong label prefix. The base notebook does its own `from keecas import *`, so nothing in it depends on the current notebook's init cell having run first — there's no cost to running it before everything else, and the current notebook's own init/config cells (which always run after) get the last word.
 
 Both cell options matter:
 
@@ -412,7 +417,7 @@ Then either build a merged zone+derived table (one row per input value, columns 
 
 ### 15. Notebook naming and `%run`
 
-Notebooks in `relazione/Azioni/` are named without an `azione_` prefix (folder context already implies it): `__vento.ipynb`, not `__azione_vento.ipynb`. Case-specific notebooks `%run` the base immediately after the init cells:
+Notebooks in `relazione/Azioni/` are named without an `azione_` prefix (folder context already implies it): `__vento.ipynb`, not `__azione_vento.ipynb`. Case-specific notebooks `%run` the base as the very first cell, before their own init cells:
 
 ```python
 #| output: false
@@ -420,7 +425,7 @@ Notebooks in `relazione/Azioni/` are named without an `azione_` prefix (folder c
 %run __neve.ipynb
 ```
 
-The `%run` cell must appear *before* any local variable definitions; otherwise the base notebook's `symbols(...)` will clobber locals that were set up first.
+See §1 for why: running it first avoids clobbering both local symbols and the current notebook's own `config.*` settings — the current notebook's own init cell, which always runs after, has the last word on those.
 
 ## Final self-check before declaring done
 
@@ -438,7 +443,7 @@ Before telling the user a notebook is ready, walk through this list. Each item i
 10. Tables use `df_to_latex(df)`, with `display(...)` wrapping when produced mid-cell?
 11. Verifications use `check(demand / capacity, ...)` — not the inverse?
 12. If the notebook reads metadata that may be a list, it normalises with `isinstance(..., list)` and picks the governing value with a `key=` lambda?
-13. Any `%run` cell is placed **before** local symbol definitions?
+13. Any `%run` cell is the very first cell in the notebook — before its own init cells — so it can't clobber local symbols or the notebook's own `config.*` settings?
 14. No whitespace padding aligning dict colons or `=` signs?
 15. Every `pc.parse_expr` string uses `^` (not `**`) for exponentiation, so the source reads as pseudo-LaTeX?
 16. If the notebook contains trig functions: no `* u.rad` attached to trig results, arguments are dimensionless (or written as ratios of like-unit quantities), and `pc.convert_to([1])` is used to strip residual units before trig consumes them?
