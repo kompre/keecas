@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.3.0](https://github.com/kompre/keecas/compare/v1.2.1...v1.3.0) (2026-09-18)
+
+
+### Features
+
+* consolidate skill CLI into `keecas skill install`/`print` ([9154f8f](https://github.com/kompre/keecas/commit/9154f8f0b130e34590c65e8c85b8b7f3343ef2e1))
+* consolidate skill CLI into keecas skill install/print ([1f30c0e](https://github.com/kompre/keecas/commit/1f30c0ef0ccc541a389bd187e1ced3b370bbff77))
+
+
+### Bug Fixes
+
+* **cli:** fix install-skill for installed (non-editable) packages ([98e8fd9](https://github.com/kompre/keecas/commit/98e8fd912bdc6d97b6ee670266e50ec70fca4333))
+* install-skill fails on real (non-editable) keecas installs ([df0e60d](https://github.com/kompre/keecas/commit/df0e60d3b53d69a2ba2228b9a7a8eb9c778f767b))
+* **skill:** correct stale comma-escaping examples, add description-safety guidance ([10b059c](https://github.com/kompre/keecas/commit/10b059c7287047e9a0bbdc8ea4b44f30ccc46e8a))
+
+
+### Documentation
+
+* drop mandatory dev hop from branch strategy ([9202012](https://github.com/kompre/keecas/commit/92020120937cc1cefadcc9c318e3050850113900))
+* drop mandatory dev hop from branch strategy ([bcea9ea](https://github.com/kompre/keecas/commit/bcea9ea3156d795ada2a8897205b390adc949598))
+
 ## [1.2.1](https://github.com/kompre/keecas/compare/v1.2.0...v1.2.1) (2026-08-28)
 
 
