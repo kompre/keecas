@@ -1048,8 +1048,8 @@ class ConfigManager:
 {format_value("display", "text_wrap_width", defaults.display.text_wrap_width, display_inherited.get("text_wrap_width"))}
 
 ## Treat string cell values passed to show_eqn as Markdown source instead of raw LaTeX.
-## When true, a small subset of inline Markdown (**bold**, *italic*, `code`) is converted
-## to LaTeX and everything else is escaped automatically (see formatters.markdown_to_latex).
+## When true, a small subset of inline Markdown (**bold**, *italic*, `code`, ^[footnote]) is
+## converted to LaTeX and everything else is escaped automatically (see formatters.markdown_to_latex).
 ## When false (default), strings are spliced into \\text{{}} unescaped -- the caller is
 ## responsible for escaping LaTeX-reserved characters (_, %, &, #, $, ~, ^, \\) themselves.
 {format_value("display", "treat_str_as_markdown", defaults.display.treat_str_as_markdown, display_inherited.get("treat_str_as_markdown"))}

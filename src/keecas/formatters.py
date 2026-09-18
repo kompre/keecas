@@ -104,30 +104,61 @@ def escape_latex_special_chars(text: str) -> str:
 
 
 # Inline Markdown spans recognized by markdown_to_latex(), checked in this
-# order (code first, so bold/italic markers inside a code span are treated
-# as literal text rather than being reinterpreted).
+# order (code first, so bold/italic/footnote markers inside a code span are
+# treated as literal text rather than being reinterpreted).
+#
+# Bold/italic use asterisks only (**bold**, *italic*) -- the underscore
+# variants (__bold__, _italic_) are deliberately NOT supported: keecas text
+# routinely contains engineering subscript notation like "x_1" and "y_2",
+# and a pair of those would otherwise be misread as an italic span
+# ("x_1 and y_2" -> "x\textit{1 and y}2"). A literal underscore is always
+# just escaped text.
 _MARKDOWN_INLINE_PATTERN = re.compile(
     r"`(?P<code>[^`]+)`"
-    r"|\*\*(?P<bold_star>[^*]+)\*\*"
-    r"|__(?P<bold_under>[^_]+)__"
-    r"|\*(?P<italic_star>[^*]+)\*"
-    r"|_(?P<italic_under>[^_]+)_",
+    r"|\*\*(?P<bold>[^*]+)\*\*"
+    r"|\^\[(?P<footnote>[^\]]+)\]"
+    r"|\*(?P<italic>[^*]+)\*",
 )
 
 
 def markdown_to_latex(text: str) -> str:
-    r"""Convert a small subset of inline Markdown to LaTeX.
+    r"""Convert a small, safety-restricted subset of Pandoc/Quarto Markdown to LaTeX.
 
-    Recognizes bold (`**text**` / `__text__`), italic (`*text*` / `_text_`),
-    and inline code (`` `text` ``), converting each to the corresponding
-    LaTeX text-mode command (`\textbf`, `\textit`, `\texttt`). Everything
-    else is treated as plain text and passed through
+    keecas notebooks render to Quarto documents, so "Markdown" here means
+    Pandoc's markdown dialect (the one Quarto uses) -- not CommonMark or
+    GFM. Every span this function recognizes is genuine Pandoc syntax, not
+    an invented dialect:
+
+    - Bold: `**text**` -> `\textbf{text}`
+    - Italic: `*text*` -> `\textit{text}`
+    - Code span: `` `text` `` -> `\texttt{text}`
+    - Inline footnote (a real Pandoc extension): `^[text]` -> `\footnote{text}`
+
+    Everything else is treated as plain text and passed through
     escape_latex_special_chars() so LaTeX-reserved characters don't corrupt
     or break the rendered output.
 
-    Markdown constructs with no sensible meaning inside a single \text{}
-    block (headings, links, lists, block quotes, tables, ...) are NOT
-    interpreted -- avoid using them in text destined for show_eqn.
+    Deliberate deviation from Pandoc: Pandoc also accepts `__text__` /
+    `_text_` for bold/italic, suppressing emphasis only for *intraword*
+    underscores (so "x_1" alone is safe in real Pandoc). This function does
+    NOT implement that intraword-suppression rule -- underscore emphasis is
+    not recognized at all, and a literal `_` is always escaped as plain
+    text. Reason: keecas text is full of engineering subscript notation
+    like "x_1" and "y_2", and getting the flanking rule exactly right is a
+    correctness-critical edge case not worth the risk here. Use `**bold**`
+    / `*italic*` instead.
+
+    A footnote's own content is recursively processed by this function, so
+    bold/italic/code inside it still work (nested footnotes are not
+    supported -- a `^[...]` marker inside a footnote is left as plain text).
+    Reference-style footnotes (`text[^1]` with a separate `[^1]: ...`
+    definition elsewhere) are NOT supported: this function only sees one
+    isolated string at a time, so it has nowhere to look up the definition.
+
+    Other Pandoc/Quarto markdown constructs (headings, links, lists, block
+    quotes, tables, sub/superscript `~x~`/`^x^`, ...) are NOT interpreted --
+    they have no sensible meaning inside a single \text{} block, so avoid
+    using them in text destined for show_eqn.
 
     Parameters
     ----------
@@ -147,6 +178,11 @@ def markdown_to_latex(text: str) -> str:
     markdown_to_latex("**important**: x_1 exceeds 5%")
     # Returns: '\\textbf{important}: x\\_1 exceeds 5\\%'
     ```
+
+    ```{python}
+    markdown_to_latex("the limit^[per EN 1993-1-1, 6.2.1] is 1.0")
+    # Returns: 'the limit\\footnote{per EN 1993-1-1, 6.2.1} is 1.0'
+    ```
     """
     pieces = []
     pos = 0
@@ -154,16 +190,18 @@ def markdown_to_latex(text: str) -> str:
         if m.start() > pos:
             pieces.append(escape_latex_special_chars(text[pos : m.start()]))
 
+        if m.group("footnote") is not None:
+            # Recurse so nested bold/italic/code inside the footnote works.
+            pieces.append(rf"\footnote{{{markdown_to_latex(m.group('footnote'))}}}")
+            pos = m.end()
+            continue
+
         if m.group("code") is not None:
             command, content = "texttt", m.group("code")
-        elif m.group("bold_star") is not None:
-            command, content = "textbf", m.group("bold_star")
-        elif m.group("bold_under") is not None:
-            command, content = "textbf", m.group("bold_under")
-        elif m.group("italic_star") is not None:
-            command, content = "textit", m.group("italic_star")
+        elif m.group("bold") is not None:
+            command, content = "textbf", m.group("bold")
         else:
-            command, content = "textit", m.group("italic_under")
+            command, content = "textit", m.group("italic")
 
         pieces.append(rf"\{command}{{{escape_latex_special_chars(content)}}}")
         pos = m.end()
@@ -303,8 +341,8 @@ def format_str(value: str, col_index: int = 0, **kwargs) -> str:
     characters (`_`, `%`, `&`, `#`, `$`, `~`, `^`, `\\`) themselves. Set
     config.display.treat_str_as_markdown = True to instead treat value as
     Markdown source (see format_markdown / markdown_to_latex): a small set
-    of inline Markdown spans (bold, italic, code) are converted to LaTeX
-    commands, and everything else is escaped automatically.
+    of inline Markdown spans (bold, italic, code, footnotes) are converted to
+    LaTeX commands, and everything else is escaped automatically.
 
     When config.display.text_wrap is True and katex is False, uses a varwidth
     environment instead of \\text{} to allow dynamic line wrapping in PDF output.
@@ -392,10 +430,10 @@ try:
     def format_markdown(value: Markdown, col_index: int = 0, **kwargs) -> str:
         """Format IPython Markdown objects to LaTeX text.
 
-        Converts a small subset of inline Markdown (bold, italic, inline code)
-        to the corresponding LaTeX command via markdown_to_latex(), and wraps
-        the result in \\text{}. Column wrapping (e.g., \\quad prefix) is
-        handled by wrap_column().
+        Converts a small subset of inline Markdown (bold, italic, inline code,
+        Pandoc-style inline footnotes) to the corresponding LaTeX command via
+        markdown_to_latex(), and wraps the result in \\text{}. Column wrapping
+        (e.g., \\quad prefix) is handled by wrap_column().
 
         Markdown constructs with no sensible meaning inside \\text{} (headings,
         links, lists, ...) are not interpreted -- avoid using them here.

@@ -250,14 +250,12 @@ def test_format_str_treat_as_markdown_opt_in():
 
 
 def test_markdown_to_latex_inline_spans():
-    """markdown_to_latex converts bold, italic, and inline code to LaTeX
-    commands, and escapes everything else."""
+    """markdown_to_latex converts bold (**), italic (*), and inline code to
+    LaTeX commands, and escapes everything else."""
     from keecas.formatters import markdown_to_latex
 
     assert markdown_to_latex("**bold**") == r"\textbf{bold}"
-    assert markdown_to_latex("__bold__") == r"\textbf{bold}"
     assert markdown_to_latex("*italic*") == r"\textit{italic}"
-    assert markdown_to_latex("_italic_") == r"\textit{italic}"
     assert markdown_to_latex("`code`") == r"\texttt{code}"
     assert markdown_to_latex("plain x_1 (5%)") == r"plain x\_1 (5\%)"
     assert (
@@ -266,6 +264,44 @@ def test_markdown_to_latex_inline_spans():
     )
     # special chars inside a converted span are escaped too
     assert markdown_to_latex("**50%**") == r"\textbf{50\%}"
+
+
+def test_markdown_to_latex_underscore_is_never_emphasis():
+    """Underscore-based bold/italic (__bold__, _italic_) is intentionally NOT
+    supported: a literal '_' is always escaped plain text, so engineering
+    subscript notation (x_1, y_2) is never misread as emphasis markers."""
+    from keecas.formatters import markdown_to_latex
+
+    assert markdown_to_latex("_italic_") == r"\_italic\_"
+    assert markdown_to_latex("__bold__") == r"\_\_bold\_\_"
+    # regression: two subscripted names used to be misread as one italic span
+    assert markdown_to_latex("stress x_1 and y_2 are equal") == r"stress x\_1 and y\_2 are equal"
+
+
+def test_markdown_to_latex_inline_footnote():
+    """markdown_to_latex converts Pandoc-style inline footnotes to \\footnote{},
+    recursively processing the footnote's own content, and escapes a lone '^'
+    that isn't followed by '[' as plain text."""
+    from keecas.formatters import markdown_to_latex
+
+    assert (
+        markdown_to_latex("the limit^[per EN 1993-1-1, 6.2.1] is 1.0")
+        == r"the limit\footnote{per EN 1993-1-1, 6.2.1} is 1.0"
+    )
+    # LaTeX-reserved characters inside the footnote are escaped
+    assert (
+        markdown_to_latex("the ratio^[valid for x < 5%] governs")
+        == r"the ratio\footnote{valid for x < 5\%} governs"
+    )
+    # bold/italic/code nested inside a footnote are still converted
+    assert (
+        markdown_to_latex("text^[see **bold** note]")
+        == r"text\footnote{see \textbf{bold} note}"
+    )
+    # a bare '^' not starting a footnote is escaped like any other special char
+    assert markdown_to_latex("a^b") == r"a\textasciicircum{}b"
+    # reference-style footnotes are NOT supported (no separate definition to resolve)
+    assert markdown_to_latex("see note[^1]") == r"see note[\textasciicircum{}1]"
 
 
 def test_format_markdown_converts_and_escapes():
@@ -280,6 +316,9 @@ def test_format_markdown_converts_and_escapes():
 
     result_bold = format_value(Markdown("**safety margin** x_1"))
     assert result_bold == r"\text{\textbf{safety margin} x\_1}"
+
+    result_footnote = format_value(Markdown("the limit^[per EN 1993-1-1] is 1.0"))
+    assert result_footnote == r"\text{the limit\footnote{per EN 1993-1-1} is 1.0}"
 
 
 def test_format_latex_not_escaped():
