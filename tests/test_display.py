@@ -221,35 +221,65 @@ def test_escape_latex_special_chars():
     assert escape_latex_special_chars("plain text") == "plain text"
 
 
-def test_format_str_escapes_latex_special_chars():
-    """format_str escapes LaTeX-reserved characters before wrapping in \\text{}."""
+def test_format_str_is_raw_latex_by_default():
+    """Default (treat_str_as_markdown=False): value is spliced into \\text{}
+    unescaped -- the caller is responsible for escaping LaTeX-reserved
+    characters themselves (see format_decimal_numbers for the one case
+    keecas escapes automatically: percent-formatted numbers)."""
     from keecas.display import config
     from keecas.formatters import format_str
 
     config.display.text_wrap = False
-    result = format_str("utilization ratio x_1")
-    assert result == r"\text{utilization ratio x\_1}"
+    assert config.display.treat_str_as_markdown is False
+    result = format_str(r"utilization ratio x_1")
+    assert result == r"\text{utilization ratio x_1}"
 
 
-def test_format_str_escapes_percent():
-    """A literal '%' in a string does not truncate the LaTeX line as a comment."""
+def test_format_str_treat_as_markdown_opt_in():
+    """treat_str_as_markdown=True: str cells go through markdown_to_latex(),
+    converting inline Markdown and escaping the rest."""
     from keecas.display import config
     from keecas.formatters import format_str
 
-    config.display.text_wrap = False
-    result = format_str("50% utilization")
-    assert result == r"\text{50\% utilization}"
-    assert "%" not in result.replace(r"\%", "")
+    config.display.treat_str_as_markdown = True
+    try:
+        result = format_str("**important**: x_1 exceeds 5%")
+        assert result == r"\text{\textbf{important}: x\_1 exceeds 5\%}"
+    finally:
+        config.display.treat_str_as_markdown = False
 
 
-def test_format_markdown_escapes_latex_special_chars():
-    """format_markdown escapes LaTeX-reserved characters before wrapping in \\text{}."""
+def test_markdown_to_latex_inline_spans():
+    """markdown_to_latex converts bold, italic, and inline code to LaTeX
+    commands, and escapes everything else."""
+    from keecas.formatters import markdown_to_latex
+
+    assert markdown_to_latex("**bold**") == r"\textbf{bold}"
+    assert markdown_to_latex("__bold__") == r"\textbf{bold}"
+    assert markdown_to_latex("*italic*") == r"\textit{italic}"
+    assert markdown_to_latex("_italic_") == r"\textit{italic}"
+    assert markdown_to_latex("`code`") == r"\texttt{code}"
+    assert markdown_to_latex("plain x_1 (5%)") == r"plain x\_1 (5\%)"
+    assert (
+        markdown_to_latex("**important**: x_1 exceeds 5%")
+        == r"\textbf{important}: x\_1 exceeds 5\%"
+    )
+    # special chars inside a converted span are escaped too
+    assert markdown_to_latex("**50%**") == r"\textbf{50\%}"
+
+
+def test_format_markdown_converts_and_escapes():
+    """format_markdown converts inline Markdown via markdown_to_latex() and
+    wraps the result in \\text{}."""
     from IPython.display import Markdown
 
     from keecas.formatters import format_value
 
     result = format_value(Markdown("safety margin x_1 (5%)"))
     assert result == r"\text{safety margin x\_1 (5\%)}"
+
+    result_bold = format_value(Markdown("**safety margin** x_1"))
+    assert result_bold == r"\text{\textbf{safety margin} x\_1}"
 
 
 def test_format_latex_not_escaped():
@@ -399,15 +429,31 @@ def test_format_decimal_numbers_no_format_unaffected():
     assert result == text
 
 
-def test_show_eqn_string_description_with_underscore_and_percent():
-    """Regression test for issue #105: a plain-text description containing
-    LaTeX-reserved characters must not corrupt show_eqn's rendered output."""
-    result = show_eqn({x: "utilization ratio x_1 (50% max)"})
-    assert r"x\_1" in result.data
-    assert r"50\%" in result.data
-    # the raw, unescaped forms must not be present
-    assert "ratio x_1" not in result.data
-    assert "50% max" not in result.data
+def test_show_eqn_string_cell_is_raw_latex_by_default():
+    """String cells are raw LaTeX by default -- keecas does not escape them,
+    so a literal '_' or '%' passes through as-is (the caller's responsibility,
+    same as writing raw LaTeX anywhere else)."""
+    from keecas.display import config
+
+    assert config.display.treat_str_as_markdown is False
+    result = show_eqn({x: r"utilization ratio x_1"})
+    assert r"utilization ratio x_1" in result.data
+
+
+def test_show_eqn_string_cell_treat_as_markdown_opt_in():
+    """With treat_str_as_markdown=True, a description containing LaTeX-reserved
+    characters is escaped automatically (opt-in fix for issue #105's string
+    case), and inline Markdown (bold/italic/code) is converted to LaTeX."""
+    from keecas.display import config
+
+    config.display.treat_str_as_markdown = True
+    try:
+        result = show_eqn({x: "**utilization ratio** x_1 (50% max)"})
+        assert r"\textbf{utilization ratio}" in result.data
+        assert r"x\_1" in result.data
+        assert r"50\%" in result.data
+    finally:
+        config.display.treat_str_as_markdown = False
 
 
 def test_show_eqn_percent_float_format_does_not_truncate_label():

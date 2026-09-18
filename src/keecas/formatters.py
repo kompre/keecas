@@ -49,6 +49,7 @@ Example:
 """
 
 import inspect
+import re
 from functools import singledispatch
 from typing import Any
 
@@ -100,6 +101,75 @@ def escape_latex_special_chars(text: str) -> str:
     ```
     """
     return "".join(_LATEX_TEXT_ESCAPES.get(char, char) for char in text)
+
+
+# Inline Markdown spans recognized by markdown_to_latex(), checked in this
+# order (code first, so bold/italic markers inside a code span are treated
+# as literal text rather than being reinterpreted).
+_MARKDOWN_INLINE_PATTERN = re.compile(
+    r"`(?P<code>[^`]+)`"
+    r"|\*\*(?P<bold_star>[^*]+)\*\*"
+    r"|__(?P<bold_under>[^_]+)__"
+    r"|\*(?P<italic_star>[^*]+)\*"
+    r"|_(?P<italic_under>[^_]+)_",
+)
+
+
+def markdown_to_latex(text: str) -> str:
+    r"""Convert a small subset of inline Markdown to LaTeX.
+
+    Recognizes bold (`**text**` / `__text__`), italic (`*text*` / `_text_`),
+    and inline code (`` `text` ``), converting each to the corresponding
+    LaTeX text-mode command (`\textbf`, `\textit`, `\texttt`). Everything
+    else is treated as plain text and passed through
+    escape_latex_special_chars() so LaTeX-reserved characters don't corrupt
+    or break the rendered output.
+
+    Markdown constructs with no sensible meaning inside a single \text{}
+    block (headings, links, lists, block quotes, tables, ...) are NOT
+    interpreted -- avoid using them in text destined for show_eqn.
+
+    Parameters
+    ----------
+    text : str
+        Markdown source text (e.g. IPython.display.Markdown.data)
+
+    Returns
+    -------
+    str
+        LaTeX text-mode content (not wrapped in \\text{})
+
+    Examples
+    --------
+    ```{python}
+    from keecas.formatters import markdown_to_latex
+
+    markdown_to_latex("**important**: x_1 exceeds 5%")
+    # Returns: '\\textbf{important}: x\\_1 exceeds 5\\%'
+    ```
+    """
+    pieces = []
+    pos = 0
+    for m in _MARKDOWN_INLINE_PATTERN.finditer(text):
+        if m.start() > pos:
+            pieces.append(escape_latex_special_chars(text[pos : m.start()]))
+
+        if m.group("code") is not None:
+            command, content = "texttt", m.group("code")
+        elif m.group("bold_star") is not None:
+            command, content = "textbf", m.group("bold_star")
+        elif m.group("bold_under") is not None:
+            command, content = "textbf", m.group("bold_under")
+        elif m.group("italic_star") is not None:
+            command, content = "textit", m.group("italic_star")
+        else:
+            command, content = "textit", m.group("italic_under")
+
+        pieces.append(rf"\{command}{{{escape_latex_special_chars(content)}}}")
+        pos = m.end()
+
+    pieces.append(escape_latex_special_chars(text[pos:]))
+    return "".join(pieces)
 
 
 def validate_latex_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
@@ -198,10 +268,11 @@ def format_value(value: Any, col_index: int = 0, **kwargs) -> str:
     ```
 
     Supported types (built-in registrations):
-    - str: Plain text wrapped in \\text{}
+    - str: Raw LaTeX wrapped in \\text{} (or Markdown source, see
+      config.display.treat_str_as_markdown)
     - int: Integer to LaTeX string
     - float: Float to LaTeX string
-    - IPython.display.Markdown: Wrapped in \\text{}
+    - IPython.display.Markdown: Inline Markdown converted to LaTeX, wrapped in \\text{}
     - pint.Quantity: Converted to SymPy, then formatted
     - sympy.Mul: Numeric/unit separation, then formatted as Basic
     - sympy.Basic: LaTeX via sympy.latex()
@@ -227,12 +298,17 @@ def format_str(value: str, col_index: int = 0, **kwargs) -> str:
     Pure conversion: wraps string in \\text{} without additional decoration.
     Column wrapping (e.g., \\quad prefix) is handled by wrap_column().
 
+    By default, value is treated as raw LaTeX: it is spliced into \\text{}
+    unescaped, so the caller is responsible for escaping any LaTeX-reserved
+    characters (`_`, `%`, `&`, `#`, `$`, `~`, `^`, `\\`) themselves. Set
+    config.display.treat_str_as_markdown = True to instead treat value as
+    Markdown source (see format_markdown / markdown_to_latex): a small set
+    of inline Markdown spans (bold, italic, code) are converted to LaTeX
+    commands, and everything else is escaped automatically.
+
     When config.display.text_wrap is True and katex is False, uses a varwidth
     environment instead of \\text{} to allow dynamic line wrapping in PDF output.
     Requires \\usepackage{varwidth} in the LaTeX preamble.
-
-    LaTeX-reserved characters (`_`, `%`, `&`, `#`, `$`, `~`, `^`, `\\`) in
-    value are escaped via escape_latex_special_chars() before wrapping.
 
     Parameters
     ----------
@@ -251,11 +327,11 @@ def format_str(value: str, col_index: int = 0, **kwargs) -> str:
     from keecas.config.manager import get_config_manager
 
     cfg = get_config_manager().options
-    escaped_value = escape_latex_special_chars(value)
+    content = markdown_to_latex(value) if cfg.display.treat_str_as_markdown else value
     if cfg.display.text_wrap and cfg.display.pdf_mode:
         width = cfg.display.text_wrap_width
-        return rf"\begin{{varwidth}}[t]{{{width}}}{escaped_value}\end{{varwidth}}"
-    return rf"\text{{{escaped_value}}}"
+        return rf"\begin{{varwidth}}[t]{{{width}}}{content}\end{{varwidth}}"
+    return rf"\text{{{content}}}"
 
 
 @format_value.register(int)
@@ -316,8 +392,13 @@ try:
     def format_markdown(value: Markdown, col_index: int = 0, **kwargs) -> str:
         """Format IPython Markdown objects to LaTeX text.
 
-        Pure conversion: wraps Markdown data in \\text{} without additional decoration.
-        Column wrapping (e.g., \\quad prefix) is handled by wrap_column().
+        Converts a small subset of inline Markdown (bold, italic, inline code)
+        to the corresponding LaTeX command via markdown_to_latex(), and wraps
+        the result in \\text{}. Column wrapping (e.g., \\quad prefix) is
+        handled by wrap_column().
+
+        Markdown constructs with no sensible meaning inside \\text{} (headings,
+        links, lists, ...) are not interpreted -- avoid using them here.
 
         Parameters
         ----------
@@ -333,7 +414,7 @@ try:
         str
             LaTeX string with \\text{} wrapper
         """
-        return rf"\text{{{escape_latex_special_chars(value.data)}}}"
+        return rf"\text{{{markdown_to_latex(value.data)}}}"
 
     @format_value.register(Latex)
     def format_latex(value: Latex, col_index: int = 0, **kwargs) -> str:
