@@ -112,6 +112,27 @@ def get_templates_dir() -> Path:
     return templates_dir
 
 
+def get_claude_commands_dir() -> Path:
+    """Get the claude-commands directory path."""
+    # Get the package installation directory
+    import keecas
+
+    package_dir = Path(keecas.__file__).parent
+    # Look for claude-commands in parent directory (for development)
+    commands_dir = package_dir.parent.parent / "claude-commands"
+    if commands_dir.exists():
+        return commands_dir
+
+    # Look for claude-commands in package directory (for installed package)
+    commands_dir = package_dir / "claude-commands"
+    if commands_dir.exists():
+        return commands_dir
+
+    # Fallback - try relative to current directory
+    commands_dir = Path("claude-commands")
+    return commands_dir
+
+
 def generate_untitled_name(work_dir: Path | str) -> str:
     """Generate an available untitled-N.ipynb filename."""
     work_dir = Path(work_dir)
@@ -728,7 +749,7 @@ def cmd_migrate(args: argparse.Namespace) -> None:
 
 def cmd_install_skill(args: argparse.Namespace) -> None:
     """Install the keecas-notebook Claude Code skill."""
-    skill_src = Path(__file__).parent.parent.parent / "claude-commands" / "keecas-notebook"
+    skill_src = get_claude_commands_dir() / "keecas-notebook"
     if not skill_src.exists():
         print(f"ERROR: skill source not found at {skill_src}")
         sys.exit(1)
