@@ -121,7 +121,7 @@ Note: do NOT restate the formula as `$$...$$` here. The next code cell will disp
 --- CELL --- *(code — derived expressions)*
 
 ```python
-f_ctm, f_ct_eff = symbols(r"f_{ctm} f_{ct\,eff}")
+f_ctm, f_ct_eff = symbols(r"f_{ctm} f_{ct,eff}")
 
 _e = {
     f_ctm:    "N(0.30) * (f_ck/u.MPa)^(2/3) * u.MPa" | pc.parse_expr,
@@ -155,7 +155,7 @@ termine geometrico minimo (0,13%).
 --- CELL --- *(code — verification)*
 
 ```python
-A_s_min, d_inf = symbols(r"A_{s\,min} d_{inf}")
+A_s_min, d_inf = symbols(r"A_{s,min} d_{inf}")
 
 _e = {
     d_inf:   "h - c_nom - 5*u.mm"                                  | pc.parse_expr,
@@ -181,7 +181,7 @@ show_eqn(
 --- CELL --- *(optional code — final esito with `check`)*
 
 ```python
-A_s_prov = symbols(r"A_{s\,prov}")
+A_s_prov = symbols(r"A_{s,prov}")
 _p_prov = {A_s_prov: 524 * u.mm**2}    # esempio: Ø10/150 per striscia di 1 m
 params.update(_p_prov)
 

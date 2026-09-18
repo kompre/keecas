@@ -21,7 +21,7 @@ Guidance for Claude Code when working in this repository.
 | `pipe_command.py` | `pc` namespace: `subs`, `N`, `convert_to`, `doit`, `parse_expr` as `@Pipe` steps |
 | `pint_sympy.py` | Pint <-> SymPy bridge, unit registry `u`, `update_pint_locale()` |
 | `config.py` | Hierarchical TOML config (local > global > defaults) at `.keecas/config.toml` |
-| `cli.py` | `keecas` CLI: `edit`, `config init/edit/open/show/path/reset` |
+| `cli.py` | `keecas` CLI: `edit`, `config init/edit/open/show/path/reset`, `skill install/print` |
 | `localization/` | 10-language support (5 full, 5 fallback), synced with Pint locale |
 | `label.py`, `utils.py` | Label/cross-reference generation, shared helpers |
 
@@ -45,6 +45,8 @@ uv sync --group dev             # install dev deps
 bash scripts/install-hooks.sh   # install pre-commit hooks
 keecas edit [file]               # launch Jupyter with a keecas template
 keecas config init|edit|show     # manage .keecas/config.toml
+keecas skill install [--force]   # install the keecas-notebook skill into ~/.claude/skills/
+keecas skill print [--with-references]  # print the skill to stdout (non-Claude-Code AI tools)
 ```
 
 Full CLI reference: `docs/cli-reference/`. Full contributor workflow: `CONTRIBUTING.md`.

@@ -112,25 +112,25 @@ def get_templates_dir() -> Path:
     return templates_dir
 
 
-def get_claude_commands_dir() -> Path:
-    """Get the claude-commands directory path."""
+def get_skills_dir() -> Path:
+    """Get the bundled Claude Code skills directory path."""
     # Get the package installation directory
     import keecas
 
     package_dir = Path(keecas.__file__).parent
-    # Look for claude-commands in parent directory (for development)
-    commands_dir = package_dir.parent.parent / "claude-commands"
-    if commands_dir.exists():
-        return commands_dir
+    # Look for skills in parent directory (for development)
+    skills_dir = package_dir.parent.parent / "skills"
+    if skills_dir.exists():
+        return skills_dir
 
-    # Look for claude-commands in package directory (for installed package)
-    commands_dir = package_dir / "claude-commands"
-    if commands_dir.exists():
-        return commands_dir
+    # Look for skills in package directory (for installed package)
+    skills_dir = package_dir / "skills"
+    if skills_dir.exists():
+        return skills_dir
 
     # Fallback - try relative to current directory
-    commands_dir = Path("claude-commands")
-    return commands_dir
+    skills_dir = Path("skills")
+    return skills_dir
 
 
 def generate_untitled_name(work_dir: Path | str) -> str:
@@ -747,14 +747,24 @@ def cmd_migrate(args: argparse.Namespace) -> None:
             sys.exit(1)
 
 
-def cmd_install_skill(args: argparse.Namespace) -> None:
+def cmd_skill_install(args: argparse.Namespace) -> None:
     """Install the keecas-notebook Claude Code skill."""
-    skill_src = get_claude_commands_dir() / "keecas-notebook"
+    skill_src = get_skills_dir() / "keecas-notebook"
     if not skill_src.exists():
         print(f"ERROR: skill source not found at {skill_src}")
         sys.exit(1)
 
-    target_dir = Path.home() / ".claude" / "commands"
+    # Clean up an install from the legacy `.claude/commands/` location (pre-1.3),
+    # so upgrading doesn't leave two competing copies of the skill on disk.
+    legacy_dst = Path.home() / ".claude" / "commands" / "keecas-notebook"
+    if legacy_dst.exists() or legacy_dst.is_symlink():
+        if legacy_dst.is_symlink():
+            legacy_dst.unlink()
+        else:
+            shutil.rmtree(legacy_dst)
+        print(f"Removed stale install at {legacy_dst}")
+
+    target_dir = Path.home() / ".claude" / "skills"
     target_dir.mkdir(parents=True, exist_ok=True)
     skill_dst = target_dir / "keecas-notebook"
 
@@ -779,10 +789,36 @@ def cmd_install_skill(args: argparse.Namespace) -> None:
         shutil.copytree(skill_src, skill_dst)
         print(f"Installed (copy): {skill_dst}")
         print(
-            "NOTE: run `keecas install-skill --force` after upgrading keecas to refresh the skill."
+            "NOTE: run `keecas skill install --force` after upgrading keecas to refresh the skill."
         )
 
-    print("Restart Claude Code (or open a new session) to activate /keecas-notebook.")
+    print("Restart Claude Code (or open a new session) to activate the keecas-notebook skill.")
+
+
+def cmd_skill_print(args: argparse.Namespace) -> None:
+    """Print the keecas-notebook skill content to stdout.
+
+    Provider-agnostic alternative to `keecas skill install`: makes no
+    filesystem writes, so it works for any AI tool the user pastes it into
+    (Codex, Cursor, Copilot, plain chat), not just Claude Code.
+    """
+    skill_src = get_skills_dir() / "keecas-notebook"
+    skill_md = skill_src / "SKILL.md"
+    if not skill_md.exists():
+        print(f"ERROR: skill source not found at {skill_md}")
+        sys.exit(1)
+
+    content = skill_md.read_text(encoding="utf-8")
+    if content.startswith("---"):
+        parts = content.split("---", 2)
+        if len(parts) == 3:
+            content = parts[2]
+    print(content.strip())
+
+    if getattr(args, "with_references", False):
+        for reference_path in sorted((skill_src / "references").glob("*.md")):
+            print(f"\n## {reference_path.name}\n")
+            print(reference_path.read_text(encoding="utf-8").strip())
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -855,17 +891,34 @@ def create_parser() -> argparse.ArgumentParser:
     )
     edit_main_parser.set_defaults(func=cmd_edit)
 
-    # Install-skill subcommand
-    install_skill_parser = main_subparsers.add_parser(
-        "install-skill",
-        help="Install the keecas-notebook Claude Code skill into ~/.claude/commands/",
+    # Skill subcommand
+    skill_parser = main_subparsers.add_parser(
+        "skill",
+        help="Manage the keecas-notebook Claude Code skill",
     )
-    install_skill_parser.add_argument(
+    skill_subparsers = skill_parser.add_subparsers(dest="skill_command", help="Skill commands")
+
+    skill_install_parser = skill_subparsers.add_parser(
+        "install",
+        help="Install the keecas-notebook Claude Code skill into ~/.claude/skills/",
+    )
+    skill_install_parser.add_argument(
         "--force",
         action="store_true",
         help="Overwrite an existing installation",
     )
-    install_skill_parser.set_defaults(func=cmd_install_skill)
+    skill_install_parser.set_defaults(func=cmd_skill_install)
+
+    skill_print_parser = skill_subparsers.add_parser(
+        "print",
+        help="Print the keecas-notebook skill to stdout, for AI tools other than Claude Code",
+    )
+    skill_print_parser.add_argument(
+        "--with-references",
+        action="store_true",
+        help="Also include the skill's reference docs",
+    )
+    skill_print_parser.set_defaults(func=cmd_skill_print)
 
     # Config subcommand
     config_parser = main_subparsers.add_parser("config", help="Configuration management")
@@ -1039,7 +1092,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # Handle main command routing
-    if args.main_command in ("config", "edit", "install-skill"):
+    if args.main_command in ("config", "edit", "skill"):
         if not hasattr(args, "func"):
             parser.print_help()
             sys.exit(1)
