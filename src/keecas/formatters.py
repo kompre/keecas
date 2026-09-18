@@ -54,7 +54,6 @@ from typing import Any
 
 from sympy import Basic, Mul, S, latex
 
-
 _LATEX_TEXT_ESCAPES = {
     "\\": r"\textbackslash{}",
     "{": r"\{",
