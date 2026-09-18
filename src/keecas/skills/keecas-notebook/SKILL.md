@@ -107,7 +107,7 @@ Both cell options matter:
 # Good
 q_s, mu_i = symbols(r'q_{s} \mu_{i}')
 alpha     = symbols(r'\alpha')
-A_s_min   = symbols(r'A_{s\,min}')          # \, for in-symbol whitespace
+A_s_min   = symbols(r'A_{s,min}')           # comma inside {} auto-escaped to a thin space
 dc_dev    = symbols(r'{\Delta\ c_{dev}}')   # braces wrap multi-token symbol
 mu_1      = symbols(r'\mu_{1}', cls=sympy.Function)
 
@@ -117,7 +117,7 @@ alpha = symbols('alpha')         # renders as the word "alpha"
 delta, c_dev = symbols(r'\Delta c_{dev}')  # space splits — yields TWO symbols
 ```
 
-Rules: r-string, `{}` around multi-char subscripts, `\` for Greek, space-separated for multiple symbols, `\,` or wrapping braces for whitespace inside one symbol name.
+Rules: r-string, `{}` around multi-char subscripts, `\` for Greek, space-separated for multiple symbols. A comma inside `{}` (e.g. `F_{Rd,b}`) is auto-escaped to a thin space by keecas's `symbols()` -- write it plain, no manual `\,` needed.
 
 ### 3. The expression → values flow
 
@@ -125,7 +125,7 @@ The canonical block is three dicts and one `show_eqn`:
 
 ```python
 # Symbols
-A_s_min, k_c, sigma_s = symbols(r"A_{s\,min} k_c \sigma_s")
+A_s_min, k_c, sigma_s = symbols(r"A_{s,min} k_c \sigma_s")
 
 # Expressions (symbolic)
 _e = {
@@ -156,10 +156,11 @@ show_eqn(
 - `_l` provides descriptions and (via `generate_unique_label`) LaTeX cross-reference anchors. Pass it to `label=` even when you don't render it as a column.
 - The slot order `[_e, _v, _l]` matches the visual order on the page: formula, value, description.
 
-**Where descriptions live — column vs. markdown.** `_l` values are wrapped in LaTeX `\text{...}` when rendered as a column, so they should be **short, LaTeX-clean strings** — not prose with parenthetical asides, and not inline math (`$...$` inside `\text{}` does not always render). As a rule of thumb:
+**Where descriptions live — column vs. markdown.** `_l` values are wrapped in LaTeX `\text{...}` when rendered as a column, so they should be **short, LaTeX-clean strings** — not prose with parenthetical asides, and not inline math (`$...$` inside `\text{}` does not always render). Unescaped LaTeX-special characters (`_`, `^`, `%`, `&`, `#`) in a description are not just "won't render as math" — they throw a hard LaTeX compile error (`_` outside math mode) or silently truncate the line (`%` is LaTeX's comment marker). Never write raw symbol notation in a description: `"minimo per la barra x1"`, not `"minimo per x_1"`. Also avoid em dashes (`—`) — use a plain hyphen. As a rule of thumb:
 
 - **For `_p` blocks (parameters)** — the symbol/value pair is narrow, so the `_l` column has room. Include it in the slot list: `show_eqn([_p, _l], ...)`.
 - **For `_e` blocks (expressions evaluated to `_v`)** — the formula column can be wide and a description column risks overflowing the page width. Drop `_l` from the slot list and put a brief description in the *markdown cell immediately above* the code cell. Still pass `_l` to `label=generate_unique_label(_l)` so the cross-reference anchors are built.
+- **When several terms each need a real sentence, or a formula itself is too wide** — see `references/show_eqn.md` for the bullet-list-per-term and `\scriptsize`-wrap alternatives.
 
 ```python
 # Parameters block — _l as column is fine

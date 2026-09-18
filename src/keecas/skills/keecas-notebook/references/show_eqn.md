@@ -46,6 +46,8 @@ show_eqn(
 
 The number of `float_format` entries should match the number of slots in the list.
 
+**Do not use a percent spec (`".2%"`) yet.** It's a known bug (keecas#105): the formatted number's literal `%` is spliced unescaped into the LaTeX string, and `%` is LaTeX's comment marker — everything after it on that line silently vanishes from the rendered output, with no error. The same bug applies to a raw, unescaped `%` typed directly into a `_l` description string. For a percentage-like result, format the number as a plain decimal (`".3f"` after multiplying by 100 yourself) and, if you need the `%` sign at all, write it pre-escaped as `\%` in the description or surrounding markdown (`"utilizzo 12.3\\%"`), never as a bare `%`.
+
 ## `col_wrap`
 
 Controls the separators between rendered columns. Common forms:
@@ -96,10 +98,12 @@ Same applies inside `for` loops, after an `if` block, or any time `show_eqn` is 
 
 ## `_l` content and placement — column vs. label-only
 
-`_l` values are rendered inside LaTeX `\text{...}` when used as a `show_eqn` column. This has two consequences:
+`_l` values are rendered inside LaTeX `\text{...}` when used as a `show_eqn` column. This has four consequences:
 
 1. **No inline math.** `$f_{yk}$` inside `\text{...}` renders as the literal characters `$f_{yk}$` in most contexts, not as math. Keep `_l` entries to plain prose, LaTeX-safe.
-2. **Short phrases only.** Long descriptions force the table column to widen, which can push the formula column past the textwidth in expression blocks where the formulas are already wide.
+2. **Unescaped LaTeX-special characters break the render, not just the look.** `_`, `^`, `%`, `&`, `#` are reserved outside math mode. A description like `"la banana x_1"` throws a LaTeX compile error at render time (`_` is read as a subscript operator with no math mode to apply it in) — it does not just print literally. `%` is LaTeX's comment marker and silently truncates the rest of the line instead of erroring. Never write raw symbol notation in a description; spell it out in words instead (`"minimo per la barra x1"`, not `"minimo per x_1"`).
+3. **Avoid em dashes (`—`).** Use a plain hyphen (`-`) or restructure the sentence instead.
+4. **Short phrases only.** Long descriptions force the table column to widen, which can push the formula column past the textwidth in expression blocks where the formulas are already wide.
 
 The convention for placement:
 
@@ -119,6 +123,43 @@ show_eqn(
 ```
 
 The pre-cell markdown gets a brief paragraph or definition list — exactly what would have been crammed into the column. Markdown has full LaTeX support, so inline `$...$` works, and the page width is not the formula's problem.
+
+### Alternative: one term per bullet
+
+When several terms each need a real sentence of description (too long for the markdown-above paragraph to stay legible as one blob), skip the `_l` column and interleave a markdown bullet list with one `show_eqn` call per term:
+
+````markdown
+- Minimo per controllo fessurazione:
+  ```{python}
+  show_eqn({A_s_min: _v[A_s_min]}, label=f"eq-{A_s_min}")
+  ```
+- Minimo geometrico di normativa:
+  ```{python}
+  show_eqn({A_s_geom: _v[A_s_geom]}, label=f"eq-{A_s_geom}")
+  ```
+````
+
+This is a different tool from the "where:" `align*` block above — that one is for a compact symbol-glossary (short phrase per symbol, no formula). This one is for when each term's formula is shown individually and the description genuinely needs a sentence, not a phrase.
+
+### Alternative: `\scriptsize`-wrap a formula that's too wide
+
+If the *formula itself* (not just the description) doesn't fit the page width, shrink the whole rendered block by wrapping the code cell in raw LaTeX (PDF/Quarto `{=latex}` output only — no effect on HTML):
+
+````markdown
+```{=latex}
+{\scriptsize
+```
+
+```{python}
+show_eqn([_e, _v], label=generate_unique_label(_l))
+```
+
+```{=latex}
+}
+```
+````
+
+The first raw block opens a LaTeX group with `\scriptsize` active and deliberately does not close the brace; the second raw block closes it. Reach for this only when shortening the description or dropping `_l` from the slot list still isn't enough — it shrinks the entire block (numbers and symbols included), not just the description column.
 
 ## `label` and `generate_unique_label`
 
