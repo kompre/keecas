@@ -294,10 +294,7 @@ def test_markdown_to_latex_inline_footnote():
         == r"the ratio\footnote{valid for x < 5\%} governs"
     )
     # bold/italic/code nested inside a footnote are still converted
-    assert (
-        markdown_to_latex("text^[see **bold** note]")
-        == r"text\footnote{see \textbf{bold} note}"
-    )
+    assert markdown_to_latex("text^[see **bold** note]") == r"text\footnote{see \textbf{bold} note}"
     # a bare '^' not starting a footnote is escaped like any other special char
     assert markdown_to_latex("a^b") == r"a\textasciicircum{}b"
     # reference-style footnotes are NOT supported (no separate definition to resolve)
