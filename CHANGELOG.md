@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.1](https://github.com/kompre/keecas/compare/v1.2.0...v1.2.1) (2026-08-28)
+
+
+### Bug Fixes
+
+* **keecas-notebook:** run %run as the very first cell, not after init ([072df11](https://github.com/kompre/keecas/commit/072df110252751075331b893cfff86b4b0e8cd25))
+* **keecas-notebook:** run %run as the very first cell, not after init ([0b5680e](https://github.com/kompre/keecas/commit/0b5680e3ad9c0dc6b999c03147341c39a8810fdb))
+
+
+### Documentation
+
+* fix stale docs.yml trigger description in CONTRIBUTING.md ([56c16ef](https://github.com/kompre/keecas/commit/56c16efc9e894dfb163b3d87d0193be3ce3c5d1d))
+* rewrite CLAUDE.md to be lean and reference-driven ([973dbce](https://github.com/kompre/keecas/commit/973dbce3913f0c889ab28d502351a15b52351750))
+
 ## [1.2.0](https://github.com/kompre/keecas/compare/v1.1.4...v1.2.0) (2026-07-07)
 
 
