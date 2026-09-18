@@ -204,6 +204,65 @@ def test_format_str_text_wrap_custom_width():
         config.display.text_wrap_width = r"0.8\linewidth"
 
 
+def test_escape_latex_special_chars():
+    """All LaTeX-reserved characters are escaped individually."""
+    from keecas.formatters import escape_latex_special_chars
+
+    assert escape_latex_special_chars("x_1") == r"x\_1"
+    assert escape_latex_special_chars("12.34%") == r"12.34\%"
+    assert escape_latex_special_chars("a & b") == r"a \& b"
+    assert escape_latex_special_chars("#tag") == r"\#tag"
+    assert escape_latex_special_chars("$5") == r"\$5"
+    assert escape_latex_special_chars("a~b") == r"a\textasciitilde{}b"
+    assert escape_latex_special_chars("a^b") == r"a\textasciicircum{}b"
+    assert escape_latex_special_chars("a\\b") == r"a\textbackslash{}b"
+    assert escape_latex_special_chars("{a}") == r"\{a\}"
+    # plain text without special chars is unchanged
+    assert escape_latex_special_chars("plain text") == "plain text"
+
+
+def test_format_str_escapes_latex_special_chars():
+    """format_str escapes LaTeX-reserved characters before wrapping in \\text{}."""
+    from keecas.display import config
+    from keecas.formatters import format_str
+
+    config.display.text_wrap = False
+    result = format_str("utilization ratio x_1")
+    assert result == r"\text{utilization ratio x\_1}"
+
+
+def test_format_str_escapes_percent():
+    """A literal '%' in a string does not truncate the LaTeX line as a comment."""
+    from keecas.display import config
+    from keecas.formatters import format_str
+
+    config.display.text_wrap = False
+    result = format_str("50% utilization")
+    assert result == r"\text{50\% utilization}"
+    assert "%" not in result.replace(r"\%", "")
+
+
+def test_format_markdown_escapes_latex_special_chars():
+    """format_markdown escapes LaTeX-reserved characters before wrapping in \\text{}."""
+    from IPython.display import Markdown
+
+    from keecas.formatters import format_value
+
+    result = format_value(Markdown("safety margin x_1 (5%)"))
+    assert result == r"\text{safety margin x\_1 (5\%)}"
+
+
+def test_format_latex_not_escaped():
+    """format_latex passes through raw LaTeX content unescaped (IPython.display.Latex
+    is an explicit user-provided LaTeX source, not plain text)."""
+    from IPython.display import Latex
+
+    from keecas.formatters import format_value
+
+    result = format_value(Latex(r"x_1 \% \alpha"))
+    assert result == r"\text{x_1 \% \alpha}"
+
+
 def test_formatter_empty_string():
     """Test that formatters can explicitly return empty string."""
     from keecas import format_value
@@ -320,6 +379,44 @@ def test_format_decimal_numbers():
     text = "The values are 3.14159, -2.71828, and 0.57721."
     result = format_decimal_numbers(text, format_string="{:.2f}")
     assert result == "The values are 3.14, -2.72, and 0.58."
+
+
+def test_format_decimal_numbers_percent_format_escaped():
+    """A '.2%' float_format must not inject a raw '%' that would start a LaTeX
+    comment and silently truncate the rest of the line."""
+    text = r"x = 0.1234"
+    result = format_decimal_numbers(text, format_string=".2%")
+    assert result == r"x = 12.34\%"
+    # every percent sign is escaped (none left "bare")
+    assert result.count("%") == result.count(r"\%")
+
+
+def test_format_decimal_numbers_no_format_unaffected():
+    """Without a format_string, text (including any literal '%') passes through
+    unchanged -- escaping only applies to the substituted numeric snippet."""
+    text = r"\text{50% already escaped elsewhere}"
+    result = format_decimal_numbers(text, format_string=None)
+    assert result == text
+
+
+def test_show_eqn_string_description_with_underscore_and_percent():
+    """Regression test for issue #105: a plain-text description containing
+    LaTeX-reserved characters must not corrupt show_eqn's rendered output."""
+    result = show_eqn({x: "utilization ratio x_1 (50% max)"})
+    assert r"x\_1" in result.data
+    assert r"50\%" in result.data
+    # the raw, unescaped forms must not be present
+    assert "ratio x_1" not in result.data
+    assert "50% max" not in result.data
+
+
+def test_show_eqn_percent_float_format_does_not_truncate_label():
+    """Regression test for issue #105: an unescaped '%' from a percent
+    float_format used to comment out everything after it on the same LaTeX
+    line -- including a trailing \\label{...} command attached to that row."""
+    result = show_eqn({x: 0.1234}, float_format=".2%", label={x: "util-check"})
+    assert r"12.34\%" in result.data
+    assert r"\label{util-check}" in result.data
 
 
 def test_dict_to_eq():

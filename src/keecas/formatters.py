@@ -55,6 +55,54 @@ from typing import Any
 from sympy import Basic, Mul, S, latex
 
 
+_LATEX_TEXT_ESCAPES = {
+    "\\": r"\textbackslash{}",
+    "{": r"\{",
+    "}": r"\}",
+    "$": r"\$",
+    "&": r"\&",
+    "%": r"\%",
+    "#": r"\#",
+    "_": r"\_",
+    "~": r"\textasciitilde{}",
+    "^": r"\textasciicircum{}",
+}
+
+
+def escape_latex_special_chars(text: str) -> str:
+    r"""Escape LaTeX-reserved characters for safe embedding in \\text{}.
+
+    Escapes backslash, braces, and the characters LaTeX treats specially
+    outside math mode (`$ & % # _ ~ ^`), so plain text containing them can be
+    spliced into a \\text{} block without corrupting or truncating the
+    rendered output (e.g. an unescaped `%` starts a LaTeX comment, silently
+    dropping the rest of the line).
+
+    Parameters
+    ----------
+    text : str
+        Plain text to escape
+
+    Returns
+    -------
+    str
+        Text with LaTeX-reserved characters escaped
+
+    Examples
+    --------
+    ```{python}
+    from keecas.formatters import escape_latex_special_chars
+
+    escape_latex_special_chars("utilization ratio x_1")  # Returns: 'utilization ratio x\\_1'
+    ```
+
+    ```{python}
+    escape_latex_special_chars("12.34%")  # Returns: '12.34\\%'
+    ```
+    """
+    return "".join(_LATEX_TEXT_ESCAPES.get(char, char) for char in text)
+
+
 def validate_latex_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     """Validate and filter kwargs for sympy.latex() function.
 
@@ -184,6 +232,9 @@ def format_str(value: str, col_index: int = 0, **kwargs) -> str:
     environment instead of \\text{} to allow dynamic line wrapping in PDF output.
     Requires \\usepackage{varwidth} in the LaTeX preamble.
 
+    LaTeX-reserved characters (`_`, `%`, `&`, `#`, `$`, `~`, `^`, `\\`) in
+    value are escaped via escape_latex_special_chars() before wrapping.
+
     Parameters
     ----------
     value : str
@@ -201,10 +252,11 @@ def format_str(value: str, col_index: int = 0, **kwargs) -> str:
     from keecas.config.manager import get_config_manager
 
     cfg = get_config_manager().options
+    escaped_value = escape_latex_special_chars(value)
     if cfg.display.text_wrap and cfg.display.pdf_mode:
         width = cfg.display.text_wrap_width
-        return rf"\begin{{varwidth}}[t]{{{width}}}{value}\end{{varwidth}}"
-    return rf"\text{{{value}}}"
+        return rf"\begin{{varwidth}}[t]{{{width}}}{escaped_value}\end{{varwidth}}"
+    return rf"\text{{{escaped_value}}}"
 
 
 @format_value.register(int)
@@ -282,7 +334,7 @@ try:
         str
             LaTeX string with \\text{} wrapper
         """
-        return rf"\text{{{value.data}}}"
+        return rf"\text{{{escape_latex_special_chars(value.data)}}}"
 
     @format_value.register(Latex)
     def format_latex(value: Latex, col_index: int = 0, **kwargs) -> str:

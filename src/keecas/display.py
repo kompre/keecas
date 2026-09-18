@@ -739,6 +739,9 @@ def format_decimal_numbers(
         - Only matches decimal numbers (requires decimal point)
         - Negative numbers supported (matches leading minus sign)
         - Format string automatically normalized from shorthand to full format
+        - The formatted numeric snippet is escaped for LaTeX-reserved characters
+          (e.g. a "%" format spec produces "\\%", not a raw "%" that would
+          start a LaTeX comment and truncate the rest of the line)
         - Returns None unchanged if either text or format_string is None
         - Used internally by show_eqn() for per-cell formatting
         - Regex pattern: r"-?\d+\.\d+" (matches standard decimal notation)
@@ -763,9 +766,11 @@ def format_decimal_numbers(
     except (ValueError, KeyError) as e:
         raise ValueError(f"Invalid float_format '{format_string}': {e}")
 
+    from keecas.formatters import escape_latex_special_chars
+
     def _format_match(match):
         value = float(match.group())
-        return normalized_format.format(value)
+        return escape_latex_special_chars(normalized_format.format(value))
 
     return re.sub(r"-?\d+\.\d+", _format_match, text)
 
