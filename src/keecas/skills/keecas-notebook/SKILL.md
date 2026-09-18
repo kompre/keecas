@@ -156,7 +156,11 @@ show_eqn(
 - `_l` provides descriptions and (via `generate_unique_label`) LaTeX cross-reference anchors. Pass it to `label=` even when you don't render it as a column.
 - The slot order `[_e, _v, _l]` matches the visual order on the page: formula, value, description.
 
-**Where descriptions live — column vs. markdown.** `_l` values are wrapped in LaTeX `\text{...}` when rendered as a column, so they should be **short, LaTeX-clean strings** — not prose with parenthetical asides, and not inline math (`$...$` inside `\text{}` does not always render). Unescaped LaTeX-special characters (`_`, `^`, `%`, `&`, `#`) in a description are not just "won't render as math" — they throw a hard LaTeX compile error (`_` outside math mode) or silently truncate the line (`%` is LaTeX's comment marker). Never write raw symbol notation in a description: `"minimo per la barra x1"`, not `"minimo per x_1"`. Also avoid em dashes (`—`) — use a plain hyphen. As a rule of thumb:
+**Where descriptions live — column vs. markdown.** `_l` values are wrapped in LaTeX `\text{...}` when rendered as a column. By default (`config.display.treat_str_as_markdown = False`, the project default), keecas treats them as **raw LaTeX, unescaped** — so they must be **short, LaTeX-clean strings**: not prose with parenthetical asides, and not inline math (`$...$` inside `\text{}` does not always render). Unescaped LaTeX-special characters (`_`, `^`, `%`, `&`, `#`) in a description are not just "won't render as math" — they throw a hard LaTeX compile error (`_` outside math mode) or silently truncate the line (`%` is LaTeX's comment marker). Never write raw symbol notation in a description: `"minimo per la barra x1"`, not `"minimo per x_1"`. Also avoid em dashes (`—`) — use a plain hyphen.
+
+*Opt-in Markdown mode.* If a description genuinely needs emphasis or a footnote, set `config.display.treat_str_as_markdown = True` once in the init cell. `_l`/`_d` strings (and any `Markdown(...)` value) are then run through keecas's Pandoc/Quarto-flavored Markdown subset — `**bold**`, `*italic*`, `` `code` ``, and Pandoc's inline footnote `^[footnote text]` convert to LaTeX, and everything else is auto-escaped, so a stray `_`/`%` no longer breaks the render. This does **not** produce real subscripts — `x_1` still renders as the literal text "x_1", not $x_1$ — so still spell out symbol references in words. Only `*`/`**` (asterisk) markers are recognized; `_italic_`/`__bold__` are deliberately unsupported, since a bare `_` is exactly what subscript notation looks like and would misfire.
+
+As a rule of thumb:
 
 - **For `_p` blocks (parameters)** — the symbol/value pair is narrow, so the `_l` column has room. Include it in the slot list: `show_eqn([_p, _l], ...)`.
 - **For `_e` blocks (expressions evaluated to `_v`)** — the formula column can be wide and a description column risks overflowing the page width. Drop `_l` from the slot list and put a brief description in the *markdown cell immediately above* the code cell. Still pass `_l` to `label=generate_unique_label(_l)` so the cross-reference anchors are built.
@@ -294,7 +298,7 @@ Use the standard names — they propagate through the codebase and Sonnet will l
 | `_p` | raw parameter inputs (with units)                            |
 | `_e` | sympy expressions (usually via `pc.parse_expr`)              |
 | `_v` | numeric values derived from `_e` via the pipeline            |
-| `_l` | short descriptions per symbol (rendered inside LaTeX `\text{...}`); doubles as the source for cross-reference anchors via `generate_unique_label(_l)`. Keep entries short and LaTeX-safe — see §3 for placement rules |
+| `_l` | short descriptions per symbol (rendered inside LaTeX `\text{...}`); doubles as the source for cross-reference anchors via `generate_unique_label(_l)`. Keep entries short and LaTeX-safe (raw LaTeX by default) — see §3 for placement rules and the optional `treat_str_as_markdown` escape hatch |
 | `_d` | only when there is no `_l` confusion; some older notebooks use `_d` interchangeably with `_l`. Prefer `_l` for new code. |
 
 `_descr`, `_desc`, `_lab`, `_labels` and similar variants are not used and cause inconsistency. Stick to the table above.
@@ -448,7 +452,7 @@ Before telling the user a notebook is ready, walk through this list. Each item i
 14. No whitespace padding aligning dict colons or `=` signs?
 15. Every `pc.parse_expr` string uses `^` (not `**`) for exponentiation, so the source reads as pseudo-LaTeX?
 16. If the notebook contains trig functions: no `* u.rad` attached to trig results, arguments are dimensionless (or written as ratios of like-unit quantities), and `pc.convert_to([1])` is used to strip residual units before trig consumes them?
-17. `_l` entries are short LaTeX-safe phrases (no inline `$...$`, no long parentheticals); for `_e` blocks with wide formulas, `_l` is *not* rendered as a column — descriptive prose lives in the markdown cell above instead?
+17. `_l` entries are short LaTeX-safe phrases (no inline `$...$`, no long parentheticals, no raw `x_1`-style symbol notation unless `config.display.treat_str_as_markdown = True` is set for the notebook); for `_e` blocks with wide formulas, `_l` is *not* rendered as a column — descriptive prose lives in the markdown cell above instead?
 
 If you wrote a notebook quickly and aren't sure, re-read the resulting `.qmd` file once and tick each item explicitly.
 

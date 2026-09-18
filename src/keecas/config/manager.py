@@ -104,6 +104,7 @@ class DisplayConfig:
     text_wrap: bool = False
     pdf_mode: bool = False
     text_wrap_width: str = r"0.8\linewidth"
+    treat_str_as_markdown: bool = False  # str cells: raw LaTeX (False) vs Markdown source (True)
 
 
 @dataclass
@@ -1045,6 +1046,13 @@ class ConfigManager:
 
 ## Width for varwidth text wrapping (any LaTeX dimension, e.g. 0.8\\linewidth, 10cm)
 {format_value("display", "text_wrap_width", defaults.display.text_wrap_width, display_inherited.get("text_wrap_width"))}
+
+## Treat string cell values passed to show_eqn as Markdown source instead of raw LaTeX.
+## When true, a small subset of inline Markdown (**bold**, *italic*, `code`, ^[footnote]) is
+## converted to LaTeX and everything else is escaped automatically (see formatters.markdown_to_latex).
+## When false (default), strings are spliced into \\text{{}} unescaped -- the caller is
+## responsible for escaping LaTeX-reserved characters (_, %, &, #, $, ~, ^, \\) themselves.
+{format_value("display", "treat_str_as_markdown", defaults.display.treat_str_as_markdown, display_inherited.get("treat_str_as_markdown"))}
 
 [language]
 ## Language settings (de, es, fr, it, pt, da, nl, no, sv, en)
