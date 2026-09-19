@@ -34,7 +34,7 @@ class KeecasLatexPrinter(LatexPrinter):
         if isinstance(expr, Mul):
             numer, denom = fraction(expr, exact=True)
             if denom is not S.One and (denom.is_Mul or denom.is_Pow):
-                return r"\frac{%s}{%s}" % (self._print(numer), self._print(denom))
+                return rf"\frac{{{self._print(numer)}}}{{{self._print(denom)}}}"
         return super()._print_Mul(expr)
 
 
