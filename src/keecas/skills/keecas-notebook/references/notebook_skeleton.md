@@ -139,7 +139,7 @@ _v = {k: v | pc.subs(eqn | params) | pc.convert_to([u.MPa]) | pc.N for k, v in _
 show_eqn(
     [_e, _v, _l],
     label=generate_unique_label(_l),
-    float_format=[None, None, "{:.2f}"],
+    float_format=[None, None, "{:.2f}", None],
 )
 ```
 
@@ -174,7 +174,7 @@ _v = {k: v | pc.subs(eqn | params) | pc.convert_to(_target_unit[k]) | pc.N for k
 show_eqn(
     [_e, _v, _l],
     label=generate_unique_label(_l),
-    float_format=[None, None, "{:.2f}"],
+    float_format=[None, None, "{:.2f}", None],
 )
 ```
 
@@ -203,7 +203,7 @@ show_eqn(
 - Init cells in fixed order; `generate_unique_label`, `display`, `Markdown` imported once at the top.
 - An optional `%run` of a shared base, when present, comes *before* the init cells — never after — so it can't clobber local symbols or this notebook's own `config.*` settings.
 - KaTeX include between init and content.
-- Each subsequent block follows the same shape: *symbols* → `_p` or `_e` → `_l` → `_v` (computed via the pipeline) → `show_eqn([..., _v, _l], label=generate_unique_label(_l), float_format=[None, None, "{:.2f}"])`.
+- Each subsequent block follows the same shape: *symbols* → `_p` or `_e` → `_l` → `_v` (computed via the pipeline) → `show_eqn([..., _v, _l], label=generate_unique_label(_l), float_format=[None, None, "{:.2f}", None])`.
 - Markdown cells carry prose; they do not duplicate formulas as `$$...$$`.
 - Verifications end with a `check(demand / capacity, 1)` rendered via `show_eqn`.
 

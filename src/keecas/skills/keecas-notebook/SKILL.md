@@ -145,7 +145,7 @@ _v = {k: v | pc.subs(eqn | params) | pc.convert_to([u.mm]) | pc.N for k, v in _e
 show_eqn(
     [_e, _v, _l],
     label=generate_unique_label(_l),
-    float_format=[None, None, "{:.2f}"],
+    float_format=[None, None, "{:.2f}", None],  # key, _e, _v, _l -- N+1 entries for N slots
 )
 ```
 
@@ -155,6 +155,7 @@ show_eqn(
 - `_v` is computed by a comprehension over `_e` — the formula and the number cannot drift apart.
 - `_l` provides descriptions and (via `generate_unique_label`) LaTeX cross-reference anchors. Pass it to `label=` even when you don't render it as a column.
 - The slot order `[_e, _v, _l]` matches the visual order on the page: formula, value, description.
+- `float_format`/`col_wrap` lists need **N+1** entries for N slots: index 0 is the key/LHS column, then one entry per slot in order. A too-short list is padded with its own last element rather than erroring, which can silently misalign the format onto the wrong column — see `references/show_eqn.md`.
 
 **Where descriptions live — column vs. markdown.** `_l` values are wrapped in LaTeX `\text{...}` when rendered as a column. By default (`config.display.treat_str_as_markdown = False`, the project default), keecas treats them as **raw LaTeX, unescaped** — so they must be **short, LaTeX-clean strings**: not prose with parenthetical asides, and not inline math (`$...$` inside `\text{}` does not always render). Unescaped LaTeX-special characters (`_`, `^`, `%`, `&`, `#`) in a description are not just "won't render as math" — they throw a hard LaTeX compile error (`_` outside math mode) or silently truncate the line (`%` is LaTeX's comment marker). Never write raw symbol notation in a description: `"minimo per la barra x1"`, not `"minimo per x_1"`. Also avoid em dashes (`—`) — use a plain hyphen.
 
@@ -191,7 +192,7 @@ eqn.update(_e)
 
 _v = {k: v | pc.subs(eqn | params) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
 
-show_eqn([_p | _e, _v, _l], label=generate_unique_label(_l), float_format=[None, None, "{:.2f}"])
+show_eqn([_p | _e, _v, _l], label=generate_unique_label(_l), float_format=[None, None, "{:.2f}", None])
 ```
 
 The `_p | _e` merge is essential: `show_eqn` uses the first slot to decide which keys become rows, and silently drops keys that appear only in later slots. See `references/show_eqn.md` for the full mechanics.
