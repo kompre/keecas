@@ -38,3 +38,22 @@ def test_simple_unevaluated_division_unaffected():
     """Plain (non-nested) unevaluated fractions still render as before."""
     expr = parse_expr("a/b", evaluate=False)
     assert keecas_latex(expr) == sympy_latex(expr) == r"\frac{a}{b}"
+
+
+def test_negative_nested_division_renders_as_nested_fraction():
+    expr = parse_expr("a/(-(b/2))", evaluate=False)
+    assert keecas_latex(expr) == r"\frac{a}{- \frac{b}{2}}"
+
+
+def test_function_in_nested_division_renders_as_nested_fraction():
+    expr = parse_expr("a/(sqrt(b)/2)", evaluate=False)
+    assert keecas_latex(expr) == r"\frac{a}{\frac{\sqrt{b}}{2}}"
+
+
+def test_format_value_integration_uses_keecas_latex():
+    """format_value (the actual keecas rendering entrypoint) picks up the fix."""
+    from keecas import pipe_command as pc
+    from keecas.formatters import format_value
+
+    expr = "a/(b/2)" | pc.parse_expr()
+    assert format_value(expr) == r"\frac{a}{\frac{b}{2}}"
