@@ -17,6 +17,7 @@ Guidance for Claude Code when working in this repository.
 | `display.py` | `show_eqn()` (dict -> LaTeX), `config`, `check()` verification, environment system |
 | `dataframe.py` | Dict-like container with consistent row length, backs `show_eqn()` |
 | `formatters.py` | Singledispatch `format_value()` — type -> LaTeX string (no decoration) |
+| `latex_printer.py` | `KeecasLatexPrinter` — SymPy `LatexPrinter` subclass fixing nested-fraction flattening in `evaluate=False` trees (e.g. `a/(b/2)`) |
 | `col_wrappers.py` | Singledispatch `wrap_column()` — prefix/suffix decoration (`= `, `\quad`, etc.) |
 | `pipe_command.py` | `pc` namespace: `subs`, `N`, `convert_to`, `doit`, `parse_expr` as `@Pipe` steps |
 | `pint_sympy.py` | Pint <-> SymPy bridge, unit registry `u`, `update_pint_locale()` |

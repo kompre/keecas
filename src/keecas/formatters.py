@@ -53,7 +53,10 @@ import re
 from functools import singledispatch
 from typing import Any
 
-from sympy import Basic, Mul, S, latex
+from sympy import Basic, Mul, S
+from sympy import latex as _sympy_latex
+
+from keecas.latex_printer import latex
 
 _LATEX_TEXT_ESCAPES = {
     "\\": r"\textbackslash{}",
@@ -228,8 +231,12 @@ def validate_latex_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     ValueError
         If any invalid parameter names are provided
     """
-    # Get valid latex() parameters
-    latex_sig = inspect.signature(latex)
+    # Get valid latex() parameters. Uses sympy's own latex() for signature
+    # introspection since it carries the expanded, decorator-generated
+    # parameter list; our latex() (KeecasLatexPrinter) accepts the same
+    # settings (it only overrides _print_Mul, not _default_settings) but
+    # is declared as a plain **settings function.
+    latex_sig = inspect.signature(_sympy_latex)
     valid_params = set(latex_sig.parameters.keys()) - {"expr"}  # Exclude positional 'expr'
 
     # Check for invalid parameters
