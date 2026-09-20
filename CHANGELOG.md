@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.1](https://github.com/kompre/keecas/compare/v1.4.0...v1.4.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* apply config.latex.default_mul_symbol without needing show_eqn or init_printing ([8d04a61](https://github.com/kompre/keecas/commit/8d04a6175820aa121fb345056e6b6298fb1dcc6d))
+* preserve typed factor/term order, not just nested-fraction structure ([2d78fc1](https://github.com/kompre/keecas/commit/2d78fc13c70505d270802c82e0f0a8cce6841c35))
+* preserve typed order and mul_symbol config in LaTeX rendering ([6de2a6c](https://github.com/kompre/keecas/commit/6de2a6c99953828702f0043ace9738e06a33c945))
+
 ## [1.4.0](https://github.com/kompre/keecas/compare/v1.3.0...v1.4.0) (2026-09-19)
 
 
