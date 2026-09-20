@@ -98,6 +98,47 @@ def test_function_in_nested_division_renders_as_nested_fraction():
     assert keecas_latex(expr) == r"\frac{a}{\frac{\sqrt{b}}{2}}"
 
 
+def test_no_reliance_on_init_printing_side_effect(monkeypatch):
+    """Regression test for the actual failure mode: both fixes above used to
+    only work because sympy.init_printing(order="none", mul_symbol=...) got
+    triggered somewhere - from keecas/__init__.py's lazy __getattr__, only
+    when something accessed keecas.sympy/keecas.latex/keecas.Eq/etc. (e.g.
+    via `from keecas import *`, since those names are in __all__). A
+    narrower import, like `from keecas import format_value, pc` (used here
+    and in test_format_value_integration_uses_keecas_latex below), never
+    triggered it, so order preservation and the mul_symbol config default
+    silently depended on unrelated code elsewhere in the session having
+    already called init_printing first.
+
+    This monkeypatches sympy.init_printing to fail loudly if called, then
+    exercises the exact narrow-import path to prove neither fix depends on
+    it anymore.
+    """
+    import sympy
+
+    def _fail_if_called(*args, **kwargs):
+        raise AssertionError(
+            "keecas must not rely on sympy.init_printing() for order/mul_symbol defaults"
+        )
+
+    monkeypatch.setattr(sympy, "init_printing", _fail_if_called)
+
+    from keecas.config.manager import get_config_manager
+    from keecas.formatters import format_value
+    from keecas.pipe_command import parse_expr as pc_parse_expr
+
+    cfg = get_config_manager().options
+    original = cfg.latex.default_mul_symbol
+    try:
+        cfg.latex.default_mul_symbol = "dot"
+        expr = "q*l**2/8" | pc_parse_expr()
+        # order preserved (q before l**2) AND config mul_symbol applied ("dot" -> \cdot),
+        # with no call to init_printing anywhere in the path.
+        assert format_value(expr) == r"\frac{q \cdot l^{2}}{8}"
+    finally:
+        cfg.latex.default_mul_symbol = original
+
+
 def test_format_value_integration_uses_keecas_latex():
     """format_value (the actual keecas rendering entrypoint) picks up the fix."""
     from keecas import pipe_command as pc
