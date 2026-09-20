@@ -27,8 +27,11 @@ def test_nested_symbolic_division_renders_as_nested_fraction():
 def test_evaluated_expressions_match_stock_sympy_latex():
     """Simple fully evaluated expressions render identically to sympy.latex().
 
-    These particular expressions happen to already be in canonical order,
-    so they're unaffected by the order='none' default (see
+    mul_symbol=None pins both sides to sympy's own default separator, so
+    this isolates the order/fraction-structure behavior from the
+    config-driven mul_symbol default (see test_mul_symbol_config_default).
+    These particular expressions also happen to already be in canonical
+    order, so they're unaffected by the order='none' default (see
     test_unevaluated_argument_order_preserved for a case where it matters).
     """
     exprs = [
@@ -36,7 +39,7 @@ def test_evaluated_expressions_match_stock_sympy_latex():
         for s in ("a/(b/2)", "a/(b/c)", "a/b/c", "2*a/b", "(a+b)/(c)", "-a/b")
     ]
     for expr in exprs:
-        assert keecas_latex(expr) == sympy_latex(expr)
+        assert keecas_latex(expr, mul_symbol=None) == sympy_latex(expr)
 
 
 def test_unevaluated_argument_order_preserved():
@@ -45,13 +48,38 @@ def test_unevaluated_argument_order_preserved():
     Stock sympy.latex() re-sorts a Mul/Add into a canonical print order
     (order=None -> as_ordered_factors()/as_ordered_terms()) regardless of
     how the Mul/Add's own .args are stored, silently discarding the
-    literal order evaluate=False parsing preserves.
+    literal order evaluate=False parsing preserves. mul_symbol=None isolates
+    this from the config-driven mul_symbol default tested separately.
     """
     expr = parse_expr("q*l**2/8", evaluate=False)
-    assert keecas_latex(expr) == r"\frac{q l^{2}}{8}"
+    assert keecas_latex(expr, mul_symbol=None) == r"\frac{q l^{2}}{8}"
 
     expr2 = parse_expr("b*a", evaluate=False)
-    assert keecas_latex(expr2) == r"b a"
+    assert keecas_latex(expr2, mul_symbol=None) == r"b a"
+
+
+def test_mul_symbol_config_default_applied_without_show_eqn():
+    """config.latex.default_mul_symbol applies even to a bare keecas_latex()/
+    format_value() call, not just when going through show_eqn().
+
+    Previously the only thing that ever applied it was
+    sympy.init_printing(mul_symbol=...), triggered from keecas/__init__.py's
+    lazy __getattr__ only when something accessed keecas.sympy/keecas.latex
+    (e.g. via `from keecas import *`) - a narrower import never triggered it.
+    latex() now reads the config directly, unconditionally.
+    """
+    from keecas.config.manager import get_config_manager
+
+    cfg = get_config_manager().options
+    original = cfg.latex.default_mul_symbol
+    try:
+        cfg.latex.default_mul_symbol = "dot"
+        expr = parse_expr("a*b", evaluate=False)
+        assert keecas_latex(expr) == sympy_latex(expr, mul_symbol="dot") == r"a \cdot b"
+        # explicit kwarg still overrides the config default
+        assert keecas_latex(expr, mul_symbol=None) == sympy_latex(expr)
+    finally:
+        cfg.latex.default_mul_symbol = original
 
 
 def test_simple_unevaluated_division_unaffected():
@@ -79,4 +107,4 @@ def test_format_value_integration_uses_keecas_latex():
     assert format_value(expr) == r"\frac{a}{\frac{b}{2}}"
 
     expr2 = "q*l**2/8" | pc.parse_expr()
-    assert format_value(expr2) == r"\frac{q l^{2}}{8}"
+    assert format_value(expr2, mul_symbol=None) == r"\frac{q l^{2}}{8}"

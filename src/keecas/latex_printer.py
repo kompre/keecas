@@ -39,7 +39,27 @@ that goal in two independent ways, both worked around here:
    affected when their own canonical `.args` order happens to differ from
    the "pretty" printing order SymPy would otherwise choose (e.g. summed
    polynomial terms may no longer print degree-descending).
+
+3. `config.latex.default_mul_symbol` doesn't reach direct `format_value()`/
+   `format_sympy()` calls. Previously the only thing that ever applied it
+   was `sympy.init_printing(mul_symbol=..., order="none")`, called from
+   `keecas/__init__.py`'s lazy `__getattr__` - but only when something
+   accesses `keecas.sympy`/`keecas.latex`/etc. (e.g. via `from keecas
+   import *`, since those names are in `__all__`). A narrower import like
+   `from keecas import format_value, pc` never triggers it, so the
+   configured symbol silently falls back to SymPy's own default depending
+   on unrelated import choices elsewhere in the session. `show_eqn()`
+   separately injects `mul_symbol` into its kwargs before calling
+   `format_value()`, so it was never affected - but `format_value()`/
+   `format_sympy()` called directly were.
+
+   `latex()` below reads `config.latex.default_mul_symbol` itself (unless
+   the caller already passed `mul_symbol` explicitly) so the setting
+   applies unconditionally, the same way the `order` fix does, with no
+   dependency on import order or on going through `show_eqn()`.
 """
+
+from typing import Any
 
 from sympy import Mul, S
 from sympy.printing.latex import LatexPrinter
@@ -59,11 +79,19 @@ class KeecasLatexPrinter(LatexPrinter):
         return super()._print_Mul(expr)
 
 
-def latex(expr, **settings):
+def latex(expr, **settings: Any):
     """Convert `expr` to LaTeX using `KeecasLatexPrinter`.
 
     Drop-in replacement for `sympy.latex()` accepting the same settings
     (`mul_symbol`, `mode`, `fold_frac_powers`, etc.) - see that function's
     docstring for the full parameter reference.
+
+    Unless the caller passes `mul_symbol` explicitly, it defaults to
+    `config.latex.default_mul_symbol` (read fresh on every call, so runtime
+    config changes take effect immediately).
     """
+    if "mul_symbol" not in settings:
+        from keecas.config.manager import get_config_manager
+
+        settings = {**settings, "mul_symbol": get_config_manager().options.latex.default_mul_symbol}
     return KeecasLatexPrinter(settings).doprint(expr)
