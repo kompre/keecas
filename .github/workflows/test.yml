@@ -3,12 +3,31 @@ name: Run Tests
 on:
   pull_request:
     branches: [ main, dev ]
+  # No branch filter (main/dev included, same as before): GitHub Actions does
+  # not reliably fire pull_request/opened for PRs created by this session's own
+  # GitHub identity (observed on #114 and #115 - the PR's initial head commit
+  # never got a "Run Tests" run, only a later push to the already-open PR, via
+  # pull_request/synchronize, did). Running on every push means the check for
+  # a PR's head commit already exists by the time the PR opens, regardless of
+  # whether the opened event itself fires, closing that gap without relying on
+  # anyone remembering to manually re-run the workflow.
   push:
-    branches: [ main, dev ]
+    branches-ignore:
+      - 'release-please--branches--**'  # already covered by its own pull_request run; avoid a redundant duplicate
+  # lint-fix.yml commits and pushes using secrets.GITHUB_TOKEN, and pushes made
+  # with the default GITHUB_TOKEN never trigger other workflows' push/pull_request
+  # triggers (GitHub's own recursion-prevention rule - undocumented by us, but
+  # confirmed here: lint-fix's auto-commits got zero "Run Tests" runs via push
+  # even after the fix above). workflow_run isn't subject to that restriction,
+  # so this catches the case where lint-fix's auto-fix commit ends up being a
+  # PR's actual final head.
+  workflow_run:
+    workflows: ["Auto-fix Linting Issues"]
+    types: [completed]
   workflow_dispatch:
 
 concurrency:
-  group: test-${{ github.event.pull_request.number || github.sha }}
+  group: test-${{ github.event.pull_request.number || github.event.workflow_run.head_sha || github.sha }}
   cancel-in-progress: true
 
 permissions:
@@ -16,11 +35,16 @@ permissions:
 
 jobs:
   test:
+    # Skip if this was triggered by lint-fix.yml failing (nothing new to verify).
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
         with:
+          # workflow_run always checks out the default branch unless told otherwise -
+          # pin it to the commit that triggered lint-fix.yml in that case.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 0  # Need full history to detect changed files
 
       - name: Detect changed files
