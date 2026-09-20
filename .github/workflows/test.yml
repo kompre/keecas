@@ -3,8 +3,17 @@ name: Run Tests
 on:
   pull_request:
     branches: [ main, dev ]
+  # No branch filter (main/dev included, same as before): GitHub Actions does
+  # not reliably fire pull_request/opened for PRs created by this session's own
+  # GitHub identity (observed on #114 and #115 - the PR's initial head commit
+  # never got a "Run Tests" run, only a later push to the already-open PR, via
+  # pull_request/synchronize, did). Running on every push means the check for
+  # a PR's head commit already exists by the time the PR opens, regardless of
+  # whether the opened event itself fires, closing that gap without relying on
+  # anyone remembering to manually re-run the workflow.
   push:
-    branches: [ main, dev ]
+    branches-ignore:
+      - 'release-please--branches--**'  # already covered by its own pull_request run; avoid a redundant duplicate
   workflow_dispatch:
 
 concurrency:
