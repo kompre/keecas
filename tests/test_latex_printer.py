@@ -25,13 +25,33 @@ def test_nested_symbolic_division_renders_as_nested_fraction():
 
 
 def test_evaluated_expressions_match_stock_sympy_latex():
-    """Fully evaluated expressions must render identically to sympy.latex()."""
+    """Simple fully evaluated expressions render identically to sympy.latex().
+
+    These particular expressions happen to already be in canonical order,
+    so they're unaffected by the order='none' default (see
+    test_unevaluated_argument_order_preserved for a case where it matters).
+    """
     exprs = [
         parse_expr(s, evaluate=True)
         for s in ("a/(b/2)", "a/(b/c)", "a/b/c", "2*a/b", "(a+b)/(c)", "-a/b")
     ]
     for expr in exprs:
         assert keecas_latex(expr) == sympy_latex(expr)
+
+
+def test_unevaluated_argument_order_preserved():
+    """Mul/Add factors and terms render in the order the user typed them.
+
+    Stock sympy.latex() re-sorts a Mul/Add into a canonical print order
+    (order=None -> as_ordered_factors()/as_ordered_terms()) regardless of
+    how the Mul/Add's own .args are stored, silently discarding the
+    literal order evaluate=False parsing preserves.
+    """
+    expr = parse_expr("q*l**2/8", evaluate=False)
+    assert keecas_latex(expr) == r"\frac{q l^{2}}{8}"
+
+    expr2 = parse_expr("b*a", evaluate=False)
+    assert keecas_latex(expr2) == r"b a"
 
 
 def test_simple_unevaluated_division_unaffected():
@@ -57,3 +77,6 @@ def test_format_value_integration_uses_keecas_latex():
 
     expr = "a/(b/2)" | pc.parse_expr()
     assert format_value(expr) == r"\frac{a}{\frac{b}{2}}"
+
+    expr2 = "q*l**2/8" | pc.parse_expr()
+    assert format_value(expr2) == r"\frac{q l^{2}}{8}"
