@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.4.0](https://github.com/kompre/keecas/compare/v1.3.0...v1.4.0) (2026-09-19)
+
+
+### Features
+
+* support Pandoc-style inline footnotes in markdown_to_latex ([3bb7796](https://github.com/kompre/keecas/commit/3bb77967db2f552210633b6560b4b2f17294dd2e))
+
+
+### Bug Fixes
+
+* escape LaTeX-reserved characters in show_eqn text and percent formatting ([73cafb7](https://github.com/kompre/keecas/commit/73cafb72e119062d2bc379a72cf929a7665f0bda))
+* escape LaTeX-reserved characters in show_eqn text and percent formatting ([55b30a6](https://github.com/kompre/keecas/commit/55b30a6893cae38e8c73f7339833365b2f9c5f31)), closes [#105](https://github.com/kompre/keecas/issues/105)
+* narrow the % fix to numbers, add real Markdown-to-LaTeX conversion ([14fab7f](https://github.com/kompre/keecas/commit/14fab7f5133688f86ad034e4247b6d28d31367f0))
+* preserve nested division structure when rendering evaluate=False expressions ([6087346](https://github.com/kompre/keecas/commit/6087346a5afd83c4f0ad745ad3ce0c02c354d948))
+* preserve nested division structure when rendering evaluate=False expressions ([3d9bb0f](https://github.com/kompre/keecas/commit/3d9bb0f7bc7e4432944e6315f9137c843d6e8fd6))
+* **skill:** correct undersized float_format lists in keecas-notebook skill ([63cf38d](https://github.com/kompre/keecas/commit/63cf38d570d18a0a7b943dd07b26f1b37389339a))
+* **skill:** correct undersized float_format lists in keecas-notebook skill ([26ea8da](https://github.com/kompre/keecas/commit/26ea8daa36886aa6dbcba63a105fae470982d95e))
+* use f-string instead of %-formatting in KeecasLatexPrinter ([b16084f](https://github.com/kompre/keecas/commit/b16084f55e73b920e6a96f26e4cc076ade60a76c))
+
+
+### Documentation
+
+* update keecas-notebook skill for treat_str_as_markdown and fixed [#105](https://github.com/kompre/keecas/issues/105) ([6fce819](https://github.com/kompre/keecas/commit/6fce81966093e0d80fd107648800d369224a26c9))
+
 ## [1.3.0](https://github.com/kompre/keecas/compare/v1.2.1...v1.3.0) (2026-09-18)
 
 
