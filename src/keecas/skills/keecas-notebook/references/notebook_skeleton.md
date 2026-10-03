@@ -1,242 +1,153 @@
-# Minimal notebook skeleton
+# Minimal notebook skeleton (plain Jupyter)
 
-A complete, copyable skeleton for a new `__<section>.ipynb`. Replace `<SECTION>`, `<eq-prefix>`, and the example calculation with the real content.
+## Contents
 
-The skeleton below is shown as a sequence of cells separated by `--- CELL ---`. Each cell is a `{python}` code block or a Quarto include / markdown cell, in the order it appears in the notebook.
+- Setup cell
+- Input parameters
+- Derived quantities (narrow formulas, description slot kept)
+- Wide formulas (description in markdown above)
+- Verification
+- What this skeleton illustrates
 
----
+A complete, copyable notebook. Each fenced block is one cell, in order. For a notebook rendered by Quarto, start from the skeleton in the `keecas-quarto` skill instead; it adds the Quarto init cells around the same calculation cells.
 
-## Front matter (raw YAML, top of notebook)
+The `python` blocks in this file are executed by the keecas test suite, so they are known to run.
 
-```yaml
----
-jupyter: python3
----
-```
-
-No `title:` field — the title comes from the first markdown `##` heading.
-
---- CELL --- *(optional `%run` of a shared base — only if the notebook depends on one; must be the very first cell)*
+## Setup cell
 
 ```python
-#| output: false
-#| eval: false
-
-%run ../../shared/__materiali.ipynb
-```
-
-Running it first — before the notebook's own init cells — avoids clobbering both local symbol definitions and this notebook's own `config.*` settings with the base notebook's values. See the main skill file §1/§15 for the full rationale.
-
---- CELL --- *(code, tagged init)*
-
-```python
-#| tags:
-#|   - inizializzazione
-#| label: INIZIO CALCOLO <SECTION>
-
-import matplotlib.pyplot as plt
 from keecas import *
-from keecas.label import generate_unique_label
-
-from ruamel.yaml import YAML
-yaml = YAML()
-yaml.preserve_quotes = True
-
-from pathlib import Path
 from IPython.display import display, Markdown
 
-try:
-    PATH_PREFIX
-except NameError:
-    PATH_PREFIX = './'
-
-PATH_PREFIX = Path(PATH_PREFIX)
+params, eqn = {}, {}
 ```
 
---- CELL --- *(code, config)*
-
-```python
-config.latex.eq_prefix = "eq-<SECTION>-"
-config.display.print_label = True
-config.display.katex = True
-
-<SECTION> = {
-    "parametri":   (params := {}),
-    "espressioni": (eqn    := {}),
-    "valori":      (vals   := {}),
-}
-```
-
---- CELL --- *(Quarto include — not a code cell)*
-
-```
-{{< include /_scripts/_KaTeX_compatibility.qmd >}}
-```
-
---- CELL --- *(markdown — first heading and prose intro)*
+## Input parameters
 
 ```markdown
-## <Title of the section>
+## Slab - minimum reinforcement
 
-Breve descrizione del calcolo, riferimenti normativi (es. NTC 2018 § X.Y, EC2 § Z.W) e ipotesi di base.
+Inputs for a 1 m strip of slab.
 ```
-
---- CELL --- *(code — input parameters)*
 
 ```python
 h, b, c_nom = symbols(r"h b c_{nom}")
-f_ck, f_yk  = symbols(r"f_{ck} f_{yk}")
+f_ck, f_yk = symbols(r"f_{ck} f_{yk}")
 
 _p = {
-    h:     250 * u.mm,
-    b:     1000 * u.mm,
+    h: 250 * u.mm,
+    b: 1000 * u.mm,
     c_nom: 35 * u.mm,
-    f_ck:  25 * u.MPa,
-    f_yk:  450 * u.MPa,
+    f_ck: 25 * u.MPa,
+    f_yk: 450 * u.MPa,
 }
 params.update(_p)
 
-_l = {
-    h:     "spessore della platea",
-    b:     "larghezza di riferimento (striscia di 1 m)",
-    c_nom: "copriferro netto al lembo barra",
-    f_ck:  "resistenza caratteristica cilindrica del calcestruzzo",
-    f_yk:  "resistenza caratteristica di snervamento dell'acciaio",
+_d = {
+    h: "spessore soletta",
+    b: "larghezza di riferimento",
+    c_nom: "copriferro",
+    f_ck: "resist. car. cls",
+    f_yk: "resist. car. acciaio",
 }
 
-show_eqn([_p, _l], label=generate_unique_label(_l))
+show_eqn([_p, _d], label=generate_unique_label(_d))
 ```
 
---- CELL --- *(markdown — prose introducing the next calculation)*
+Descriptions are short phrases and do not repeat values: the strip width is the `b` row, not part of a description.
+
+## Derived quantities (narrow formulas, description slot kept)
 
 ```markdown
-### Caratteristiche meccaniche derivate
+### Concrete tensile strength
 
-La resistenza media a trazione del calcestruzzo è calcolata secondo EC2 § 3.1.6
-(per $f_{ck} \le 50\text{ MPa}$).
+Mean tensile strength, EC2 3.1.2 (valid for $f_{ck} \le 50$ MPa).
 ```
-
-Note: do NOT restate the formula as `$$...$$` here. The next code cell will display it via `show_eqn`.
-
---- CELL --- *(code — derived expressions)*
 
 ```python
 f_ctm, f_ct_eff = symbols(r"f_{ctm} f_{ct,eff}")
 
 _e = {
-    f_ctm:    "N(0.30) * (f_ck/u.MPa)^(2/3) * u.MPa" | pc.parse_expr,
+    f_ctm: "0.30 * (f_ck/u.MPa)^(2/3) * u.MPa" | pc.parse_expr,
     f_ct_eff: f_ctm,
 }
 eqn.update(_e)
 
-_l = {
-    f_ctm:    "resistenza media a trazione del calcestruzzo",
-    f_ct_eff: "resistenza efficace a trazione al momento della fessurazione",
+_d = {
+    f_ctm: "resist. media a trazione",
+    f_ct_eff: "resist. efficace a trazione",
 }
 
-_v = {k: v | pc.subs(eqn | params) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
+_v = {k: v | pc.subs(eqn | params) | pc.N | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
 
 show_eqn(
-    [_e, _v, _l],
-    label=generate_unique_label(_l),
+    [_e, _v, _d],
+    label=generate_unique_label(_d),
     float_format=[None, None, "{:.2f}", None],
 )
 ```
 
---- CELL --- *(markdown — verification preamble)*
+The markdown cell gives context; it does not restate the formula as `$$...$$`, because `show_eqn` already renders it from `_e`.
+
+## Wide formulas (description in markdown above)
 
 ```markdown
-### Verifica del minimo flessionale — NTC § 4.1.6.1.1 / EC2 § 9.2.1.1
+### Minimum flexural reinforcement
 
-Il minimo è il massimo fra il termine proporzionale a $f_{ctm}/f_{yk}$ e il
-termine geometrico minimo (0,13%).
+Effective depth of the bottom face, and the larger of the strength-based and geometric minimum (EC2 9.2.1.1).
 ```
-
---- CELL --- *(code — verification)*
 
 ```python
 A_s_min, d_inf = symbols(r"A_{s,min} d_{inf}")
 
 _e = {
-    d_inf:   "h - c_nom - 5*u.mm"                                  | pc.parse_expr,
-    A_s_min: "Max(N(0.26)*f_ctm/f_yk*b*d_inf, N(0.0013)*b*d_inf)"  | pc.parse_expr,
+    d_inf: "h - c_nom - 5*u.mm" | pc.parse_expr,
+    A_s_min: "Max(0.26*f_ctm/f_yk*b*d_inf, 0.0013*b*d_inf)" | pc.parse_expr,
 }
 eqn.update(_e)
 
-_l = {
-    d_inf:   "altezza utile faccia inferiore",
-    A_s_min: "minimo flessionale di armatura",
+_d = {
+    d_inf: "altezza utile inf.",
+    A_s_min: "min. flessionale",
 }
 
-_target_unit = {d_inf: [u.mm], A_s_min: [u.mm]}
-_v = {k: v | pc.subs(eqn | params) | pc.convert_to(_target_unit[k]) | pc.N for k, v in _e.items()}
-
-show_eqn(
-    [_e, _v, _l],
-    label=generate_unique_label(_l),
-    float_format=[None, None, "{:.2f}", None],
-)
-```
-
---- CELL --- *(optional code — final esito with `check`)*
-
-```python
-A_s_prov = symbols(r"A_{s,prov}")
-_p_prov = {A_s_prov: 524 * u.mm**2}    # esempio: Ø10/150 per striscia di 1 m
-params.update(_p_prov)
-
-_ratio = A_s_min / A_s_prov
-_v_ratio = _ratio | pc.subs(eqn | params) | pc.N
-
-show_eqn(
-    {_ratio: check(_v_ratio, 1)},
-    float_format="{:.3f}",
-)
-```
-
-`check()` argument is **demand / capacity**. Here `A_s_min` is the required minimum (demand) and `A_s_prov` is the disposed armature (capacity). The check passes when the ratio is ≤ 1.
-
----
-
-## What this skeleton illustrates
-
-- Init cells in fixed order; `generate_unique_label`, `display`, `Markdown` imported once at the top.
-- An optional `%run` of a shared base, when present, comes *before* the init cells — never after — so it can't clobber local symbols or this notebook's own `config.*` settings.
-- KaTeX include between init and content.
-- Each subsequent block follows the same shape: *symbols* → `_p` or `_e` → `_l` → `_v` (computed via the pipeline) → `show_eqn([..., _v, _l], label=generate_unique_label(_l), float_format=[None, None, "{:.2f}", None])`.
-- Markdown cells carry prose; they do not duplicate formulas as `$$...$$`.
-- Verifications end with a `check(demand / capacity, 1)` rendered via `show_eqn`.
-
-## Variant: wide expressions — descriptions in markdown, `_l` for labels only
-
-The skeleton above renders `_l` as a column in every `show_eqn`. That works when descriptions are short and formulas are narrow. For `_e` blocks where the formula column is already wide (e.g. `atan2((y_2 - y_1)/d, (x_2 - x_1)/d)` or anything involving `Max(...)` / `Piecewise(...)`), the description column can push the table past the textwidth.
-
-Alternate pattern for wide-formula blocks: expand the markdown cell above the code, and drop `_l` from the slot list while still using it for label anchors:
-
-```markdown
-<!-- markdown cell above the code -->
-### Geometria della congiungente
-
-La distanza fra i centri delle pulegge ($d$) e l'angolo della congiungente
-rispetto all'orizzontale ($\varphi$) sono calcolati come segue.
-```
-
-```python
-# code cell — _l is defined for label= but NOT slotted into the show_eqn list
-_l = {
-    d:      "distanza centri",
-    varphi: "angolo congiungente",
-}
-
-_v = {k: v | pc.subs(eqn | params) | pc.convert_to(_target_unit[k]) | pc.N for k, v in _e.items()}
+_v = {k: v | pc.subs(eqn | params) | pc.N | pc.convert_to([u.mm]) | pc.N for k, v in _e.items()}
 
 show_eqn(
     [_e, _v],
-    label=generate_unique_label(_l),
-    float_format="{:.4f}",
+    label=generate_unique_label(_d),
+    float_format=[None, None, "{:.2f}"],
 )
 ```
 
-Keep `_l` entries short and LaTeX-clean either way — they get wrapped in `\text{...}` whenever they *are* rendered as a column.
+`_d` is not a slot here (the `Max(...)` row is wide), but it still feeds the labels. `pc.convert_to([u.mm])` gives `d_inf` in mm and `A_s_min` in mm**2. The `pc.N` before `pc.convert_to` matters: `5*u.mm` inside the sum would otherwise produce a wrong unit (keecas#118).
 
-When in doubt, copy the main skeleton and adapt rather than improvising a new structure.
+## Verification
+
+```markdown
+### Check
+
+Provided reinforcement against the minimum.
+```
+
+```python
+A_s_prov = symbols(r"A_{s,prov}")
+
+_p = {A_s_prov: 524 * u.mm**2}
+params.update(_p)
+
+_v = {k: k | pc.subs(eqn | params) | pc.N | pc.convert_to([1]) | pc.N for k in [A_s_min / A_s_prov]}
+_c = {k: check(v, 1) for k, v in _v.items()}
+
+show_eqn([_p | _v, _c], float_format=[None, "{:.3f}", None])
+```
+
+`check()` takes **demand / capacity**: `A_s_min` is required, `A_s_prov` is provided, and the check passes when the ratio is <= 1.
+
+## What this skeleton illustrates
+
+- One setup cell; `params` and `eqn` are global, `_p/_e/_v/_d/_c` are per cell.
+- Each block: symbols -> `_p` or `_e` -> `_d` -> `_v` via `pc.subs | pc.N | pc.convert_to | pc.N` -> `show_eqn`.
+- Narrow blocks keep the description slot; wide blocks move the description to the markdown cell above and keep `_d` for labels.
+- Markdown cells carry prose, never duplicate formulas.
+- Verifications end with `check(demand / capacity, 1)`.

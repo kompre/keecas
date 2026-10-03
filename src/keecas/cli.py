@@ -747,13 +747,47 @@ def cmd_migrate(args: argparse.Namespace) -> None:
             sys.exit(1)
 
 
-def cmd_skill_install(args: argparse.Namespace) -> None:
-    """Install the keecas-notebook Claude Code skill."""
-    skill_src = get_skills_dir() / "keecas-notebook"
+# Bundled skills, in install/print order. keecas-quarto builds on keecas-notebook.
+SKILL_NAMES = ("keecas-notebook", "keecas-quarto")
+
+
+def _install_skill(name: str, target_dir: Path, force: bool) -> str:
+    """Symlink (or copy) one bundled skill into ``target_dir``.
+
+    Returns "symlink", "copy", or "skipped" (already installed, no ``force``).
+    """
+    skill_src = get_skills_dir() / name
     if not skill_src.exists():
         print(f"ERROR: skill source not found at {skill_src}")
         sys.exit(1)
 
+    skill_dst = target_dir / name
+    if skill_dst.exists() or skill_dst.is_symlink():
+        if not force:
+            print(f"Already installed: {skill_dst}")
+            return "skipped"
+        if skill_dst.is_symlink():
+            skill_dst.unlink()
+        else:
+            shutil.rmtree(skill_dst)
+
+    try:
+        skill_dst.symlink_to(skill_src.resolve())
+        print(f"Installed (symlink): {skill_dst} -> {skill_src.resolve()}")
+        return "symlink"
+    except OSError:
+        # Windows without Developer Mode / admin rights cannot create symlinks;
+        # fall back to a plain copy. The copy won't auto-update on `pip install -U keecas`.
+        shutil.copytree(skill_src, skill_dst)
+        print(f"Installed (copy): {skill_dst}")
+        print(
+            "NOTE: run `keecas skill install --force` after upgrading keecas to refresh the skill."
+        )
+        return "copy"
+
+
+def cmd_skill_install(args: argparse.Namespace) -> None:
+    """Install the bundled Claude Code skills (keecas-notebook, keecas-quarto)."""
     # Clean up an install from the legacy `.claude/commands/` location (pre-1.3),
     # so upgrading doesn't leave two competing copies of the skill on disk.
     legacy_dst = Path.home() / ".claude" / "commands" / "keecas-notebook"
@@ -766,43 +800,21 @@ def cmd_skill_install(args: argparse.Namespace) -> None:
 
     target_dir = Path.home() / ".claude" / "skills"
     target_dir.mkdir(parents=True, exist_ok=True)
-    skill_dst = target_dir / "keecas-notebook"
 
     force = getattr(args, "force", False)
-    if skill_dst.exists() or skill_dst.is_symlink():
-        if not force:
-            print(f"Already installed: {skill_dst}")
-            print("Use --force to overwrite.")
-            sys.exit(0)
-        if skill_dst.is_symlink():
-            skill_dst.unlink()
-        else:
-            shutil.rmtree(skill_dst)
+    results = [_install_skill(name, target_dir, force) for name in SKILL_NAMES]
 
-    try:
-        skill_dst.symlink_to(skill_src.resolve())
-        print(f"Installed (symlink): {skill_dst} -> {skill_src.resolve()}")
-        print("The skill updates automatically when keecas is updated.")
-    except OSError:
-        # Windows without Developer Mode / admin rights cannot create symlinks;
-        # fall back to a plain copy. The copy won't auto-update on `pip install -U keecas`.
-        shutil.copytree(skill_src, skill_dst)
-        print(f"Installed (copy): {skill_dst}")
-        print(
-            "NOTE: run `keecas skill install --force` after upgrading keecas to refresh the skill."
-        )
-
-    print("Restart Claude Code (or open a new session) to activate the keecas-notebook skill.")
+    if "skipped" in results:
+        print("Use --force to overwrite.")
+    if "symlink" in results:
+        print("Symlinked skills update automatically when keecas is updated.")
+    if "symlink" in results or "copy" in results:
+        print("Restart Claude Code (or open a new session) to activate the skills.")
 
 
-def cmd_skill_print(args: argparse.Namespace) -> None:
-    """Print the keecas-notebook skill content to stdout.
-
-    Provider-agnostic alternative to `keecas skill install`: makes no
-    filesystem writes, so it works for any AI tool the user pastes it into
-    (Codex, Cursor, Copilot, plain chat), not just Claude Code.
-    """
-    skill_src = get_skills_dir() / "keecas-notebook"
+def _skill_text(name: str, with_references: bool) -> str:
+    """Return a skill's body (frontmatter stripped), optionally with its reference docs."""
+    skill_src = get_skills_dir() / name
     skill_md = skill_src / "SKILL.md"
     if not skill_md.exists():
         print(f"ERROR: skill source not found at {skill_md}")
@@ -813,12 +825,32 @@ def cmd_skill_print(args: argparse.Namespace) -> None:
         parts = content.split("---", 2)
         if len(parts) == 3:
             content = parts[2]
-    print(content.strip())
+    chunks = [content.strip()]
 
-    if getattr(args, "with_references", False):
+    if with_references:
         for reference_path in sorted((skill_src / "references").glob("*.md")):
-            print(f"\n## {reference_path.name}\n")
-            print(reference_path.read_text(encoding="utf-8").strip())
+            chunks.append(f"## {name}/{reference_path.name}\n")
+            chunks.append(reference_path.read_text(encoding="utf-8").strip())
+    return "\n\n".join(chunks)
+
+
+def cmd_skill_print(args: argparse.Namespace) -> None:
+    """Print the keecas-notebook skill (and optionally keecas-quarto) to stdout.
+
+    Provider-agnostic alternative to `keecas skill install`: makes no
+    filesystem writes, so it works for any AI tool the user pastes it into
+    (Codex, Cursor, Copilot, plain chat), not just Claude Code.
+    """
+    # The skills contain non-ASCII text; a legacy console code page (e.g. cp1252
+    # on Windows) cannot encode it, so always emit UTF-8.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):
+        pass
+
+    with_references = getattr(args, "with_references", False)
+    names = SKILL_NAMES if getattr(args, "quarto", False) else SKILL_NAMES[:1]
+    print("\n\n".join(_skill_text(name, with_references) for name in names))
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -894,13 +926,13 @@ def create_parser() -> argparse.ArgumentParser:
     # Skill subcommand
     skill_parser = main_subparsers.add_parser(
         "skill",
-        help="Manage the keecas-notebook Claude Code skill",
+        help="Manage the bundled Claude Code skills (keecas-notebook, keecas-quarto)",
     )
     skill_subparsers = skill_parser.add_subparsers(dest="skill_command", help="Skill commands")
 
     skill_install_parser = skill_subparsers.add_parser(
         "install",
-        help="Install the keecas-notebook Claude Code skill into ~/.claude/skills/",
+        help="Install the keecas-notebook and keecas-quarto skills into ~/.claude/skills/",
     )
     skill_install_parser.add_argument(
         "--force",
@@ -916,7 +948,12 @@ def create_parser() -> argparse.ArgumentParser:
     skill_print_parser.add_argument(
         "--with-references",
         action="store_true",
-        help="Also include the skill's reference docs",
+        help="Also include the skills' reference docs",
+    )
+    skill_print_parser.add_argument(
+        "--quarto",
+        action="store_true",
+        help="Also include the keecas-quarto skill (notebooks rendered by Quarto)",
     )
     skill_print_parser.set_defaults(func=cmd_skill_print)
 

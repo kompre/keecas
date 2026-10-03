@@ -30,7 +30,8 @@ Guidance for Claude Code when working in this repository.
 
 ## Where to Look
 
-- **Writing/editing a keecas notebook or calculation report**: use the `keecas-notebook` skill, or see `_docs/USER_USAGE_CONVENTIONS.md` for dict conventions (`_p`/`_e`/`_v`/`_d`/`_l`/`_c`, `params`/`eqn` globals), symbol naming, and cell patterns.
+- **Writing/editing a keecas notebook or calculation report**: use the `keecas-notebook` skill (core conventions, plain Jupyter) plus `keecas-quarto` for notebooks rendered by Quarto; or see `_docs/USER_USAGE_CONVENTIONS.md` for dict conventions (`_p`/`_e`/`_v`/`_d`/`_l`/`_c`, `params`/`eqn` globals), symbol naming, and cell patterns.
+- **Editing the bundled skills** (`src/keecas/skills/`): keep each `SKILL.md` under ~16k chars (compaction keeps only the first 5k tokens), link every reference file from `SKILL.md`, give reference files >100 lines a `## Contents` list, keep the two skills' cross-pointers near the top. `tests/test_skills.py` enforces these and executes the core skeleton's code cells.
 - **Docstrings**: `_docs/DOCSTRINGS.md` (Google-style, quartodoc, ASCII-only, `{python}` fenced examples).
 - **Dev workflow, branching, CI/CD, releases**: `CONTRIBUTING.md` (branch strategy, pre-commit hooks, release-please, PyPI publishing).
 - **Linting setup**: `_docs/LINTING.md`.
@@ -46,8 +47,8 @@ uv sync --group dev             # install dev deps
 bash scripts/install-hooks.sh   # install pre-commit hooks
 keecas edit [file]               # launch Jupyter with a keecas template
 keecas config init|edit|show     # manage .keecas/config.toml
-keecas skill install [--force]   # install the keecas-notebook skill into ~/.claude/skills/
-keecas skill print [--with-references]  # print the skill to stdout (non-Claude-Code AI tools)
+keecas skill install [--force]   # install keecas-notebook + keecas-quarto into ~/.claude/skills/
+keecas skill print [--with-references] [--quarto]  # print the skill(s) to stdout as UTF-8 (non-Claude-Code AI tools)
 ```
 
 Full CLI reference: `docs/cli-reference/`. Full contributor workflow: `CONTRIBUTING.md`.

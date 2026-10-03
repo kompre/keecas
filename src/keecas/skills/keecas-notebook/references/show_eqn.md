@@ -1,214 +1,155 @@
-# `show_eqn` — mechanics and patterns
+# `show_eqn` - mechanics and patterns
 
-`show_eqn` is the single rendering primitive for symbol-value-description tables. Its API has a few sharp edges that produce silent failures if you don't know them.
+## Contents
 
-## First-slot drives the rows
+- First slot drives the rows
+- Slot order
+- `float_format`
+- `col_wrap`
+- `environment`
+- Mid-cell rendering
+- Labels: `label` and `generate_unique_label`
+- Descriptions: content rules and Markdown mode
+- Keeping rows narrow
+- Common slot patterns
 
-When called with a list, `show_eqn([A, B, C, ...], ...)` uses the **keys of the first element** to decide which rows to render. Subsequent elements contribute columns, but each column only shows a value on rows whose key exists in `A`.
+`show_eqn` is the single rendering primitive for symbol / formula / value / description tables. Its sharp edges fail silently, so know them.
+
+## First slot drives the rows
+
+`show_eqn([A, B, C, ...])` renders one row per key of the **first** element. Later elements add columns, and only show a value on rows whose key is in `A`.
 
 ```python
-_p = {f_ck: 25*u.MPa, f_yk: 450*u.MPa}
-_e = {f_ctm: "N(0.30)*(f_ck/u.MPa)^(2/3)*u.MPa" | pc.parse_expr,
-      f_ct_eff: f_ctm}
+_p = {f_ck: 25 * u.MPa, f_yk: 450 * u.MPa}
+_e = {f_ctm: "0.30 * (f_ck/u.MPa)^(2/3) * u.MPa" | pc.parse_expr}
 
-# WRONG — only f_ck and f_yk appear; f_ctm and f_ct_eff are silently dropped
-show_eqn([_p, _e, _v], ...)
+# WRONG - only f_ck and f_yk appear; f_ctm is silently dropped
+show_eqn([_p, _e, _v])
 
-# RIGHT — merge into the first slot so every key produces a row
-show_eqn([_p | _e, _v, _l], ...)
+# RIGHT - merge into the first slot so every key gets a row
+show_eqn([_p | _e, _v, _d])
 ```
 
-When called with a single dict (not a list), every key of that dict becomes a row. The single-dict form is fine when there's nothing to add — `show_eqn(_e)` or `show_eqn(_p)`.
+A single dict (not a list) renders every key: `show_eqn(_e)`, `show_eqn(_p)`.
 
-## Slot order convention
+## Slot order
 
-For new code, use this slot order:
-
-| Position | Content                                | Notes                                                  |
-|----------|----------------------------------------|--------------------------------------------------------|
-| 1        | `_p` or `_e` or `_p | _e`              | drives the rows; merge with `|` to include all keys    |
-| 2        | `_v`                                   | numeric values; pair with `'{:.2f}'` in `float_format` |
-| 3        | `_l`                                   | descriptions                                           |
-
-`label=generate_unique_label(_l)` should still be passed even when `_l` is not rendered as a column — the labels produce LaTeX cross-reference anchors regardless.
+| Position | Content | Notes |
+|---|---|---|
+| 1 | `_p`, `_e` or `_p \| _e` | drives the rows |
+| 2 | `_v` | values; pair with `"{:.2f}"` in `float_format` |
+| 3 | `_d` | descriptions; drop for wide `_e` blocks |
+| (last) | `_c` | `check()` results, in verification tables |
 
 ## `float_format`
 
-Accepts a single format string (applied to every numeric column) or a list with one entry per column. Use `None` to skip a column:
+A single format string applies to every column, **including float literals inside formulas**: with `"{:.2f}"`, a formula term `0.0013*b*d` renders as `0.00 b d`. Whenever a slot holds formulas (`_e`), use a list with one entry per column and `None` to skip:
 
 ```python
 show_eqn(
-    [_p | _e, _v, _l],
-    label=generate_unique_label(_l),
-    float_format=[None, None, "{:.2f}", None],   # skip key, skip formula col, format value col, skip description col
+    [_p | _e, _v, _d],
+    label=generate_unique_label(_d),
+    float_format=[None, None, "{:.2f}", None],  # key, first slot, _v, _d
 )
 ```
 
-The number of `float_format` (and `col_wrap`) entries must be **N+1** for N slots: index 0 is the key/LHS column, then one entry per slot in the same order as the list passed to `show_eqn`. A list shorter than N+1 is not an error — the last entry is repeated to fill the remaining columns — so an undersized list can silently apply the wrong format to the wrong column instead of failing loudly. If the format you want applies to the *last* slot, this padding happens to land it correctly by accident; for any other slot it does not, so always size the list explicitly rather than relying on the pad behavior.
+The list needs **N+1** entries for N slots: index 0 is the key (LHS) column, then one per slot in order. A shorter list is not an error: its last entry is repeated to fill the remaining columns, so an undersized list silently formats the wrong column. Always size it explicitly.
 
-**A percent spec (`".2%"`) is safe to use.** keecas auto-escapes the `%` produced by a percent-formatted number (fixed in keecas#105) — `show_eqn({x: 0.1234}, float_format=".2%")` renders `12.34\%`, not a truncated line. This escaping only covers the `%` *generated by the format spec itself*. A raw, unescaped `%` (or `_`, `^`, `&`, `#`) typed directly into a `_l`/`_d` description string is still spliced in as-is and will still break the render — see "`_l` content and placement" below, including the `treat_str_as_markdown` opt-in that auto-escapes those too.
+A percent spec is safe: `show_eqn({x: 0.1234}, float_format=".2%")` renders `12.34\%` (the generated `%` is escaped). A raw `%` typed into a description is not escaped and still breaks the render.
 
 ## `col_wrap`
 
-Controls the separators between rendered columns. Common forms:
+Controls the separators around each column. The default (`wrap_column`) already picks `"= "` for numbers, sympy and pint values and `\quad` for strings, so pass `col_wrap` only for a real deviation. It has the same N+1 sizing rule as `float_format`.
 
 ```python
-show_eqn([_p, _l], col_wrap=[None, "=", "&"])    # used in older notebooks for param tables
-show_eqn(_d, col_wrap=[None, r"\qquad"], environment="align*")  # description-only blocks
+show_eqn([_p, _d], col_wrap=[None, "=", "&"])                    # one-column parameter table
+show_eqn(_d, col_wrap=[None, r"\qquad"], environment="align*")   # symbol glossary
 ```
-
-For a typical formula/value table you usually don't need `col_wrap` — the default (`wrap_column`) already dispatches sensible separators per cell type (`'= '` for `int`/`float`/`sympy.Basic`/`pint.Quantity`, `'\quad'` for `str`). Only pass `col_wrap` explicitly for a genuine deviation from that default (e.g. the `"=" "&"` one-column-table form above); a manual override carries the same N+1 list-sizing footgun as `float_format`.
 
 ## `environment`
 
-Switches the underlying LaTeX environment. Useful values:
+Built-in environments: `"align"` (default), `"equation"`, `"cases"`, `"gather"`, `"split"`, `"alignat"`, `"rcases"`; a trailing `*` removes numbering. Useful cases:
 
-- `"cases"` / `"cases*"` — for systems of equations or piecewise outputs
-- `"align*"` — for symbol-description blocks where each row is `symbol \qquad description`
-
-Example for a description-only "where:" block under a formula:
+- `"cases"` - a system of equations, e.g. the result of `solve()`.
+- `"align*"` - a "where:" glossary of symbol and description, no formula.
 
 ```python
-display(show_eqn([_e, _v], float_format="{:.2f}"))
-display(Markdown("Dove:"))
+display(show_eqn([_e, _v], float_format=[None, None, "{:.2f}"]))
+display(Markdown("where:"))
 show_eqn(_d, col_wrap=[None, r"\qquad"], environment="align*")
 ```
 
 ## Mid-cell rendering
 
-`show_eqn` only auto-displays when it is the last expression of a cell. Inside conditionals, loops, or before another expression, wrap it:
+`show_eqn` returns a display object; Jupyter renders it only when it is the last expression of the cell. Inside `if`/`for`, or when other statements follow, wrap it:
 
 ```python
-# WRONG — neither branch renders because show_eqn isn't the cell's last expression
 if k_e_val <= 1.0:
-    show_eqn(...)
+    display(show_eqn(_v1))
 else:
-    show_eqn(...)
-other_thing()
-
-# RIGHT
-if k_e_val <= 1.0:
-    display(show_eqn(...))
-else:
-    display(show_eqn(...))
-other_thing()
+    display(show_eqn(_v2))
 ```
 
-Same applies inside `for` loops, after an `if` block, or any time `show_eqn` is not the trailing expression.
+## Labels: `label` and `generate_unique_label`
 
-## `_l` content and placement — column vs. label-only
+```python
+show_eqn([_e, _v, _d], label=generate_unique_label(_d), float_format=[None, None, "{:.2f}", None])
+```
 
-`_l` values are rendered inside LaTeX `\text{...}` when used as a `show_eqn` column. This has four consequences:
+- `generate_unique_label(dict)` returns `{key: "eq-<hash>"}`, with the prefix from `config.latex.eq_prefix`. It is exported by `from keecas import *`.
+- The hash comes from the dict's text. Editing a description (or expression) changes the label and breaks `@eq-...` references to it.
+- An empty string value yields an empty label. To label rows that have no description, use `generate_unique_label(_e)`.
+- `config.display.print_label = True` makes `show_eqn` print each row's `symbol: eq-...` label to stdout, ready to copy into a cross-reference. `config.display.katex = True` omits the `\label{...}` commands from the LaTeX itself.
+- `label="my-block"` applies one string label to the block.
+- Pass `label=` even when the description slot is not rendered.
 
-1. **No inline math.** `$f_{yk}$` inside `\text{...}` renders as the literal characters `$f_{yk}$` in most contexts, not as math. Keep `_l` entries to plain prose, LaTeX-safe.
-2. **Unescaped LaTeX-special characters break the render, not just the look.** `_`, `^`, `%`, `&`, `#` are reserved outside math mode. A description like `"la banana x_1"` throws a LaTeX compile error at render time (`_` is read as a subscript operator with no math mode to apply it in) — it does not just print literally. `%` is LaTeX's comment marker and silently truncates the rest of the line instead of erroring. Never write raw symbol notation in a description; spell it out in words instead (`"minimo per la barra x1"`, not `"minimo per x_1"`).
-3. **Avoid em dashes (`—`).** Use a plain hyphen (`-`) or restructure the sentence instead.
-4. **Short phrases only.** Long descriptions force the table column to widen, which can push the formula column past the textwidth in expression blocks where the formulas are already wide.
+## Descriptions: content rules and Markdown mode
 
-**Opt-in: Markdown-flavored descriptions.** Points 1-2 above describe the project default (`config.display.treat_str_as_markdown = False`): `_l`/`_d` strings are raw LaTeX, spliced in unescaped. Setting `config.display.treat_str_as_markdown = True` once in the init cell changes that: every plain `str` cell value (not just `Markdown(...)` objects, which already get this treatment unconditionally) is parsed as a small, Pandoc/Quarto-flavored Markdown subset before being escaped:
+With the default `config.display.treat_str_as_markdown = False`, each description is spliced raw into `\text{...}`:
 
-| Markdown | LaTeX produced |
-|----------|-----------------|
+1. **Short phrases**, abbreviations welcome. A long description widens the row.
+2. **No values that are parameters elsewhere** (sizes, classes, spacings). They go stale; make them `_p` rows.
+3. **No inline math**: `$f_{yk}$` inside `\text{}` does not render reliably. Spell symbols in words.
+4. **No unescaped `_ ^ % & #`**: `_` is a LaTeX compile error outside math, `%` silently truncates the rest of the line. `"barra x1"`, not `"barra x_1"`.
+5. **No em dashes**; use a hyphen.
+
+Setting `config.display.treat_str_as_markdown = True` once (it is a global setting, not a `show_eqn` argument) parses every plain string through a small Markdown subset before escaping:
+
+| Markdown | LaTeX |
+|---|---|
 | `**bold**` | `\textbf{...}` |
 | `*italic*` | `\textit{...}` |
 | `` `code` `` | `\texttt{...}` |
-| `^[footnote text]` (Pandoc inline footnote) | `\footnote{...}` |
-| anything else | escaped plain text (`_`, `%`, `&`, `#`, `$`, `~`, `^`, `\` no longer break the render) |
+| `^[footnote]` | `\footnote{...}` |
+| anything else | escaped text (`_ % & # $ ~ ^ \` no longer break) |
 
-Two things this does *not* do: it does not produce real subscripts (`x_1` is still the literal text "x_1", not math $x_1$ — still spell out symbol references in words), and it does not recognize underscore-based emphasis (`_italic_`, `__bold__`) — a bare `_` is what subscript notation looks like, so only `*`/`**` markers are parsed. Reference-style footnotes (`text[^1]` with a separate `[^1]: ...` definition) are also not supported; only Pandoc's inline form works.
+It does not produce subscripts (`x_1` stays literal text), and only `*`/`**` emphasis is recognised (not `_italic_`). `Markdown(...)` values always get this treatment.
 
-This is a global `config.display.*` setting, not a per-call `show_eqn` argument — flip it once per notebook (or leave it off, the default) rather than toggling it around individual calls.
+## Keeping rows narrow
 
-The convention for placement:
-
-- **Parameters (`_p`)** — narrow rows (`symbol = value`), so `_l` as a column fits comfortably. Slot it in: `show_eqn([_p, _l], ...)`.
-- **Expressions (`_e` → `_v`)** — wide rows (`symbol = formula = value`). Drop `_l` from the slot list to avoid overflow and put the description in the markdown cell *above* the code cell instead. Still pass `_l` to `label=generate_unique_label(_l)` so the row anchors are generated.
-
-```python
-# Parameters — _l column is fine
-show_eqn([_p, _l], label=generate_unique_label(_l))
-
-# Expression — describe in markdown above; _l only for label anchors
-show_eqn(
-    [_e, _v],
-    label=generate_unique_label(_l),
-    float_format="{:.2f}",
-)
-```
-
-The pre-cell markdown gets a brief paragraph or definition list — exactly what would have been crammed into the column. Markdown has full LaTeX support, so inline `$...$` works, and the page width is not the formula's problem.
-
-### Alternative: one term per bullet
-
-When several terms each need a real sentence of description (too long for the markdown-above paragraph to stay legible as one blob), skip the `_l` column and interleave a markdown bullet list with one `show_eqn` call per term:
-
-````markdown
-- Minimo per controllo fessurazione:
-  ```{python}
-  show_eqn({A_s_min: _v[A_s_min]}, label=f"eq-{A_s_min}")
-  ```
-- Minimo geometrico di normativa:
-  ```{python}
-  show_eqn({A_s_geom: _v[A_s_geom]}, label=f"eq-{A_s_geom}")
-  ```
-````
-
-This is a different tool from the "where:" `align*` block above — that one is for a compact symbol-glossary (short phrase per symbol, no formula). This one is for when each term's formula is shown individually and the description genuinely needs a sentence, not a phrase.
-
-### Alternative: `\scriptsize`-wrap a formula that's too wide
-
-If the *formula itself* (not just the description) doesn't fit the page width, shrink the whole rendered block by wrapping the code cell in raw LaTeX (PDF/Quarto `{=latex}` output only — no effect on HTML):
-
-````markdown
-```{=latex}
-{\scriptsize
-```
-
-```{python}
-show_eqn([_e, _v], label=generate_unique_label(_l))
-```
-
-```{=latex}
-}
-```
-````
-
-The first raw block opens a LaTeX group with `\scriptsize` active and deliberately does not close the brace; the second raw block closes it. Reach for this only when shortening the description or dropping `_l` from the slot list still isn't enough — it shrinks the entire block (numbers and symbols included), not just the description column.
-
-## `label` and `generate_unique_label`
-
-```python
-from keecas.label import generate_unique_label
-
-show_eqn(
-    [_e, _v, _l],
-    label=generate_unique_label(_l),
-    float_format=[None, None, "{:.2f}", None],
-)
-```
-
-`generate_unique_label(_l)` derives a LaTeX-safe anchor for each row from the description dict's keys. Pass `_l` even when not displaying it as a column — the anchor is what lets later prose reference the formula by number.
-
-If you have no description dict and just want anchors, you can also write `label="my-block-label"` (a single string applied to the block).
+- **Parameter blocks** (`symbol = value`) are narrow: keep the description slot, `show_eqn([_p, _d], ...)`.
+- **Expression blocks** (`symbol = formula = value`) are wide: drop the description slot and describe the step in the markdown cell above; still pass `label=generate_unique_label(_d)`.
+- **A formula that is itself too wide**: split it into intermediate symbols, each an `_e` entry and a row of its own.
+- Rendering-specific remedies for PDF output (one term per bullet, `\scriptsize`) are in the `keecas-quarto` skill.
 
 ## Common slot patterns
 
-For quick reference:
-
 ```python
-# Just show formulas
-show_eqn(_e, label=generate_unique_label(_l))
+# Formulas only
+show_eqn(_e, label=generate_unique_label(_e))
 
-# Parameters in a one-column table
-show_eqn([_p, _l], col_wrap=[None, "=", "&"])
+# Parameters with descriptions
+show_eqn([_p, _d], label=generate_unique_label(_d))
 
-# Parameters + expressions + values + descriptions
-show_eqn([_p | _e, _v, _l], label=generate_unique_label(_l),
-         float_format=[None, None, "{:.2f}", None])
+# Parameters + expressions + values + descriptions (narrow formulas)
+show_eqn([_p | _e, _v, _d], label=generate_unique_label(_d), float_format=[None, None, "{:.2f}", None])
 
-# Only values (e.g. after solving symbolically)
-show_eqn([_e, _v], float_format="{:.2f}")
+# Wide expressions: no description slot
+show_eqn([_e, _v], label=generate_unique_label(_d), float_format=[None, None, "{:.2f}"])
 
-# Where-block (description only)
+# Verification
+show_eqn([_v, _c], float_format="{:.3f}")
+
+# Glossary
 show_eqn(_d, col_wrap=[None, r"\qquad"], environment="align*")
 ```

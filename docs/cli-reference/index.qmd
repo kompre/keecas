@@ -170,35 +170,43 @@ Templates include:
 
 ## Claude Code Skill Integration
 
-### Install the keecas-notebook Skill
+keecas bundles two Claude Code skills:
 
-Install the bundled `keecas-notebook` skill so Claude Code automatically applies it when authoring calculation notebooks:
+- `keecas-notebook` - core conventions for keecas calculation notebooks: symbols, the `_p`/`_e`/`_v`/`_d`/`_l` dicts, the `pc.subs | pc.N | pc.convert_to | pc.N` values pipeline, `show_eqn`, descriptions and verifications. Applies to any Jupyter notebook.
+- `keecas-quarto` - the Quarto layer on top of it: init cells, `%run` of shared notebooks, cell options, fitting rows to the page, tables and figures for a PDF calculation report.
+
+Each skill tells Claude to load the other when both apply.
+
+### Install the Skills
 
 ```bash
 keecas skill install
 
-# Overwrite an existing installation (e.g. after upgrading keecas)
+# Overwrite existing installations
 keecas skill install --force
 ```
 
-This installs into `~/.claude/skills/keecas-notebook/`. Where the platform supports it, the skill is symlinked to the version bundled with your installed `keecas` package, so it updates automatically on `pip install -U keecas`; otherwise (e.g. Windows without symlink support) it falls back to a plain copy, and you should re-run `keecas skill install --force` after upgrading keecas. A stale install from a previous keecas version's legacy location is removed automatically. Restart Claude Code (or open a new session) after installing.
+This installs into `~/.claude/skills/keecas-notebook/` and `~/.claude/skills/keecas-quarto/`. Skills already installed are left alone unless `--force` is given, so running it again after upgrading keecas adds any newly bundled skill. Where the platform supports it, each skill is symlinked to the version bundled with your installed `keecas` package, so it updates automatically on `pip install -U keecas`; otherwise (e.g. Windows without symlink support) it falls back to a plain copy, and you should re-run `keecas skill install --force` after upgrading keecas. A stale install from a previous keecas version's legacy location is removed automatically. Restart Claude Code (or open a new session) after installing.
 
-### Use the Skill with Other AI Tools
+### Use the Skills with Other AI Tools
 
 For AI tools that don't understand Claude Code's Skill format (OpenAI Codex CLI, Cursor, Copilot, or a plain chat session), print the skill content to stdout instead of installing it, and paste or redirect it wherever you need:
 
 ```bash
-# Print the main skill guidance
+# Print the core keecas-notebook guidance
 keecas skill print
 
-# Include the skill's reference docs too (roughly double the size)
-keecas skill print --with-references
+# Add the keecas-quarto guidance (for notebooks rendered by Quarto)
+keecas skill print --quarto
+
+# Include the skills' reference docs too (several times the size)
+keecas skill print --quarto --with-references
 
 # e.g. append it to a project-level AGENTS.md
-keecas skill print --with-references >> AGENTS.md
+keecas skill print --quarto --with-references >> AGENTS.md
 ```
 
-This makes no filesystem writes on its own -- it's plain text on stdout, so it works the same on every OS and with any tool that accepts pasted or piped context.
+Output is always UTF-8, regardless of the console encoding. This makes no filesystem writes on its own -- it's plain text on stdout, so it works the same on every OS and with any tool that accepts pasted or piped context.
 
 ## Configuration File Format
 
