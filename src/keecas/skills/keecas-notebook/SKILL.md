@@ -124,12 +124,18 @@ A row is `symbol = formula = value  description`. When it gets too wide:
 
 ## 11. Verifications
 
-`check()` defaults to `<=`, so pass **demand / capacity** against 1. Convert the ratio with `[1]`: with mixed units (`kN` over `N`) it otherwise stays `0.000667 kN/N` and `check` raises an error. `[1]` reduces only dimensionless quantities, so a demand/capacity pair with mismatched dimensions keeps its units and still fails loudly.
+`check(lhs, rhs)` defaults to `lhs <= rhs` and compares quantities directly (`30 deg <= 45 deg`, `20 mm <= 30 mm`), provided **both sides are in the same unit**. Mixed units (`20 mm` vs `3 cm`, or a `kN/N` ratio) raise a `TypeError`. Units are the author's responsibility: convert demand and capacity to the same unit in the pipeline. Never pass them through `pc.convert_to([1])`, which turns an angle into radians and then compares it with whatever is on the other side (`30 deg` -> `0.52 <= 45` passes silently).
 
 ```python
-_v = {k: k | pc.subs(eqn | params) | pc.N | pc.convert_to([1]) | pc.N for k in [N_Ed / N_Rd]}
-_c = {k: check(v, 1) for k, v in _v.items()}
-show_eqn([_v, _c], float_format="{:.3f}")
+_v = {k: k | pc.subs(eqn | params) | pc.N | pc.convert_to([u.kN]) | pc.N for k in [N_Ed, N_Rd]}
+
+# Compare the quantities
+_c = {N_Ed: check(_v[N_Ed], _v[N_Rd])}
+show_eqn([_v, _c], float_format="{:.2f}")
+
+# Or as a utilisation ratio (demand / capacity) against 1
+_r = {N_Ed / N_Rd: _v[N_Ed] / _v[N_Rd]}
+show_eqn([_r, {k: check(v, 1) for k, v in _r.items()}], float_format="{:.3f}")
 ```
 
 ## 12. Style
@@ -145,6 +151,6 @@ No whitespace padding to align dict values or `=` signs; ruff collapses it and i
 5. `_d` descriptions, `_l` labels; descriptions short, LaTeX-safe, free of parameter values?
 6. Wide `_e` blocks render without the description slot?
 7. Expression strings use `^`; `Max`/`Min`/`Piecewise` written as strings?
-8. Verifications are `check(demand / capacity, 1)` with the ratio converted via `[1]`?
+8. Verifications compare demand and capacity (or their ratio against 1) in the same unit, never via `pc.convert_to([1])`?
 9. Trig: no `* u.rad` on results, angles via `pc.convert_to([1])`?
 10. No `print()`, no aligned padding, `display(...)` around non-final `show_eqn`?

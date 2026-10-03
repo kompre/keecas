@@ -41,12 +41,12 @@ pc.convert_to([u.mm])        # length -> mm, area -> mm**2, volume -> mm**3
 pc.convert_to([u.cm])        # inertia -> cm**4, section modulus -> cm**3
 pc.convert_to([u.MPa])       # stress -> MPa
 pc.convert_to([u.kN, u.m])   # force -> kN, moment -> kN*m, line load -> kN/m
-pc.convert_to([1])           # dimensionless quantity (deg, kN/N) -> plain number
+pc.convert_to([1])           # angle in deg -> plain number (radians), for trig only
 ```
 
 Compound targets (`[u.mm**2]`, `[u.kN * u.m]`) work, but don't use them: the point of base units is that you cannot ask for the wrong power.
 
-`[1]` is not a unit stripper. It turns a **dimensionless** quantity into a plain number: an angle (`30 deg` -> `0.5236`) or a ratio written in mixed units (`kN/N` -> `1000`). A quantity with dimensions is left unchanged (`5 m` stays `5 m`).
+`[1]` is not a unit stripper. It turns a **dimensionless** quantity into a plain number: an angle (`30 deg` -> `0.5236`) or a ratio written in mixed units (`kN/N` -> `1000`). A quantity with dimensions is left unchanged (`5 m` stays `5 m`). Use it for angles that feed trig functions, not before `check()`: there the unit is information (`30 deg <= 45 deg`), and a converted angle is compared with a bare number.
 
 Per-symbol targets: a dict of **lists**, indexed directly.
 

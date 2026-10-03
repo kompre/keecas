@@ -155,7 +155,7 @@ A_s_prov = symbols(r"A_{s,prov}")
 _p = {A_s_prov: 524 * u.mm**2}
 params.update(_p)
 
-_v = {k: k | pc.subs(eqn | params) | pc.N | pc.convert_to([1]) | pc.N for k in [A_s_min / A_s_prov]}
+_v = {k: k | pc.subs(eqn | params) | pc.N | pc.convert_to([u.mm]) | pc.N for k in [A_s_min / A_s_prov]}
 _c = {k: check(v, 1) for k, v in _v.items()}
 verifiche.update(_c)
 

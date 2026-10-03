@@ -136,13 +136,13 @@ A_s_prov = symbols(r"A_{s,prov}")
 _p = {A_s_prov: 524 * u.mm**2}
 params.update(_p)
 
-_v = {k: k | pc.subs(eqn | params) | pc.N | pc.convert_to([1]) | pc.N for k in [A_s_min / A_s_prov]}
+_v = {k: k | pc.subs(eqn | params) | pc.N | pc.convert_to([u.mm]) | pc.N for k in [A_s_min / A_s_prov]}
 _c = {k: check(v, 1) for k, v in _v.items()}
 
 show_eqn([_p | _v, _c], float_format=[None, "{:.3f}", None])
 ```
 
-`check()` takes **demand / capacity**: `A_s_min` is required, `A_s_prov` is provided, and the check passes when the ratio is <= 1.
+`check()` takes **demand / capacity**: `A_s_min` is required, `A_s_prov` is provided, and the check passes when the ratio is <= 1. Converting to `[u.mm]` puts both areas in mm**2, so the ratio is a plain number; `check(_v_min, _v_prov)` on the two areas works the same way.
 
 ## What this skeleton illustrates
 
