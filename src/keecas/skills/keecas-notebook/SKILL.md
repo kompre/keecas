@@ -10,7 +10,7 @@ description: Writes and edits Jupyter notebooks that use the keecas library (sym
 Reference files, read when the topic comes up:
 
 - `references/show_eqn.md` - rows and columns, `float_format`/`col_wrap` sizing, environments, labels, descriptions, wide rows.
-- `references/values_pipeline.md` - the `pc.subs | pc.N | pc.convert_to | pc.N` chain, extracting floats, `solve()`, trig and angles, `sympy.evaluate(False)`.
+- `references/values_pipeline.md` - the `pc.subs | pc.convert_to | pc.N` chain, extracting floats, `solve()`, trig and angles, `sympy.evaluate(False)`.
 - `references/notebook_skeleton.md` - a complete minimal notebook to copy.
 
 ## Core principle
@@ -56,7 +56,7 @@ _d = {
     A_s_min: "min. controllo fessurazione",
 }
 
-_v = {k: v | pc.subs(eqn | params) | pc.N | pc.convert_to([u.mm]) | pc.N for k, v in _e.items()}
+_v = {k: v | pc.subs(eqn | params) | pc.convert_to([u.mm]) | pc.N for k, v in _e.items()}
 
 show_eqn(
     [_e, _v, _d],
@@ -72,9 +72,9 @@ show_eqn(
 
 ## 4. The values pipeline
 
-Use exactly `pc.subs(eqn | params) | pc.N | pc.convert_to([...]) | pc.N`.
+Use exactly `pc.subs(eqn | params) | pc.convert_to([...]) | pc.N`.
 
-The first `pc.N` is required: `pc.convert_to` on an unevaluated expression can return a wrong unit **and** a wrong magnitude when a sum stays a factor inside a product, e.g. a formula with `(4 - pi)` or a unit literal like `"h - c_nom - 5*u.mm"` (keecas#118). Evaluating first removes the problem. Add `| pc.doit` at the end if a `Piecewise` or other wrapper survives.
+`pc.convert_to` keeps `pi`, fractions and roots exact; the final `pc.N` evaluates them (leave it off only to show an exact result). Don't add `pc.N` before `pc.convert_to`: sums with units, e.g. a formula with `(4 - pi)` or a unit literal like `"h - c_nom - 5*u.mm"`, convert correctly without it (keecas#118). Add `| pc.doit` at the end if a `Piecewise` or other wrapper survives.
 
 ## 5. Units in `pc.convert_to`
 
@@ -119,7 +119,7 @@ A row is `symbol = formula = value  description`. When it gets too wide:
 ## 10. No parallel numerics, no `print()`
 
 - Never strip units, compute with numpy/floats and write the result back into `params`. Numpy is fine for plotting or sweeps; any number reported must be re-derived through the pipeline.
-- To branch on a value, extract it after the pipeline: `float((d | pc.subs(eqn | params) | pc.N | pc.convert_to([u.m]) | pc.N).args[0])`.
+- To branch on a value, extract it after the pipeline: `float((d | pc.subs(eqn | params) | pc.convert_to([u.m]) | pc.N).args[0])`.
 - No `print()`: use `show_eqn({sym: value})`, `display(Markdown(...))`, or a markdown cell.
 
 ## 11. Verifications
@@ -127,7 +127,7 @@ A row is `symbol = formula = value  description`. When it gets too wide:
 `check(lhs, rhs)` defaults to `lhs <= rhs` and compares quantities directly (`30 deg <= 45 deg`, `20 mm <= 30 mm`), provided **both sides are in the same unit**. Mixed units (`20 mm` vs `3 cm`, or a `kN/N` ratio) raise a `TypeError`. Units are the author's responsibility: convert demand and capacity to the same unit in the pipeline. Never pass them through `pc.convert_to([1])`, which turns an angle into radians and then compares it with whatever is on the other side (`30 deg` -> `0.52 <= 45` passes silently).
 
 ```python
-_v = {k: k | pc.subs(eqn | params) | pc.N | pc.convert_to([u.kN]) | pc.N for k in [N_Ed, N_Rd]}
+_v = {k: k | pc.subs(eqn | params) | pc.convert_to([u.kN]) | pc.N for k in [N_Ed, N_Rd]}
 
 # Compare the quantities
 _c = {N_Ed: check(_v[N_Ed], _v[N_Rd])}
@@ -145,7 +145,7 @@ No whitespace padding to align dict values or `=` signs; ruff collapses it and i
 ## Self-check before declaring done
 
 1. Symbols: r-strings, `{}` subscripts, `\` Greek?
-2. Every displayed value comes from `pc.subs | pc.N | pc.convert_to | pc.N`; nothing computed with floats is written into `params`?
+2. Every displayed value comes from `pc.subs | pc.convert_to | pc.N`; nothing computed with floats is written into `params`?
 3. `pc.convert_to` targets are base-unit lists (`[u.mm]`, `[u.kN, u.m]`)?
 4. First `show_eqn` slot contains every key that needs a row (`_p | _e`); `float_format`/`col_wrap` are N+1-entry lists whenever a slot holds formulas?
 5. `_d` descriptions, `_l` labels; descriptions short, LaTeX-safe, free of parameter values?

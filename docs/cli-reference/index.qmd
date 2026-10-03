@@ -172,7 +172,7 @@ Templates include:
 
 keecas bundles two Claude Code skills:
 
-- `keecas-notebook` - core conventions for keecas calculation notebooks: symbols, the `_p`/`_e`/`_v`/`_d`/`_l` dicts, the `pc.subs | pc.N | pc.convert_to | pc.N` values pipeline, `show_eqn`, descriptions and verifications. Applies to any Jupyter notebook.
+- `keecas-notebook` - core conventions for keecas calculation notebooks: symbols, the `_p`/`_e`/`_v`/`_d`/`_l` dicts, the `pc.subs | pc.convert_to | pc.N` values pipeline, `show_eqn`, descriptions and verifications. Applies to any Jupyter notebook.
 - `keecas-quarto` - the Quarto layer on top of it: init cells, `%run` of shared notebooks, cell options, fitting rows to the page, tables and figures for a PDF calculation report.
 
 Each skill tells Claude to load the other when both apply.

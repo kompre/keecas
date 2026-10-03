@@ -7,16 +7,22 @@ All functions are designed to work with SymPy expressions and support
 functional programming patterns for mathematical computation workflows.
 """
 
+from collections.abc import Iterable
+from functools import reduce
 from inspect import currentframe
 from itertools import permutations
 from typing import Any
 
 from pipe import Pipe
 from sympy import (
+    Add,
     Basic,
+    Function,
     MatrixBase,
     Mul,
+    Pow,
     S,
+    Tuple,
     UnevaluatedExpr,
     default_sort_key,
     sympify,
@@ -25,7 +31,9 @@ from sympy import (
 from sympy.core.function import UndefinedFunction
 from sympy.parsing.sympy_parser import T
 from sympy.parsing.sympy_parser import parse_expr as sympy_parse_expr
-from sympy.physics.units.util import convert_to as sympy_convert_to
+from sympy.physics.units import Quantity, UnitSystem
+from sympy.physics.units.dimensions import Dimension
+from sympy.physics.units.util import _get_conversion_matrix_for_expr
 from sympy.physics.units.util import quantity_simplify as sympy_quantity_simplify
 
 
@@ -47,6 +55,119 @@ def order_subs(subs: dict[Basic, Any]) -> list[tuple[Basic, Any]]:
 
     # Reorder the dict with topological_sort
     return topological_sort((subs.items(), edges), default_sort_key)
+
+
+def _is_homogeneous(expr: Add, unit_system: UnitSystem) -> bool:
+    """Check that all terms of a sum have the same dimension.
+
+    Args:
+        expr: Sum to check
+        unit_system: Unit system used for dimensional analysis
+
+    Returns:
+        True if every term has the same dimension, False otherwise or if the
+        dimension of a term cannot be determined.
+    """
+    dimension_system = unit_system.get_dimension_system()
+    try:
+        first, *rest = (
+            dimension_system.get_dimensional_dependencies(
+                Dimension(unit_system.get_dimensional_expr(term)), mark_dimensionless=True
+            )
+            for term in expr.args
+        )
+    except (TypeError, ValueError):
+        return False
+    return all(dims == first for dims in rest)
+
+
+def _scale_factor(expr: Basic, unit_system: UnitSystem) -> Basic:
+    """Return the magnitude of an expression in the base units of the unit system.
+
+    Same as the helper inside sympy's `convert_to`, plus a branch for sums: a
+    sum whose terms share a dimension is the sum of the terms' scale factors.
+    Without it, a sum that is a factor of a product (`(4 - pi)*b**2*gamma`)
+    keeps its units inside the scale factor, and they are counted twice
+    (keecas#118). Other nodes (functions, Piecewise, matrices) are returned
+    unchanged, as sympy does.
+
+    Args:
+        expr: Expression whose quantities are replaced by their scale factors
+        unit_system: Unit system providing the scale factors
+
+    Returns:
+        Expression with the quantities reachable through products, powers and
+        homogeneous sums replaced by their scale factors.
+    """
+    if isinstance(expr, Quantity):
+        return unit_system.get_quantity_scale_factor(expr)
+    if isinstance(expr, Mul):
+        return reduce(lambda x, y: x * y, (_scale_factor(arg, unit_system) for arg in expr.args))
+    if isinstance(expr, Pow):
+        return _scale_factor(expr.base, unit_system) ** expr.exp
+    if isinstance(expr, Add) and _is_homogeneous(expr, unit_system):
+        return Add(*(_scale_factor(arg, unit_system) for arg in expr.args))
+    return expr
+
+
+def _convert_to(expr: Any, target_units: Any, unit_system: str | UnitSystem = "SI") -> Basic:
+    """Convert an expression to target units, also when sums are nested in products.
+
+    Follows `sympy.physics.units.util.convert_to` (sympy 1.14), with two changes:
+
+    - a sum whose terms share a dimension is converted as a whole, so the result
+      is a single magnitude times the target units; sympy converts a top-level
+      sum term by term and mishandles a sum nested in a product (keecas#118);
+    - the magnitude is computed with `_scale_factor`, which handles such sums.
+
+    Exact numbers and constants such as `pi` stay symbolic.
+
+    Args:
+        expr: Expression to convert
+        target_units: Unit or list of units to express the result in
+        unit_system: Unit system used for the conversion. Defaults to "SI".
+
+    Returns:
+        Converted expression, or the expression with each quantity converted
+        on its own when its dimension cannot be expressed in the target units.
+    """
+    unit_system = UnitSystem.get_unit_system(unit_system)
+
+    if not isinstance(target_units, Iterable | Tuple):
+        target_units = [target_units]
+
+    expr = sympify(expr)
+    target_units = sympify(target_units)
+
+    # A sum of terms with different dimensions is converted term by term, as sympy does
+    if isinstance(expr, Add) and not _is_homogeneous(expr, unit_system):
+        return Add.fromiter(_convert_to(arg, target_units, unit_system) for arg in expr.args)
+    if (
+        isinstance(expr, Pow)
+        and isinstance(expr.base, Add)
+        and not _is_homogeneous(expr.base, unit_system)
+    ):
+        return _convert_to(expr.base, target_units, unit_system) ** expr.exp
+
+    if isinstance(expr, Function):
+        expr = expr.together()
+
+    # Quantities inside nodes that _scale_factor leaves unchanged are still converted
+    if not isinstance(expr, Quantity) and expr.has(Quantity):
+        expr = expr.replace(
+            lambda x: isinstance(x, Quantity),
+            lambda x: x.convert_to(target_units, unit_system),
+        )
+
+    depmat = _get_conversion_matrix_for_expr(expr, target_units, unit_system)
+    if depmat is None:
+        return expr
+
+    coeff, units = Mul.fromiter(
+        (1 / _scale_factor(unit, unit_system) * unit) ** p for unit, p in zip(target_units, depmat)
+    ).as_coeff_Mul()
+    # Multiplying the coefficient first spreads it over a sum: (4000 + 250*pi)*mm**2
+    return (_scale_factor(expr, unit_system) * coeff) * units
 
 
 @Pipe
@@ -326,14 +447,42 @@ def convert_to(expression: Basic, units: Any = 1) -> Basic:
         show_eqn([_p | _e, _v])
         ```
 
+        ```{python}
+        # Sums with units and exact constants: pi stays symbolic until pc.N
+        b_f, A_r, g_s, w = symbols(r"b_f, A_r, \gamma_s, w")
+
+        _p = {
+            b_f: 50*u.mm,
+            g_s: 78.5*u.kN/u.m**3,
+        }
+
+        _e = {
+            A_r: "2*b_f**2 - (4 - pi)*b_f**2/10" | pc.parse_expr,
+            w: "A_r * g_s" | pc.parse_expr,
+        }
+
+        _v = {
+            A_r: A_r | pc.subs(_p | _e) | pc.convert_to([u.mm]),  # (4000 + 250*pi) mm**2, exact
+            w: w | pc.subs(_p | _e) | pc.convert_to([u.kN, u.m]) | pc.N,  # kN/m
+        }
+
+        show_eqn([_p | _e, _v])
+        ```
+
     Notes:
         - Prefixed units (kN, cm, MPa) handled automatically via SymPy prefix system
         - Non-prefixed units (kgf, lbf) use scale factors from Pint definitions
         - All Pint units convert correctly through SymPy integration
         - Commonly chained between subs() and N() in evaluation workflows
         - List of units allows flexible conversion with fallback options
+        - A sum whose terms share a dimension is converted as a whole, also when
+          it is a factor of a product (`(4 - pi)*b**2`, `h - c - 5*u.mm`), so
+          `N()` is not needed before `convert_to()`; sympy's own `convert_to`
+          gets the unit wrong there (keecas#118)
+        - Exact numbers and constants such as `pi` stay symbolic; chain `N()`
+          after `convert_to()` to evaluate them
     """
-    return sympy_convert_to(expression, target_units=units)
+    return _convert_to(expression, units)
 
 
 @Pipe

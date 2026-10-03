@@ -78,7 +78,7 @@ _d = {
     f_ct_eff: "resist. efficace a trazione",
 }
 
-_v = {k: v | pc.subs(eqn | params) | pc.N | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
+_v = {k: v | pc.subs(eqn | params) | pc.convert_to([u.MPa]) | pc.N for k, v in _e.items()}
 
 show_eqn(
     [_e, _v, _d],
@@ -111,7 +111,7 @@ _d = {
     A_s_min: "min. flessionale",
 }
 
-_v = {k: v | pc.subs(eqn | params) | pc.N | pc.convert_to([u.mm]) | pc.N for k, v in _e.items()}
+_v = {k: v | pc.subs(eqn | params) | pc.convert_to([u.mm]) | pc.N for k, v in _e.items()}
 
 show_eqn(
     [_e, _v],
@@ -120,7 +120,7 @@ show_eqn(
 )
 ```
 
-`_d` is not a slot here (the `Max(...)` row is wide), but it still feeds the labels. `pc.convert_to([u.mm])` gives `d_inf` in mm and `A_s_min` in mm**2. The `pc.N` before `pc.convert_to` matters: `5*u.mm` inside the sum would otherwise produce a wrong unit (keecas#118).
+`_d` is not a slot here (the `Max(...)` row is wide), but it still feeds the labels. `pc.convert_to([u.mm])` gives `d_inf` in mm and `A_s_min` in mm**2.
 
 ## Verification
 
@@ -136,7 +136,7 @@ A_s_prov = symbols(r"A_{s,prov}")
 _p = {A_s_prov: 524 * u.mm**2}
 params.update(_p)
 
-_v = {k: k | pc.subs(eqn | params) | pc.N | pc.convert_to([u.mm]) | pc.N for k in [A_s_min / A_s_prov]}
+_v = {k: k | pc.subs(eqn | params) | pc.convert_to([u.mm]) | pc.N for k in [A_s_min / A_s_prov]}
 _c = {k: check(v, 1) for k, v in _v.items()}
 
 show_eqn([_p | _v, _c], float_format=[None, "{:.3f}", None])
@@ -147,7 +147,7 @@ show_eqn([_p | _v, _c], float_format=[None, "{:.3f}", None])
 ## What this skeleton illustrates
 
 - One setup cell; `params` and `eqn` are global, `_p/_e/_v/_d/_c` are per cell.
-- Each block: symbols -> `_p` or `_e` -> `_d` -> `_v` via `pc.subs | pc.N | pc.convert_to | pc.N` -> `show_eqn`.
+- Each block: symbols -> `_p` or `_e` -> `_d` -> `_v` via `pc.subs | pc.convert_to | pc.N` -> `show_eqn`.
 - Narrow blocks keep the description slot; wide blocks move the description to the markdown cell above and keep `_d` for labels.
 - Markdown cells carry prose, never duplicate formulas.
 - Verifications end with `check(demand / capacity, 1)`.

@@ -1,5 +1,5 @@
 import pytest
-from sympy import pi, sin, symbols
+from sympy import pi, sin, sqrt, symbols, sympify
 from sympy.parsing.sympy_parser import parse_expr as sympy_parse_expr
 from sympy.physics.units import meter
 
@@ -42,6 +42,109 @@ def test_convert_to():
     expression = x * meter
     result = expression | convert_to(meter)
     assert result == x * meter
+
+
+@pytest.fixture
+def section_params():
+    """Rectangular section with an area formula holding a sum factor (keecas#118)."""
+    from keecas.pint_sympy import unitregistry as u
+
+    a, b, A, gamma = symbols("a b A gamma")
+    params = {a: 100 * u.mm, b: 50 * u.mm, gamma: 78.5 * u.kN / u.m**3}
+    return u, (a, b, A, gamma), params
+
+
+@pytest.mark.parametrize(
+    "formula",
+    [
+        "a*b - (4 - pi)*b**2/10",  # irrational constant in the sum factor
+        "a*b - (4 - 3)*b**2/10",  # unevaluated numeric sum from parse_expr
+    ],
+)
+def test_convert_to_sum_factor_in_product(section_params, formula):
+    """A sum that stays a factor of a product gets the right unit (keecas#118)."""
+    u, (a, b, A, gamma), params = section_params
+    expr = (A * gamma) | subs({A: formula | parse_expr(local_dict={"a": a, "b": b})} | params)
+    target = [sympify(u.kN), sympify(u.m)]
+
+    result = expr | convert_to(target) | N
+    reference = expr | N | convert_to(target) | N  # evaluating first avoids the bug
+
+    magnitude, unit = result.as_coeff_Mul()
+    assert unit == sympify(u.kN / u.m)
+    assert magnitude == pytest.approx(float(reference.as_coeff_Mul()[0]))
+
+
+def test_convert_to_keeps_pi_symbolic(section_params):
+    """Converting before pc.N keeps exact constants such as pi."""
+    u, (a, b, A, gamma), params = section_params
+    area = "a*b - (4 - pi)*b**2/10" | parse_expr(local_dict={"a": a, "b": b}) | subs(params)
+
+    result = area | convert_to([u.mm])
+
+    assert result == (4000 + 250 * pi) * sympify(u.mm) ** 2
+
+
+def test_convert_to_sum_in_denominator():
+    """A sum with units in a denominator, e.g. an inertia with a `(4 - pi)` term, converts correctly."""
+    from keecas.pint_sympy import unitregistry as u
+
+    q, L, E, I_y, b, h, r, delta = symbols("q L E I_y b h r delta")
+    params = {
+        q: 12 * u.kN / u.m,
+        L: 6 * u.m,
+        E: 210 * u.GPa,
+        b: 100 * u.mm,
+        h: 200 * u.mm,
+        r: 10 * u.mm,
+    }
+    local_dict = {"q": q, "L": L, "E": E, "I_y": I_y, "b": b, "h": h, "r": r}
+    eqn = {
+        I_y: "b*h**3/12 - (4 - pi)*r**4/16" | parse_expr(local_dict=local_dict),
+        delta: "5*q*L**4/(384*E*I_y)" | parse_expr(local_dict=local_dict),
+    }
+    expr = delta | subs(eqn | params)
+
+    result = expr | convert_to([u.mm])
+    reference = expr | N | convert_to([u.mm]) | N
+
+    assert result.has(pi)
+    magnitude, unit = (result | N).as_coeff_Mul()
+    assert unit == sympify(u.mm)
+    assert magnitude == pytest.approx(float(reference.as_coeff_Mul()[0]))
+
+
+def test_convert_to_mixed_dimension_sum_term_by_term():
+    """A sum whose terms have different dimensions is converted term by term, as in sympy."""
+    from sympy.physics.units import millimeter
+
+    x = symbols("x")
+    result = (x + 5 * millimeter) | convert_to(meter)
+    assert result == x + meter / 200
+
+
+@pytest.mark.parametrize(
+    "expression, target",
+    [
+        ("850*u.kN / (120*u.cm**2)", "[u.MPa]"),
+        ("5000*u.N", "u.kN"),
+        ("2*u.kgf", "[u.N]"),
+        ("12*u.kN/u.m * (6*u.m)**2 / 8", "[u.kN, u.m]"),
+        ("sqrt(3*u.kN*u.m)", "[u.kN, u.m]"),
+        ("30*u.deg", "[1]"),
+    ],
+)
+def test_convert_to_matches_sympy_without_sums(expression, target):
+    """Without sums carrying units, the result is identical to sympy's convert_to."""
+    from sympy.physics.units.util import convert_to as sympy_convert_to
+
+    from keecas.pint_sympy import unitregistry as u
+
+    namespace = {"u": u, "sqrt": sqrt}
+    expr = sympify(eval(expression, namespace))
+    target_units = eval(target, namespace)
+
+    assert (expr | convert_to(target_units)) == sympy_convert_to(expr, target_units)
 
 
 def test_doit():
