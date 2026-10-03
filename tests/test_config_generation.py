@@ -242,19 +242,16 @@ class TestCommentSyntaxConventions:
                 # So we shouldn't find many of these
                 pass  # OK - may have some commented optional settings
 
-    def test_local_config_shows_inheritance(self, tmp_path, monkeypatch):
+    def test_local_config_shows_inheritance(self, setup_fake_home, tmp_path, monkeypatch):
         """Local config should show inherited global values in comments."""
         monkeypatch.chdir(tmp_path)
 
         from keecas.config.manager import ConfigManager
 
-        # Create global config with custom values
+        # Create global config with custom values.
+        # ConfigManager resolves the global path in __init__, so it must be
+        # constructed after HOME/USERPROFILE point at the fake home.
         manager = ConfigManager()
-        fake_home = tmp_path / "home"
-        fake_home.mkdir()
-        monkeypatch.setenv("HOME", str(fake_home))
-        monkeypatch.setenv("USERPROFILE", str(fake_home))
-
         manager.init_config(global_config=True, force=True)
 
         # Now create local config
