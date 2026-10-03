@@ -41,10 +41,12 @@ pc.convert_to([u.mm])        # length -> mm, area -> mm**2, volume -> mm**3
 pc.convert_to([u.cm])        # inertia -> cm**4, section modulus -> cm**3
 pc.convert_to([u.MPa])       # stress -> MPa
 pc.convert_to([u.kN, u.m])   # force -> kN, moment -> kN*m, line load -> kN/m
-pc.convert_to([1])           # strip units from a dimensionless result
+pc.convert_to([1])           # dimensionless quantity (deg, kN/N) -> plain number
 ```
 
 Compound targets (`[u.mm**2]`, `[u.kN * u.m]`) work, but don't use them: the point of base units is that you cannot ask for the wrong power.
+
+`[1]` is not a unit stripper. It turns a **dimensionless** quantity into a plain number: an angle (`30 deg` -> `0.5236`) or a ratio written in mixed units (`kN/N` -> `1000`). A quantity with dimensions is left unchanged (`5 m` stays `5 m`).
 
 Per-symbol targets: a dict of **lists**, indexed directly.
 
@@ -82,7 +84,7 @@ For branching or feeding a library (`math.ceil`, `np.linspace`), extract after t
 _d_m = float((d | pc.subs(eqn | params) | pc.N | pc.convert_to([u.m]) | pc.N).args[0])
 ```
 
-The result is a sympy object, not a pint quantity: it has no `.magnitude`. A dimensionless result (`pc.convert_to([1])`) is already a number: `float(v)`.
+The result is a sympy object, not a pint quantity: it has no `.magnitude`. A dimensionless result passed through `pc.convert_to([1])` is already a number: `float(v)`.
 
 ## `solve()` on a symbolic system
 

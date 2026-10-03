@@ -90,7 +90,7 @@ Don't write `[u.mm**2]` or `[u.kN * u.m]`. They work, but writing the power by h
 
 ## 6. Angles and trig
 
-Trig functions take and return dimensionless numbers (radians). Convert angle inputs with `pc.convert_to([1])`, never `[u.rad]`; never multiply a trig result by `u.rad`. To display an angle in degrees: `(v * u.rad) | pc.convert_to([u.deg]) | pc.N`. Details in `references/values_pipeline.md`.
+Trig functions take and return dimensionless numbers, implicitly radians; an argument still carrying `deg` or `rad` is not evaluated (`sin(30*degree)`). Convert angle inputs with `pc.convert_to([1])`, which turns a dimensionless quantity into a plain number, never `[u.rad]`; never multiply a trig result by `u.rad`. To display an angle in degrees: `(v * u.rad) | pc.convert_to([u.deg]) | pc.N`. Details in `references/values_pipeline.md`.
 
 ## 7. Descriptions
 
@@ -124,7 +124,7 @@ A row is `symbol = formula = value  description`. When it gets too wide:
 
 ## 11. Verifications
 
-`check()` defaults to `<=`, so pass **demand / capacity** against 1. Convert the ratio with `[1]`: with mixed units (`kN` over `N`) it otherwise stays `kN/N` and `check` cannot decide.
+`check()` defaults to `<=`, so pass **demand / capacity** against 1. Convert the ratio with `[1]`: with mixed units (`kN` over `N`) it otherwise stays `0.000667 kN/N` and `check` raises an error. `[1]` reduces only dimensionless quantities, so a demand/capacity pair with mismatched dimensions keeps its units and still fails loudly.
 
 ```python
 _v = {k: k | pc.subs(eqn | params) | pc.N | pc.convert_to([1]) | pc.N for k in [N_Ed / N_Rd]}
