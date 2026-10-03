@@ -86,6 +86,64 @@ def test_check():
     assert r"\textcolor{green}" in result.data
 
 
+def _as_sympy(quantity):
+    """Pint quantity -> sympy expression, as produced by the values pipeline."""
+    q = symbols("q")
+    return q | pc.subs({q: quantity}) | pc.N
+
+
+@pytest.mark.parametrize("to_sympy", [False, True], ids=["pint", "sympy"])
+@pytest.mark.parametrize(
+    "lhs, rhs, color",
+    [
+        ("30 deg", "45 deg", "green"),
+        ("60 deg", "45 deg", "red"),
+        ("20 mm", "30 mm", "green"),
+        ("50 mm", "30 mm", "red"),
+    ],
+)
+def test_check_compares_quantities_in_same_unit(lhs, rhs, color, to_sympy):
+    """check() compares two quantities directly when both share a unit."""
+    from keecas import u
+
+    lhs, rhs = u.Quantity(lhs), u.Quantity(rhs)
+    if to_sympy:
+        lhs, rhs = _as_sympy(lhs), _as_sympy(rhs)
+    result = check(lhs, rhs)
+    assert rf"\textcolor{{{color}}}" in result.data
+
+
+@pytest.mark.parametrize("to_sympy", [False, True], ids=["pint", "sympy"])
+@pytest.mark.parametrize(
+    "lhs, rhs",
+    [
+        ("20 mm", "3 cm"),  # same dimension, different unit
+        ("20 mm", "30 deg"),  # different dimension
+    ],
+)
+def test_check_raises_on_mixed_units(lhs, rhs, to_sympy):
+    """check() does not convert units: mixed units fail loudly instead of guessing."""
+    from keecas import u
+
+    lhs, rhs = u.Quantity(lhs), u.Quantity(rhs)
+    if to_sympy:
+        lhs, rhs = _as_sympy(lhs), _as_sympy(rhs)
+    with pytest.raises(TypeError):
+        check(lhs, rhs)
+
+
+def test_check_raises_on_quantity_vs_number():
+    """A quantity is not compared against a bare number (e.g. 30 deg vs pi/4)."""
+    from sympy import pi
+
+    from keecas import u
+
+    with pytest.raises(TypeError):
+        check(_as_sympy(30 * u.deg), pi / 4)
+    with pytest.raises(TypeError):
+        check(20 * u.mm, 30)
+
+
 def test_default_cell_formatter():
     """Test format_value function with singledispatch."""
     from keecas import format_value
