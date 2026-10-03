@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.5.0](https://github.com/kompre/keecas/compare/v1.4.1...v1.5.0) (2026-10-03)
+
+
+### Features
+
+* **skills:** split keecas-notebook into core and keecas-quarto skills ([a0d492e](https://github.com/kompre/keecas/commit/a0d492e65d82105a5bdcc8fd85cd9e34d915bbea))
+* **skills:** split keecas-notebook into core and keecas-quarto skills ([d007a8a](https://github.com/kompre/keecas/commit/d007a8ab677ab40d5ef2ad4a2eb9ea2e36223cae))
+
+
+### Documentation
+
+* **skills:** compare check() operands in the same unit, not via convert_to([1]) ([f8bdd2d](https://github.com/kompre/keecas/commit/f8bdd2d535273ebaf76d29f13a5242392ce3f7d3))
+* **skills:** describe convert_to([1]) precisely ([12023e4](https://github.com/kompre/keecas/commit/12023e47a64b89e8b8b8bfd00536812d421c690b))
+
 ## [1.4.1](https://github.com/kompre/keecas/compare/v1.4.0...v1.4.1) (2026-09-20)
 
 
