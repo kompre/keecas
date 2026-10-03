@@ -14,6 +14,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write  # dispatch test.yml after an auto-fix commit
 
 jobs:
   lint-fix:
@@ -46,6 +47,9 @@ jobs:
           uv run ruff format src/ tests/
 
       - name: Commit auto-fixes if any
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -53,6 +57,9 @@ jobs:
           if ! git diff --staged --quiet; then
             git commit -m "style: auto-fix linting issues [skip ci]"
             git push
+            # A GITHUB_TOKEN push starts no push/pull_request runs; dispatch the
+            # tests on the branch so the new head commit gets its "test" check.
+            gh workflow run test.yml --ref "$BRANCH"
           else
             echo "No linting fixes needed"
           fi
