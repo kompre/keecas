@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.6.0](https://github.com/kompre/keecas/compare/v1.5.0...v1.6.0) (2026-10-04)
+
+
+### Features
+
+* **pc:** add pc.rebuild to canonicalize expressions after pc.subs ([fc03443](https://github.com/kompre/keecas/commit/fc0344342252a0d736ddfde48a113c0bb3ed8590)), closes [#125](https://github.com/kompre/keecas/issues/125)
+* **pc:** add pc.rebuild to evaluate numeric leftovers after pc.subs ([e54d0a3](https://github.com/kompre/keecas/commit/e54d0a3e4bb893540b962d7133a22fae31f416c4))
+
+
+### Bug Fixes
+
+* **pc:** convert sums nested in products in pc.convert_to ([39595c5](https://github.com/kompre/keecas/commit/39595c5099893e17baac1eb29ed14332e08798a4))
+* **pc:** convert sums nested in products in pc.convert_to ([56bb560](https://github.com/kompre/keecas/commit/56bb5609680e90d6664faa578a10a0a442204559)), closes [#118](https://github.com/kompre/keecas/issues/118)
+* **pc:** evaluate a Sum over an IndexedBase substituted with a matrix in pc.doit ([011adb9](https://github.com/kompre/keecas/commit/011adb913f31cbc400764db114545ed27741d02f))
+* **pc:** find the caller's scope in pc.parse_expr called with arguments ([0fe60e6](https://github.com/kompre/keecas/commit/0fe60e6daecceb94288fbffd3b8a6deb4e0db8e1)), closes [#127](https://github.com/kompre/keecas/issues/127)
+* **pc:** find the caller's variables in pc.parse_expr called with arguments ([bd9b330](https://github.com/kompre/keecas/commit/bd9b3307609230412b3eeb3b0ec043fd4524eb16))
+* **pc:** name the keys of a substitution cycle in order_subs ([89c25a6](https://github.com/kompre/keecas/commit/89c25a6f9c6676c288a349d3921b37cae609e013)), closes [#124](https://github.com/kompre/keecas/issues/124)
+* **pc:** order a key before the keys it contains in order_subs ([47f282f](https://github.com/kompre/keecas/commit/47f282f2e5cd674c70694e245c02ae785bbab95a)), closes [#124](https://github.com/kompre/keecas/issues/124)
+* **pc:** resolve Indexed over matrices and matrix expressions in pc.doit ([ef50b16](https://github.com/kompre/keecas/commit/ef50b164e006895608ddaa0a7d126954a875e530)), closes [#126](https://github.com/kompre/keecas/issues/126)
+* **pc:** search only expressions for keys in order_subs ([f617cf4](https://github.com/kompre/keecas/commit/f617cf413637c7a84ce97385bfabcfaca3744e9c)), closes [#124](https://github.com/kompre/keecas/issues/124)
+* **pc:** substitute a MatrixSymbol with a symbolic shape in pc.subs ([7e5f968](https://github.com/kompre/keecas/commit/7e5f96877759776cd57fd8464f3a8a2b29b8d405))
+
+
+### Documentation
+
+* **skills:** document pc.rebuild for Sum and Product limits ([f8c8eda](https://github.com/kompre/keecas/commit/f8c8eda027dde7371d27f6c4dbb24463b5e7088b)), closes [#125](https://github.com/kompre/keecas/issues/125)
+
 ## [1.5.0](https://github.com/kompre/keecas/compare/v1.4.1...v1.5.0) (2026-10-03)
 
 
