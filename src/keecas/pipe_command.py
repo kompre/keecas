@@ -16,9 +16,13 @@ from typing import Any
 from pipe import Pipe
 from sympy import (
     Add,
+    Array,
     Basic,
     Function,
+    Indexed,
     MatrixBase,
+    MatrixExpr,
+    MatrixSymbol,
     Mul,
     Pow,
     S,
@@ -540,6 +544,54 @@ def convert_to(expression: Basic, units: Any = 1) -> Basic:
     return _convert_to(expression, units)
 
 
+def _is_matrix_indexed(expr: Any) -> bool:
+    """Check whether an `Indexed` needs an explicit `Array` base to be resolved.
+
+    Args:
+        expr: Node of the expression tree
+
+    Returns:
+        True for an `Indexed` over a matrix expression (`k*B`, a Hadamard
+        product, ...), or over an explicit Matrix indexed with two or more
+        indices. A Matrix with a single index already resolves.
+    """
+    if not isinstance(expr, Indexed):
+        return False
+    if isinstance(expr.base, MatrixBase):
+        return len(expr.indices) > 1
+    return isinstance(expr.base, MatrixExpr)
+
+
+def _explicit_indexed(indexed: Indexed) -> Basic:
+    """Rebuild an `Indexed` over a matrix as an `Indexed` over an explicit container.
+
+    sympy resolves an `Indexed` with numeric indices only when its base is an
+    explicit container, and passes the indices as a list, which a Matrix reads
+    as a flat index: `Indexed(Matrix, 0, 1)` raises, an `Array` base works
+    (keecas#126). A matrix expression is never resolved, and `MatMul.doit()`
+    keeps a scalar factor carrying units, so it goes through `.as_explicit()`.
+
+    Args:
+        indexed: `Indexed` whose base is a Matrix or a matrix expression
+
+    Returns:
+        The same indices over `Array(base)` (over the explicit Matrix with a
+        single index), or `indexed` unchanged when the base still contains a
+        `MatrixSymbol` or has a symbolic shape.
+    """
+    base = indexed.base
+    if not isinstance(base, MatrixBase):
+        if base.has(MatrixSymbol):
+            return indexed
+        try:
+            base = base.as_explicit()
+        except ValueError:  # symbolic shape
+            return indexed
+    if len(indexed.indices) > 1:
+        base = Array(base)
+    return Indexed(base, *indexed.indices)
+
+
 @Pipe
 def doit(expression: Basic) -> Basic:
     r"""Evaluate unevaluated operations in symbolic expressions.
@@ -604,12 +656,47 @@ def doit(expression: Basic) -> Basic:
         show_eqn([_p | _e, _v])
         ```
 
+        ```{python}
+        # Sum over an IndexedBase substituted with a matrix expression
+        from sympy import Idx, ImmutableMatrix, IndexedBase, MatrixSymbol
+
+        q = symbols(r"q", cls=IndexedBase)
+        i, j = symbols(r"i, j", cls=Idx)
+        gamma_Q, Q_tot = symbols(r"\gamma_Q, Q_{tot}")
+        Q_k = symbols(r"Q_k", cls=MatrixSymbol, n=2, m=3)
+
+        _p = {
+            gamma_Q: 1.5,
+            Q_k: ImmutableMatrix([[1, 2, 3], [4, 5, 6]]) * u.kN,
+        }
+
+        _e = {
+            q: "gamma_Q * Q_k" | pc.parse_expr,
+            Q_tot: "Sum(q[i, j], (i, 0, 1), (j, 0, 2))" | pc.parse_expr,
+        }
+
+        # q becomes 1.5*Q_k with Q_k a Matrix: the Sum still evaluates
+        _v = {
+            Q_tot: Q_tot | pc.subs(_p | _e) | pc.doit | pc.convert_to(u.kN) | pc.N,
+        }
+
+        show_eqn([_p | _e, _v])
+        ```
+
     Notes:
         - Works with derivatives, integrals, limits, summations, and products
         - May be needed before subs() to properly substitute into evaluated forms
         - Not all operations can be evaluated symbolically (may return unchanged)
         - Combines well with other pipe commands in calculation workflows
+        - An `IndexedBase` such as `x[i, j]` can be substituted with a 2-D Matrix
+          or a matrix expression (`k*B`, a Hadamard product, a scalar with units
+          times a Matrix), not only with an `Array`: before evaluating, such
+          `Indexed` objects are rebuilt over an explicit `Array` so a `Sum` over
+          them resolves (keecas#126). A matrix expression that still contains a
+          `MatrixSymbol` is left symbolic.
     """
+    if isinstance(expression, Basic | MatrixBase) and expression.has(Indexed):
+        expression = expression.replace(_is_matrix_indexed, _explicit_indexed)
     return expression.doit()
 
 
