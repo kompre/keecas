@@ -40,18 +40,32 @@ from sympy.physics.units.util import quantity_simplify as sympy_quantity_simplif
 def order_subs(subs: dict[Basic, Any]) -> list[tuple[Basic, Any]]:
     """Reorder substitutions using topological order for dependency resolution.
 
-    Ensures that substitutions are applied in the correct order when variables
-    depend on each other (e.g., y depends on x, so x must be substituted first).
+    Substitutions are applied one after the other, so a key must be replaced
+    before any other key it brings into the expression or contains:
+
+    - a key whose value contains another key comes first (`y: 2*x` is applied
+      before `x: 3`, so the `x` it introduces is replaced too);
+    - a key that contains another key comes first: `MatrixSymbol("A", n, m)`
+      is applied before `n` and `m`, and `f(x)` before `x`. Replacing `n`
+      first would turn the expression's `A` into `MatrixSymbol("A", 2, m)`,
+      which no longer matches the key `A` (keecas#124).
 
     Args:
         subs: Dictionary of substitutions where keys are variables and values are expressions
 
     Returns:
         Ordered list of substitution tuples for exhaustive application
+
+    Raises:
+        ValueError: If the dependencies form a cycle (e.g. `x: y` and `y: x`).
     """
 
-    # Generate edges between each vertex
-    edges = [(i, j) for i, j in permutations(subs.items(), 2) if sympify(i[1]).has(j[0])]
+    # Edge (i, j): key i is replaced before key j
+    edges = [
+        (i, j)
+        for i, j in permutations(subs.items(), 2)
+        if sympify(i[1]).has(j[0]) or sympify(i[0]).has(j[0])
+    ]
 
     # Reorder the dict with topological_sort
     return topological_sort((subs.items(), edges), default_sort_key)
@@ -196,7 +210,11 @@ def subs(
         sorted: Whether to apply topological sorting for dependency resolution.
             When True (default), automatically orders substitutions so that dependent
             variables are substituted in correct order (e.g., if y depends on x,
-            x is substituted first). Defaults to True.
+            the x introduced by y is substituted too, and a `MatrixSymbol` with a
+            symbolic shape is substituted before its shape symbols; see
+            `order_subs`). When False, the dict is passed to SymPy's `subs`
+            unchanged, which does not resolve dependencies between entries.
+            Defaults to True.
 
     Returns:
         SymPy expression with substitutions applied, or None if input is None.
