@@ -147,6 +147,8 @@ Common pipe commands:
 - `pc.subs(dict)` - Substitute values
 - `pc.convert_to(units)` - Convert units
 - `pc.N` - Numerical evaluation
+- `pc.doit` - Evaluate sums, integrals, `Piecewise` and other unevaluated operations
+- `pc.rebuild` - Evaluate numeric leftovers after `pc.subs`; needed when a `Sum` limit is a formula such as `n - 1`
 
 ### Symbol Dependency Ordering
 

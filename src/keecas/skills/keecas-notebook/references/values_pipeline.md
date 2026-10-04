@@ -7,6 +7,7 @@
 - `pc.convert_to([...])` and per-symbol targets
 - `pc.N`, `pc.N(precision)`, `pc.doit`
 - `pc.rebuild` for `Sum` and `Product` limits
+- Sums over matrices (`IndexedBase`)
 - Extracting a Python float
 - `solve()` on a symbolic system
 - Angles and trig functions
@@ -83,12 +84,48 @@ _v = {
 
 ```python
 _v = {
-    k: v | pc.subs(eqn | params) | pc.rebuild | pc.convert_to([u.kN, u.m]) | pc.doit | pc.N
+    k: v | pc.subs(eqn | params) | pc.rebuild | pc.doit | pc.convert_to([u.kN, u.m]) | pc.N
     for k, v in _e.items()
 }
 ```
 
 Don't work around it by respelling the string (`n + -1`) or parsing with `evaluate=True`, which reorders the displayed formula. `pc.N` before `pc.doit` is no substitute: on a single `Sum` it can fail.
+
+Add it only to these cells: an ordinary formula gives the same result without `pc.rebuild` (`pc.N` evaluates the leftovers), so the default chain stays `pc.subs | pc.convert_to | pc.N`. A missing `pc.rebuild` is visible: the value still prints `Sum(...)`.
+
+## Sums over matrices (`IndexedBase`)
+
+A matrix of values (one per panel, per bar, ...) is summed through an `IndexedBase` symbol with `Idx` indices. The matrix comes straight from `eqn | params`: a Matrix, a `MatrixSymbol` whose shape symbols are in `params`, or a matrix expression such as `c_p*p*A_pan` or a `hadamard_product`, units included.
+
+```python
+from sympy import Idx, ImmutableMatrix, IndexedBase, MatrixSymbol
+
+n_f, n_p, p, A_pan, F_tot = symbols(r"n_{f} n_{p} p A_{pan} F_{tot}")
+c_p = symbols(r"c_{p}", cls=MatrixSymbol, n=n_f, m=n_p)  # shape resolved by params
+F_w = symbols(r"F_{w}", cls=IndexedBase)
+i, j = symbols(r"i j", cls=Idx)
+
+_p = {
+    n_f: 2,
+    n_p: 3,
+    p: 0.6 * u.kPa,
+    A_pan: 2.0 * u.m**2,
+    c_p: ImmutableMatrix([[-0.8, -0.6, -0.6], [-0.5, -0.4, -0.4]]),
+}
+params.update(_p)
+
+_e = {
+    F_w: "c_p*p*A_pan" | pc.parse_expr,  # one force per panel
+    F_tot: "Sum(Sum(F_w[i, j], (i, 0, n_f - 1)), (j, 0, n_p - 1))" | pc.parse_expr,
+}
+eqn.update(_e)
+
+_v = {F_tot: F_tot | pc.subs(eqn | params) | pc.rebuild | pc.doit | pc.convert_to([u.kN]) | pc.N}  # -3.96 kN
+```
+
+- Put `pc.doit` before `pc.convert_to`: the sum is then a plain quantity. With `pc.convert_to` first, it converts each quantity inside the unevaluated `Sum` separately, and `[u.kN]` alone cannot express the `kPa` there. An angle in degrees in the summand still needs `1` in the units (see "Angles and trig functions").
+- A column vector indexed once (`x_p[i]`) and a literal index next to a summation index (`F_w[0, j]`) work. A literal index on both axes of a 2-D matrix (`F_w[0, 1]`) raises `TypeError` in `pc.subs` (keecas#134).
+- Don't carry over the keecas 1.5 workarounds: no hand-made `Array(...)` copies or dict of evaluated arrays, no `pc.subs(..., sorted=False)`, no `pc.parse_expr(evaluate=True, local_dict=locals())`.
 
 ## Extracting a Python float
 

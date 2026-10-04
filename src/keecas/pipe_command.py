@@ -398,7 +398,7 @@ def rebuild(expression: Any) -> Basic:
 
         # Without pc.rebuild, pc.doit would leave the Sum unevaluated
         _v = {
-            k: v | pc.subs(_p | _e) | pc.rebuild | pc.convert_to([u.kN]) | pc.doit | pc.N
+            k: v | pc.subs(_p | _e) | pc.rebuild | pc.doit | pc.convert_to([u.kN]) | pc.N
             for k, v in _e.items()
         }
 
@@ -406,6 +406,10 @@ def rebuild(expression: Any) -> Basic:
         ```
 
     Notes:
+        - Needed only when a `Sum` or `Product` limit is a formula such as
+          `n - 1`: other expressions give the same result without it, since
+          `N()` evaluates the leftovers. A missing `rebuild` shows as an
+          unevaluated `Sum(...)` in the result
         - Not applied inside `subs()`: its output is sometimes displayed as an
           intermediate step, and rebuilding can reorder the terms
         - `N()` before `doit()` is not a substitute: on a single `Sum` it tries
@@ -777,6 +781,14 @@ def doit(expression: Basic) -> Basic:
           `Indexed` objects are rebuilt over an explicit `Array` so a `Sum` over
           them resolves (keecas#126). A matrix expression that still contains a
           `MatrixSymbol` is left symbolic.
+        - A `Sum` or `Product` whose limit is a formula (`n - 1`) also needs
+          `rebuild()` after `subs()`: `pc.subs | pc.rebuild | pc.doit |
+          pc.convert_to | pc.N`
+        - With a `Sum`, put `doit()` before `convert_to()`: on an unevaluated
+          `Sum`, `convert_to()` converts each quantity inside it separately,
+          and a target such as `[u.kN]` cannot express a `kPa` there
+        - A literal index on both axes of a 2-D Matrix (`x[0, 1]`) fails
+          earlier, in `subs()` (keecas#134)
     """
     if isinstance(expression, Basic | MatrixBase) and expression.has(Indexed):
         expression = expression.replace(_is_matrix_indexed, _explicit_indexed)
