@@ -417,6 +417,78 @@ print("SUCCESS")
     assert "SUCCESS" in result.stdout
 
 
+@pytest.mark.parametrize(
+    "parser",
+    [
+        parse_expr,
+        parse_expr(),
+        parse_expr(evaluate=True),
+        parse_expr()(evaluate=True),
+    ],
+    ids=["bare", "empty-call", "evaluate", "chained-calls"],
+)
+def test_parse_expr_with_arguments_sees_caller_scope(parser):
+    """Calling the pipe with arguments still finds the caller's variables (keecas#127).
+
+    The symbol's name differs from its variable name, as usual in keecas, so a
+    lookup that misses the caller would silently create a new plain symbol.
+    """
+    from sympy import IndexedBase
+
+    F, A_s = symbols(r"F A_{s}")
+    x = IndexedBase("x")
+
+    expr = "F/A_s" | parser
+    assert expr.free_symbols == {F, A_s}
+    assert expr | subs({F: 10, A_s: 2}) == 5
+
+    # An IndexedBase from the caller is subscriptable, not a plain Symbol
+    assert "x[0]" | parser == x[0]
+
+
+def test_parse_expr_with_arguments_in_comprehension_in_function():
+    """A dict comprehension inside a function sees the function's locals (keecas#127)."""
+    k_f = symbols(r"k_{f}")
+
+    _v = {i: "k_f*i" | parse_expr(evaluate=True) for i in (1, 2)}
+
+    assert _v == {1: k_f, 2: 2 * k_f}
+
+
+def test_parse_expr_with_arguments_at_module_level():
+    """Module-level `| pc.parse_expr(...)`, also in a comprehension (keecas#127)."""
+    import subprocess
+    import sys
+
+    test_script = r"""
+from keecas import pc, symbols
+from sympy import IndexedBase
+
+F, A_s = symbols(r"F A_{s}")
+x = IndexedBase("x")
+
+expr = "F/A_s" | pc.parse_expr(evaluate=True)
+assert expr.free_symbols == {F, A_s}, expr.free_symbols
+assert "x[0]" | pc.parse_expr(evaluate=True) == x[0]
+
+# Loop variable and module variable together
+_v = {k: "k/A_s" | pc.parse_expr(evaluate=True) for k in (F, 2*F)}
+assert _v == {F: F/A_s, 2*F: 2*F/A_s}, _v
+
+print("SUCCESS")
+"""
+
+    result = subprocess.run(
+        [sys.executable, "-c", test_script],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+
+    assert result.returncode == 0, f"Script failed:\n{result.stderr}"
+    assert "SUCCESS" in result.stdout
+
+
 def test_quantity_simplify():
     from sympy.physics.units import joule, meter, newton
 
