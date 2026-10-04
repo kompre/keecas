@@ -10,7 +10,7 @@ description: Writes and edits Jupyter notebooks that use the keecas library (sym
 Reference files, read when the topic comes up:
 
 - `references/show_eqn.md` - rows and columns, `float_format`/`col_wrap` sizing, environments, labels, descriptions, wide rows.
-- `references/values_pipeline.md` - the `pc.subs | pc.convert_to | pc.N` chain, extracting floats, `solve()`, trig and angles, `sympy.evaluate(False)`.
+- `references/values_pipeline.md` - the `pc.subs | pc.convert_to | pc.N` chain, `pc.rebuild` for sum limits, extracting floats, `solve()`, trig and angles, `sympy.evaluate(False)`.
 - `references/notebook_skeleton.md` - a complete minimal notebook to copy.
 
 ## Core principle
@@ -74,7 +74,7 @@ show_eqn(
 
 Use exactly `pc.subs(eqn | params) | pc.convert_to([...]) | pc.N`.
 
-`pc.convert_to` keeps `pi`, fractions and roots exact; the final `pc.N` evaluates them (leave it off only to show an exact result). Don't add `pc.N` before `pc.convert_to`: sums with units, e.g. a formula with `(4 - pi)` or a unit literal like `"h - c_nom - 5*u.mm"`, convert correctly without it (keecas#118). Add `| pc.doit` at the end if a `Piecewise` or other wrapper survives.
+`pc.convert_to` keeps `pi`, fractions and roots exact; the final `pc.N` evaluates them (leave it off only to show an exact result). Don't add `pc.N` before `pc.convert_to`: sums with units, e.g. a formula with `(4 - pi)` or a unit literal like `"h - c_nom - 5*u.mm"`, convert correctly without it (keecas#118). Add `| pc.doit` at the end if a `Piecewise` or other wrapper survives. For a `Sum` or `Product` whose limit is a formula (`n - 1`), also insert `| pc.rebuild` right after `pc.subs` (see `references/values_pipeline.md`).
 
 ## 5. Units in `pc.convert_to`
 

@@ -6,6 +6,7 @@
 - `pc.subs(eqn | params)`
 - `pc.convert_to([...])` and per-symbol targets
 - `pc.N`, `pc.N(precision)`, `pc.doit`
+- `pc.rebuild` for `Sum` and `Product` limits
 - Extracting a Python float
 - `solve()` on a symbolic system
 - Angles and trig functions
@@ -75,6 +76,19 @@ _v = {
 
 - `pc.N` evaluates numerically (15 significant digits); `pc.N(4)` uses 4.
 - `pc.doit` forces evaluation of wrappers that survive (`Piecewise`, unevaluated `Max`). Append it when the result still shows a symbolic wrapper: `... | pc.N | pc.doit`.
+
+## `pc.rebuild` for `Sum` and `Product` limits
+
+`pc.parse_expr` keeps `n - 1` as typed, so after `pc.subs` a limit reads `3 - 1*1`. That is not an integer, and `pc.doit` leaves the `Sum` unevaluated. `pc.rebuild` calls every constructor again (sympy's `rebuild`) and the limit becomes `2`. Insert it right after `pc.subs`; `_e` keeps the typed form for display:
+
+```python
+_v = {
+    k: v | pc.subs(eqn | params) | pc.rebuild | pc.convert_to([u.kN, u.m]) | pc.doit | pc.N
+    for k, v in _e.items()
+}
+```
+
+Don't work around it by respelling the string (`n + -1`) or parsing with `evaluate=True`, which reorders the displayed formula. `pc.N` before `pc.doit` is no substitute: on a single `Sum` it can fail.
 
 ## Extracting a Python float
 
