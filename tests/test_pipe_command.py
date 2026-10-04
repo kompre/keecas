@@ -30,6 +30,96 @@ def test_subs():
     assert result == x + 3
 
 
+def test_order_subs_key_before_keys_it_contains():
+    """A key is replaced before the other keys it contains (keecas#124)."""
+    from sympy import Function, ImmutableMatrix, IndexedBase, MatrixSymbol
+
+    m, n, x = symbols("m n x")
+    A = MatrixSymbol("A", n, m)
+    f = Function("f")
+    b = IndexedBase("b")
+
+    keys = [k for k, _ in order_subs({m: 3, n: 2, A: ImmutableMatrix([[1, 2, 3], [4, 5, 6]])})]
+    assert keys.index(A) < keys.index(n)
+    assert keys.index(A) < keys.index(m)
+
+    assert [k for k, _ in order_subs({x: 2, f(x): 5})] == [f(x), x]
+    assert (f(x) + x) | subs({x: 2, f(x): 5}) == 7
+
+    keys = [k for k, _ in order_subs({b: ImmutableMatrix([1, 2]), x: 1, b[x]: 7})]
+    assert keys.index(b[x]) < keys.index(x)
+    assert keys.index(b[x]) < keys.index(b)
+
+
+def test_order_subs_non_expression_keys_and_values():
+    """String keys and function classes, as keys or values, contain nothing.
+
+    Display dicts use `""` keys, which do not sympify, and `.has` on a function
+    class runs the unbound method on the other key.
+    """
+    from sympy import Function
+
+    x, y = symbols("x y")
+    f = Function("f")
+
+    ordered = order_subs({f: 1, "": 2, x: f, y: x + 1})
+    assert [k for k, _ in ordered].index(y) < [k for k, _ in ordered].index(x)
+    assert (y + 1) | subs({f: 1, "": 2, x: 3, y: x + 1}) == 5
+
+
+def test_order_subs_cycle_names_keys():
+    """A cycle raises a ValueError naming its keys, not only "cycle detected"."""
+    from sympy import Function
+
+    x, y, z, w = symbols("x y z w")
+    f = Function("f")
+
+    # Value of x contains f(x), and the key f(x) contains x
+    with pytest.raises(ValueError, match=r"cycle: x, f\(x\)\."):
+        order_subs({x: f(x), f(x): 3, w: 1})
+
+    # Two separate cycles; keys outside them (w) are not listed
+    with pytest.raises(ValueError, match=r"cycle: x, y; z, f\(z\)\."):
+        order_subs({x: y, y: x, z: f(z), f(z): 1, w: 2})
+
+
+def test_subs_matrix_symbol_with_symbolic_shape():
+    """A MatrixSymbol is substituted when its shape symbols are in the same dict (keecas#124)."""
+    from sympy import ImmutableMatrix, MatrixSymbol
+
+    m, n, y = symbols("m n y")
+    A = MatrixSymbol("A", n, m)
+    M = ImmutableMatrix([[1, 2, 3], [4, 5, 6]])
+
+    eqn = {y: "2*A" | parse_expr(local_dict={"A": A})}
+    params = {A: M, n: 2, m: 3}
+
+    result = y | subs(eqn | params)
+    assert not result.atoms(MatrixSymbol)
+    assert result.doit() == 2 * M
+
+
+def test_subs_matrix_expression_chain_with_symbolic_shape():
+    """Matrix symbols defined through eqn, with their shape in params, are substituted."""
+    from sympy import ImmutableMatrix, MatrixSymbol, hadamard_product
+
+    n_file, n_pan, k, A_pan, F_w = symbols("n_file n_pan k A_pan F_w")
+    c_p = MatrixSymbol("c_p", n_file, n_pan)
+    gamma_N = MatrixSymbol("gamma_N", n_file, n_pan)
+    C = ImmutableMatrix([[1, 2], [3, 4]])
+
+    local_dict = {"c_p": c_p, "gamma_N": gamma_N, "hp": hadamard_product, "A_pan": A_pan, "k": k}
+    eqn = {
+        F_w: "hp(gamma_N, c_p)*A_pan" | parse_expr(local_dict=local_dict),
+        gamma_N: "k*c_p" | parse_expr(local_dict=local_dict),
+    }
+    params = {c_p: C, k: 2, A_pan: 3, n_file: 2, n_pan: 2}
+
+    result = F_w | subs(eqn | params)
+    assert not result.atoms(MatrixSymbol)
+    assert result.doit() == 6 * C.multiply_elementwise(C)
+
+
 def test_N():
     x = symbols("x")
     expression = sin(x)
