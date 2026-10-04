@@ -35,6 +35,7 @@ from sympy.physics.units import Quantity, UnitSystem
 from sympy.physics.units.dimensions import Dimension
 from sympy.physics.units.util import _get_conversion_matrix_for_expr
 from sympy.physics.units.util import quantity_simplify as sympy_quantity_simplify
+from sympy.strategies.rl import rebuild as sympy_rebuild
 
 
 def order_subs(subs: dict[Basic, Any]) -> list[tuple[Basic, Any]]:
@@ -273,6 +274,85 @@ def subs(
     #     expression = expression | quantity_simplify(**kwargs)
 
     return expression
+
+
+@Pipe
+def rebuild(expression: Any) -> Basic:
+    r"""Rebuild an expression tree so that leftover numeric pieces are evaluated.
+
+    `parse_expr` keeps the expression as typed (`evaluate=False`), so `n - 1`
+    is stored as `n + (-1)*1`. After `subs()` replaces `n` with 3, the result
+    still reads `3 - 1*1`: the `(-1)*1` holds no symbol, so `subs()` never
+    rebuilds it. Most steps do not mind, but `Sum` and `Product` iterate only
+    when their limits are plain integers, so `doit()` leaves them unevaluated.
+    The same happens with any unevaluated literal, such as `Abs(-3)` or
+    `sqrt(4)`.
+
+    `rebuild` calls every constructor in the tree again (SymPy's
+    `sympy.strategies.rl.rebuild`), giving the same tree as parsing with
+    `evaluate=True`. Quantities, matrices, arrays, indexed objects and
+    `UnevaluatedExpr` are kept. Use it as a step after `subs()` in the `_v`
+    pipeline; the `_e` dict keeps the typed form for `show_eqn()`.
+
+    NOTE: Returns None if input expression is None, like `subs()`.
+
+    Args:
+        expression: Expression to rebuild, typically the output of `subs()`.
+            Non-SymPy input (numbers, mutable matrices) is sympified first,
+            as `subs()` does.
+
+    Returns:
+        Rebuilt SymPy expression, or None if input is None.
+
+    Examples:
+        ```{python}
+        from keecas import symbols, pc
+
+        n = symbols(r"n")
+
+        after_subs = "n - 1" | pc.parse_expr | pc.subs({n: 3})
+        print(after_subs)  # 3 - 1*1, as typed
+
+        print(after_subs | pc.rebuild)  # 2
+        ```
+
+        ```{python}
+        # A sum whose upper limit depends on a parameter
+        from keecas import u, show_eqn
+        from sympy import Array, Idx, IndexedBase
+
+        F = symbols(r"F", cls=IndexedBase)
+        i = symbols(r"i", cls=Idx)
+        n, F_tot = symbols(r"n, F_{tot}")
+
+        _p = {
+            F: Array([10, 20, 30]) * u.kN,
+            n: 3,
+        }
+
+        _e = {
+            F_tot: "Sum(F[i], (i, 0, n - 1))" | pc.parse_expr,
+        }
+
+        # Without pc.rebuild, pc.doit would leave the Sum unevaluated
+        _v = {
+            k: v | pc.subs(_p | _e) | pc.rebuild | pc.convert_to([u.kN]) | pc.doit | pc.N
+            for k, v in _e.items()
+        }
+
+        show_eqn([_p | _e, _v])
+        ```
+
+    Notes:
+        - Not applied inside `subs()`: its output is sometimes displayed as an
+          intermediate step, and rebuilding can reorder the terms
+        - `N()` before `doit()` is not a substitute: on a single `Sum` it tries
+          a numeric estimate and can fail
+    """
+    if expression is None:
+        return None
+
+    return sympy_rebuild(sympify(expression))
 
 
 @Pipe

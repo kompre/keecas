@@ -37,6 +37,92 @@ def test_N():
     assert abs(result - sin(x).evalf(10)) < 1e-10
 
 
+@pytest.mark.parametrize("limit", ["n - 1", "Abs(-3) - 1", "n - sqrt(4) + 1"])
+def test_rebuild_lets_sum_doit_after_subs(limit):
+    """Numeric leftovers of evaluate=False parsing in a Sum limit (keecas#125)."""
+    from sympy import Abs, Array, Idx, IndexedBase, Sum
+
+    from keecas.pipe_command import rebuild
+
+    x = IndexedBase("x")
+    i = Idx("i")
+    n, total = symbols("n total")
+    local_dict = {"x": x, "i": i, "n": n, "Sum": Sum, "Abs": Abs, "sqrt": sqrt}
+    expr = f"Sum(x[i], (i, 0, {limit}))" | parse_expr(local_dict=local_dict)
+
+    value = total | subs({total: expr, x: Array([10, 20, 30]), n: 3})
+    # subs alone leaves the upper limit unevaluated, so Sum.doit cannot iterate
+    assert value.limits[0][2] != 2
+    assert isinstance(value | doit, Sum)
+
+    assert (value | rebuild).limits[0][2] == 2
+    assert value | rebuild | doit == 60
+    # Same tree as parsing with evaluate=True
+    assert expr | rebuild == sympy_parse_expr(f"Sum(x[i], (i, 0, {limit}))", local_dict=local_dict)
+
+
+def test_rebuild_keeps_quantities_and_containers():
+    from sympy import (
+        Array,
+        HadamardProduct,
+        Idx,
+        ImmutableMatrix,
+        IndexedBase,
+        MatrixSymbol,
+        Piecewise,
+        UnevaluatedExpr,
+        latex,
+    )
+
+    from keecas.pint_sympy import unitregistry as u
+    from keecas.pipe_command import rebuild
+
+    n = symbols("n")
+    A = MatrixSymbol("A", n, 2)
+    x = IndexedBase("x", positive=True, offset=1, strides=(2,))
+    expressions = [
+        sympify(78.5 * u.kN / u.m**3) * (n - 1),
+        ImmutableMatrix([[1, 2], [3, 4]]),
+        Array([[1, 2], [3, 4]]),
+        x,
+        Idx("j", (0, n - 1)),
+        2 * A,
+        HadamardProduct(A, A),
+        UnevaluatedExpr(n - 1) * 2,
+        Piecewise((n, n > 0), (0, True)),
+    ]
+    for expression in expressions:
+        rebuilt = expression | rebuild
+        assert rebuilt == expression
+        assert type(rebuilt) is type(expression)
+        assert latex(rebuilt) == latex(expression)
+
+    rebuilt_x = x | rebuild
+    assert rebuilt_x.assumptions0 == x.assumptions0
+    assert (rebuilt_x.offset, rebuilt_x.strides) == (1, (2,))
+
+
+def test_rebuild_evaluates_matrix_entries():
+    from sympy import ImmutableMatrix, Matrix
+
+    from keecas.pipe_command import rebuild
+
+    n = symbols("n")
+    entry = "n - 1" | parse_expr(local_dict={"n": n})
+    assert ImmutableMatrix([[entry]]).subs(n, 3) | rebuild == ImmutableMatrix([[2]])
+    # Mutable input is sympified, as subs does
+    assert Matrix([[1, 2]]) | rebuild == ImmutableMatrix([[1, 2]])
+
+
+def test_rebuild_passes_none_and_sympifies_numbers():
+    from sympy import Integer
+
+    from keecas.pipe_command import rebuild
+
+    assert None | rebuild is None
+    assert isinstance(3 | rebuild, Integer)
+
+
 def test_convert_to():
     x = symbols("x")
     expression = x * meter
