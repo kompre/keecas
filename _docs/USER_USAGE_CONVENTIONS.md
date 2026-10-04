@@ -269,6 +269,10 @@ value = "F / A" | pc.parse_expr | pc.subs(eqn | params) | pc.convert_to([u.MPa])
 
 # Symbolic manipulation without numerical evaluation
 expr = expression | pc.subs(params) | pc.doit()
+
+# Sum or Product with a formula as limit ("Sum(x[i], (i, 0, n - 1))"):
+# pc.rebuild evaluates leftovers like 3 - 1*1 so that pc.doit can iterate
+total = expression | pc.subs(eqn | params) | pc.rebuild | pc.doit | pc.N
 ```
 
 ### Dict Comprehension Pattern (Most Common)
