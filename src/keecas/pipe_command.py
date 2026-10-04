@@ -37,6 +37,23 @@ from sympy.physics.units.util import _get_conversion_matrix_for_expr
 from sympy.physics.units.util import quantity_simplify as sympy_quantity_simplify
 
 
+def _contains(expr: Any, key: Any) -> bool:
+    """Check whether an expression contains a substitution key.
+
+    Only SymPy expressions are searched. A string key (`""`), a function class
+    (`Function("f")`) or a list contains nothing: calling `has` on a class would
+    run the unbound method on the key instead.
+
+    Args:
+        expr: Key or sympified value of a substitution
+        key: Key of another substitution
+
+    Returns:
+        True if `expr` is an expression that contains `key`.
+    """
+    return isinstance(expr, Basic) and expr.has(key)
+
+
 def order_subs(subs: dict[Basic, Any]) -> list[tuple[Basic, Any]]:
     """Reorder substitutions using topological order for dependency resolution.
 
@@ -64,7 +81,7 @@ def order_subs(subs: dict[Basic, Any]) -> list[tuple[Basic, Any]]:
     edges = [
         (i, j)
         for i, j in permutations(subs.items(), 2)
-        if sympify(i[1]).has(j[0]) or sympify(i[0]).has(j[0])
+        if _contains(sympify(i[1]), j[0]) or _contains(i[0], j[0])
     ]
 
     # Reorder the dict with topological_sort

@@ -51,6 +51,22 @@ def test_order_subs_key_before_keys_it_contains():
     assert keys.index(b[x]) < keys.index(b)
 
 
+def test_order_subs_non_expression_keys_and_values():
+    """String keys and function classes, as keys or values, contain nothing.
+
+    Display dicts use `""` keys, which do not sympify, and `.has` on a function
+    class runs the unbound method on the other key.
+    """
+    from sympy import Function
+
+    x, y = symbols("x y")
+    f = Function("f")
+
+    ordered = order_subs({f: 1, "": 2, x: f, y: x + 1})
+    assert [k for k, _ in ordered].index(y) < [k for k, _ in ordered].index(x)
+    assert (y + 1) | subs({f: 1, "": 2, x: 3, y: x + 1}) == 5
+
+
 def test_subs_matrix_symbol_with_symbolic_shape():
     """A MatrixSymbol is substituted when its shape symbols are in the same dict (keecas#124)."""
     from sympy import ImmutableMatrix, MatrixSymbol
