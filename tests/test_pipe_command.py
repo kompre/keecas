@@ -154,6 +154,89 @@ def test_doit():
     assert result == 1
 
 
+@pytest.fixture
+def indexed_sum():
+    """Sum over the entries of a 2x3 IndexedBase and a matching Matrix (keecas#126)."""
+    from sympy import Idx, ImmutableMatrix, IndexedBase, Sum
+
+    x = IndexedBase("x")
+    i, j = symbols("i j", cls=Idx)
+    matrix = ImmutableMatrix([[1, 2, 3], [4, 5, 6]])
+    return x, Sum(x[i, j], (i, 0, 1), (j, 0, 2)), matrix
+
+
+@pytest.mark.parametrize("as_array", [True, False], ids=["Array", "Matrix"])
+def test_doit_sum_over_explicit_matrix(indexed_sum, as_array):
+    """A Sum over x[i, j] evaluates with x an Array or a 2-D Matrix (keecas#126)."""
+    from sympy import Array
+
+    x, total, matrix = indexed_sum
+    base = Array(matrix) if as_array else matrix
+
+    assert (total | subs({x: base}) | doit) == 21
+
+
+def test_doit_sum_over_matrix_expression(indexed_sum):
+    """A Sum over x[i, j] evaluates with x a matrix expression such as k*B (keecas#126)."""
+    from sympy import MatrixSymbol
+
+    x, total, matrix = indexed_sum
+    k = symbols("k")
+    B = MatrixSymbol("B", 2, 3)
+
+    assert (total | subs({x: k * B, k: 2, B: matrix}) | doit) == 42
+
+
+def test_doit_sum_over_hadamard_product_with_units(indexed_sum):
+    """A scalar factor with units times a Hadamard product resolves (keecas#126)."""
+    from sympy import HadamardProduct, Indexed, MatrixSymbol
+
+    from keecas.pint_sympy import unitregistry as u
+
+    x, total, matrix = indexed_sum
+    p = symbols("p")
+    A, B = MatrixSymbol("A", 2, 3), MatrixSymbol("B", 2, 3)
+    params = {x: p * HadamardProduct(A, B), p: 1.36 * u.kPa * u.m**2, A: matrix, B: matrix}
+
+    result = total | subs(params) | doit
+    element = x[0, 0] | subs(params) | doit
+
+    assert not result.has(Indexed)
+    magnitude, unit = result.as_coeff_Mul()
+    assert unit == sympify(u.kPa * u.m**2)
+    assert magnitude == pytest.approx(1.36 * 91)
+    assert element == 1.36 * sympify(u.kPa * u.m**2)
+
+
+def test_doit_single_index_on_column_matrix():
+    """A single index on a column Matrix keeps working, also from a matrix expression."""
+    from sympy import Idx, ImmutableMatrix, IndexedBase, MatrixSymbol, Sum
+
+    x = IndexedBase("x")
+    i = symbols("i", cls=Idx)
+    k = symbols("k")
+    v = MatrixSymbol("v", 3, 1)
+    column = ImmutableMatrix([10, 20, 30])
+    total = Sum(x[i], (i, 0, 2))
+
+    assert (total | subs({x: column}) | doit) == 60
+    assert (total | subs({x: k * v, k: 2, v: column}) | doit) == 120
+
+
+def test_doit_leaves_matrix_symbol_symbolic(indexed_sum):
+    """An unsubstituted MatrixSymbol stays symbolic, as before keecas#126."""
+    from sympy import Add, Indexed, MatrixSymbol
+
+    x, total, _ = indexed_sum
+    k = symbols("k")
+    B = MatrixSymbol("B", 2, 3)
+
+    result = total | subs({x: k * B}) | doit
+
+    assert isinstance(result, Add)
+    assert all(isinstance(term, Indexed) and term.base == k * B for term in result.args)
+
+
 def test_parse_expr():
     expr_str = "x**2 + y"
     local_dict = {"x": 2, "y": 3}
