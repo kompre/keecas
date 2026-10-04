@@ -74,7 +74,9 @@ def order_subs(subs: dict[Basic, Any]) -> list[tuple[Basic, Any]]:
         Ordered list of substitution tuples for exhaustive application
 
     Raises:
-        ValueError: If the dependencies form a cycle (e.g. `x: y` and `y: x`).
+        ValueError: If the dependencies form a cycle, e.g. `x: y` and `y: x`, or
+            `x: f(x)` and `f(x): 3` (the value of `x` contains `f(x)`, and `f(x)`
+            contains `x`). The message names the keys of each cycle.
     """
 
     # Edge (i, j): key i is replaced before key j
@@ -85,7 +87,25 @@ def order_subs(subs: dict[Basic, Any]) -> list[tuple[Basic, Any]]:
     ]
 
     # Reorder the dict with topological_sort
-    return topological_sort((subs.items(), edges), default_sort_key)
+    try:
+        return topological_sort((subs.items(), edges), default_sort_key)
+    except ValueError:
+        # sympy only says "cycle detected": name the keys of each cycle
+        from sympy.utilities.iterables import strongly_connected_components
+
+        components = strongly_connected_components((list(subs), [(i[0], j[0]) for i, j in edges]))
+        cycles = sorted(
+            (sorted(c, key=default_sort_key) for c in components if len(c) > 1),
+            key=lambda cycle: default_sort_key(cycle[0]),
+        )
+        if not cycles:
+            raise
+        keys = "; ".join(", ".join(str(key) for key in cycle) for cycle in cycles)
+        raise ValueError(
+            f"Cannot order the substitutions, these keys depend on each other in a cycle: "
+            f"{keys}. A key is replaced before any key that its value or the key itself "
+            f"contains."
+        ) from None
 
 
 def _is_homogeneous(expr: Add, unit_system: UnitSystem) -> bool:

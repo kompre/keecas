@@ -67,6 +67,22 @@ def test_order_subs_non_expression_keys_and_values():
     assert (y + 1) | subs({f: 1, "": 2, x: 3, y: x + 1}) == 5
 
 
+def test_order_subs_cycle_names_keys():
+    """A cycle raises a ValueError naming its keys, not only "cycle detected"."""
+    from sympy import Function
+
+    x, y, z, w = symbols("x y z w")
+    f = Function("f")
+
+    # Value of x contains f(x), and the key f(x) contains x
+    with pytest.raises(ValueError, match=r"cycle: x, f\(x\)\."):
+        order_subs({x: f(x), f(x): 3, w: 1})
+
+    # Two separate cycles; keys outside them (w) are not listed
+    with pytest.raises(ValueError, match=r"cycle: x, y; z, f\(z\)\."):
+        order_subs({x: y, y: x, z: f(z), f(z): 1, w: 2})
+
+
 def test_subs_matrix_symbol_with_symbolic_shape():
     """A MatrixSymbol is substituted when its shape symbols are in the same dict (keecas#124)."""
     from sympy import ImmutableMatrix, MatrixSymbol
