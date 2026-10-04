@@ -85,7 +85,7 @@ for _as_val in _altezze_sito:
     _subs = _base | params | eqn | {a_s: _as_q}
     _rec = {"ZONA": _zona, v_b_0: _base[v_b_0], a_0: _base[a_0], k_s: _base[k_s], a_s: _as_q}
     for _var in [c_a, c_r, v_b, v_r, q_r]:
-        _val = _var | pc.subs(_subs) | pc.N | pc.convert_to([u.m, u.kPa]) | pc.N(4)
+        _val = _var | pc.subs(_subs) | pc.convert_to([u.m, u.kPa]) | pc.N(4)
         _rec[_var] = u.Quantity(str(_val))
     _records.append(_rec)
 

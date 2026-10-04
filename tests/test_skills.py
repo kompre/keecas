@@ -71,8 +71,8 @@ def test_skills_point_to_each_other():
 def test_notebook_skeleton_runs_and_gives_correct_units():
     """The core skeleton's code cells execute and produce dimensionally correct values.
 
-    The skeleton includes `h - c_nom - 5*u.mm`, which hits keecas#118 if the
-    pipeline drops the `pc.N` before `pc.convert_to`.
+    The skeleton includes `h - c_nom - 5*u.mm`, a sum left as a factor of a
+    product, which `pc.convert_to` must convert as a whole (keecas#118).
     """
     source = (SKILLS_DIR / "keecas-notebook" / "references" / "notebook_skeleton.md").read_text(
         encoding="utf-8"
