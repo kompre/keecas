@@ -30,6 +30,96 @@ def test_subs():
     assert result == x + 3
 
 
+def test_order_subs_key_before_keys_it_contains():
+    """A key is replaced before the other keys it contains (keecas#124)."""
+    from sympy import Function, ImmutableMatrix, IndexedBase, MatrixSymbol
+
+    m, n, x = symbols("m n x")
+    A = MatrixSymbol("A", n, m)
+    f = Function("f")
+    b = IndexedBase("b")
+
+    keys = [k for k, _ in order_subs({m: 3, n: 2, A: ImmutableMatrix([[1, 2, 3], [4, 5, 6]])})]
+    assert keys.index(A) < keys.index(n)
+    assert keys.index(A) < keys.index(m)
+
+    assert [k for k, _ in order_subs({x: 2, f(x): 5})] == [f(x), x]
+    assert (f(x) + x) | subs({x: 2, f(x): 5}) == 7
+
+    keys = [k for k, _ in order_subs({b: ImmutableMatrix([1, 2]), x: 1, b[x]: 7})]
+    assert keys.index(b[x]) < keys.index(x)
+    assert keys.index(b[x]) < keys.index(b)
+
+
+def test_order_subs_non_expression_keys_and_values():
+    """String keys and function classes, as keys or values, contain nothing.
+
+    Display dicts use `""` keys, which do not sympify, and `.has` on a function
+    class runs the unbound method on the other key.
+    """
+    from sympy import Function
+
+    x, y = symbols("x y")
+    f = Function("f")
+
+    ordered = order_subs({f: 1, "": 2, x: f, y: x + 1})
+    assert [k for k, _ in ordered].index(y) < [k for k, _ in ordered].index(x)
+    assert (y + 1) | subs({f: 1, "": 2, x: 3, y: x + 1}) == 5
+
+
+def test_order_subs_cycle_names_keys():
+    """A cycle raises a ValueError naming its keys, not only "cycle detected"."""
+    from sympy import Function
+
+    x, y, z, w = symbols("x y z w")
+    f = Function("f")
+
+    # Value of x contains f(x), and the key f(x) contains x
+    with pytest.raises(ValueError, match=r"cycle: x, f\(x\)\."):
+        order_subs({x: f(x), f(x): 3, w: 1})
+
+    # Two separate cycles; keys outside them (w) are not listed
+    with pytest.raises(ValueError, match=r"cycle: x, y; z, f\(z\)\."):
+        order_subs({x: y, y: x, z: f(z), f(z): 1, w: 2})
+
+
+def test_subs_matrix_symbol_with_symbolic_shape():
+    """A MatrixSymbol is substituted when its shape symbols are in the same dict (keecas#124)."""
+    from sympy import ImmutableMatrix, MatrixSymbol
+
+    m, n, y = symbols("m n y")
+    A = MatrixSymbol("A", n, m)
+    M = ImmutableMatrix([[1, 2, 3], [4, 5, 6]])
+
+    eqn = {y: "2*A" | parse_expr(local_dict={"A": A})}
+    params = {A: M, n: 2, m: 3}
+
+    result = y | subs(eqn | params)
+    assert not result.atoms(MatrixSymbol)
+    assert result.doit() == 2 * M
+
+
+def test_subs_matrix_expression_chain_with_symbolic_shape():
+    """Matrix symbols defined through eqn, with their shape in params, are substituted."""
+    from sympy import ImmutableMatrix, MatrixSymbol, hadamard_product
+
+    n_file, n_pan, k, A_pan, F_w = symbols("n_file n_pan k A_pan F_w")
+    c_p = MatrixSymbol("c_p", n_file, n_pan)
+    gamma_N = MatrixSymbol("gamma_N", n_file, n_pan)
+    C = ImmutableMatrix([[1, 2], [3, 4]])
+
+    local_dict = {"c_p": c_p, "gamma_N": gamma_N, "hp": hadamard_product, "A_pan": A_pan, "k": k}
+    eqn = {
+        F_w: "hp(gamma_N, c_p)*A_pan" | parse_expr(local_dict=local_dict),
+        gamma_N: "k*c_p" | parse_expr(local_dict=local_dict),
+    }
+    params = {c_p: C, k: 2, A_pan: 3, n_file: 2, n_pan: 2}
+
+    result = F_w | subs(eqn | params)
+    assert not result.atoms(MatrixSymbol)
+    assert result.doit() == 6 * C.multiply_elementwise(C)
+
+
 def test_N():
     x = symbols("x")
     expression = sin(x)
@@ -240,6 +330,89 @@ def test_doit():
     assert result == 1
 
 
+@pytest.fixture
+def indexed_sum():
+    """Sum over the entries of a 2x3 IndexedBase and a matching Matrix (keecas#126)."""
+    from sympy import Idx, ImmutableMatrix, IndexedBase, Sum
+
+    x = IndexedBase("x")
+    i, j = symbols("i j", cls=Idx)
+    matrix = ImmutableMatrix([[1, 2, 3], [4, 5, 6]])
+    return x, Sum(x[i, j], (i, 0, 1), (j, 0, 2)), matrix
+
+
+@pytest.mark.parametrize("as_array", [True, False], ids=["Array", "Matrix"])
+def test_doit_sum_over_explicit_matrix(indexed_sum, as_array):
+    """A Sum over x[i, j] evaluates with x an Array or a 2-D Matrix (keecas#126)."""
+    from sympy import Array
+
+    x, total, matrix = indexed_sum
+    base = Array(matrix) if as_array else matrix
+
+    assert (total | subs({x: base}) | doit) == 21
+
+
+def test_doit_sum_over_matrix_expression(indexed_sum):
+    """A Sum over x[i, j] evaluates with x a matrix expression such as k*B (keecas#126)."""
+    from sympy import MatrixSymbol
+
+    x, total, matrix = indexed_sum
+    k = symbols("k")
+    B = MatrixSymbol("B", 2, 3)
+
+    assert (total | subs({x: k * B, k: 2, B: matrix}) | doit) == 42
+
+
+def test_doit_sum_over_hadamard_product_with_units(indexed_sum):
+    """A scalar factor with units times a Hadamard product resolves (keecas#126)."""
+    from sympy import HadamardProduct, Indexed, MatrixSymbol
+
+    from keecas.pint_sympy import unitregistry as u
+
+    x, total, matrix = indexed_sum
+    p = symbols("p")
+    A, B = MatrixSymbol("A", 2, 3), MatrixSymbol("B", 2, 3)
+    params = {x: p * HadamardProduct(A, B), p: 1.36 * u.kPa * u.m**2, A: matrix, B: matrix}
+
+    result = total | subs(params) | doit
+    element = x[0, 0] | subs(params) | doit
+
+    assert not result.has(Indexed)
+    magnitude, unit = result.as_coeff_Mul()
+    assert unit == sympify(u.kPa * u.m**2)
+    assert magnitude == pytest.approx(1.36 * 91)
+    assert element == 1.36 * sympify(u.kPa * u.m**2)
+
+
+def test_doit_single_index_on_column_matrix():
+    """A single index on a column Matrix keeps working, also from a matrix expression."""
+    from sympy import Idx, ImmutableMatrix, IndexedBase, MatrixSymbol, Sum
+
+    x = IndexedBase("x")
+    i = symbols("i", cls=Idx)
+    k = symbols("k")
+    v = MatrixSymbol("v", 3, 1)
+    column = ImmutableMatrix([10, 20, 30])
+    total = Sum(x[i], (i, 0, 2))
+
+    assert (total | subs({x: column}) | doit) == 60
+    assert (total | subs({x: k * v, k: 2, v: column}) | doit) == 120
+
+
+def test_doit_leaves_matrix_symbol_symbolic(indexed_sum):
+    """An unsubstituted MatrixSymbol stays symbolic, as before keecas#126."""
+    from sympy import Add, Indexed, MatrixSymbol
+
+    x, total, _ = indexed_sum
+    k = symbols("k")
+    B = MatrixSymbol("B", 2, 3)
+
+    result = total | subs({x: k * B}) | doit
+
+    assert isinstance(result, Add)
+    assert all(isinstance(term, Indexed) and term.base == k * B for term in result.args)
+
+
 def test_parse_expr():
     expr_str = "x**2 + y"
     local_dict = {"x": 2, "y": 3}
@@ -326,6 +499,78 @@ print("SUCCESS")
     )
 
     # Check execution succeeded
+    assert result.returncode == 0, f"Script failed:\n{result.stderr}"
+    assert "SUCCESS" in result.stdout
+
+
+@pytest.mark.parametrize(
+    "parser",
+    [
+        parse_expr,
+        parse_expr(),
+        parse_expr(evaluate=True),
+        parse_expr()(evaluate=True),
+    ],
+    ids=["bare", "empty-call", "evaluate", "chained-calls"],
+)
+def test_parse_expr_with_arguments_sees_caller_scope(parser):
+    """Calling the pipe with arguments still finds the caller's variables (keecas#127).
+
+    The symbol's name differs from its variable name, as usual in keecas, so a
+    lookup that misses the caller would silently create a new plain symbol.
+    """
+    from sympy import IndexedBase
+
+    F, A_s = symbols(r"F A_{s}")
+    x = IndexedBase("x")
+
+    expr = "F/A_s" | parser
+    assert expr.free_symbols == {F, A_s}
+    assert expr | subs({F: 10, A_s: 2}) == 5
+
+    # An IndexedBase from the caller is subscriptable, not a plain Symbol
+    assert "x[0]" | parser == x[0]
+
+
+def test_parse_expr_with_arguments_in_comprehension_in_function():
+    """A dict comprehension inside a function sees the function's locals (keecas#127)."""
+    k_f = symbols(r"k_{f}")
+
+    _v = {i: "k_f*i" | parse_expr(evaluate=True) for i in (1, 2)}
+
+    assert _v == {1: k_f, 2: 2 * k_f}
+
+
+def test_parse_expr_with_arguments_at_module_level():
+    """Module-level `| pc.parse_expr(...)`, also in a comprehension (keecas#127)."""
+    import subprocess
+    import sys
+
+    test_script = r"""
+from keecas import pc, symbols
+from sympy import IndexedBase
+
+F, A_s = symbols(r"F A_{s}")
+x = IndexedBase("x")
+
+expr = "F/A_s" | pc.parse_expr(evaluate=True)
+assert expr.free_symbols == {F, A_s}, expr.free_symbols
+assert "x[0]" | pc.parse_expr(evaluate=True) == x[0]
+
+# Loop variable and module variable together
+_v = {k: "k/A_s" | pc.parse_expr(evaluate=True) for k in (F, 2*F)}
+assert _v == {F: F/A_s, 2*F: 2*F/A_s}, _v
+
+print("SUCCESS")
+"""
+
+    result = subprocess.run(
+        [sys.executable, "-c", test_script],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+
     assert result.returncode == 0, f"Script failed:\n{result.stderr}"
     assert "SUCCESS" in result.stdout
 

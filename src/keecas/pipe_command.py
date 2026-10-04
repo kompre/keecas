@@ -16,9 +16,13 @@ from typing import Any
 from pipe import Pipe
 from sympy import (
     Add,
+    Array,
     Basic,
     Function,
+    Indexed,
     MatrixBase,
+    MatrixExpr,
+    MatrixSymbol,
     Mul,
     Pow,
     S,
@@ -37,25 +41,79 @@ from sympy.physics.units.util import _get_conversion_matrix_for_expr
 from sympy.physics.units.util import quantity_simplify as sympy_quantity_simplify
 from sympy.strategies.rl import rebuild as sympy_rebuild
 
+# Modules whose frames sit between `parse_expr` and the code that pipes into it
+_PIPE_MODULES = frozenset({__name__, Pipe.__module__})
+
+
+def _contains(expr: Any, key: Any) -> bool:
+    """Check whether an expression contains a substitution key.
+
+    Only SymPy expressions are searched. A string key (`""`), a function class
+    (`Function("f")`) or a list contains nothing: calling `has` on a class would
+    run the unbound method on the key instead.
+
+    Args:
+        expr: Key or sympified value of a substitution
+        key: Key of another substitution
+
+    Returns:
+        True if `expr` is an expression that contains `key`.
+    """
+    return isinstance(expr, Basic) and expr.has(key)
+
 
 def order_subs(subs: dict[Basic, Any]) -> list[tuple[Basic, Any]]:
     """Reorder substitutions using topological order for dependency resolution.
 
-    Ensures that substitutions are applied in the correct order when variables
-    depend on each other (e.g., y depends on x, so x must be substituted first).
+    Substitutions are applied one after the other, so a key must be replaced
+    before any other key it brings into the expression or contains:
+
+    - a key whose value contains another key comes first (`y: 2*x` is applied
+      before `x: 3`, so the `x` it introduces is replaced too);
+    - a key that contains another key comes first: `MatrixSymbol("A", n, m)`
+      is applied before `n` and `m`, and `f(x)` before `x`. Replacing `n`
+      first would turn the expression's `A` into `MatrixSymbol("A", 2, m)`,
+      which no longer matches the key `A` (keecas#124).
 
     Args:
         subs: Dictionary of substitutions where keys are variables and values are expressions
 
     Returns:
         Ordered list of substitution tuples for exhaustive application
+
+    Raises:
+        ValueError: If the dependencies form a cycle, e.g. `x: y` and `y: x`, or
+            `x: f(x)` and `f(x): 3` (the value of `x` contains `f(x)`, and `f(x)`
+            contains `x`). The message names the keys of each cycle.
     """
 
-    # Generate edges between each vertex
-    edges = [(i, j) for i, j in permutations(subs.items(), 2) if sympify(i[1]).has(j[0])]
+    # Edge (i, j): key i is replaced before key j
+    edges = [
+        (i, j)
+        for i, j in permutations(subs.items(), 2)
+        if _contains(sympify(i[1]), j[0]) or _contains(i[0], j[0])
+    ]
 
     # Reorder the dict with topological_sort
-    return topological_sort((subs.items(), edges), default_sort_key)
+    try:
+        return topological_sort((subs.items(), edges), default_sort_key)
+    except ValueError:
+        # sympy only says "cycle detected": name the keys of each cycle
+        from sympy.utilities.iterables import strongly_connected_components
+
+        components = strongly_connected_components((list(subs), [(i[0], j[0]) for i, j in edges]))
+        cycles = sorted(
+            (sorted(c, key=default_sort_key) for c in components if len(c) > 1),
+            key=lambda cycle: default_sort_key(cycle[0]),
+        )
+        if not cycles:
+            raise
+        keys = "; ".join(", ".join(str(key) for key in cycle) for cycle in cycles)
+        raise ValueError(
+            f"Cannot order the substitutions, these keys depend on each other in a cycle: "
+            f"{keys}. A key is replaced before any key that its value or the key itself "
+            f"contains."
+        ) from None
 
 
 def _is_homogeneous(expr: Add, unit_system: UnitSystem) -> bool:
@@ -197,7 +255,11 @@ def subs(
         sorted: Whether to apply topological sorting for dependency resolution.
             When True (default), automatically orders substitutions so that dependent
             variables are substituted in correct order (e.g., if y depends on x,
-            x is substituted first). Defaults to True.
+            the x introduced by y is substituted too, and a `MatrixSymbol` with a
+            symbolic shape is substituted before its shape symbols; see
+            `order_subs`). When False, the dict is passed to SymPy's `subs`
+            unchanged, which does not resolve dependencies between entries.
+            Defaults to True.
 
     Returns:
         SymPy expression with substitutions applied, or None if input is None.
@@ -565,6 +627,54 @@ def convert_to(expression: Basic, units: Any = 1) -> Basic:
     return _convert_to(expression, units)
 
 
+def _is_matrix_indexed(expr: Any) -> bool:
+    """Check whether an `Indexed` needs an explicit `Array` base to be resolved.
+
+    Args:
+        expr: Node of the expression tree
+
+    Returns:
+        True for an `Indexed` over a matrix expression (`k*B`, a Hadamard
+        product, ...), or over an explicit Matrix indexed with two or more
+        indices. A Matrix with a single index already resolves.
+    """
+    if not isinstance(expr, Indexed):
+        return False
+    if isinstance(expr.base, MatrixBase):
+        return len(expr.indices) > 1
+    return isinstance(expr.base, MatrixExpr)
+
+
+def _explicit_indexed(indexed: Indexed) -> Basic:
+    """Rebuild an `Indexed` over a matrix as an `Indexed` over an explicit container.
+
+    sympy resolves an `Indexed` with numeric indices only when its base is an
+    explicit container, and passes the indices as a list, which a Matrix reads
+    as a flat index: `Indexed(Matrix, 0, 1)` raises, an `Array` base works
+    (keecas#126). A matrix expression is never resolved, and `MatMul.doit()`
+    keeps a scalar factor carrying units, so it goes through `.as_explicit()`.
+
+    Args:
+        indexed: `Indexed` whose base is a Matrix or a matrix expression
+
+    Returns:
+        The same indices over `Array(base)` (over the explicit Matrix with a
+        single index), or `indexed` unchanged when the base still contains a
+        `MatrixSymbol` or has a symbolic shape.
+    """
+    base = indexed.base
+    if not isinstance(base, MatrixBase):
+        if base.has(MatrixSymbol):
+            return indexed
+        try:
+            base = base.as_explicit()
+        except ValueError:  # symbolic shape
+            return indexed
+    if len(indexed.indices) > 1:
+        base = Array(base)
+    return Indexed(base, *indexed.indices)
+
+
 @Pipe
 def doit(expression: Basic) -> Basic:
     r"""Evaluate unevaluated operations in symbolic expressions.
@@ -629,12 +739,47 @@ def doit(expression: Basic) -> Basic:
         show_eqn([_p | _e, _v])
         ```
 
+        ```{python}
+        # Sum over an IndexedBase substituted with a matrix expression
+        from sympy import Idx, ImmutableMatrix, IndexedBase, MatrixSymbol
+
+        q = symbols(r"q", cls=IndexedBase)
+        i, j = symbols(r"i, j", cls=Idx)
+        gamma_Q, Q_tot = symbols(r"\gamma_Q, Q_{tot}")
+        Q_k = symbols(r"Q_k", cls=MatrixSymbol, n=2, m=3)
+
+        _p = {
+            gamma_Q: 1.5,
+            Q_k: ImmutableMatrix([[1, 2, 3], [4, 5, 6]]) * u.kN,
+        }
+
+        _e = {
+            q: "gamma_Q * Q_k" | pc.parse_expr,
+            Q_tot: "Sum(q[i, j], (i, 0, 1), (j, 0, 2))" | pc.parse_expr,
+        }
+
+        # q becomes 1.5*Q_k with Q_k a Matrix: the Sum still evaluates
+        _v = {
+            Q_tot: Q_tot | pc.subs(_p | _e) | pc.doit | pc.convert_to(u.kN) | pc.N,
+        }
+
+        show_eqn([_p | _e, _v])
+        ```
+
     Notes:
         - Works with derivatives, integrals, limits, summations, and products
         - May be needed before subs() to properly substitute into evaluated forms
         - Not all operations can be evaluated symbolically (may return unchanged)
         - Combines well with other pipe commands in calculation workflows
+        - An `IndexedBase` such as `x[i, j]` can be substituted with a 2-D Matrix
+          or a matrix expression (`k*B`, a Hadamard product, a scalar with units
+          times a Matrix), not only with an `Array`: before evaluating, such
+          `Indexed` objects are rebuilt over an explicit `Array` so a `Sum` over
+          them resolves (keecas#126). A matrix expression that still contains a
+          `MatrixSymbol` is left symbolic.
     """
+    if isinstance(expression, Basic | MatrixBase) and expression.has(Indexed):
+        expression = expression.replace(_is_matrix_indexed, _explicit_indexed)
     return expression.doit()
 
 
@@ -652,8 +797,9 @@ def parse_expr(
     pipe operator to define expressions in `_e` dicts using readable string
     notation instead of verbose SymPy syntax.
 
-    NOTE: Automatically captures local variables from caller's scope when
-    local_dict is None, enabling clean string-based expression definitions.
+    NOTE: Automatically captures the caller's variables when local_dict is None,
+    both with `| pc.parse_expr` and with arguments (`| pc.parse_expr(evaluate=True)`),
+    enabling clean string-based expression definitions.
 
     Args:
         expression: String representation of mathematical expression using standard
@@ -661,14 +807,13 @@ def parse_expr(
             operators: +, -, *, /, **, parentheses, and common functions.
         local_dict: Dictionary of local variables for parsing context (symbol
             definitions, parameters, functions). If None, automatically uses
-            caller's local variables from enclosing scope. Defaults to None.
+            the caller's local and module variables. Defaults to None.
         evaluate: Whether to evaluate the expression during parsing (e.g., simplify
             numeric operations). When False, preserves structure as written.
             Defaults to False.
         **kwargs: Additional arguments passed to SymPy's parse_expr:
             - transformations: List of parsing transformations (defaults to T[:11])
             - global_dict: Global symbol dictionary
-            - rational: Whether to convert floats to rationals
 
     Returns:
         Parsed SymPy expression object ready for symbolic manipulation.
@@ -758,7 +903,9 @@ def parse_expr(
 
     Notes:
         - Uses transformations T[:11] by default for standard mathematical parsing
-        - Automatically captures caller's local scope for symbol resolution
+        - Automatically captures caller's local scope for symbol resolution; inside a
+          generator expression only its own variables and the module globals are
+          visible, so pass local_dict there
         - Common functions supported: sin, cos, sqrt, log, exp, abs, etc.
         - Operators: +, -, *, /, ** (power), parentheses for grouping
         - Cleaner than verbose SymPy syntax: "F/A" vs sp.Div(F, A)
@@ -766,31 +913,22 @@ def parse_expr(
     """
 
     if not local_dict:
+        # The caller is the first frame outside this module and the pipe library.
+        # The pipe frames between them vary: `| pc.parse_expr(...)` adds lambdas
+        # that the bare `| pc.parse_expr` does not (keecas#127).
         frame = currentframe()
-        # Frame stack: parse_expr (0) -> __ror__ (1) -> lambda (2) -> caller (3)
-        frame3 = frame.f_back.f_back.f_back
+        while frame is not None and frame.f_globals.get("__name__") in _PIPE_MODULES:
+            frame = frame.f_back
 
-        if not frame3:
-            local_dict = {}
-        else:
-            # Python 3.13 compatibility: cross-module isolation via f_globals
-            #
-            # Always merge f_globals + f_locals to match Python's scoping:
-            # - f_globals: bound to DEFINING module (not calling module)
-            #   This ensures cross-module isolation - if module_b imports module_a
-            #   and calls module_a.func(), we see module_a's globals, not module_b's
-            # - f_locals: function-local variables and loop variables
-            # - Precedence: f_locals override f_globals (locals shadow globals)
-            #
-            # This handles all common cases:
-            # 1. Functions accessing module variables: ✓ (f_globals)
-            # 2. Module-level comprehensions: ✓ (f_globals + loop vars)
-            # 3. Cross-module isolation: ✓ (f_globals is defining module)
-            #
-            # Known limitation (Python 3.13 PEP 667):
-            # - Comprehensions inside functions can't access parent function locals
-            #   due to scope isolation. Workaround: pass explicit local_dict parameter
-            local_dict = {**dict(frame3.f_globals), **dict(frame3.f_locals)}
+        # Merge the caller's module globals with its locals, locals taking
+        # precedence as in Python's own name lookup. f_globals belongs to the
+        # module that defines the calling code, so a function imported from
+        # another module sees its own module's names. List, dict and set
+        # comprehensions run in the enclosing frame (PEP 709), so f_locals also
+        # holds their loop variables (keecas#66). A generator expression has its
+        # own frame and sees only its variables and the module globals.
+        local_dict = {} if frame is None else {**frame.f_globals, **frame.f_locals}
+        del frame
 
     if "transformations" not in kwargs:
         kwargs["transformations"] = T[:11]
