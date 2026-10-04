@@ -41,24 +41,75 @@ from sympy.physics.units.util import _get_conversion_matrix_for_expr
 from sympy.physics.units.util import quantity_simplify as sympy_quantity_simplify
 
 
+def _contains(expr: Any, key: Any) -> bool:
+    """Check whether an expression contains a substitution key.
+
+    Only SymPy expressions are searched. A string key (`""`), a function class
+    (`Function("f")`) or a list contains nothing: calling `has` on a class would
+    run the unbound method on the key instead.
+
+    Args:
+        expr: Key or sympified value of a substitution
+        key: Key of another substitution
+
+    Returns:
+        True if `expr` is an expression that contains `key`.
+    """
+    return isinstance(expr, Basic) and expr.has(key)
+
+
 def order_subs(subs: dict[Basic, Any]) -> list[tuple[Basic, Any]]:
     """Reorder substitutions using topological order for dependency resolution.
 
-    Ensures that substitutions are applied in the correct order when variables
-    depend on each other (e.g., y depends on x, so x must be substituted first).
+    Substitutions are applied one after the other, so a key must be replaced
+    before any other key it brings into the expression or contains:
+
+    - a key whose value contains another key comes first (`y: 2*x` is applied
+      before `x: 3`, so the `x` it introduces is replaced too);
+    - a key that contains another key comes first: `MatrixSymbol("A", n, m)`
+      is applied before `n` and `m`, and `f(x)` before `x`. Replacing `n`
+      first would turn the expression's `A` into `MatrixSymbol("A", 2, m)`,
+      which no longer matches the key `A` (keecas#124).
 
     Args:
         subs: Dictionary of substitutions where keys are variables and values are expressions
 
     Returns:
         Ordered list of substitution tuples for exhaustive application
+
+    Raises:
+        ValueError: If the dependencies form a cycle, e.g. `x: y` and `y: x`, or
+            `x: f(x)` and `f(x): 3` (the value of `x` contains `f(x)`, and `f(x)`
+            contains `x`). The message names the keys of each cycle.
     """
 
-    # Generate edges between each vertex
-    edges = [(i, j) for i, j in permutations(subs.items(), 2) if sympify(i[1]).has(j[0])]
+    # Edge (i, j): key i is replaced before key j
+    edges = [
+        (i, j)
+        for i, j in permutations(subs.items(), 2)
+        if _contains(sympify(i[1]), j[0]) or _contains(i[0], j[0])
+    ]
 
     # Reorder the dict with topological_sort
-    return topological_sort((subs.items(), edges), default_sort_key)
+    try:
+        return topological_sort((subs.items(), edges), default_sort_key)
+    except ValueError:
+        # sympy only says "cycle detected": name the keys of each cycle
+        from sympy.utilities.iterables import strongly_connected_components
+
+        components = strongly_connected_components((list(subs), [(i[0], j[0]) for i, j in edges]))
+        cycles = sorted(
+            (sorted(c, key=default_sort_key) for c in components if len(c) > 1),
+            key=lambda cycle: default_sort_key(cycle[0]),
+        )
+        if not cycles:
+            raise
+        keys = "; ".join(", ".join(str(key) for key in cycle) for cycle in cycles)
+        raise ValueError(
+            f"Cannot order the substitutions, these keys depend on each other in a cycle: "
+            f"{keys}. A key is replaced before any key that its value or the key itself "
+            f"contains."
+        ) from None
 
 
 def _is_homogeneous(expr: Add, unit_system: UnitSystem) -> bool:
@@ -200,7 +251,11 @@ def subs(
         sorted: Whether to apply topological sorting for dependency resolution.
             When True (default), automatically orders substitutions so that dependent
             variables are substituted in correct order (e.g., if y depends on x,
-            x is substituted first). Defaults to True.
+            the x introduced by y is substituted too, and a `MatrixSymbol` with a
+            symbolic shape is substituted before its shape symbols; see
+            `order_subs`). When False, the dict is passed to SymPy's `subs`
+            unchanged, which does not resolve dependencies between entries.
+            Defaults to True.
 
     Returns:
         SymPy expression with substitutions applied, or None if input is None.
