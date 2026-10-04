@@ -36,6 +36,9 @@ from sympy.physics.units.dimensions import Dimension
 from sympy.physics.units.util import _get_conversion_matrix_for_expr
 from sympy.physics.units.util import quantity_simplify as sympy_quantity_simplify
 
+# Modules whose frames sit between `parse_expr` and the code that pipes into it
+_PIPE_MODULES = frozenset({__name__, Pipe.__module__})
+
 
 def order_subs(subs: dict[Basic, Any]) -> list[tuple[Basic, Any]]:
     """Reorder substitutions using topological order for dependency resolution.
@@ -572,8 +575,9 @@ def parse_expr(
     pipe operator to define expressions in `_e` dicts using readable string
     notation instead of verbose SymPy syntax.
 
-    NOTE: Automatically captures local variables from caller's scope when
-    local_dict is None, enabling clean string-based expression definitions.
+    NOTE: Automatically captures the caller's variables when local_dict is None,
+    both with `| pc.parse_expr` and with arguments (`| pc.parse_expr(evaluate=True)`),
+    enabling clean string-based expression definitions.
 
     Args:
         expression: String representation of mathematical expression using standard
@@ -581,14 +585,13 @@ def parse_expr(
             operators: +, -, *, /, **, parentheses, and common functions.
         local_dict: Dictionary of local variables for parsing context (symbol
             definitions, parameters, functions). If None, automatically uses
-            caller's local variables from enclosing scope. Defaults to None.
+            the caller's local and module variables. Defaults to None.
         evaluate: Whether to evaluate the expression during parsing (e.g., simplify
             numeric operations). When False, preserves structure as written.
             Defaults to False.
         **kwargs: Additional arguments passed to SymPy's parse_expr:
             - transformations: List of parsing transformations (defaults to T[:11])
             - global_dict: Global symbol dictionary
-            - rational: Whether to convert floats to rationals
 
     Returns:
         Parsed SymPy expression object ready for symbolic manipulation.
@@ -678,7 +681,9 @@ def parse_expr(
 
     Notes:
         - Uses transformations T[:11] by default for standard mathematical parsing
-        - Automatically captures caller's local scope for symbol resolution
+        - Automatically captures caller's local scope for symbol resolution; inside a
+          generator expression only its own variables and the module globals are
+          visible, so pass local_dict there
         - Common functions supported: sin, cos, sqrt, log, exp, abs, etc.
         - Operators: +, -, *, /, ** (power), parentheses for grouping
         - Cleaner than verbose SymPy syntax: "F/A" vs sp.Div(F, A)
@@ -686,31 +691,22 @@ def parse_expr(
     """
 
     if not local_dict:
+        # The caller is the first frame outside this module and the pipe library.
+        # The pipe frames between them vary: `| pc.parse_expr(...)` adds lambdas
+        # that the bare `| pc.parse_expr` does not (keecas#127).
         frame = currentframe()
-        # Frame stack: parse_expr (0) -> __ror__ (1) -> lambda (2) -> caller (3)
-        frame3 = frame.f_back.f_back.f_back
+        while frame is not None and frame.f_globals.get("__name__") in _PIPE_MODULES:
+            frame = frame.f_back
 
-        if not frame3:
-            local_dict = {}
-        else:
-            # Python 3.13 compatibility: cross-module isolation via f_globals
-            #
-            # Always merge f_globals + f_locals to match Python's scoping:
-            # - f_globals: bound to DEFINING module (not calling module)
-            #   This ensures cross-module isolation - if module_b imports module_a
-            #   and calls module_a.func(), we see module_a's globals, not module_b's
-            # - f_locals: function-local variables and loop variables
-            # - Precedence: f_locals override f_globals (locals shadow globals)
-            #
-            # This handles all common cases:
-            # 1. Functions accessing module variables: ✓ (f_globals)
-            # 2. Module-level comprehensions: ✓ (f_globals + loop vars)
-            # 3. Cross-module isolation: ✓ (f_globals is defining module)
-            #
-            # Known limitation (Python 3.13 PEP 667):
-            # - Comprehensions inside functions can't access parent function locals
-            #   due to scope isolation. Workaround: pass explicit local_dict parameter
-            local_dict = {**dict(frame3.f_globals), **dict(frame3.f_locals)}
+        # Merge the caller's module globals with its locals, locals taking
+        # precedence as in Python's own name lookup. f_globals belongs to the
+        # module that defines the calling code, so a function imported from
+        # another module sees its own module's names. List, dict and set
+        # comprehensions run in the enclosing frame (PEP 709), so f_locals also
+        # holds their loop variables (keecas#66). A generator expression has its
+        # own frame and sees only its variables and the module globals.
+        local_dict = {} if frame is None else {**frame.f_globals, **frame.f_locals}
+        del frame
 
     if "transformations" not in kwargs:
         kwargs["transformations"] = T[:11]
