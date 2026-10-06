@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.1](https://github.com/kompre/keecas/compare/v1.6.0...v1.6.1) (2026-10-04)
+
+
+### Documentation
+
+* document sums over matrices and when pc.rebuild is needed ([d5c06aa](https://github.com/kompre/keecas/commit/d5c06aa998c307b34bed7a9ed062814ef03672cd))
+* **pc:** align pc.rebuild and pc.doit docs with the sum guidance ([aa4c45c](https://github.com/kompre/keecas/commit/aa4c45ca0e411f845e39e2966f22928122f5d288))
+* **skills:** document sums over matrices and when pc.rebuild is needed ([b2821bb](https://github.com/kompre/keecas/commit/b2821bb72163b13cbbb7fa1978d838a821da6e73))
+
 ## [1.6.0](https://github.com/kompre/keecas/compare/v1.5.0...v1.6.0) (2026-10-04)
 
 
