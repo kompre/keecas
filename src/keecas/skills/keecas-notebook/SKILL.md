@@ -142,6 +142,17 @@ show_eqn([_r, {k: check(v, 1) for k, v in _r.items()}], float_format="{:.3f}")
 
 No whitespace padding to align dict values or `=` signs; ruff collapses it and it makes diffs noisy.
 
+## 13. Extra dependencies
+
+If the notebook imports packages beyond keecas's own (scipy, pandas, ...), declare them in a comment-only first code cell, so `keecas edit --sandbox` (uv) can build an environment with them:
+
+```python
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["scipy"]
+# ///
+```
+
 ## Self-check before declaring done
 
 1. Symbols: r-strings, `{}` subscripts, `\` Greek?
