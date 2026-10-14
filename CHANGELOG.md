@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.7.0](https://github.com/kompre/keecas/compare/v1.6.1...v1.7.0) (2026-10-14)
+
+
+### Features
+
+* **cli:** add keecas edit --sandbox for notebooks with inline dependencies ([22561d1](https://github.com/kompre/keecas/commit/22561d18f30447808b230575052570b8edb528ea))
+* **cli:** add keecas edit --sandbox for notebooks with inline dependencies ([8f741d4](https://github.com/kompre/keecas/commit/8f741d4b73bba4a342dbed3041127639e336ef5a))
+
+
+### Bug Fixes
+
+* **cli:** pin the sandbox kernel to the sandbox interpreter ([7d0d5ba](https://github.com/kompre/keecas/commit/7d0d5bae1c9fd59198eb773524ea28048437f47a))
+
 ## [1.6.1](https://github.com/kompre/keecas/compare/v1.6.0...v1.6.1) (2026-10-04)
 
 
