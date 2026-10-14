@@ -217,6 +217,47 @@ def run_in_sandbox(metadata: dict | None, inner_args: list[str]) -> int:
             pass
 
 
+KERNEL_NAME = "python3"
+
+
+def pin_kernel_to_interpreter(base_env: dict[str, str]) -> tuple[dict[str, str], list[str]]:
+    """Make the `python3` kernel run on this interpreter, and allow no other.
+
+    Jupyter resolves kernel names through its kernel directories, so a
+    `python3` kernel registered by the user (`ipykernel install --user`)
+    would shadow the sandbox's own and run the notebook in another
+    environment, without the declared dependencies. A temporary kernel
+    directory placed first on JUPYTER_PATH pins `python3` to the sandbox
+    interpreter; `allowed_kernelspecs` hides every other registered kernel.
+
+    Args:
+        base_env: Environment the Jupyter server will inherit.
+
+    Returns:
+        (server environment, extra Jupyter server arguments). The temporary
+        directory is removed at interpreter exit.
+    """
+    import atexit
+
+    jupyter_dir = tempfile.mkdtemp(prefix="keecas_kernels_")
+    atexit.register(shutil.rmtree, jupyter_dir, ignore_errors=True)
+
+    spec_dir = Path(jupyter_dir) / "kernels" / KERNEL_NAME
+    spec_dir.mkdir(parents=True)
+    spec = {
+        "argv": [sys.executable, "-m", "ipykernel_launcher", "-f", "{connection_file}"],
+        "display_name": "Python 3 (keecas sandbox)",
+        "language": "python",
+        "metadata": {"debugger": True},
+    }
+    (spec_dir / "kernel.json").write_text(json.dumps(spec, indent=1), encoding="utf-8")
+
+    env = dict(base_env)
+    existing = env.get("JUPYTER_PATH")
+    env["JUPYTER_PATH"] = jupyter_dir + (os.pathsep + existing if existing else "")
+    return env, [f"--KernelSpecManager.allowed_kernelspecs={KERNEL_NAME}"]
+
+
 def should_prompt(metadata: dict | None) -> bool:
     """Decide whether to offer sandbox mode for a notebook without `--sandbox`.
 

@@ -178,6 +178,7 @@ uvx keecas edit analysis.ipynb --sandbox
 - keecas is added at the running version (`keecas==X.Y.Z`) unless the block lists `keecas` itself.
 - uv is not a keecas dependency: `--sandbox` exits with an install hint when uv is missing.
 - Only one block per notebook; a second one is an error.
+- In the sandbox, the `python3` kernel always runs on the sandbox's Python, and other registered kernels (`ipykernel install --user`, conda environments, ...) are hidden, so a notebook cannot silently run in an environment without its declared dependencies.
 
 ### List Available Templates
 

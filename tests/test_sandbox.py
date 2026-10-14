@@ -155,3 +155,40 @@ def test_sandbox_without_uv_errors(tmp_path, relaunch, monkeypatch, capsys):
     assert exc.value.code == 1
     assert "uv must be installed" in capsys.readouterr().out
     assert relaunch == []
+
+
+def register_kernel(kernels_dir, name, python):
+    spec_dir = kernels_dir / name
+    spec_dir.mkdir(parents=True)
+    spec = {
+        "argv": [python, "-m", "ipykernel_launcher", "-f", "{connection_file}"],
+        "display_name": name,
+    }
+    (spec_dir / "kernel.json").write_text(json.dumps(spec))
+
+
+def test_sandbox_kernel_shadows_user_registered_kernels(tmp_path, monkeypatch):
+    from jupyter_client.kernelspec import KernelSpecManager
+
+    # A user-level `python3` (as left by `ipykernel install --user`) and another env.
+    user_data = tmp_path / "user-data"
+    register_kernel(user_data / "kernels", "python3", "/elsewhere/bin/python")
+    register_kernel(user_data / "kernels", "myenv", "/myenv/bin/python")
+    monkeypatch.setenv("JUPYTER_DATA_DIR", str(user_data))
+    monkeypatch.delenv("JUPYTER_PATH", raising=False)
+    # Inside a venv jupyter_core checks env kernels before user ones; users can
+    # turn that off, and then the user's `python3` shadows the sandbox's.
+    monkeypatch.setenv("JUPYTER_PREFER_ENV_PATH", "0")
+
+    # Without pinning: the user's kernel wins, and other envs are selectable.
+    unpinned = KernelSpecManager()
+    assert unpinned.get_kernel_spec("python3").argv[0] == "/elsewhere/bin/python"
+    assert "myenv" in unpinned.find_kernel_specs()
+
+    env, server_args = sandbox.pin_kernel_to_interpreter(dict(cli.os.environ))
+    monkeypatch.setenv("JUPYTER_PATH", env["JUPYTER_PATH"])
+    assert server_args == ["--KernelSpecManager.allowed_kernelspecs=python3"]
+
+    manager = KernelSpecManager(allowed_kernelspecs={"python3"})
+    assert manager.get_kernel_spec("python3").argv[0] == cli.sys.executable
+    assert set(manager.find_kernel_specs()) == {"python3"}

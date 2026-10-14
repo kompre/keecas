@@ -445,6 +445,14 @@ def cmd_edit(args: argparse.Namespace) -> None:
         # Disable authentication for local development convenience
         jupyter_cmd.extend(["--IdentityProvider.token="])
 
+    # Inside a sandbox, the kernel must run on the sandbox interpreter
+    server_env = None
+    from . import sandbox
+
+    if sandbox.in_sandbox():
+        server_env, kernel_args = sandbox.pin_kernel_to_interpreter(dict(os.environ))
+        jupyter_cmd.extend(kernel_args)
+
     interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
     print(f"Starting {interface_name} server on port {port}...")
     if use_temp:
@@ -462,6 +470,7 @@ def cmd_edit(args: argparse.Namespace) -> None:
             jupyter_cmd,
             stdout=None,
             stderr=None,
+            env=server_env,
         )
 
         # Wait a moment for server to start
