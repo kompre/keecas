@@ -23,6 +23,7 @@ Guidance for Claude Code when working in this repository.
 | `pint_sympy.py` | Pint <-> SymPy bridge, unit registry `u`, `update_pint_locale()` |
 | `config.py` | Hierarchical TOML config (local > global > defaults) at `.keecas/config.toml` |
 | `cli.py` | `keecas` CLI: `edit`, `config init/edit/open/show/path/reset`, `skill install/print` |
+| `sandbox.py` | `keecas edit --sandbox`: reads a PEP 723 `# /// script` block from a notebook cell and relaunches via `uv run` (marimo-style; uv is optional, never a dependency) |
 | `localization/` | 10-language support (5 full, 5 fallback), synced with Pint locale |
 | `label.py`, `utils.py` | Label/cross-reference generation, shared helpers |
 
@@ -46,6 +47,7 @@ uv build                        # build package
 uv sync --group dev             # install dev deps
 bash scripts/install-hooks.sh   # install pre-commit hooks
 keecas edit [file]               # launch Jupyter with a keecas template
+keecas edit [file] --sandbox     # same, in a uv env with the notebook's inline deps
 keecas config init|edit|show     # manage .keecas/config.toml
 keecas skill install [--force]   # install keecas-notebook + keecas-quarto into ~/.claude/skills/
 keecas skill print [--with-references] [--quarto]  # print the skill(s) to stdout as UTF-8 (non-Claude-Code AI tools)

@@ -154,6 +154,31 @@ keecas edit --dir /path/to/project --no-lab
 - `--token TOKEN`: Set Jupyter access token
 - `--no-lab`: Use Jupyter Notebook instead of JupyterLab
 - `--temp`: Create temporary notebook (not saved)
+- `--sandbox`: Run in an isolated uv environment with the notebook's inline dependencies (requires [uv](https://docs.astral.sh/uv/getting-started/installation/))
+- `--no-sandbox`: Never offer sandbox mode
+
+### Sandboxed Notebooks (Inline Dependencies)
+
+A notebook can declare the packages it needs with a [PEP 723](https://peps.python.org/pep-0723/) block in a code cell. The cell holds only comments, so running it is a no-op:
+
+```python
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["scipy", "pandas>=2"]
+# ///
+```
+
+`keecas edit --sandbox` reads the block and relaunches itself through `uv run` in an isolated, ephemeral environment containing keecas plus those dependencies. The Jupyter server and kernel both run there, so the notebook can import them:
+
+```bash
+uvx keecas edit analysis.ipynb --sandbox
+```
+
+- Without `--sandbox`, opening a notebook that declares dependencies asks whether to use a sandbox (interactive terminals only, and only if uv is installed). `--no-sandbox` skips the question.
+- keecas is added at the running version (`keecas==X.Y.Z`) unless the block lists `keecas` itself.
+- uv is not a keecas dependency: `--sandbox` exits with an install hint when uv is missing.
+- Only one block per notebook; a second one is an error.
+- In the sandbox, the `python3` kernel always runs on the sandbox's Python, and other registered kernels (`ipykernel install --user`, conda environments, ...) are hidden, so a notebook cannot silently run in an environment without its declared dependencies.
 
 ### List Available Templates
 

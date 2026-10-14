@@ -260,6 +260,40 @@ def cmd_config_edit(args: argparse.Namespace) -> None:
         sys.exit(1)
 
 
+def _maybe_run_in_sandbox(args: argparse.Namespace) -> None:
+    """Re-launch `keecas edit` through uv when sandbox mode applies.
+
+    Sandbox mode applies with `--sandbox`, or after a confirmation prompt when
+    the notebook declares inline dependencies. Exits with the sandboxed
+    process's return code; returns when the current environment should be used.
+    """
+    from . import sandbox
+
+    if sandbox.in_sandbox() or getattr(args, "no_sandbox", False):
+        return
+
+    metadata = None
+    target_file = getattr(args, "file", None)
+    if target_file:
+        notebook_path = Path(args.dir) / target_file
+        if notebook_path.suffix == ".ipynb" and notebook_path.exists():
+            try:
+                metadata = sandbox.read_notebook_metadata(notebook_path)
+            except (ValueError, OSError) as e:
+                print(f"Error: Could not read inline dependencies from {notebook_path}: {e}")
+                sys.exit(1)
+
+    if not (getattr(args, "sandbox", False) or sandbox.should_prompt(metadata)):
+        return
+
+    if not sandbox.is_uv_available():
+        print("Error: uv must be installed to use --sandbox.")
+        print(f"Install uv from {sandbox.UV_INSTALL_URL}")
+        sys.exit(1)
+
+    sys.exit(sandbox.run_in_sandbox(metadata, sandbox.strip_sandbox_args(sys.argv[1:])))
+
+
 def cmd_edit(args: argparse.Namespace) -> None:
     """Launch Jupyter server with keecas notebook templates."""
     # Handle template listing
@@ -281,6 +315,8 @@ def cmd_edit(args: argparse.Namespace) -> None:
         else:
             print("Templates directory not found.")
         return
+
+    _maybe_run_in_sandbox(args)
 
     # Default to JupyterLab unless --no-lab is specified
     use_lab = not getattr(args, "no_lab", False)
@@ -409,6 +445,14 @@ def cmd_edit(args: argparse.Namespace) -> None:
         # Disable authentication for local development convenience
         jupyter_cmd.extend(["--IdentityProvider.token="])
 
+    # Inside a sandbox, the kernel must run on the sandbox interpreter
+    server_env = None
+    from . import sandbox
+
+    if sandbox.in_sandbox():
+        server_env, kernel_args = sandbox.pin_kernel_to_interpreter(dict(os.environ))
+        jupyter_cmd.extend(kernel_args)
+
     interface_name = "JupyterLab" if use_lab else "Jupyter Notebook"
     print(f"Starting {interface_name} server on port {port}...")
     if use_temp:
@@ -426,6 +470,7 @@ def cmd_edit(args: argparse.Namespace) -> None:
             jupyter_cmd,
             stdout=None,
             stderr=None,
+            env=server_env,
         )
 
         # Wait a moment for server to start
@@ -920,6 +965,22 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         default=False,
         help="Create temporary notebook (auto-cleanup when server stops)",
+    )
+    sandbox_group = edit_main_parser.add_mutually_exclusive_group()
+    sandbox_group.add_argument(
+        "--sandbox",
+        action="store_true",
+        default=False,
+        help=(
+            "Run in an isolated uv environment with the notebook's inline "
+            "'# /// script' dependencies (requires uv)"
+        ),
+    )
+    sandbox_group.add_argument(
+        "--no-sandbox",
+        action="store_true",
+        default=False,
+        help="Never offer sandbox mode, even if the notebook declares dependencies",
     )
     edit_main_parser.set_defaults(func=cmd_edit)
 

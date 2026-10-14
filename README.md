@@ -70,7 +70,10 @@ keecas edit                        # Minimal template
 keecas edit --template quickstart  # Comprehensive examples
 keecas edit analysis.ipynb         # Open specific notebook
 keecas edit --temp                 # Temporary session
+uvx keecas edit analysis.ipynb --sandbox  # Isolated env with the notebook's inline deps (uv)
 ```
+
+A notebook declares extra dependencies with a [PEP 723](https://peps.python.org/pep-0723/) `# /// script` block in a comment-only code cell; `--sandbox` builds a throwaway environment with them via uv. See the [CLI reference](https://kompre.github.io/keecas/cli-reference/).
 
 ## Configuration
 
