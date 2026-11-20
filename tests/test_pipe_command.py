@@ -585,3 +585,62 @@ def test_quantity_simplify():
 
 if __name__ == "__main__":
     pytest.main()
+
+
+@pytest.mark.parametrize(
+    "matrix",
+    [
+        [[1, 2, 3], [4, 5, 6]],
+        [[1], [2], [3]],
+        [[1, 2, 3]],
+    ],
+    ids=["2x3", "column", "row"],
+)
+def test_subs_literal_indices_with_matrix(matrix):
+    """x[0, 0] resolves when x is substituted with a Matrix of any shape (keecas#134)."""
+    from sympy import Array, ImmutableMatrix, IndexedBase
+
+    x = IndexedBase("x")
+    M = ImmutableMatrix(matrix)
+    expr = x[0, 0] + x[M.rows - 1, M.cols - 1]
+    expected = M[0, 0] + M[M.rows - 1, M.cols - 1]
+
+    assert (expr | subs({x: M})) == expected
+    assert (expr | subs({x: Array(M)})) == expected
+
+
+def test_subs_literal_indices_from_dependent_substitution():
+    """The issue's reproduction: x[0, 1] comes in through another key (keecas#134)."""
+    from sympy import ImmutableMatrix, IndexedBase, MatrixSymbol
+
+    x = IndexedBase("x")
+    k, y = symbols("k y")
+    B = MatrixSymbol("B", 2, 3)
+    M = ImmutableMatrix([[1, 2, 3], [4, 5, 6]])
+    eqn = {y: x[0, 1] + x[1, 2]}
+
+    assert (y | subs(eqn | {x: M}) | doit) == 8
+    assert (y | subs(eqn | {x: k * B, k: 2, B: M}) | doit) == 16
+
+
+def test_subs_matrix_keeps_bare_base_and_single_index():
+    """A bare x still becomes the Matrix, and x[1] stays a flat index (keecas#134)."""
+    from sympy import ImmutableMatrix, IndexedBase
+
+    x = IndexedBase("x")
+    M = ImmutableMatrix([[1, 2, 3], [4, 5, 6]])
+
+    assert (x | subs({x: M})) == M
+    assert (x[1] | subs({x: M})) == 2
+
+
+def test_subs_literal_indices_with_matrix_and_units():
+    """A Matrix of quantities resolves a literal x[0, 1] (keecas#134)."""
+    from sympy import ImmutableMatrix, IndexedBase
+
+    from keecas.pint_sympy import unitregistry as u
+
+    x = IndexedBase("x")
+    M = ImmutableMatrix([[1, 2], [3, 4]]) * sympify(u.kN)
+
+    assert (x[0, 1] | subs({x: M})) == 2 * sympify(u.kN)
