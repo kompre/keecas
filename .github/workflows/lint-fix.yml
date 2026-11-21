@@ -53,7 +53,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
+          # Only ruff's fixes: `uv sync` can rewrite uv.lock (e.g. the project
+          # version after a release), and committing that churn leaves the PR's
+          # head commit without this workflow's own check, blocking the merge.
+          git add src/ tests/
           if ! git diff --staged --quiet; then
             git commit -m "style: auto-fix linting issues [skip ci]"
             git push
