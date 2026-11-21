@@ -20,6 +20,7 @@ from sympy import (
     Basic,
     Function,
     Indexed,
+    IndexedBase,
     MatrixBase,
     MatrixExpr,
     MatrixSymbol,
@@ -229,6 +230,45 @@ def _convert_to(expr: Any, target_units: Any, unit_system: str | UnitSystem = "S
     return (_scale_factor(expr, unit_system) * coeff) * units
 
 
+def _is_indexed_matrix_pair(old: Any, new: Any) -> bool:
+    """Check whether a substitution replaces an `IndexedBase` with an explicit Matrix.
+
+    Args:
+        old: Key of the substitution
+        new: Value of the substitution
+
+    Returns:
+        True if `old` is an `IndexedBase` and `new` a Matrix.
+    """
+    return isinstance(old, IndexedBase) and isinstance(new, MatrixBase)
+
+
+def _index_matrix_as_array(expr: Basic, base: IndexedBase, matrix: MatrixBase) -> Basic:
+    """Rebuild each multi-index `Indexed` over `base` as an `Indexed` over `Array(matrix)`.
+
+    When `subs` replaces the base of `x[0, 1]` with a Matrix, sympy resolves the
+    numeric indices with `matrix[[0, 1]]`, which a Matrix reads as a flat index
+    and raises `TypeError`; an `Array` accepts it (keecas#134, same sympy bug as
+    keecas#126). A single index is left alone: the Matrix resolves it as a flat
+    index, and a bare `x` still becomes the Matrix.
+
+    Args:
+        expr: Expression to rewrite
+        base: `IndexedBase` about to be substituted
+        matrix: Matrix that replaces `base`
+
+    Returns:
+        The expression with `base[i, j, ...]` replaced by `Array(matrix)[i, j, ...]`.
+    """
+    if not isinstance(expr, Basic):
+        return expr
+    array = Array(matrix)
+    return expr.replace(
+        lambda node: isinstance(node, Indexed) and node.base == base and node.rank > 1,
+        lambda node: Indexed(array, *node.indices),
+    )
+
+
 @Pipe
 def subs(
     expression: Basic,
@@ -315,6 +355,9 @@ def subs(
         - Topological sorting handles complex dependency chains automatically
         - Works seamlessly with Pint quantities through SymPy integration
         - Common pattern: `_p | _e` merges parameters and expressions for substitution
+        - An `IndexedBase` indexed with literal numbers (`x[0, 1]`) can be substituted
+          with a Matrix of any shape: each such `Indexed` is rebuilt over
+          `Array(matrix)` first, working around a sympy bug (keecas#134)
     """
     # Filter out None expressions
     if expression is None:
@@ -330,7 +373,17 @@ def subs(
     if sorted:
         substitution = order_subs(substitution)
 
-    expression = S(expression).subs(substitution)
+    pairs = substitution.items() if isinstance(substitution, dict) else substitution
+    if any(_is_indexed_matrix_pair(old, new) for old, new in pairs):
+        # Apply the pairs one by one, as sympy does with a list, so an Indexed
+        # brought in by an earlier pair is rebuilt before its base is replaced
+        expression = S(expression)
+        for old, new in pairs:
+            if _is_indexed_matrix_pair(old, new):
+                expression = _index_matrix_as_array(expression, old, new)
+            expression = expression.subs(old, new)
+    else:
+        expression = S(expression).subs(substitution)
 
     # if simplify_quantity:
     #     expression = expression | quantity_simplify(**kwargs)
