@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.1](https://github.com/kompre/keecas/compare/v1.7.0...v1.7.1) (2026-11-21)
+
+
+### Bug Fixes
+
+* **pc.subs:** resolve literal multi-index lookups on an IndexedBase substituted with a Matrix ([fa276a5](https://github.com/kompre/keecas/commit/fa276a50a17f039465b685e0b2d85b7b05b464b0))
+* **pc.subs:** resolve literal multi-index lookups on an IndexedBase substituted with a Matrix ([6a0e68e](https://github.com/kompre/keecas/commit/6a0e68ead494ae684711f06eddfa6cf6b6a44c9d)), closes [#134](https://github.com/kompre/keecas/issues/134)
+
 ## [1.7.0](https://github.com/kompre/keecas/compare/v1.6.1...v1.7.0) (2026-10-14)
 
 
