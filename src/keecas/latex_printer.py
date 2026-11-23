@@ -87,7 +87,46 @@ class KeecasLatexPrinter(LatexPrinter):
             numer, denom = fraction(expr, exact=True)
             if denom is not S.One and (denom.is_Mul or denom.is_Pow):
                 return rf"\frac{{{self._print(numer)}}}{{{self._print(denom)}}}"
+            if denom is S.One:
+                if self._needs_explicit_dots(expr.args):
+                    return self._join_factors(expr.args)
+            elif isinstance(numer, Mul) and self._needs_explicit_dots(numer.args):
+                return rf"\frac{{{self._print(numer)}}}{{{self._print(denom)}}}"
         return super()._print_Mul(expr)
+
+    def _needs_explicit_dots(self, args) -> bool:
+        """True if some pair of factors needs an explicit multiplication sign."""
+        if len(args) < 2:
+            return False
+        return any(_is_quantity(arg) for arg in args) or any(
+            self._print(arg)[:1].isdigit() for arg in args[1:]
+        )
+
+    def _join_factors(self, args) -> str:
+        """Join factors, using \\cdot where juxtaposition could be misread.
+
+        A \\cdot goes between two factors when
+        - the next factor starts with a digit (`x \\cdot 2`, `q \\cdot 5\\,m`), or
+        - the previous factor is a number with units and the next one is not
+          parenthesised (`3\\,\\frac{kN}{m} \\cdot l`: `\\,l` could read as litres).
+
+        Otherwise the configured `mul_symbol` is used, e.g. before
+        `\\left(5\\,m\\right)^{2}`, where the parenthesis already separates.
+        """
+        sep = self._settings["mul_symbol_latex"]
+        out, prev = "", None
+        for i, arg in enumerate(args):
+            tex = self._print(arg)
+            if not _is_unit(arg) and self._needs_mul_brackets(
+                arg, first=(i == 0), last=(i == len(args) - 1)
+            ):
+                tex = rf"\left({tex}\right)"
+            if prev is not None:
+                dot = tex[:1].isdigit() or (_is_quantity(prev) and not tex.startswith(r"\left("))
+                out += r" \cdot " if dot else sep
+            out += tex
+            prev = arg
+        return out
 
     def _print_quantity(self, coeff, units):
         """Print `number * units` with the magnitude outside the unit fraction.
@@ -105,7 +144,15 @@ class KeecasLatexPrinter(LatexPrinter):
 def _is_unit(arg) -> bool:
     from sympy.physics.units import Quantity
 
-    return isinstance(arg, Quantity) or (arg.is_Pow and isinstance(arg.base, Quantity))
+    # Unwrap nested powers: 1/m**2 under evaluate(False) is Pow(Pow(m, 2), -1)
+    while arg.is_Pow:
+        arg = arg.base
+    return isinstance(arg, Quantity)
+
+
+def _is_quantity(arg) -> bool:
+    """A number times units (bare units do not count)."""
+    return isinstance(arg, Mul) and _split_quantity(arg) is not None
 
 
 def _flat_factors(expr):
@@ -129,6 +176,8 @@ def _split_quantity(expr):
 
     coeffs, units = [], []
     for arg in _flat_factors(expr):
+        if arg is S.One:  # e.g. Mul(1, 1/m) from 1/u.m under evaluate(False)
+            continue
         if _is_unit(arg):
             units.append(arg)
         elif arg.is_number and not arg.has(Quantity):
