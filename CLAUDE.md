@@ -53,6 +53,8 @@ keecas skill install [--force]   # install keecas-notebook + keecas-quarto into 
 keecas skill print [--with-references] [--quarto]  # print the skill(s) to stdout as UTF-8 (non-Claude-Code AI tools)
 ```
 
+In sandboxes/containers without system locales installed, the pint-locale tests in `tests/test_localization.py` (7 of them) fail; this is environmental, not a regression, so ignore them.
+
 Full CLI reference: `docs/cli-reference/`. Full contributor workflow: `CONTRIBUTING.md`.
 
 ## Notes
