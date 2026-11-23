@@ -20,7 +20,7 @@ Guidance for Claude Code when working in this repository.
 | `latex_printer.py` | `KeecasLatexPrinter` — SymPy `LatexPrinter` subclass fixing nested-fraction flattening in `evaluate=False` trees (e.g. `a/(b/2)`) |
 | `col_wrappers.py` | Singledispatch `wrap_column()` — prefix/suffix decoration (`= `, `\quad`, etc.) |
 | `pipe_command.py` | `pc` namespace: `subs`, `rebuild`, `N`, `convert_to`, `doit`, `parse_expr` as `@Pipe` steps |
-| `pint_sympy.py` | Pint <-> SymPy bridge, unit registry `u`, `update_pint_locale()`; non-prefixed units (kgf, lbf) get scale factors that work under both SymPy <1.15 and >=1.15 semantics (1.15 folds the reference's scale, e.g. kg=1000 g, into `set_global_relative_scale_factor`) |
+| `pint_sympy.py` | Pint <-> SymPy bridge, unit registry `u`, `update_pint_locale()`; kgf/lbf scale factors must work on SymPy <1.15 and >=1.15 |
 | `config/` | Hierarchical TOML config (local > global > defaults) at `.keecas/config.toml`: `manager.py`, `schema.py`, `migration.py` |
 | `cli.py` | `keecas` CLI: `edit`, `config init/edit/open/show/path/reset`, `skill install/print`; notebook templates live in `templates/` |
 | `sandbox.py` | `keecas edit --sandbox`: reads a PEP 723 `# /// script` block from a notebook cell and relaunches via `uv run` (marimo-style; uv is optional, never a dependency) |
@@ -46,20 +46,15 @@ pytest                          # run tests
 uv build                        # build package
 uv sync --group dev             # install dev deps
 bash scripts/install-hooks.sh   # install pre-commit hooks
-keecas edit [file]               # launch Jupyter with a keecas template
-keecas edit [file] --sandbox     # same, in a uv env with the notebook's inline deps
-keecas config init|edit|show     # manage .keecas/config.toml
-keecas skill install [--force]   # install keecas-notebook + keecas-quarto into ~/.claude/skills/
-keecas skill print [--with-references] [--quarto]  # print the skill(s) to stdout as UTF-8 (non-Claude-Code AI tools)
 ```
 
-In sandboxes/containers without system locales installed, the pint-locale tests in `tests/test_localization.py` (7 of them) fail; this is environmental, not a regression, so ignore them.
+Pint-locale tests in `tests/test_localization.py` fail without system locales installed (e.g. sandboxes); ignore.
 
 Full CLI reference: `docs/cli-reference/`. Full contributor workflow: `CONTRIBUTING.md`.
 
 ## Notes
 
-- keecas is past 1.0 and follows semver via release-please: breaking changes need a `BREAKING CHANGE` commit footer and a `_docs/MIGRATION_GUIDE.md` entry. Prefer keeping existing user code and supported dependency ranges working (e.g. the `sympy>=1.13.1` floor) over clean breaks.
+- 1.x, semver via release-please: breaking changes need a `BREAKING CHANGE` footer and a `_docs/MIGRATION_GUIDE.md` entry; keep supported dependency ranges working.
 - The committed `pyproject.toml` version is never bumped manually; release-please derives versions from conventional commits on `main`.
 
 ## Keeping This File Current
