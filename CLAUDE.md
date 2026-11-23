@@ -20,9 +20,9 @@ Guidance for Claude Code when working in this repository.
 | `latex_printer.py` | `KeecasLatexPrinter` — SymPy `LatexPrinter` subclass fixing nested-fraction flattening in `evaluate=False` trees (e.g. `a/(b/2)`) |
 | `col_wrappers.py` | Singledispatch `wrap_column()` — prefix/suffix decoration (`= `, `\quad`, etc.) |
 | `pipe_command.py` | `pc` namespace: `subs`, `rebuild`, `N`, `convert_to`, `doit`, `parse_expr` as `@Pipe` steps |
-| `pint_sympy.py` | Pint <-> SymPy bridge, unit registry `u`, `update_pint_locale()` |
-| `config.py` | Hierarchical TOML config (local > global > defaults) at `.keecas/config.toml` |
-| `cli.py` | `keecas` CLI: `edit`, `config init/edit/open/show/path/reset`, `skill install/print` |
+| `pint_sympy.py` | Pint <-> SymPy bridge, unit registry `u`, `update_pint_locale()`; kgf/lbf scale factors must work on SymPy <1.15 and >=1.15 |
+| `config/` | Hierarchical TOML config (local > global > defaults) at `.keecas/config.toml`: `manager.py`, `schema.py`, `migration.py` |
+| `cli.py` | `keecas` CLI: `edit`, `config init/edit/open/show/path/reset`, `skill install/print`; notebook templates live in `templates/` |
 | `sandbox.py` | `keecas edit --sandbox`: reads a PEP 723 `# /// script` block from a notebook cell and relaunches via `uv run` (marimo-style; uv is optional, never a dependency) |
 | `localization/` | 10-language support (5 full, 5 fallback), synced with Pint locale |
 | `label.py`, `utils.py` | Label/cross-reference generation, shared helpers |
@@ -46,19 +46,16 @@ pytest                          # run tests
 uv build                        # build package
 uv sync --group dev             # install dev deps
 bash scripts/install-hooks.sh   # install pre-commit hooks
-keecas edit [file]               # launch Jupyter with a keecas template
-keecas edit [file] --sandbox     # same, in a uv env with the notebook's inline deps
-keecas config init|edit|show     # manage .keecas/config.toml
-keecas skill install [--force]   # install keecas-notebook + keecas-quarto into ~/.claude/skills/
-keecas skill print [--with-references] [--quarto]  # print the skill(s) to stdout as UTF-8 (non-Claude-Code AI tools)
 ```
+
+Pint-locale tests in `tests/test_localization.py` fail without system locales installed (e.g. sandboxes); ignore.
 
 Full CLI reference: `docs/cli-reference/`. Full contributor workflow: `CONTRIBUTING.md`.
 
 ## Notes
 
-- Backward compatibility is not a constraint pre-1.0 — prefer clean breaks over shims.
-- `dev`'s committed `pyproject.toml` version is never read or bumped manually; release-please derives versions from conventional commits on `main`.
+- 1.x, semver via release-please: breaking changes need a `BREAKING CHANGE` footer and a `_docs/MIGRATION_GUIDE.md` entry; keep supported dependency ranges working.
+- The committed `pyproject.toml` version is never bumped manually; release-please derives versions from conventional commits on `main`.
 
 ## Keeping This File Current
 
