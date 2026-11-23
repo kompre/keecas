@@ -149,3 +149,75 @@ def test_format_value_integration_uses_keecas_latex():
 
     expr2 = "q*l**2/8" | pc.parse_expr()
     assert format_value(expr2, mul_symbol=None) == r"\frac{q l^{2}}{8}"
+
+
+def test_unevaluated_reciprocal_drops_explicit_one():
+    """parse_expr("1/(a+b)", evaluate=False) is Mul(1, Pow(a+b, -1)).
+
+    Stock printing renders the explicit 1 factor as "1 \\frac{1}{a + b}" (#142).
+    """
+    expr = parse_expr("1/(a+b)", evaluate=False)
+    assert keecas_latex(expr, mul_symbol=None) == r"\frac{1}{a + b}"
+
+
+def test_unevaluated_reciprocal_inside_function_drops_explicit_one():
+    expr = parse_expr("Min(1/(a+b), 1, 1/c**2)", evaluate=False)
+    out = keecas_latex(expr, mul_symbol=None)
+    assert r"1 \frac" not in out
+    assert r"\frac{1}{a + b}" in out
+    assert r"\frac{1}{c^{2}}" in out
+
+
+def test_explicit_one_factor_dropped_from_longer_product():
+    expr = parse_expr("1*a/(b+c)", evaluate=False)
+    assert keecas_latex(expr, mul_symbol=None) == r"\frac{a}{b + c}"
+
+
+def _q(*args):
+    """Unevaluated Mul, as substitution under evaluate(False) produces."""
+    from sympy import Mul
+
+    return Mul(*args, evaluate=False)
+
+
+def test_cdot_between_factors_that_could_be_misread():
+    """\\cdot where juxtaposition is ambiguous, configured separator elsewhere."""
+    from sympy import Pow, S
+
+    from keecas import u
+
+    q, ell, x, y = symbols("q l x y")
+    kNm = _q(S(3.0), u.kN, Pow(u.m, -1))
+    m5 = _q(S(5), u.m)
+    cases = [
+        # next factor starts with a digit
+        (_q(q, m5), r"q \cdot 5\,\text{m}"),
+        (_q(kNm, m5), r"3.0\,\frac{\text{kN}}{\text{m}} \cdot 5\,\text{m}"),
+        (_q(x, S(2)), r"x \cdot 2"),
+        # previous factor is a quantity: "\,l" would read as litres
+        (_q(kNm, ell), r"3.0\,\frac{\text{kN}}{\text{m}} \cdot l"),
+        # parenthesised factor after a quantity: separator kept
+        (
+            _q(kNm, Pow(m5, 2, evaluate=False)),
+            r"3.0\,\frac{\text{kN}}{\text{m}}\,\left(5\,\text{m}\right)^{2}",
+        ),
+        # unchanged
+        (_q(S(2), x), r"2\,x"),
+        (_q(x, y), r"x\,y"),
+        (_q(S(15), u.kN, u.m), r"15\,\text{kN}\,\text{m}"),
+    ]
+    for expr, expected in cases:
+        assert keecas_latex(expr, mul_symbol=r"\,") == expected
+
+
+def test_quantity_with_explicit_one_factor():
+    """2*kN/m**2 typed under evaluate(False) carries Mul(1, m**-2)."""
+    import sympy
+    from sympy import S
+
+    from keecas import u
+
+    kN, m = S(u.kN), S(u.m)
+    with sympy.evaluate(False):
+        expr = 2 * kN / m**2
+    assert keecas_latex(expr, mul_symbol=r"\,") == r"2\,\frac{\text{kN}}{\text{m}^{2}}"

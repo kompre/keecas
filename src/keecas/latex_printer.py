@@ -73,10 +73,120 @@ class KeecasLatexPrinter(LatexPrinter):
 
     def _print_Mul(self, expr):
         if isinstance(expr, Mul):
+            quantity = _split_quantity(expr)
+            if quantity is not None:
+                return self._print_quantity(*quantity)
+            # An unevaluated Mul can carry an explicit 1 factor, e.g.
+            # parse_expr("1/(a+b)", evaluate=False) == Mul(1, Pow(a+b, -1)),
+            # which stock printing renders as "1 \frac{1}{a + b}". Drop it.
+            rest = [arg for arg in expr.args if arg is not S.One]
+            if 0 < len(rest) < len(expr.args):
+                if len(rest) == 1:
+                    return self._print(rest[0])
+                expr = Mul(*rest, evaluate=False)
             numer, denom = fraction(expr, exact=True)
             if denom is not S.One and (denom.is_Mul or denom.is_Pow):
                 return rf"\frac{{{self._print(numer)}}}{{{self._print(denom)}}}"
+            if denom is S.One:
+                if self._needs_explicit_dots(expr.args):
+                    return self._join_factors(expr.args)
+            elif isinstance(numer, Mul) and self._needs_explicit_dots(numer.args):
+                return rf"\frac{{{self._print(numer)}}}{{{self._print(denom)}}}"
         return super()._print_Mul(expr)
+
+    def _needs_explicit_dots(self, args) -> bool:
+        """True if some pair of factors needs an explicit multiplication sign."""
+        if len(args) < 2:
+            return False
+        return any(_is_quantity(arg) for arg in args) or any(
+            self._print(arg)[:1].isdigit() for arg in args[1:]
+        )
+
+    def _join_factors(self, args) -> str:
+        """Join factors, using \\cdot where juxtaposition could be misread.
+
+        A \\cdot goes between two factors when
+        - the next factor starts with a digit (`x \\cdot 2`, `q \\cdot 5\\,m`), or
+        - the previous factor is a number with units and the next one is not
+          parenthesised (`3\\,\\frac{kN}{m} \\cdot l`: `\\,l` could read as litres).
+
+        Otherwise the configured `mul_symbol` is used, e.g. before
+        `\\left(5\\,m\\right)^{2}`, where the parenthesis already separates.
+        """
+        sep = self._settings["mul_symbol_latex"]
+        out, prev = "", None
+        for i, arg in enumerate(args):
+            tex = self._print(arg)
+            if not _is_unit(arg) and self._needs_mul_brackets(
+                arg, first=(i == 0), last=(i == len(args) - 1)
+            ):
+                tex = rf"\left({tex}\right)"
+            if prev is not None:
+                dot = tex[:1].isdigit() or (_is_quantity(prev) and not tex.startswith(r"\left("))
+                out += r" \cdot " if dot else sep
+            out += tex
+            prev = arg
+        return out
+
+    def _print_quantity(self, coeff, units):
+        """Print `number * units` with the magnitude outside the unit fraction.
+
+        `2*kN/m**2` -> `2\\,\\frac{kN}{m^{2}}`, not `\\frac{2\\,kN}{m^{2}}`.
+        """
+        sign = ""
+        if coeff.is_extended_negative:
+            sign, coeff = "-", -coeff
+        unit_part = units[0] if len(units) == 1 else Mul(*units, evaluate=False)
+        sep = self._settings["mul_symbol_latex"]
+        return f"{sign}{self._print(coeff)}{sep}{self._print(unit_part)}"
+
+
+def _is_unit(arg) -> bool:
+    from sympy.physics.units import Quantity
+
+    # Unwrap nested powers: 1/m**2 under evaluate(False) is Pow(Pow(m, 2), -1)
+    while arg.is_Pow:
+        arg = arg.base
+    return isinstance(arg, Quantity)
+
+
+def _is_quantity(arg) -> bool:
+    """A number times units (bare units do not count)."""
+    return isinstance(arg, Mul) and _split_quantity(arg) is not None
+
+
+def _flat_factors(expr):
+    """Factors of a Mul, descending into nested (unevaluated) Muls."""
+    for arg in expr.args:
+        if isinstance(arg, Mul):
+            yield from _flat_factors(arg)
+        else:
+            yield arg
+
+
+def _split_quantity(expr):
+    """Return `(coeff, units)` if `expr` is one number times units, else None.
+
+    Nested Muls are flattened, so the unevaluated `Mul(Mul(27.06, kN), 1/m)`
+    produced by substituting `27.06*kN/m` into an `evaluate=False` tree is
+    recognised too. Products of several quantities (two numeric factors), or
+    anything with symbols or a power of a quantity, are not.
+    """
+    from sympy.physics.units import Quantity
+
+    coeffs, units = [], []
+    for arg in _flat_factors(expr):
+        if arg is S.One:  # e.g. Mul(1, 1/m) from 1/u.m under evaluate(False)
+            continue
+        if _is_unit(arg):
+            units.append(arg)
+        elif arg.is_number and not arg.has(Quantity):
+            coeffs.append(arg)
+        else:
+            return None
+    if len(coeffs) != 1 or not units or coeffs[0] is S.One:
+        return None
+    return coeffs[0], units
 
 
 def latex(expr, **settings: Any):

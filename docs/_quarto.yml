@@ -134,7 +134,6 @@ quartodoc:
         - formatters.format_latex
         - formatters.format_pint
         - formatters.format_sympy
-        - formatters.format_mul
         - formatters.validate_latex_kwargs
     - title: Columns Wrapper Module
       desc: Column wrappers for LaTeX equation rendering
