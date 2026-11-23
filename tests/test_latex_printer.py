@@ -149,3 +149,25 @@ def test_format_value_integration_uses_keecas_latex():
 
     expr2 = "q*l**2/8" | pc.parse_expr()
     assert format_value(expr2, mul_symbol=None) == r"\frac{q l^{2}}{8}"
+
+
+def test_unevaluated_reciprocal_drops_explicit_one():
+    """parse_expr("1/(a+b)", evaluate=False) is Mul(1, Pow(a+b, -1)).
+
+    Stock printing renders the explicit 1 factor as "1 \\frac{1}{a + b}" (#142).
+    """
+    expr = parse_expr("1/(a+b)", evaluate=False)
+    assert keecas_latex(expr, mul_symbol=None) == r"\frac{1}{a + b}"
+
+
+def test_unevaluated_reciprocal_inside_function_drops_explicit_one():
+    expr = parse_expr("Min(1/(a+b), 1, 1/c**2)", evaluate=False)
+    out = keecas_latex(expr, mul_symbol=None)
+    assert r"1 \frac" not in out
+    assert r"\frac{1}{a + b}" in out
+    assert r"\frac{1}{c^{2}}" in out
+
+
+def test_explicit_one_factor_dropped_from_longer_product():
+    expr = parse_expr("1*a/(b+c)", evaluate=False)
+    assert keecas_latex(expr, mul_symbol=None) == r"\frac{a}{b + c}"

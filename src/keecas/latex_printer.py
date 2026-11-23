@@ -73,6 +73,14 @@ class KeecasLatexPrinter(LatexPrinter):
 
     def _print_Mul(self, expr):
         if isinstance(expr, Mul):
+            # An unevaluated Mul can carry an explicit 1 factor, e.g.
+            # parse_expr("1/(a+b)", evaluate=False) == Mul(1, Pow(a+b, -1)),
+            # which stock printing renders as "1 \frac{1}{a + b}". Drop it.
+            rest = [arg for arg in expr.args if arg is not S.One]
+            if 0 < len(rest) < len(expr.args):
+                if len(rest) == 1:
+                    return self._print(rest[0])
+                expr = Mul(*rest, evaluate=False)
             numer, denom = fraction(expr, exact=True)
             if denom is not S.One and (denom.is_Mul or denom.is_Pow):
                 return rf"\frac{{{self._print(numer)}}}{{{self._print(denom)}}}"

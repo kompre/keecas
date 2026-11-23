@@ -534,6 +534,9 @@ def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
     - No free symbols (variables like x, y, sigma)
     - No addition/subtraction (no Add terms)
     - Single unit quantity (multiple units indicate compound units from calculation)
+    - Flat product: every factor is a unit, a power of a unit, or a unit-free
+      number (a substituted `evaluate=False` tree nests its units deeper and
+      is printed as-is, keeping its fraction structure)
 
     **Examples:**
 
@@ -597,7 +600,20 @@ def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
     unit_count = sum(1 for arg in value.args if isinstance(arg, Quantity))
     has_multiple_units = unit_count > 1
 
-    if not has_symbols and not has_addition and not has_multiple_units:
+    # Only a flat product qualifies: every factor is a bare unit, a power of a
+    # unit, or a unit-free number. A substituted evaluate=False tree such as
+    # (514*cm**3)*(235*MPa)/(1.05*1.35) nests its units one level down; the
+    # shortcut would split it and break the fraction (#139).
+    def _is_flat_factor(arg) -> bool:
+        if isinstance(arg, Quantity):
+            return True
+        if arg.is_Pow and isinstance(arg.base, Quantity):
+            return True
+        return not arg.has(Quantity)
+
+    is_flat = all(_is_flat_factor(arg) for arg in value.args)
+
+    if not has_symbols and not has_addition and not has_multiple_units and is_flat:
         # Simple "numeric * units" pattern - transform for cleaner display
         from sympy import UnevaluatedExpr
 
