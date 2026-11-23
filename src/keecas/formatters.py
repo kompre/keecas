@@ -8,7 +8,7 @@ Formatter Architecture:
     - Main entry point: format_value(value, col_index, **kwargs) -> str
     - Type-based dispatch using @singledispatch decorator
     - Each type has a registered formatter implementation
-    - Transformers (Pint, Mul) call other formatters directly
+    - Transformers (Pint) call other formatters directly
     - Fallback to sympy.latex() for unhandled types
 
 Example:
@@ -53,7 +53,7 @@ import re
 from functools import singledispatch
 from typing import Any
 
-from sympy import Basic, Mul, S
+from sympy import Basic, S
 from sympy import latex as _sympy_latex
 
 from keecas.latex_printer import latex
@@ -319,8 +319,8 @@ def format_value(value: Any, col_index: int = 0, **kwargs) -> str:
     - float: Float to LaTeX string
     - IPython.display.Markdown: Inline Markdown converted to LaTeX, wrapped in \\text{}
     - pint.Quantity: Converted to SymPy, then formatted
-    - sympy.Mul: Numeric/unit separation, then formatted as Basic
-    - sympy.Basic: LaTeX via sympy.latex()
+    - sympy.Basic: LaTeX via KeecasLatexPrinter (which also keeps the magnitude
+      outside the unit fraction for `number * units`, at any depth)
 
     See Also
     --------
@@ -520,126 +520,6 @@ try:
 
 except ImportError:
     pass
-
-
-@format_value.register(Mul)
-def format_mul(value: Mul, col_index: int = 0, **kwargs) -> str:
-    """Format Mul expressions with numeric/unit separation for simple cases.
-
-    For simple multiplication of numeric values and units (e.g., 5*meter),
-    applies transformation to separate numeric and unit parts for cleaner
-    LaTeX display. Complex calculations are formatted as-is.
-
-    **Transformation applies only when ALL conditions are met:**
-    - No free symbols (variables like x, y, sigma)
-    - No addition/subtraction (no Add terms)
-    - Single unit quantity (multiple units indicate compound units from calculation)
-    - Flat product: every factor is a unit, a power of a unit, or a unit-free
-      number (a substituted `evaluate=False` tree nests its units deeper and
-      is printed as-is, keeping its fraction structure)
-
-    **Examples:**
-
-    Simple cases (transformed):
-        - 5*meter -> "5 \\cdot \\mathrm{meter}"
-        - 3.14*kilogram -> "3.14 \\cdot \\mathrm{kilogram}"
-        - -5*kN -> "-5 \\cdot \\mathrm{kilonewton}" (sign kept outside, no parens)
-        - 2.0*kN/m^2 -> "2.0 \\dfrac{\\text{kN}}{\\text{m}^2}" (compound unit, one Quantity)
-
-    Complex cases (NOT transformed, formatted as-is):
-        - 15*kN*m -> displayed as-is (compound units from torque calculation)
-        - x * y -> displayed as symbolic multiplication
-        - (a + b) * meter -> displayed with addition
-
-    Parameters
-    ----------
-    value : Mul
-        Multiplication expression to format
-    col_index : int, optional
-        Column index (0 = LHS, 1+ = RHS)
-    **kwargs
-        Passed to format_sympy()
-
-    Returns
-    -------
-    str
-        LaTeX string representation
-
-    Notes
-    -----
-    Transformation uses as_coeff_Mul() to extract the numeric coefficient, then
-    wraps coefficient and unit separately in UnevaluatedExpr to produce clean
-    LaTeX spacing: "5 \\mathrm{meter}" instead of "5meter".
-
-    Negative coefficients have their sign extracted before wrapping to avoid
-    parenthesization: UnevaluatedExpr(-5) would produce "(-5)" in LaTeX, so
-    the sign is stripped and prepended as a literal "-" after formatting.
-
-    For non-numeric leading factors (e.g., pi*meter), falls back to as_two_terms().
-
-    For complex expressions with calculations, the function preserves the
-    original structure to maintain clarity in mathematical notation.
-    """
-    # Import here to avoid circular dependency
-    from sympy import Add
-
-    # Check if this is a simple "numeric * units" pattern
-    # Don't transform if it has any of these:
-    from sympy.physics.units import Quantity
-
-    from keecas import pipe_command as pc
-
-    has_symbols = bool(value.free_symbols)
-    has_addition = any(isinstance(arg, Add) for arg in value.args)
-
-    # Count unit quantities - multiple units indicate compound units from calculation
-    # (e.g., kN*m for torque, not simple kN for force).
-    # Note: Pow(unit, -n) args (e.g., meter**-2) are NOT Quantity instances, so
-    # compound fraction units like kN/m^2 correctly have unit_count=1 and are
-    # transformed, giving "2.0{\,}\dfrac{kN}{m^2}" rather than "\dfrac{2.0 kN}{m^2}".
-    unit_count = sum(1 for arg in value.args if isinstance(arg, Quantity))
-    has_multiple_units = unit_count > 1
-
-    # Only a flat product qualifies: every factor is a bare unit, a power of a
-    # unit, or a unit-free number. A substituted evaluate=False tree such as
-    # (514*cm**3)*(235*MPa)/(1.05*1.35) nests its units one level down; the
-    # shortcut would split it and break the fraction (#139).
-    def _is_flat_factor(arg) -> bool:
-        if isinstance(arg, Quantity):
-            return True
-        if arg.is_Pow and isinstance(arg.base, Quantity):
-            return True
-        return not arg.has(Quantity)
-
-    is_flat = all(_is_flat_factor(arg) for arg in value.args)
-
-    if not has_symbols and not has_addition and not has_multiple_units and is_flat:
-        # Simple "numeric * units" pattern - transform for cleaner display
-        from sympy import UnevaluatedExpr
-
-        coeff, unit_part = value.as_coeff_Mul()
-
-        # as_coeff_Mul returns coeff=1 when no pure numeric factor exists
-        # (e.g., pi*meter -> coeff=1, unit_part=pi*meter).
-        # Fall back to as_two_terms for correct splitting in that case.
-        if coeff == 1:
-            transformed = value | pc.as_two_terms(as_mul=True)
-            return format_sympy(transformed, col_index, **kwargs)
-
-        # For negative coefficients, strip the sign and prepend it as a literal "-".
-        # UnevaluatedExpr(-5) produces "(-5)" in LaTeX; this avoids the parentheses.
-        # NOTE: the coeff==1 guard must come BEFORE this block — negating coeff=-1
-        # would make it 1 and incorrectly trigger the fallback.
-        sign_prefix = ""
-        if coeff.is_negative:
-            sign_prefix = "-"
-            coeff = -coeff  # absolute value
-
-        transformed = UnevaluatedExpr(coeff) * UnevaluatedExpr(unit_part)
-        return sign_prefix + format_sympy(transformed, col_index, **kwargs)
-
-    # Complex expression - format as-is
-    return format_sympy(value, col_index, **kwargs)
 
 
 @format_value.register(Basic)

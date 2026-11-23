@@ -73,6 +73,9 @@ class KeecasLatexPrinter(LatexPrinter):
 
     def _print_Mul(self, expr):
         if isinstance(expr, Mul):
+            quantity = _split_quantity(expr)
+            if quantity is not None:
+                return self._print_quantity(*quantity)
             # An unevaluated Mul can carry an explicit 1 factor, e.g.
             # parse_expr("1/(a+b)", evaluate=False) == Mul(1, Pow(a+b, -1)),
             # which stock printing renders as "1 \frac{1}{a + b}". Drop it.
@@ -85,6 +88,56 @@ class KeecasLatexPrinter(LatexPrinter):
             if denom is not S.One and (denom.is_Mul or denom.is_Pow):
                 return rf"\frac{{{self._print(numer)}}}{{{self._print(denom)}}}"
         return super()._print_Mul(expr)
+
+    def _print_quantity(self, coeff, units):
+        """Print `number * units` with the magnitude outside the unit fraction.
+
+        `2*kN/m**2` -> `2\\,\\frac{kN}{m^{2}}`, not `\\frac{2\\,kN}{m^{2}}`.
+        """
+        sign = ""
+        if coeff.is_extended_negative:
+            sign, coeff = "-", -coeff
+        unit_part = units[0] if len(units) == 1 else Mul(*units, evaluate=False)
+        sep = self._settings["mul_symbol_latex"]
+        return f"{sign}{self._print(coeff)}{sep}{self._print(unit_part)}"
+
+
+def _is_unit(arg) -> bool:
+    from sympy.physics.units import Quantity
+
+    return isinstance(arg, Quantity) or (arg.is_Pow and isinstance(arg.base, Quantity))
+
+
+def _flat_factors(expr):
+    """Factors of a Mul, descending into nested (unevaluated) Muls."""
+    for arg in expr.args:
+        if isinstance(arg, Mul):
+            yield from _flat_factors(arg)
+        else:
+            yield arg
+
+
+def _split_quantity(expr):
+    """Return `(coeff, units)` if `expr` is one number times units, else None.
+
+    Nested Muls are flattened, so the unevaluated `Mul(Mul(27.06, kN), 1/m)`
+    produced by substituting `27.06*kN/m` into an `evaluate=False` tree is
+    recognised too. Products of several quantities (two numeric factors), or
+    anything with symbols or a power of a quantity, are not.
+    """
+    from sympy.physics.units import Quantity
+
+    coeffs, units = [], []
+    for arg in _flat_factors(expr):
+        if _is_unit(arg):
+            units.append(arg)
+        elif arg.is_number and not arg.has(Quantity):
+            coeffs.append(arg)
+        else:
+            return None
+    if len(coeffs) != 1 or not units or coeffs[0] is S.One:
+        return None
+    return coeffs[0], units
 
 
 def latex(expr, **settings: Any):

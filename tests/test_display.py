@@ -428,9 +428,9 @@ def test_formatter_pint_transformation():
 
 
 def test_formatter_mul_complex_expressions():
-    """Test format_mul correctly separates magnitude from unit for numeric*unit expressions.
+    """Test numeric*unit Mul expressions keep the magnitude outside the unit fraction.
 
-    format_mul transforms any no-symbol expression with a single unit type
+    The printer transforms any no-symbol expression with a single unit type
     (including compound fraction units like kN/m^2) to put the magnitude outside
     the unit fraction. Only expressions with multiple distinct unit Quantities
     (e.g., kN*m torque) or free symbols are NOT transformed.
@@ -1368,3 +1368,25 @@ def test_formatter_mul_plain_quantities_unchanged():
     }
     for expr, expected in cases.items():
         assert format_value(expr, mul_symbol=r"\,") == expected
+
+
+def test_nested_quantity_keeps_magnitude_outside_unit_fraction():
+    """27.06*kN/m substituted into a tree still renders as 27.06 \\frac{kN}{m}.
+
+    The rule used to live in a top-level Mul formatter shortcut, so it never
+    reached quantities nested inside a substituted evaluate=False expression.
+    """
+    import sympy
+
+    from keecas import format_value, symbols, u
+
+    q, L = symbols("q L")
+    with sympy.evaluate(False):
+        expr = (q * L**2 / 8).subs({q: 27.06 * u.kN / u.m, L: 6.4 * u.m})
+        neg = (q * L).subs({q: -27.06 * u.kN / u.m, L: 6.4 * u.m})
+
+    out = format_value(expr, mul_symbol=r"\,")
+    assert out.startswith(r"\frac{27.06\,\frac{\text{kN}}{\text{m}}")
+    assert out.endswith("}{8}")
+    assert r"\frac{27.06\,\text{kN}}" not in out
+    assert r"-27.06\,\frac{\text{kN}}{\text{m}}" in format_value(neg, mul_symbol=r"\,")
