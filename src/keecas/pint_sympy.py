@@ -7,6 +7,7 @@ It patches the Pint `Quantity` and `Unit` class to add the `_sympy_` method, whi
 automatically converts Pint quantities to SymPy expressions with units.
 """
 
+import math
 from typing import Any
 
 import pint
@@ -205,10 +206,15 @@ class SymPyUnitCache:
                         # Base unit doesn't exist in SymPy - skip scale factor
                         break
                 else:
-                    # All base units exist - set scale factor
-                    # Adjust magnitude by SymPy's reference scale factors
-                    adjusted_magnitude = float(pint_magnitude * sympy_scale)
-                    sympy_unit.set_global_relative_scale_factor(adjusted_magnitude, reference)
+                    # All base units exist - set scale factor.
+                    # SymPy >= 1.15 folds the reference's own scale factors
+                    # (e.g. kilogram = 1000 gram) into the result; older
+                    # versions ignore them. Set the plain magnitude, then
+                    # compensate only if SymPy did not apply them.
+                    expected = float(pint_magnitude * sympy_scale)
+                    sympy_unit.set_global_relative_scale_factor(pint_magnitude, reference)
+                    if not math.isclose(float(sympy_unit.scale_factor), expected, rel_tol=1e-12):
+                        sympy_unit.set_global_relative_scale_factor(expected, reference)
             except Exception:
                 # If scale factor setup fails, unit still works but won't convert
                 pass
