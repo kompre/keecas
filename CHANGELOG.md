@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.7.1](https://github.com/kompre/keecas/compare/v1.7.0...v1.7.1) (2026-11-23)
+
+
+### Bug Fixes
+
+* **display:** explicit \cdot where juxtaposed factors could be misread ([06e13d4](https://github.com/kompre/keecas/commit/06e13d45b01a7c4d562d225e9b22ce445bf80086))
+* **display:** keep fraction shape in substituted unevaluated expressions ([2dfb170](https://github.com/kompre/keecas/commit/2dfb1708031898cd89f166f5568d83fb4c10fe3a))
+* **display:** keep fraction shape in substituted unevaluated expressions ([3de7616](https://github.com/kompre/keecas/commit/3de7616760c4037fea18c6b6608d983f43a056f7))
+* **display:** keep magnitude outside unit fraction for nested quantities ([a85185d](https://github.com/kompre/keecas/commit/a85185dedf6102efbb5fb81e6d335277b58148df))
+* **pc.subs:** resolve literal multi-index lookups on an IndexedBase substituted with a Matrix ([fa276a5](https://github.com/kompre/keecas/commit/fa276a50a17f039465b685e0b2d85b7b05b464b0))
+* **pc.subs:** resolve literal multi-index lookups on an IndexedBase substituted with a Matrix ([6a0e68e](https://github.com/kompre/keecas/commit/6a0e68ead494ae684711f06eddfa6cf6b6a44c9d)), closes [#134](https://github.com/kompre/keecas/issues/134)
+* **pint_sympy:** correct kgf/lbf scale factors on SymPy 1.15 ([49f3f82](https://github.com/kompre/keecas/commit/49f3f82233d6ec1b120b36b93893cfc9c5e27fcd))
+* **pint_sympy:** correct kgf/lbf scale factors on SymPy 1.15 ([0d7dd6e](https://github.com/kompre/keecas/commit/0d7dd6e674c2b6971a95fe8cd4979a615a4fef11))
+
+
+### Documentation
+
+* **claude:** fix stale notes (keecas is 1.x, config/ package, templates) ([0d7dd6e](https://github.com/kompre/keecas/commit/0d7dd6e674c2b6971a95fe8cd4979a615a4fef11))
+* **claude:** note locale-dependent test failures in sandboxes ([13e7bbe](https://github.com/kompre/keecas/commit/13e7bbec68ad403c35271d59c14c57c52641f063))
+* **claude:** trim verbose notes and duplicated CLI commands ([df15808](https://github.com/kompre/keecas/commit/df15808a50aa00f472eb39af2b49b6fd59f42073))
+
 ## [1.7.0](https://github.com/kompre/keecas/compare/v1.6.1...v1.7.0) (2026-10-14)
 
 
